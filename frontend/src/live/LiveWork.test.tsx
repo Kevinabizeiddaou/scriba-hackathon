@@ -247,6 +247,25 @@ describe('work queue', () => {
   })
 })
 
+describe('overview', () => {
+  it('lists the picked-up requests that need the user and links each to its run', async () => {
+    serveRuns([INFO_RUN, DONE_RUN, HELD_RUN, TASK_RUN])
+    renderApp('#/overview')
+    const section = await screen.findByRole('region', { name: 'Requests the secretary picked up' })
+    const links = await within(section).findAllByRole('link', { name: /Board pack|Can we meet/ })
+    expect(links.map(a => a.getAttribute('href'))).toEqual(['#/work/8', '#/work/7'])
+    expect(links[1]).toHaveTextContent('Review the proposed action and decide')
+    expect(section).not.toHaveTextContent('Weekly digest') // finished and no-action runs are not pushed at the user
+    expect(within(section).getByRole('link', { name: /Work queue/ })).toHaveAttribute('href', '#/work')
+  })
+
+  it('says that mail is picked up on request when nothing has been picked up yet', async () => {
+    renderApp('#/overview')
+    const section = await screen.findByRole('region', { name: 'Requests the secretary picked up' })
+    expect(await within(section).findByText(/Nothing has been picked up yet\. New mail is picked up when you check for new work/)).toBeInTheDocument()
+  })
+})
+
 describe('checking for new work', () => {
   it('runs one bounded check per click, reports every message it examined, and reads the queue again', async () => {
     const user = userEvent.setup()

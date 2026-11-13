@@ -25,6 +25,9 @@ vi.mock('./api/desk', async original => ({
   fetchDeskInbox: vi.fn(),
   fetchDeskInboxItem: vi.fn(),
   fetchDeskBriefing: vi.fn(),
+  // The shell and the overview read the run queue; without these the tests would call a real backend.
+  fetchDeskRuns: vi.fn(),
+  fetchDeskRun: vi.fn(),
 }))
 vi.mock('./live/scribaApi', async original => ({
   ...(await original<typeof import('./live/scribaApi')>()),
@@ -40,7 +43,7 @@ vi.mock('./live/scribaApi', async original => ({
 }))
 
 import App from './App'
-import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox } from './api/desk'
+import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRuns } from './api/desk'
 import { fetchCalendarEvents, fetchProviderStatus, logout } from './api/scriba'
 import { approveChatToolCall, cancelChatToolCall, fetchChatConversations, fetchChatMessages, fetchDrafts, fetchReminders, fetchTasks, retryChatToolCall } from './live/scribaApi'
 
@@ -131,6 +134,7 @@ function setBackend(calls: ChatToolCall[] = [CALLS.email, CALLS.task]) {
   vi.mocked(fetchDeskConnections).mockResolvedValue(connections())
   vi.mocked(fetchDeskInbox).mockResolvedValue(inbox())
   vi.mocked(fetchDeskBriefing).mockResolvedValue(briefing())
+  vi.mocked(fetchDeskRuns).mockResolvedValue({ account: 'exec@example.test', runs: [] })
   vi.mocked(fetchChatConversations).mockResolvedValue([conversation])
   vi.mocked(fetchChatMessages).mockResolvedValue(thread(calls))
   vi.mocked(fetchTasks).mockResolvedValue({ tasks: [] })

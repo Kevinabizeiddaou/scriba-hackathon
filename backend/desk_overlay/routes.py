@@ -19,13 +19,15 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import __version__
 from .availability import InvalidAvailabilityRequest
 from .service import DeskService, NotFound
+from .workflow import DeskWorkflow
 
-DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing"]
+DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing",
+                     "intake", "runs"]
 
 
 class SlotCheckBody(BaseModel):
@@ -35,10 +37,17 @@ class SlotCheckBody(BaseModel):
     buffer_minutes: Optional[int] = None
 
 
+class IntakeBody(BaseModel):
+    provider: str = Field(pattern="^(gmail|outlook)$")
+    id: str = Field(min_length=1)
+    mailbox: Optional[str] = None
+
+
 def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None) -> APIRouter:
     """``gateway`` is the Scriba seam; ``now`` is injectable for tests."""
     router = APIRouter(prefix="/desk", tags=["desk"])
     service = DeskService(gateway, clock=now)
+    workflow = DeskWorkflow(service, gateway)
 
     def guarded(call: Any) -> Dict[str, Any]:
         try:
@@ -111,6 +120,31 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None) -> 
         return guarded(lambda: service.slot_check(
             request, user, start=body.start, end=body.end, timezone=body.timezone,
             buffer_minutes=body.buffer_minutes))
+
+    # ── workflow: one incoming email to proposed, approvable actions ────────
+    # These create a run (a Scriba chat conversation) and action cards in
+    # Scriba. They send no mail and write no calendar; every card is approved
+    # through Scriba's existing POST /chat/tool-calls/{id}/approve.
+    @router.post("/intake")
+    def desk_intake(request: Request, body: IntakeBody) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.intake(
+            request, user, provider=body.provider, item_id=body.id, mailbox=body.mailbox))
+
+    @router.get("/runs")
+    def desk_runs(request: Request, limit: int = Query(default=50, ge=1, le=200)) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return {"account": user.email, "runs": workflow.list_runs(user, limit)}
+
+    @router.get("/runs/{run_id}")
+    def desk_run(request: Request, run_id: int) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.view(request, user, run_id))
+
+    @router.post("/runs/{run_id}/advance")
+    def desk_run_advance(request: Request, run_id: int) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.advance(request, user, run_id))
 
     @router.get("/briefing")
     def desk_briefing(request: Request, limit: int = Query(default=50, ge=1, le=100)) -> Dict[str, Any]:

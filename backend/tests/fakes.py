@@ -41,6 +41,8 @@ class FakeGateway:
         self.users: Dict[str, Dict[str, Any]] = {}
         self.calls: List[tuple] = []
         self.acting_as: Optional[str] = None
+        self.runs: Dict[int, Dict[str, Any]] = {}
+        self.cards: List[Dict[str, Any]] = []
 
     def add_user(self, user_id: int, address: str, *, google: Optional[List[str]] = None,
                  outlook: Optional[str] = None, gmail_mail: bool = False, outlook_mail: bool = False,
@@ -125,6 +127,47 @@ class FakeGateway:
         if reasons:
             return {"classification": "requires_reply", "priority": "high", "reasons": reasons}
         return {"classification": "informational", "priority": "low", "reasons": ["no_question_or_request"]}
+
+    # ── workflow runs (a stand-in for Scriba's chat conversations and cards) ─
+    def list_runs(self, user: DeskUser, limit: int = 50) -> List[Dict[str, Any]]:
+        return [run for run in self.runs.values() if run["user_id"] == user.id][:limit]
+
+    def find_run(self, user: DeskUser, key: str) -> Optional[Dict[str, Any]]:
+        return next((run for run in self.list_runs(user, 500) if run["meta"]["key"] == key), None)
+
+    def get_run(self, user: DeskUser, run_id: int) -> Optional[Dict[str, Any]]:
+        run = self.runs.get(int(run_id))
+        return run if run and run["user_id"] == user.id else None
+
+    def open_run(self, user: DeskUser, *, title: str, meta: Dict[str, Any],
+                 summary: str) -> Dict[str, Any]:
+        run = {"id": len(self.runs) + 1, "user_id": user.id, "title": title, "meta": meta,
+               "summary": summary}
+        self.runs[run["id"]] = run
+        return run
+
+    def propose_action(self, user: DeskUser, run: Dict[str, Any], *, tool_name: str,
+                       tool_input: Dict[str, Any], email_id: Optional[str],
+                       thread_id: Optional[str], provider: Optional[str]) -> Dict[str, Any]:
+        card = {"id": len(self.cards) + 1, "run_id": run["id"], "user_id": user.id,
+                "tool_name": tool_name, "status": "awaiting_approval", "input": dict(tool_input),
+                "output": {}, "error": None, "assistant_action_id": None,
+                "context": {"email_id": email_id, "thread_id": thread_id, "provider": provider}}
+        self.cards.append(card)
+        return card
+
+    def run_cards(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
+        return [card for card in self.cards if card["run_id"] == run["id"] and card["user_id"] == user.id]
+
+    def settle(self, card_id: int, status: str = "executed") -> None:
+        """What Scriba's approve route does to a card, for workflow tests."""
+        card = next(card for card in self.cards if card["id"] == card_id)
+        card["status"] = status
+        card["assistant_action_id"] = 900 + card_id if status in ("executed", "partially_executed") else None
+
+    def extract_meeting(self, user: DeskUser, item: Dict[str, Any], timezone: str) -> Optional[Dict[str, Any]]:
+        self.calls.append(("extract_meeting", user.email, item.get("id")))
+        return self.users[user.email].get("meeting_plan")
 
     def _section(self, user: DeskUser, name: str) -> Any:
         world = self.users[user.email]

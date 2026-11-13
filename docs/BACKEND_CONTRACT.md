@@ -176,3 +176,106 @@ Rules a client can rely on:
 Not in the overlay, because Scriba's existing API already covers it: drafts,
 sending, calendar writes, chat, approvals, tasks, reminders, notifications,
 daily brief (`POST /daily-brief`), automations. Use section 3.
+
+## 5. Desk chat scope (Integrated on Scriba's chat service; no model called)
+
+The Desk does not have its own chatbot. A client uses Scriba's existing chat
+routes from section 3 (`/chat/conversations`, `.../messages`,
+`.../messages/stream`, `/chat/tool-calls/{id}/approve|cancel|retry`). In a
+backend started for the Desk, Scriba's chat agent is scoped:
+
+- `GET /desk/health` reports `chatScope: "enforced"` and `chatTools.read` /
+  `chatTools.approval`. When it reports `"off"`, the chat is unscoped Scriba
+  chat and the rules below do not apply.
+- **Read tools** (run without approval): `check_availability`,
+  `find_free_slots`, `executive_briefing`, `provider_status`,
+  `summarize_emails`, `search_sources`, `show_agenda`, `show_meetings`,
+  `list_tasks`.
+- **Approval tools**: `draft_email_reply`, `send_email`, `create_task`,
+  `create_reminder`, `create_calendar_event`, `update_calendar_event`,
+  `cancel_calendar_event`.
+- Excluded integrations are not offered to the planner, are stripped from a
+  plan if a model emits them, are refused by dispatch (`status:
+  "unsupported"`), and cannot be approved.
+
+Tool-call outputs a client may render (`tool_call.output`):
+
+| Tool | Output |
+| --- | --- |
+| `check_availability` | `DeskSlotCheck` (section 4) |
+| `find_free_slots` | `DeskAvailability` without `busy` |
+| `executive_briefing` | `DeskBriefing` |
+| `provider_status` | `DeskConnections` |
+
+A failed Desk read tool has `status: "failed"`, `error: "invalid_request"` or
+`"tool_failed"`, and `output.message`.
+
+### The booking gate
+
+Every `create_calendar_event` card is checked against every connected Google
+and Outlook calendar when it is created and again on approve and retry.
+
+| Card result | Meaning | Client behaviour |
+| --- | --- | --- |
+| `status: "awaiting_approval"`, `output.availability.free: true` | Verified free on every calendar | Show Approve |
+| `status: "needs_info"`, `output.error_code: "calendar_conflict"` | Collides with `output.availability.conflicts[]` | Show the conflicts; offer another time, or "book anyway" |
+| `status: "needs_info"`, `output.error_code: "availability_unknown"`, `output.blocked: true` | A calendar could not be read (`output.availability.calendars[].ok == false`) | Show which calendar; offer reconnect, or "book anyway" |
+
+"Book anyway" is an approve with
+`{"payload_overrides": {"desk_availability_override": true}}`. Only an
+approve request can set it; the same flag in a model's proposal is ignored.
+After it executes, the card carries `output.availability_override`
+(`by: "user"`, the time, and the conflicts overridden). An approve can come
+back `needs_info` even if the card was `awaiting_approval` a moment ago,
+because the calendars are re-read at approval.
+
+Limits: the gate covers creating an event, not yet moving one; search results
+can still contain items that came from an excluded integration; no model was
+called in any test, so what the agent says in prose is unverified.
+
+## 6. Desk workflow: one incoming email (Integrated; execution simulated or in-memory)
+
+| Method and path | Purpose | Type |
+| --- | --- | --- |
+| `POST /desk/intake` `{provider, id, mailbox?}` | Take one inbox message through classify, thread, calendar context and proposal. Idempotent per message: a repeat returns the same run with `duplicate: true` | `DeskRun` |
+| `GET /desk/runs` | The user's runs, newest first | `{account, runs[]}` |
+| `GET /desk/runs/{runId}` | A run with its proposed actions and their current status | `DeskRun` |
+| `POST /desk/runs/{runId}/advance` | Propose what may only follow an executed step (the confirmation reply after the event exists). Safe to repeat | `DeskRun` |
+
+These create a run and action cards inside Scriba. They send no mail and
+write no calendar. **Every action is approved through Scriba's existing
+`POST /chat/tool-calls/{toolCallId}/approve`** (each action carries its
+`approve` path) and rejected through `.../cancel`.
+
+What is proposed:
+
+| Message | Proposal |
+| --- | --- |
+| Actionable (deadline, no question) | One `create_task` card |
+| New meeting request, requested time verified free on every calendar | One `create_calendar_event` card, attendee = the sender from the From header. After it is executed, `next` contains `"advance"`, which proposes one `send_email` reply in the original thread, from the receiving mailbox |
+| Meeting request, time busy or unverifiable or not understood | No card. `held.reason` is `calendar_conflict`, `availability_unknown`, `time_not_understood`, `change_request` or `invalid_preferences`; `held.slots` are verified free times; `draftRequest` is the reply request |
+| Needs a reply | No card; `draftRequest`, and `next: ["draft_reply"]` |
+| Informational or automated | Nothing |
+
+`DeskRun.state`: `awaiting_approval`, `executing`, `completed`, `partial`
+(some actions executed, some failed), `failed`, `cancelled`,
+`no_action_proposed`. An action's `verified` is true only when the card
+executed and Scriba recorded the action (`assistantActionId`); it is never
+inferred.
+
+Readiness:
+
+| Capability | Status |
+| --- | --- |
+| Classification, proposals, duplicates, isolation, run states | Tested without Scriba and on the real Scriba app |
+| Task case: propose, approve through Scriba's route, executed by Scriba's engine, verified | Integrated, with in-memory storage |
+| Meeting case: propose, gate at approval, event before reply | Integrated; the calendar write itself is a recording stand-in |
+| Extracting the requested time from the email | Uses Scriba's model call; scripted in tests, **never run against a real model** |
+| Sending the confirmation reply | Card creation tested; the send is not executed in any test |
+| Anything on a live mailbox, calendar or model | Not tested |
+
+Limits: a run starts when a client calls `/desk/intake`; nothing yet starts
+runs automatically when mail arrives. Reschedule and cancel requests are
+held, not proposed. One Desk process is assumed (the duplicate guard is a
+process lock plus a lookup). The confirmation reply text is a fixed template
+the user can edit on the card.

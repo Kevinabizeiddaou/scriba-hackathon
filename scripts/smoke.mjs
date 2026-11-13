@@ -232,6 +232,25 @@ if (email && password) {
       return json.headline + (json.unavailable.length ? ` unavailable: ${json.unavailable}` : '')
     })
 
+    await check('desk: POST /desk/intake opens one run per message and proposes nothing unapproved', async () => {
+      const inbox = await call('/desk/inbox?limit=5')
+      const item = inbox.json?.items?.[0]
+      if (!item) return 'no mail to take in (skipped)'
+      const body = { provider: item.provider, id: item.id }
+      const first = await call('/desk/intake', { method: 'POST', body })
+      expect(first.response.status === 200, `status ${first.response.status}`)
+      const run = first.json
+      expect(typeof run.runId === 'number' && Array.isArray(run.actions), 'unexpected shape')
+      // Nothing is executed by intake: every action still waits for approval.
+      expect(run.actions.every(action => action.verified === false || run.duplicate),
+        'an action was executed by intake')
+      const again = await call('/desk/intake', { method: 'POST', body })
+      expect(again.json.runId === run.runId && again.json.duplicate === true, 'a duplicate run was created')
+      const fetched = await call(`/desk/runs/${run.runId}`)
+      expect(fetched.response.status === 200 && fetched.json.runId === run.runId, 'run not readable')
+      return `run ${run.runId}: ${run.category}, state ${run.state}, ${run.actions.length} action(s)`
+    })
+
     if (withDeskChat) {
       // Each chat turn below reaches Scriba's planner, so on a backend with a
       // real model it costs model calls. It never proposes or approves a write.

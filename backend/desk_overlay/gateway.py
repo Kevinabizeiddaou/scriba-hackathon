@@ -122,6 +122,85 @@ class ScribaGateway:
 
         return get_user_preferences(user.email) or {}
 
+    # ── workflow runs: Scriba chat conversations and action cards ───────────
+    @staticmethod
+    def _run_of(row: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+        meta = _as_dict((row or {}).get("metadata")).get("desk_run") if row else None
+        if not row or not isinstance(meta, dict) or not meta.get("key"):
+            return None
+        return {"id": int(row["id"]), "meta": meta}
+
+    def list_runs(self, user: DeskUser, limit: int = 50) -> List[Dict[str, Any]]:
+        from app import chat_repository
+
+        runs = [self._run_of(row) for row in chat_repository.list_conversations(user.id, limit=200)]
+        return [run for run in runs if run][:limit]
+
+    def find_run(self, user: DeskUser, key: str) -> Optional[Dict[str, Any]]:
+        return next((run for run in self.list_runs(user, 200) if run["meta"].get("key") == key), None)
+
+    def get_run(self, user: DeskUser, run_id: int) -> Optional[Dict[str, Any]]:
+        """A run only if it belongs to this user (Scriba's repository scopes by user)."""
+        from app import chat_repository
+
+        return self._run_of(chat_repository.get_conversation(int(run_id), user_id=user.id))
+
+    def open_run(self, user: DeskUser, *, title: str, meta: Dict[str, Any],
+                 summary: str) -> Dict[str, Any]:
+        """A Scriba chat conversation holding the run, with one assistant
+        message that the proposed action cards hang from."""
+        from app import chat_repository
+
+        conversation = chat_repository.create_conversation(
+            user_id=user.id, title=title, metadata={"desk_run": meta})
+        message = chat_repository.create_message(
+            conversation_id=int(conversation["id"]), user_id=user.id, role="assistant", content=summary)
+        meta["message_id"] = int(message["id"])
+        return {"id": int(conversation["id"]), "meta": meta}
+
+    def propose_action(self, user: DeskUser, run: Dict[str, Any], *, tool_name: str,
+                       tool_input: Dict[str, Any], email_id: Optional[str],
+                       thread_id: Optional[str], provider: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Create an action card through Scriba's own card path: its
+        validation gate, provider checks and idempotent card creation."""
+        from app import chat_repository, chat_service
+
+        message_id = run["meta"].get("message_id")
+        if not message_id:
+            messages = chat_repository.list_messages(run["id"], user_id=user.id, limit=5)
+            message_id = next((m["id"] for m in messages if m.get("role") == "assistant"), None)
+        return chat_service._handle_tool_call(
+            account_email=user.email, user_id=user.id, conversation_id=run["id"],
+            message_id=int(message_id), tool_name=tool_name, tool_input=dict(tool_input),
+            provider_status=chat_service._safe_provider_status(user.email),
+            email_id=email_id, thread_id=thread_id, provider=provider, user_message="",
+        )
+
+    def run_cards(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
+        from app import chat_repository
+
+        rows = chat_repository.list_tool_calls_for_conversation(run["id"], user_id=user.id)
+        return [chat_repository.serialize_tool_call(row) for row in rows]
+
+    def extract_meeting(self, user: DeskUser, item: Mapping[str, Any],
+                        timezone: str) -> Optional[Dict[str, Any]]:
+        """Scriba's own email-plan extraction (its model, its prompt). None
+        when the model is unavailable or says nothing usable: the workflow
+        then proposes no event rather than guessing a time."""
+        from app import llm_client
+
+        try:
+            plan = llm_client.extract_email_plan(
+                subject=str(item.get("subject") or ""), from_addr=str(item.get("from_addr") or ""),
+                body=str(item.get("snippet") or ""), account_email=user.email, user_name=None,
+                timezone=timezone, thread_context=[], attachment_context={},
+            )
+        except Exception:
+            return None
+        if not isinstance(plan, dict) or str(plan.get("calendar_action") or "").lower() != "create":
+            return None
+        return plan
+
     # ── briefing inputs ─────────────────────────────────────────────────────
     def agenda_today(self, request: Any, user: DeskUser) -> Dict[str, Any]:
         """The payload behind ``GET /agenda/today`` (Scriba's synced calendar)."""
@@ -224,6 +303,14 @@ def _as_dict(value: Any) -> Dict[str, Any]:
     """Scriba runtimes return either a dict or a JSON response object."""
     if isinstance(value, dict):
         return value
+    if isinstance(value, str):
+        import json
+
+        try:
+            parsed = json.loads(value)
+        except ValueError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
     body = getattr(value, "body", None)
     if body:
         import json

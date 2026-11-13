@@ -38,12 +38,43 @@ def main() -> None:
     def serve_with_desk(app, *args, **kwargs):
         from desk_overlay import install
 
+        _keep_conversation_metadata()
         install(app)
         return serve(app, *args, **kwargs)
 
     uvicorn.run = serve_with_desk
     sys.argv = [str(seeded), *sys.argv[1:]]
     runpy.run_path(str(seeded), run_name="__main__")
+
+
+def _keep_conversation_metadata() -> None:
+    """Seeded-backend shim only.
+
+    Scriba's real repository stores a conversation's ``metadata`` (the Desk
+    keeps a run's identity there). The seeded server's in-memory stand-in
+    drops it, so here it is remembered beside that stand-in. A real Scriba
+    backend does not need or load this.
+    """
+    import app.chat_repository as chat_repo
+
+    kept = {}
+    create, get, listing = (chat_repo.create_conversation, chat_repo.get_conversation,
+                            chat_repo.list_conversations)
+
+    def with_metadata(row):
+        if row and row.get("id") in kept and not row.get("metadata"):
+            row = {**row, "metadata": kept[row["id"]]}
+        return row
+
+    def create_conversation(**kwargs):
+        row = create(**kwargs)
+        if row and kwargs.get("metadata"):
+            kept[row["id"]] = dict(kwargs["metadata"])
+        return with_metadata(row)
+
+    chat_repo.create_conversation = create_conversation
+    chat_repo.get_conversation = lambda *a, **k: with_metadata(get(*a, **k))
+    chat_repo.list_conversations = lambda *a, **k: [with_metadata(r) for r in listing(*a, **k)]
 
 
 if __name__ == "__main__":

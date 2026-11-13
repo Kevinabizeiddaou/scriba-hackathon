@@ -32,7 +32,7 @@ describe('MockExecutiveDesk', () => {
   it('contains no network code at all: no fetch, sockets, HTTP modules or dynamic imports in its source', () => {
     const dir = resolve(__dirname);
     const sources = readdirSync(dir).filter((name) => name.endsWith('.ts') && !name.includes('.test.'));
-    expect(sources.sort()).toEqual(['chatIntents.ts', 'mockAdapter.ts', 'scriptDsl.ts', 'scripts.ts']);
+    expect(sources.sort()).toEqual(['chatIntents.ts', 'mockAdapter.ts', 'scriptDsl.ts', 'scripts.ts', 'workspaceMock.ts']);
     const banned = /\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|node:(http|https|net|tls|dgram|child_process)|\baxios\b|\bimport\s*\(|httpAdapter|referenceServer|process\.env|localStorage|document\.cookie/;
     for (const name of sources) {
       const code = readFileSync(resolve(dir, name), 'utf8')

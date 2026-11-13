@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getApi, type ExecutiveDeskApi } from '../api';
+import { getApi, getWorkspace, type ExecutiveDeskApi } from '../api';
+import type { WorkspaceApi } from '../api/workspace';
 
 export interface Resource<T> {
   data: T | undefined;
@@ -21,6 +22,23 @@ export interface Resource<T> {
  * shown under another conversation's title.
  */
 export function useResource<T>(load: (api: ExecutiveDeskApi) => Promise<T>, deps: readonly unknown[]): Resource<T> {
+  return useLoader(() => load(getApi()), (listener) => getApi().subscribe(listener), deps);
+}
+
+/** The same, for the workspace view models (mail, calendar, tasks, follow-ups, activity). */
+export function useWorkspace<T>(load: (workspace: WorkspaceApi) => Promise<T>, deps: readonly unknown[]): Resource<T> {
+  return useLoader(
+    () => load(getWorkspace()),
+    (listener) => {
+      // Workspace data also depends on the desk (approvals, runs), so listen to both.
+      const off = [getWorkspace().subscribe(listener), getApi().subscribe(listener)];
+      return () => off.forEach((stop) => stop());
+    },
+    deps,
+  );
+}
+
+function useLoader<T>(load: () => Promise<T>, subscribe: (listener: () => void) => () => void, deps: readonly unknown[]): Resource<T> {
   const [state, setState] = useState<{ data: T | undefined; error: Error | null; loading: boolean }>({
     data: undefined,
     error: null,
@@ -41,7 +59,7 @@ export function useResource<T>(load: (api: ExecutiveDeskApi) => Promise<T>, deps
     inFlight.current = true;
     const startedIn = generation.current;
     loadRef
-      .current(getApi())
+      .current()
       .then((data) => {
         if (startedIn === generation.current) setState({ data, error: null, loading: false });
       })
@@ -65,7 +83,7 @@ export function useResource<T>(load: (api: ExecutiveDeskApi) => Promise<T>, deps
     generation.current = mine;
     setState({ data: undefined, error: null, loading: true });
     reload();
-    const unsubscribe = getApi().subscribe(reload);
+    const unsubscribe = subscribe(reload);
     return () => {
       unsubscribe();
       // Negative marks "unmounted or between deps": in-flight answers are dropped and nothing restarts.

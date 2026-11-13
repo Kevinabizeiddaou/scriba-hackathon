@@ -34,6 +34,9 @@ from .service import DeskService, NotFound
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _DONE = ("executed", "partially_executed")
 _OPEN = ("pending", "needs_info", "draft", "awaiting_approval", "approved", "executing")
+# Messages a sweep opens a run for. Informational and automated mail is left alone.
+SWEEP_CATEGORIES = ("meeting_request", "action_item", "needs_reply")
+SWEEP_MAX_NEW = 5
 
 
 def sender_address(from_addr: str) -> Optional[str]:
@@ -109,6 +112,61 @@ class DeskWorkflow:
                     user, run, tool_name=proposal["tool_name"], tool_input=proposal["tool_input"],
                     email_id=item.get("id"), thread_id=item.get("threadId"), provider=provider)
         return self.view(ctx, user, run["id"])
+
+    # ── sweep ───────────────────────────────────────────────────────────────
+    def sweep(self, ctx: Any, user: Any, *, provider: str = "all", limit: int = 25,
+              max_new: int = SWEEP_MAX_NEW, mailbox: Optional[str] = None) -> Dict[str, Any]:
+        """Open a run for every recent message that needs one and has none.
+
+        Bounded on purpose: at most ``max_new`` runs are opened per call,
+        because each meeting request costs a model call and calendar reads.
+        The rest are reported as ``deferred`` and picked up by the next call.
+        One message failing does not stop the others. Like ``intake``, this
+        proposes actions; it sends no mail and writes no calendar.
+        """
+        guard = self._lock(f"sweep|{int(user.id)}")
+        if not guard.acquire(blocking=False):
+            return {"account": user.email, "status": "already_running", "examined": 0,
+                    "opened": [], "existing": 0, "skipped": 0, "deferred": [], "failed": [],
+                    "sources": [], "complete": False}
+        try:
+            inbox = self.service.inbox(ctx, user, provider=provider, limit=limit, mailbox=mailbox)
+            opened: List[Dict[str, Any]] = []
+            deferred: List[Dict[str, Any]] = []
+            failed: List[Dict[str, Any]] = []
+            existing = skipped = 0
+            for item in inbox["items"]:
+                ref = {"provider": item.get("provider"), "id": item.get("id"),
+                       "subject": item.get("subject"),
+                       "category": (item.get("triage") or {}).get("category")}
+                if ref["category"] not in SWEEP_CATEGORIES or not ref["id"] or not ref["provider"]:
+                    skipped += 1
+                    continue
+                key = run_key(user.id, ref["provider"], item.get("provider_account_id"), ref["id"])
+                if self.gateway.find_run(user, key) is not None:
+                    existing += 1
+                    continue
+                if len(opened) + len(failed) >= max_new:
+                    deferred.append(ref)
+                    continue
+                try:
+                    run = self.intake(ctx, user, provider=ref["provider"], item_id=ref["id"],
+                                      mailbox=mailbox)
+                except Exception as exc:  # one bad message must not stop the sweep
+                    failed.append({**ref, "error": type(exc).__name__})
+                    continue
+                if run.get("duplicate"):
+                    existing += 1
+                else:
+                    opened.append({**ref, "runId": run.get("runId"), "state": run.get("state")})
+            return {"account": user.email, "status": "completed", "examined": len(inbox["items"]),
+                    "opened": opened, "existing": existing, "skipped": skipped,
+                    "deferred": deferred, "failed": failed,
+                    "sources": inbox["sources"],
+                    # False when a connected mailbox could not be read: mail may be missing.
+                    "complete": bool(inbox["complete"])}
+        finally:
+            guard.release()
 
     def _plan_meeting(self, ctx: Any, user: Any, item: Dict[str, Any],
                       calendar: Optional[Dict[str, Any]]) -> Any:

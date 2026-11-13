@@ -238,6 +238,7 @@ called in any test, so what the agent says in prose is unverified.
 | Method and path | Purpose | Type |
 | --- | --- | --- |
 | `POST /desk/intake` `{provider, id, mailbox?}` | Take one inbox message through classify, thread, calendar context and proposal. Idempotent per message: a repeat returns the same run with `duplicate: true` | `DeskRun` |
+| `POST /desk/intake/sweep` `{provider?, limit?, max_new?, mailbox?}` | Open a run for every recent message that needs one and has none. Bounded and safe to repeat (see below) | `DeskSweep` |
 | `GET /desk/runs` | The user's runs, newest first | `{account, runs[]}` |
 | `GET /desk/runs/{runId}` | A run with its proposed actions and their current status | `DeskRun` |
 | `POST /desk/runs/{runId}/advance` | Propose what may only follow an executed step (the confirmation reply after the event exists). Safe to repeat | `DeskRun` |
@@ -274,8 +275,32 @@ Readiness:
 | Sending the confirmation reply | Card creation tested; the send is not executed in any test |
 | Anything on a live mailbox, calendar or model | Not tested |
 
-Limits: a run starts when a client calls `/desk/intake`; nothing yet starts
-runs automatically when mail arrives. Reschedule and cancel requests are
+### Sweep
+
+`POST /desk/intake/sweep` reads the recent inbox (`provider` `all`, `gmail` or
+`outlook`; `limit` 1 to 50, default 25) and runs `/desk/intake` for each
+message triaged `meeting_request`, `action_item` or `needs_reply` that has no
+run yet. Informational and automated mail is left alone. It proposes
+actions exactly as `/desk/intake` does: nothing is sent or written.
+
+| Field | Meaning |
+| --- | --- |
+| `status` | `completed`, or `already_running` when another sweep for the same user is in progress (nothing was done) |
+| `examined` | Messages read |
+| `opened[]` | `{provider, id, subject, category, runId, state}` for each run opened by this call |
+| `existing` | Messages that already had a run |
+| `skipped` | Messages that need no run |
+| `deferred[]` | Messages that need a run but were over `max_new` (1 to 10, default 5). Call again to take them |
+| `failed[]` | `{provider, id, subject, category, error}`; one failure does not stop the others, and the message is retried by the next sweep |
+| `complete` | False when a connected mailbox could not be read, so mail may be missing. `sources[]` says which |
+
+The bound exists because each meeting request costs one model call and a
+calendar read. The sweep runs only when a signed-in client calls it; there
+is no background job and no push trigger.
+
+Limits: runs start when a client calls `/desk/intake` or
+`/desk/intake/sweep`; nothing starts them when mail arrives with no client
+open. Reschedule and cancel requests are
 held, not proposed. One Desk process is assumed (the duplicate guard is a
 process lock plus a lookup). The confirmation reply text is a fixed template
 the user can edit on the card.

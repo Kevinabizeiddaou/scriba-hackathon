@@ -27,7 +27,7 @@ from .service import DeskService, NotFound
 from .workflow import DeskWorkflow
 
 DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing",
-                     "intake", "runs"]
+                     "intake", "intake_sweep", "runs"]
 
 
 class SlotCheckBody(BaseModel):
@@ -40,6 +40,13 @@ class SlotCheckBody(BaseModel):
 class IntakeBody(BaseModel):
     provider: str = Field(pattern="^(gmail|outlook)$")
     id: str = Field(min_length=1)
+    mailbox: Optional[str] = None
+
+
+class SweepBody(BaseModel):
+    provider: str = Field(default="all", pattern="^(all|gmail|outlook)$")
+    limit: int = Field(default=25, ge=1, le=50)
+    max_new: int = Field(default=5, ge=1, le=10)
     mailbox: Optional[str] = None
 
 
@@ -130,6 +137,15 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None) -> 
         user = gateway.current_user(request)
         return guarded(lambda: workflow.intake(
             request, user, provider=body.provider, item_id=body.id, mailbox=body.mailbox))
+
+    @router.post("/intake/sweep")
+    def desk_intake_sweep(request: Request, body: Optional[SweepBody] = None) -> Dict[str, Any]:
+        """Open runs for recent messages that need one. Bounded and idempotent."""
+        user = gateway.current_user(request)
+        body = body or SweepBody()
+        return guarded(lambda: workflow.sweep(
+            request, user, provider=body.provider, limit=body.limit, max_new=body.max_new,
+            mailbox=body.mailbox))
 
     @router.get("/runs")
     def desk_runs(request: Request, limit: int = Query(default=50, ge=1, le=200)) -> Dict[str, Any]:

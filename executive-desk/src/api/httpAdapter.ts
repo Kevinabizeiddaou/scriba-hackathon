@@ -57,6 +57,7 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
       baseUrl: options.baseUrl,
       principal: options.principal,
       simulatedNow: null,
+      suggestedPrompts: [],
     };
     this.fetchImpl = options.fetchImpl ?? ((...args) => fetch(...args));
     this.aliases = { ...DEFAULT_TOOL_ALIASES, ...options.toolAliases };

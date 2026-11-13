@@ -24,7 +24,7 @@ import {
 } from '../types';
 import { EVALUATION_CASES } from '../../evaluation/fixtures';
 import { NOW, PRINCIPAL } from '../../evaluation/fixtures/world';
-import { scriptForChat } from './chatIntents';
+import { CHAT_SUGGESTIONS, scriptForChat } from './chatIntents';
 import type { ActionStep, ApprovalStep, FinishStep, MockScript } from './scriptDsl';
 import { MOCK_SCRIPTS } from './scripts';
 
@@ -91,6 +91,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     baseUrl: null,
     principal: { name: PRINCIPAL.name, email: PRINCIPAL.email, timezone: PRINCIPAL.timezone },
     simulatedNow: NOW,
+    suggestedPrompts: CHAT_SUGGESTIONS,
   };
 
   private readonly requests = new Map<string, SecretaryRequest>();
@@ -425,7 +426,9 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     await this.wait();
     this.tick(step.durationMs);
     action.finishedAt = this.now();
-    action.durationMs = step.durationMs;
+    // Timestamps advance on a simulated clock so steps stay ordered, but no duration is
+    // reported: the mock does no real work, and an invented latency would look measured.
+    action.durationMs = null;
     action.summary = step.summary;
     action.simulated = step.simulated;
     if (step.fail) {
@@ -463,7 +466,6 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     const ask = this.newAction(run, 'approval.request', `Asked for approval: ${step.title}`, { approvalId: approval.id }, null);
     ask.status = 'succeeded';
     ask.startedAt = ask.finishedAt = this.now();
-    ask.durationMs = 0;
     ask.output = { approvalId: approval.id };
 
     for (const change of step.changes) {
@@ -491,7 +493,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     run.assistantMessage = step.assistantMessage;
     run.error = clone(step.error);
     run.finishedAt = this.now();
-    run.durationMs = Date.parse(run.finishedAt) - Date.parse(run.startedAt);
+    run.durationMs = null;
     for (const intervention of step.humanInterventions) {
       run.humanInterventions.push({ at: this.now(), ...intervention });
     }
@@ -558,7 +560,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     run.summary = summary;
     run.assistantMessage = run.conversationId ? 'Understood. I have not sent anything or changed your calendar.' : null;
     run.finishedAt = this.now();
-    run.durationMs = Date.parse(run.finishedAt) - Date.parse(run.startedAt);
+    run.durationMs = null;
     if (request) {
       request.status = 'declined';
       this.log(request, 'human', 'Rejected', `${input.decidedBy} rejected "${approval.title}".${input.note ? ` Note: ${input.note}` : ''}`);

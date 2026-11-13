@@ -6,7 +6,8 @@
  *   - HttpExecutiveDesk (src/api/httpAdapter.ts): thin fetch wrapper over the endpoints
  *     in docs/API_CONTRACT.md, for Role 1's backend.
  *
- * Nothing outside src/api may import an adapter directly; use getApi() from src/api/index.ts.
+ * UI code never imports an adapter directly; it calls getApi() from src/api/index.ts.
+ * (The harness self-test is the one other place that constructs the mock.)
  */
 import type {
   AgentRun,
@@ -32,6 +33,8 @@ export interface ApiInfo {
   principal: Participant & { timezone: IanaTimeZone };
   /** Set by the mock adapter, whose clock is frozen at the fixture date. Null for a live backend. */
   simulatedNow: ISODateTime | null;
+  /** Example prompts for the chat composer. The mock lists the ones it has scripts for. */
+  suggestedPrompts: string[];
 }
 
 export interface ExecutiveDeskApi {

@@ -10,6 +10,7 @@ import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
 import { AVAILABILITY_OVERRIDE_FLAG, describeAction, heldByAvailability, providerLabel, type ActionDescription, type ActionKind } from './describeAction'
 import { approveChatToolCall, cancelChatToolCall, retryChatToolCall, type ChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
+import { RUNS_KEY } from './deskRuns'
 import { WORK_QUEUE_KEY, WORK_STAGES, stageOf } from './workQueue'
 import { approvalGate, toolEffect } from './writePolicy'
 
@@ -85,6 +86,8 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
 
   const afterChange = () => {
     void queryClient.invalidateQueries({ queryKey: WORK_QUEUE_KEY })
+    // A card that belongs to a Desk run changes that run's state and its next step.
+    void queryClient.invalidateQueries({ queryKey: RUNS_KEY })
     void queryClient.invalidateQueries({ queryKey: chatMessagesKey(toolCall.conversation_id) })
     // A task or reminder created here shows on the Tasks screen and the briefing.
     session.workspace.refresh()

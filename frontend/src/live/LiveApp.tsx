@@ -10,7 +10,8 @@ import { PROVIDER_STATUS_QUERY_KEY, clearProviderStatusCache, useProviderStatus 
 import { SignIn } from '../shell/SignIn'
 import { LiveDesk, ScribaWorkspace } from './liveDesk'
 import { useWorkQueue } from './LiveWorkPages'
-import { LiveSessionProvider, type LiveSession } from './session'
+import { runsNeedingUser, useRunQueue } from './LiveWorkQueuePage'
+import { LiveSessionProvider, useRequiredLiveSession, type LiveSession } from './session'
 import { isWorkItem, needsIntervention, needsUser } from './workQueue'
 import { writePolicyFrom, type DeskHealthWithPolicy } from './writePolicy'
 
@@ -105,10 +106,15 @@ function SignedIn({ email, name }: { email: string | null; name: string | null }
 /** Counts for the navigation, from the same action records the approval center shows. */
 function WithBadges({ children }: { children: React.ReactNode }) {
   const queue = useWorkQueue()
+  // Desk runs exist only with the overlay; without it the work queue has no badge and no request.
+  const runs = useRunQueue(useRequiredLiveSession().overlay === 'ok')
   const badges = useMemo<ShellBadges>(() => {
-    if (!queue.data) return { approvals: null, problems: null }
-    const work = queue.data.cards.filter(isWorkItem)
-    return { approvals: work.filter(needsUser).length, problems: work.filter(needsIntervention).length }
-  }, [queue.data])
+    const work = queue.data?.cards.filter(isWorkItem)
+    return {
+      approvals: work ? work.filter(needsUser).length : null,
+      problems: work ? work.filter(needsIntervention).length : null,
+      work: runsNeedingUser(runs.data),
+    }
+  }, [queue.data, runs.data])
   return <ShellBadgesContext.Provider value={badges}>{children}</ShellBadgesContext.Provider>
 }

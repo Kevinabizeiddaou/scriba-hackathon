@@ -107,7 +107,7 @@ async function pooled<T, R>(items: T[], limit: number, work: (item: T) => Promis
 
 export async function loadRunQueue(): Promise<RunQueue> {
   const listing = await fetchDeskRuns()
-  const rows = (listing.runs ?? []).map(toRunRow).filter((row): row is RunRow => row !== null)
+  const rows = (listing?.runs ?? []).map(toRunRow).filter((row): row is RunRow => row !== null)
   const head = rows.slice(0, RUN_DETAIL_LIMIT)
   const details = await pooled(head, DETAIL_CONCURRENCY, row => fetchDeskRun(row.runId))
   const entries: RunEntry[] = rows.map((row, index) => {

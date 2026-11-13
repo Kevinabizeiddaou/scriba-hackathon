@@ -5,6 +5,7 @@ import { useRoute, type Page } from './lib/router';
 import { LiveChatPage } from './live/LiveChatPage';
 import { LiveOverviewPage } from './live/LiveOverviewPage';
 import { LiveActivityPage, LiveApprovalsPage } from './live/LiveWorkPages';
+import { LiveWorkQueuePage, WorkQueueDemoNotice } from './live/LiveWorkQueuePage';
 import { ActivityPage } from './pages/ActivityPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { CalendarPage } from './pages/CalendarPage';
@@ -19,6 +20,7 @@ const TITLES: Record<Page, string> = {
   inbox: 'Inbox',
   calendar: 'Calendar',
   tasks: 'Tasks and follow-ups',
+  work: 'Work queue',
   chat: 'Secretary chat',
   approvals: 'Approval center',
   activity: 'Activity',
@@ -47,6 +49,7 @@ export function Desk() {
       {route.page === 'inbox' && <InboxPage emailId={route.param} />}
       {route.page === 'calendar' && <CalendarPage eventId={route.param} />}
       {route.page === 'tasks' && <TasksPage tab={route.param} />}
+      {route.page === 'work' && (live ? <LiveWorkQueuePage runId={route.param} /> : <WorkQueueDemoNotice />)}
       {route.page === 'chat' && (live ? <LiveChatPage conversationId={route.param} /> : <ChatPage conversationId={route.param} />)}
       {route.page === 'approvals' && (live ? <LiveApprovalsPage /> : <ApprovalsPage approvalId={route.param} />)}
       {route.page === 'activity' && (live ? <LiveActivityPage /> : <ActivityPage />)}

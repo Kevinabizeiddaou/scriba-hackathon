@@ -590,7 +590,7 @@ describe('secretary chat', () => {
 
   it('shows a failed booking, sends nothing, and recovers when you try again', async () => {
     const user = userEvent.setup();
-    await open('#/chat');
+    const view = await open('#/chat');
     const thread = await screen.findByRole('region', { name: 'Conversation' });
     await user.type(screen.getByLabelText('Message Scriba'), 'Book 30 minutes with Yara on Thursday at 15:00 about the insurance renewal and send her the invite.{Enter}');
     await settle();
@@ -614,6 +614,15 @@ describe('secretary chat', () => {
     await settle();
     await waitFor(() => expect(within(thread).getByText(/Done\. The insurance renewal preparation is booked for Thu 19 Nov, 15:00 to 15:30/)).toBeInTheDocument());
     expect(within(thread).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+
+    // After a reload the failed attempt is still on the record, but only the latest request could be
+    // retried, and that one succeeded. Offering "Try again" here would book the meeting a second time.
+    view.unmount();
+    await open('#/chat');
+    const reopened = await screen.findByRole('region', { name: 'Conversation' });
+    const old = (await within(reopened).findAllByRole('article', { name }))[0];
+    expect(within(old).getByRole('alert')).toHaveTextContent('This did not complete');
+    expect(within(reopened).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 });
 

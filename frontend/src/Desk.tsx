@@ -4,6 +4,7 @@ import { getWorkspace } from './harness';
 import { useRoute, type Page } from './lib/router';
 import { LiveChatPage } from './live/LiveChatPage';
 import { LiveOverviewPage } from './live/LiveOverviewPage';
+import { LiveSchedulingPage } from './live/LiveSchedulingPage';
 import { LiveActivityPage, LiveApprovalsPage } from './live/LiveWorkPages';
 import { LiveWorkQueuePage, WorkQueueDemoNotice } from './live/LiveWorkQueuePage';
 import { ActivityPage } from './pages/ActivityPage';
@@ -14,6 +15,9 @@ import { EvaluationPage } from './pages/EvaluationPage';
 import { InboxPage } from './pages/InboxPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { TasksPage } from './pages/TasksPage';
+
+/** `#/calendar/find-a-time`: the scheduling workspace. Any other parameter is an event id. */
+export const FIND_A_TIME = 'find-a-time';
 
 const TITLES: Record<Page, string> = {
   overview: 'Overview',
@@ -47,7 +51,7 @@ export function Desk() {
     <AppShell page={route.page}>
       {route.page === 'overview' && (live ? <LiveOverviewPage /> : <OverviewPage />)}
       {route.page === 'inbox' && <InboxPage emailId={route.param} />}
-      {route.page === 'calendar' && <CalendarPage eventId={route.param} />}
+      {route.page === 'calendar' && (live && route.param === FIND_A_TIME ? <LiveSchedulingPage /> : <CalendarPage eventId={route.param} />)}
       {route.page === 'tasks' && <TasksPage tab={route.param} />}
       {route.page === 'work' && (live ? <LiveWorkQueuePage runId={route.param} /> : <WorkQueueDemoNotice />)}
       {route.page === 'chat' && (live ? <LiveChatPage conversationId={route.param} /> : <ChatPage conversationId={route.param} />)}

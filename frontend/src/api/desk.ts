@@ -369,3 +369,24 @@ export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/$
 
 /** "Book anyway" for a calendar card held by the booking gate. */
 export const DESK_AVAILABILITY_OVERRIDE = { payload_overrides: { desk_availability_override: true } } as const
+
+// ── Desk safeguards (BACKEND_CONTRACT section 7) ────────────────────────────
+
+/** `output.error_code` values with which the Desk holds a card. */
+export type DeskHoldCode =
+  | 'unverified_recipient'
+  | 'reply_target_changed'
+  | 'reply_target_unverified'
+  | 'recipient_required'
+  | 'body_required'
+  | 'title_required'
+  | 'reminder_incomplete'
+  | 'start_required'
+  | 'calendar_conflict'
+  | 'availability_unknown'
+  | 'desk_check_failed'
+
+/** Approve body that accepts recipients the user confirmed or typed on the card. */
+export const confirmDeskRecipients = (addresses: string[], extra: Record<string, unknown> = {}) => ({
+  payload_overrides: { ...extra, desk_confirmed_recipients: addresses },
+})

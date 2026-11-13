@@ -115,6 +115,13 @@ class FakeGateway:
         rows = world["emails"][provider][:limit]
         return {"items": rows, "hasMore": False}
 
+    def list_sent(self, request: Any, user: DeskUser, provider: str,
+                  mailbox: Optional[str] = None) -> List[Dict[str, Any]]:
+        world = self.users[user.email]
+        if world.get("sent_error"):
+            raise RuntimeError("sent mail unavailable")
+        return list(world.get("sent", []))
+
     def classify(self, *, from_addr: str, subject: str, body: str) -> Dict[str, Any]:
         text = f"{subject}\n{body}".lower()
         if "unsubscribe" in text or "no-reply" in from_addr.lower():

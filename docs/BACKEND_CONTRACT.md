@@ -279,3 +279,39 @@ runs automatically when mail arrives. Reschedule and cancel requests are
 held, not proposed. One Desk process is assumed (the duplicate guard is a
 process lock plus a lookup). The confirmation reply text is a fixed template
 the user can edit on the card.
+
+## 7. Desk safeguards on proposed actions (Integrated; no live provider)
+
+With the Desk chat scope enforced, every write card passes the Desk's own
+checks after Scriba's validation, both when it is proposed and again on
+approve and retry. They are implemented in the Desk
+(`backend/desk_overlay/safeguards.py`), so they hold whatever version of
+Scriba the Desk runs on. A held card has `status: "needs_info"`,
+`output.blocked: true` and one of these `output.error_code` values:
+
+| `error_code` | Meaning | What the client offers |
+| --- | --- | --- |
+| `unverified_recipient` | A recipient or attendee (`output.unverified_recipients[]`) was not given by the user, is not the sender of the message being answered, and is not one of the user's own accounts | Show the address. To accept it, approve with `{"payload_overrides": {"desk_confirmed_recipients": ["<address>"]}}`. To change it, send the corrected field and the same confirmation |
+| `reply_target_changed` | A Gmail reply targets a message that is no longer the latest in its thread (a newer message arrived, or the user already wrote there) | Open the thread; do not approve as is |
+| `reply_target_unverified` | The message being answered, or the user's sent mail, could not be read | Retry later |
+| `recipient_required`, `body_required`, `title_required`, `reminder_incomplete`, `start_required` | The action is incomplete | Let the user fill the field |
+| `calendar_conflict`, `availability_unknown` | The booking gate (section 5) | As in section 5 |
+| `desk_check_failed` | A Desk check itself failed. The card is held, never passed | Retry later |
+
+Rules:
+
+- `desk_verified_recipients`, `desk_confirmed_recipients` and
+  `desk_availability_override` are honoured only on an approve request. In a
+  model's proposal they are ignored.
+- When a user edits a recipient on a card, send `desk_confirmed_recipients`
+  with the addresses the user typed, in the same approve request.
+- An approve that carries an `idempotency_key` and is repeated with the same
+  key after its attempt failed returns the recorded card with
+  `idempotent_replay: true` and runs nothing. Use one key per user click.
+- A second identical calendar event is held as `calendar_conflict`, because
+  the first one now occupies the slot.
+
+Not covered by a Desk guard (they live in Scriba itself): what happens to a
+session cookie after sign-out, the thread context Scriba gives its draft
+writer, and the provider call inside one already-approved attempt. The Desk
+does not assume any Scriba change for these.

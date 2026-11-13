@@ -108,6 +108,13 @@ class ScribaGateway:
             mailbox=mailbox,
         )
 
+    def list_sent(self, request: Any, user: DeskUser, provider: str,
+                  mailbox: Optional[str] = None) -> List[Dict[str, Any]]:
+        """The payload behind ``GET /emails/sent``: what the user has sent."""
+        payload = _as_dict(request.app.state.email_read_runtime.sent_payload(
+            account_email=user.email, provider=provider, limit=200, offset=0, mailbox=mailbox))
+        return [row for row in (payload.get("messages") or []) if isinstance(row, dict)]
+
     def classify(self, *, from_addr: str, subject: str, body: str) -> Dict[str, Any]:
         """Scriba's reply classifier: bulk and automated mail, questions,
         direct requests, meeting requests, urgency."""
@@ -165,16 +172,22 @@ class ScribaGateway:
         validation gate, provider checks and idempotent card creation."""
         from app import chat_repository, chat_service
 
+        from .chat_scope import trusted_recipients
+        from .workflow import sender_address
+
         message_id = run["meta"].get("message_id")
         if not message_id:
             messages = chat_repository.list_messages(run["id"], user_id=user.id, limit=5)
             message_id = next((m["id"] for m in messages if m.get("role") == "assistant"), None)
-        return chat_service._handle_tool_call(
-            account_email=user.email, user_id=user.id, conversation_id=run["id"],
-            message_id=int(message_id), tool_name=tool_name, tool_input=dict(tool_input),
-            provider_status=chat_service._safe_provider_status(user.email),
-            email_id=email_id, thread_id=thread_id, provider=provider, user_message="",
-        )
+        # The one address the Desk vouches for on its own cards: the sender of
+        # the message the run is about, taken from its From header.
+        with trusted_recipients([sender_address(str(run["meta"].get("from_addr") or ""))]):
+            return chat_service._handle_tool_call(
+                account_email=user.email, user_id=user.id, conversation_id=run["id"],
+                message_id=int(message_id), tool_name=tool_name, tool_input=dict(tool_input),
+                provider_status=chat_service._safe_provider_status(user.email),
+                email_id=email_id, thread_id=thread_id, provider=provider, user_message="",
+            )
 
     def run_cards(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
         from app import chat_repository

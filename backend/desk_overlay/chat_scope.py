@@ -31,6 +31,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
+from . import safeguards
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .gateway import DeskUser
 from .service import AppContext, DeskService
@@ -96,6 +97,84 @@ _FALLBACK_HELP = (
 _EXCLUDED_WORDS = ("Drive", "OneDrive", "Jira", "Slack", "Teams", "files")
 
 _proposing: contextvars.ContextVar[bool] = contextvars.ContextVar("desk_proposing", default=False)
+# Recipients the Desk itself took from a verified source (the From header of
+# the email a workflow run is answering) for the card being proposed.
+_trusted: contextvars.ContextVar[frozenset] = contextvars.ContextVar("desk_trusted", default=frozenset())
+APPROVAL_KEY_FIELD = "desk_approval_key"
+
+
+class trusted_recipients:
+    """``with trusted_recipients([...]):`` around a card the Desk proposes."""
+
+    def __init__(self, addresses: Any) -> None:
+        self.addresses = frozenset(str(a).lower() for a in (addresses or []) if a)
+
+    def __enter__(self) -> None:
+        self.token = _trusted.set(self.addresses)
+
+    def __exit__(self, *exc: Any) -> None:
+        _trusted.reset(self.token)
+
+
+def held(make: Any, data: Dict[str, Any], output: Dict[str, Any], code: str, message: str,
+         **extra: Any) -> Any:
+    """A card that may not be approved as it stands."""
+    return make("needs_info", data, {**output, "needs_info": True, "blocked": True,
+                                     "error_code": code, "message": message, **extra}, code)
+
+
+def desk_checks(service: DeskService, ctx: Any, gateway: Any, user: DeskUser, name: str,
+                data: Dict[str, Any], output: Dict[str, Any], *, user_message: Optional[str],
+                proposing: bool, make: Any) -> Any:
+    """The Desk's own checks on a card Scriba's validation has passed.
+
+    Returns a held result, or None when every check passes. ``data`` is
+    updated in place with what the Desk verified.
+    """
+    issue = safeguards.structural_issue(name, data)
+    if issue:
+        return held(make, data, output, issue[0], issue[1])
+
+    if name in safeguards.RECIPIENT_FIELDS and safeguards.recipients_of(name, data):
+        status = gateway.provider_status(ctx) or {}
+        vouched = {user.email, *_trusted.get()}
+        for account in (status.get("emailAccounts") or []) + (status.get("gmailAccounts") or []):
+            if isinstance(account, dict):
+                vouched.add(str(account.get("email") or "").lower())
+        vouched.add(str(status.get("outlookEmail") or "").lower())
+        unverified = safeguards.unverified_recipients(
+            name, data, user_message=user_message if proposing else None, vouched=vouched)
+        if unverified and (data.get("email_id") or data.get("message_id")):
+            # The sender of the email this card answers, from its From header.
+            provider = str(data.get("provider") or "gmail").lower()
+            if provider in ("gmail", "outlook"):
+                _, rows = service.read_mail(ctx, user, [provider], 100, None)
+                wanted = str(data.get("email_id") or data.get("message_id"))
+                row = next((r for r in rows if str(r.get("id")) == wanted), None)
+                vouched.update(safeguards.addresses_in((row or {}).get("from_addr")))
+                unverified = [address for address in unverified if address not in vouched]
+        if unverified:
+            return held(
+                make, data, output, "unverified_recipient",
+                "You did not give this address, and it is not the sender of the message being "
+                "answered: " + ", ".join(unverified) + ". Confirm it to continue, or change it.",
+                unverified_recipients=unverified)
+        # Remember what was verified, so approval does not ask again.
+        data[safeguards.VERIFIED_KEY] = sorted(
+            set(safeguards.addresses_in(data.get(safeguards.VERIFIED_KEY)))
+            | set(safeguards.recipients_of(name, data)))
+
+    if safeguards.is_gmail_reply(name, data):
+        mailbox = str(data.get("provider_account_id") or "") or None
+        _, inbox_rows = service.read_mail(ctx, user, ["gmail"], 100, mailbox)
+        try:
+            sent_rows: Optional[List[Dict[str, Any]]] = gateway.list_sent(ctx, user, "gmail", mailbox)
+        except Exception:
+            sent_rows = None
+        issue = safeguards.reply_target_issue(data, inbox_rows=inbox_rows, sent_rows=sent_rows)
+        if issue:
+            return held(make, data, output, issue[0], issue[1])
+    return None
 _state: Dict[str, Any] = {}
 
 
@@ -318,31 +397,65 @@ def enable(app: Any, gateway: Any, *, clock: Any = None) -> None:
         tool_input = dict(kwargs.get("tool_input") or {})
         user_confirmed = (not proposing) and tool_input.get(OVERRIDE_FLAG) is True
         if proposing:
-            tool_input.pop(OVERRIDE_FLAG, None)
+            # While a card is being proposed these keys would be the model's,
+            # not the user's or the Desk's: they are ignored.
+            for key in (OVERRIDE_FLAG, safeguards.VERIFIED_KEY, safeguards.CONFIRMED_KEY):
+                tool_input.pop(key, None)
         result = saved["validate"](**{**kwargs, "tool_input": tool_input})
-        if name != "create_calendar_event" or result.status != "awaiting_approval":
+        if result.status != "awaiting_approval":
             return result
-        try:
-            user = gateway.user_for_email(str(kwargs.get("account_email") or ""))
-        except Exception:
-            user = None
         make = lambda status, data, output, error: chat_validation.ToolValidation(  # noqa: E731
             status=status, input=data, output=output, error=error)
-        if user is None:
-            return make("needs_info", dict(result.input or {}), {
-                **dict(result.output or {}), "needs_info": True, "blocked": True,
-                "error_code": "availability_unknown",
-                "message": "The Desk could not check your calendars right now, so this meeting "
-                           "was not prepared for booking. Try again in a moment.",
-            }, "availability_unknown")
+        data, output = dict(result.input or {}), dict(result.output or {})
+        # Scriba's validation passed the card. The Desk's own checks follow,
+        # and any failure inside them holds the card: they fail closed.
+        try:
+            user = gateway.user_for_email(str(kwargs.get("account_email") or ""))
+            if user is None:
+                raise LookupError("no user for this account")
+            for key in (safeguards.VERIFIED_KEY, safeguards.CONFIRMED_KEY):
+                if key in tool_input:
+                    data.setdefault(key, tool_input[key])
+            problem = desk_checks(service, ctx, gateway, user, name, data, output,
+                                  user_message=kwargs.get("user_message"), proposing=proposing,
+                                  make=make)
+        except Exception:
+            logger.exception("desk checks failed tool=%s", name)
+            return held(make, data, output, "desk_check_failed",
+                        "The Desk could not verify this action right now, so it was not prepared "
+                        "for approval. Nothing was sent or changed. Try again in a moment.")
+        if problem is not None:
+            return problem
+        checked = make(result.status, data, output, result.error)
+        if name != "create_calendar_event":
+            return checked
         if user_confirmed:
-            result.input[OVERRIDE_FLAG] = True
-        return availability_gate(service, ctx, user, result, user_confirmed=user_confirmed, make=make)
+            checked.input[OVERRIDE_FLAG] = True
+        return availability_gate(service, ctx, user, checked, user_confirmed=user_confirmed, make=make)
 
     # Scriba keeps a card's validation output only when it holds the card
     # back, so a booking the user confirmed despite a conflict is recorded
     # here, on the card, once the approval has gone through.
     def approve_tool_call(**kwargs: Any) -> Any:
+        # A repeat of the SAME approve request (same idempotency key) after
+        # its attempt failed gets that attempt's outcome, not a second attempt.
+        key = str(kwargs.get("idempotency_key") or "").strip()[:200]
+        if key:
+            try:
+                user_id = chat_service._user_id_for(kwargs["account_email"])
+                existing = chat_service.repo.get_tool_call(kwargs["tool_call_id"], user_id=user_id)
+                recorded = (existing or {}).get("output_payload") or {}
+                if (existing and existing.get("status") == "failed" and isinstance(recorded, dict)
+                        and recorded.get(APPROVAL_KEY_FIELD) == key):
+                    return {"tool_call": chat_service.repo.serialize_tool_call(existing),
+                            "idempotent_replay": True}
+                if existing:
+                    # Recorded before the attempt, so a failure is tied to this key.
+                    chat_service.repo.update_tool_call(
+                        kwargs["tool_call_id"], user_id=user_id,
+                        output_payload_patch={APPROVAL_KEY_FIELD: key}, error=existing.get("error"))
+            except Exception:
+                logger.exception("desk approval key could not be recorded")
         result = saved["approve"](**kwargs)
         overrides = kwargs.get("payload_overrides") or {}
         try:

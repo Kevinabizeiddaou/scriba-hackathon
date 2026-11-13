@@ -23,6 +23,7 @@ It is read-only. Nothing here sends mail or writes to a calendar.
 | `desk_overlay/service.py` | The operations shared by the routes and the chat tools |
 | `desk_overlay/chat_scope.py` | The Desk scope for Scriba's chat agent: tool scope, availability tools, booking gate |
 | `desk_overlay/workflow.py` | One incoming email to proposed, approvable Scriba action cards |
+| `desk_overlay/safeguards.py` | The Desk's own checks on a proposed action: completeness, recipient provenance, reply target (pure) |
 | `desk_overlay/scriba_transferred/` | Scriba's slot search and time rules, transferred unchanged |
 | `dev/seeded_desk_server.py` | Scriba's seeded test backend with the overlay mounted |
 | `tests/` | Unit and route tests (no Scriba needed) and `tests/integration/` (real Scriba app) |

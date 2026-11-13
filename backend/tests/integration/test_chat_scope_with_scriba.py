@@ -221,9 +221,15 @@ def test_provider_status_tool_is_answered_by_the_desk(world):
 
 # ── the gate inside Scriba's approve path ──────────────────────────────────
 
+GUEST = "ralph@acme.example"            # the attendee in Scriba's calendar_input()
+
+
 def seed_event(harness, **overrides):
+    """A calendar card as the Desk leaves it once proposed: its attendee was
+    verified at proposal and that is recorded on the card."""
     from test_contract_calendar_mutation_chat import calendar_input
 
+    overrides.setdefault("desk_verified_recipients", [GUEST])
     return harness["repo"].seed(tool_name="create_calendar_event", input_payload=calendar_input(**overrides))
 
 
@@ -297,7 +303,8 @@ def test_the_model_cannot_pre_confirm_a_conflict_when_proposing(world):
         result = chat_validation.validate_tool_call(
             tool_name="create_calendar_event",
             tool_input=calendar_input(**{chat_scope.OVERRIDE_FLAG: True}),
-            account_email=ACCOUNT, provider_status=GOOGLE_CONNECTED, user_message="book it")
+            account_email=ACCOUNT, provider_status=GOOGLE_CONNECTED,
+            user_message=f"book it with {GUEST}")
     finally:
         chat_scope._proposing.reset(token)
     assert result.status == "needs_info" and result.error == "calendar_conflict"
@@ -323,4 +330,183 @@ def test_scribas_own_validation_still_runs_first(world):
     card = approve(row)["tool_call"]
     assert card["status"] == "needs_info"
     assert card["output"].get("error_code") not in ("calendar_conflict", "availability_unknown")
+    assert harness["execute"].calls == []
+
+
+# ── Desk safeguards inside Scriba's validation and approve path ────────────
+
+def propose(tool_name, tool_input, user_message):
+    """Scriba's validation for a card being proposed, with the Desk's checks."""
+    from app import chat_validation
+    from test_contract_calendar_mutation_chat import GOOGLE_CONNECTED
+
+    status = {"providers": {**GOOGLE_CONNECTED["providers"],
+                            "gmail": {"connected": True, "available": True, "email": ACCOUNT}},
+              "emailAccounts": [{"provider": "gmail", "email": ACCOUNT, "providerAccountId": ACCOUNT,
+                                 "label": "Gmail", "isPrimary": True}]}
+    token = chat_scope._proposing.set(True)
+    try:
+        return chat_validation.validate_tool_call(
+            tool_name=tool_name, tool_input=tool_input, account_email=ACCOUNT,
+            provider_status=status, user_message=user_message)
+    finally:
+        chat_scope._proposing.reset(token)
+
+
+def test_an_attendee_the_user_never_named_holds_the_card(world):
+    from test_contract_calendar_mutation_chat import calendar_input
+
+    result = propose("create_calendar_event", calendar_input(attendees=["billing@attacker.example"]),
+                     "Book the roadmap review for Thursday at 10")
+    assert result.status == "needs_info" and result.error == "unverified_recipient"
+    assert result.output["unverified_recipients"] == ["billing@attacker.example"]
+    assert result.output["blocked"] is True
+
+
+def test_an_attendee_the_user_named_is_accepted_and_recorded_as_verified(world):
+    from test_contract_calendar_mutation_chat import calendar_input
+
+    result = propose("create_calendar_event", calendar_input(),
+                     f"Book the roadmap review with {GUEST} on Thursday at 10")
+    assert result.status == "awaiting_approval", result.output
+    assert result.input["desk_verified_recipients"] == [GUEST]
+
+
+def test_the_model_cannot_mark_its_own_recipient_as_verified(world):
+    from test_contract_calendar_mutation_chat import calendar_input
+
+    for key in ("desk_verified_recipients", "desk_confirmed_recipients"):
+        result = propose("create_calendar_event",
+                         calendar_input(attendees=["billing@attacker.example"],
+                                        **{key: ["billing@attacker.example"]}),
+                         "Book the roadmap review")
+        assert result.error == "unverified_recipient", key
+
+
+def test_an_unverified_attendee_cannot_be_approved_until_the_user_confirms_it(world):
+    _, harness = world
+    row = seed_event(harness, attendees=["billing@attacker.example"], desk_verified_recipients=[])
+    held = approve(row)["tool_call"]
+    assert held["status"] == "needs_info" and held["output"]["error_code"] == "unverified_recipient"
+    assert harness["execute"].calls == []
+
+    confirmed = approve(row, payload_overrides={"desk_confirmed_recipients": ["billing@attacker.example"]})
+    assert confirmed["tool_call"]["status"] == "executed"
+    assert len(harness["execute"].calls) == 1
+
+
+def test_a_second_identical_event_is_held_because_the_first_now_occupies_the_slot(world):
+    gateway, harness = world
+    first = seed_event(harness)
+    assert approve(first)["tool_call"]["status"] == "executed"
+    # The provider now shows the event that was just created.
+    gateway.world(ACCOUNT)["google_busy"][ACCOUNT] = [busy("google", ACCOUNT, 10, 11, "Roadmap review")]
+    second = seed_event(harness)
+    held = approve(second)["tool_call"]
+    assert held["status"] == "needs_info" and held["output"]["error_code"] == "calendar_conflict"
+    assert len(harness["execute"].calls) == 1           # no duplicate event
+
+
+def test_the_same_approve_request_replayed_after_a_failure_does_not_run_again(desk):
+    from app import chat_service
+    from test_contract_calendar_mutation_chat import chat_world
+
+    with chat_world(execute_raises=RuntimeError("provider down")) as harness:
+        row = seed_event(harness)
+        # Scriba marks the card failed and re-raises when the provider call fails.
+        with pytest.raises(RuntimeError):
+            chat_service.approve_tool_call(
+                account_email=ACCOUNT, tool_call_id=row["id"], idempotency_key="click-1")
+        assert harness["repo"].rows[row["id"]]["status"] == "failed"
+        assert len(harness["execute"].calls) == 1
+
+        replay = chat_service.approve_tool_call(
+            account_email=ACCOUNT, tool_call_id=row["id"], idempotency_key="click-1")
+        assert replay["idempotent_replay"] is True and replay["tool_call"]["status"] == "failed"
+        assert len(harness["execute"].calls) == 1       # the replay ran nothing
+
+        # A new request from the user is a new attempt.
+        with pytest.raises(RuntimeError):
+            chat_service.approve_tool_call(
+                account_email=ACCOUNT, tool_call_id=row["id"], idempotency_key="click-2")
+        assert len(harness["execute"].calls) == 2
+
+
+def reply_card(**overrides):
+    return {"provider": "gmail", "mode": "reply", "to": "sofia@client.example", "subject": "Re: Intro",
+            "body": "Tuesday works.", "thread_id": "T1", "email_id": "m1",
+            "provider_account_id": ACCOUNT, **overrides}
+
+
+def inbox_message(item_id, minute, **overrides):
+    from ..fakes import email
+
+    return email(item_id, "Intro", "Could we talk?", thread="T1", account=ACCOUNT,
+                 from_addr="Sofia <sofia@client.example>",
+                 timestamp=f"2027-03-01T07:{minute:02d}:00+00:00", **overrides)
+
+
+def test_a_reply_to_the_latest_message_in_its_thread_is_approvable(world):
+    gateway, _ = world
+    data = gateway.world(ACCOUNT)
+    data["status"]["providers"]["gmail"]["connected"] = True
+    data["emails"]["gmail"] = [inbox_message("m1", 10)]
+    result = propose("send_email", reply_card(), "Reply that Tuesday works")
+    assert result.status == "awaiting_approval", result.output
+    # The sender was accepted from the From header of the message being answered.
+    assert result.input["desk_verified_recipients"] == ["sofia@client.example"]
+
+
+def test_a_reply_is_held_when_a_newer_message_arrived_in_the_thread(world):
+    gateway, _ = world
+    data = gateway.world(ACCOUNT)
+    data["status"]["providers"]["gmail"]["connected"] = True
+    data["emails"]["gmail"] = [inbox_message("m1", 10), inbox_message("m2", 30)]
+    result = propose("send_email", reply_card(), "Reply that Tuesday works")
+    assert result.status == "needs_info" and result.error == "reply_target_changed"
+
+
+def test_a_reply_is_held_when_the_user_already_wrote_in_the_thread_since(world):
+    gateway, _ = world
+    data = gateway.world(ACCOUNT)
+    data["status"]["providers"]["gmail"]["connected"] = True
+    data["emails"]["gmail"] = [inbox_message("m1", 10)]
+    data["sent"] = [{"id": "s1", "thread_id": "T1", "sent_at": "2027-03-01T07:40:00+00:00"}]
+    result = propose("send_email", reply_card(), "Reply that Tuesday works")
+    assert result.status == "needs_info" and result.error == "reply_target_changed"
+
+
+def test_a_reply_is_held_when_sent_mail_cannot_be_read(world):
+    gateway, _ = world
+    data = gateway.world(ACCOUNT)
+    data["status"]["providers"]["gmail"]["connected"] = True
+    data["emails"]["gmail"] = [inbox_message("m1", 10)]
+    data["sent_error"] = True
+    result = propose("send_email", reply_card(), "Reply that Tuesday works")
+    assert result.status == "needs_info" and result.error == "reply_target_unverified"
+
+
+def test_a_reply_to_a_message_that_is_not_in_the_inbox_is_held(world):
+    gateway, _ = world
+    gateway.world(ACCOUNT)["status"]["providers"]["gmail"]["connected"] = True
+    result = propose("send_email", reply_card(), "Reply to sofia@client.example that Tuesday works")
+    assert result.status == "needs_info" and result.error == "reply_target_unverified"
+
+
+def test_an_injected_recipient_on_an_email_is_held(world):
+    gateway, _ = world
+    gateway.world(ACCOUNT)["status"]["providers"]["gmail"]["connected"] = True
+    result = propose("send_email", {"provider": "gmail", "to": "billing@attacker.example",
+                                    "subject": "Invoice summary", "body": "Attached."},
+                     "Send the invoice summary to our billing contact")
+    assert result.status == "needs_info"
+    assert result.error in ("unverified_recipient", "recipient_unresolved", "recipient_required") \
+        or result.output.get("error_code") == "unverified_recipient", result.output
+
+
+def test_a_failure_inside_the_desk_checks_holds_the_card(world):
+    gateway, harness = world
+    gateway.user_for_email = lambda address: (_ for _ in ()).throw(RuntimeError("lookup down"))
+    held = approve(seed_event(harness))["tool_call"]
+    assert held["status"] == "needs_info" and held["output"]["error_code"] == "desk_check_failed"
     assert harness["execute"].calls == []

@@ -2,9 +2,13 @@
  * HTTP implementation of ExecutiveDeskApi, for Role 1's backend.
  *
  * This file is the only place that knows URLs, headers and transport behaviour. It follows
- * docs/API_CONTRACT.md (contract v1): handshake on GET /meta, bearer auth, an Idempotency-Key
- * on every POST, a timeout on every request, bounded retries on failures that are safe to
- * retry, and runtime validation of what comes back.
+ * docs/API_CONTRACT.md (contract v1): handshake on GET /meta, Scriba's existing cookie session
+ * for authentication, an Idempotency-Key on every POST, a timeout on every request, bounded
+ * retries on reads (and on writes only when the backend says it replays repeated keys), and
+ * runtime validation of what comes back.
+ *
+ * There is no token handling here on purpose. Scriba signs users in with an HttpOnly session
+ * cookie owned by the API host; the browser sends it when `credentials` is "include".
  *
  * It is exercised over real HTTP against the reference server (src/api/httpAdapter.integration.test.ts).
  * It has not been run against the real Scriba backend.
@@ -41,13 +45,16 @@ export interface RetryPolicy {
 export interface HttpOptions {
   /** For example "http://localhost:8000/api/executive-desk/v1". No trailing slash. */
   baseUrl: string;
-  /** Returns a bearer token, or null to send no Authorization header. Never hard-code a token. */
-  getToken?: () => string | null | Promise<string | null>;
   /**
-   * Called once when a request comes back 401. Return a fresh token to retry the request,
-   * or null to give up (the caller then sees an `unauthenticated` error).
+   * Whether the browser sends the session cookie. "include" is right for a backend on another
+   * origin, which is how Scriba is deployed. Defaults to "include".
    */
-  onUnauthorized?: () => string | null | Promise<string | null>;
+  credentials?: RequestCredentials;
+  /**
+   * For clients that are not browsers (the evaluation CLI): the value of the Cookie header of
+   * an existing Scriba session. A browser ignores this and uses its own cookie jar.
+   */
+  sessionCookie?: () => string | null;
   /** Maps the backend's tool names onto the canonical ones in types.ts. */
   toolAliases?: Record<string, ToolName>;
   /** How often subscribers are told to refetch. */
@@ -90,6 +97,8 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
   private readonly retry: RetryPolicy;
   private readonly timeoutMs: number;
   private readonly sleep: (ms: number) => Promise<void>;
+  /** From GET /meta. Until the backend says it replays repeated keys, a write is never sent twice. */
+  private writesAreIdempotent = false;
 
   constructor(private readonly options: HttpOptions) {
     this.current = {
@@ -206,6 +215,7 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
         'unsupported_contract_version',
       );
     }
+    this.writesAreIdempotent = meta.capabilities.idempotentPosts === true;
     this.current = {
       name: meta.service,
       // Only a real agent produces live data. A scripted stand-in is simulated, whatever the transport.
@@ -298,15 +308,17 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
 
     // One key for all tries of this call: a POST that timed out and is sent again must not act twice.
     const idempotencyKey = method === 'POST' ? (this.options.newIdempotencyKey ?? uuid)() : null;
-    let token = (await this.options.getToken?.()) ?? null;
-    let refreshed = false;
+    // Reads can always be repeated. A write is repeated only when the backend has said it
+    // recognises a repeated key; otherwise it is tried once, and the caller re-reads the state.
+    const tries = method === 'GET' || this.writesAreIdempotent ? this.retry.attempts : 1;
+    const cookie = this.options.sessionCookie?.() ?? null;
     let lastError: ApiError | null = null;
 
-    for (let attempt = 1; attempt <= this.retry.attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= tries; attempt += 1) {
       const headers: Record<string, string> = { Accept: 'application/json', [CONTRACT_HEADER]: CONTRACT_VERSION };
       if (body !== undefined) headers['Content-Type'] = 'application/json';
       if (idempotencyKey) headers[IDEMPOTENCY_HEADER] = idempotencyKey;
-      if (token) headers.Authorization = `Bearer ${token}`;
+      if (cookie) headers.Cookie = cookie;
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -316,6 +328,7 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
         response = await this.fetchImpl(`${this.options.baseUrl}${path}`, {
           method,
           headers,
+          credentials: this.options.credentials ?? 'include',
           body: body === undefined ? undefined : JSON.stringify(body),
           signal: controller.signal,
         });
@@ -324,7 +337,7 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
         lastError = controller.signal.aborted
           ? new ApiError(`The backend did not answer ${method} ${path} within ${this.timeoutMs} ms.`, null, 'timeout', true)
           : new ApiError(`Could not reach the backend: ${cause instanceof Error ? cause.message : String(cause)}`, null, 'network_error', true);
-        if (attempt < this.retry.attempts) {
+        if (attempt < tries) {
           await this.sleep(this.backoff(attempt, null));
           continue;
         }
@@ -333,23 +346,13 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
         clearTimeout(timer);
       }
 
-      if (response.status === 401 && !refreshed && this.options.onUnauthorized) {
-        refreshed = true;
-        const fresh = await this.options.onUnauthorized();
-        if (fresh) {
-          token = fresh;
-          attempt -= 1; // the refresh does not use up a retry
-          continue;
-        }
-      }
-
       let payload: unknown = null;
       if (text) {
         try {
           payload = JSON.parse(text);
         } catch {
           lastError = new ApiError(`The backend returned a non-JSON response (HTTP ${response.status}).`, response.status, 'invalid_response', RETRYABLE_STATUS.has(response.status));
-          if (RETRYABLE_STATUS.has(response.status) && attempt < this.retry.attempts) {
+          if (RETRYABLE_STATUS.has(response.status) && attempt < tries) {
             await this.sleep(this.backoff(attempt, response.headers.get('Retry-After')));
             continue;
           }
@@ -362,14 +365,16 @@ export class HttpExecutiveDesk implements ExecutiveDeskApi {
       // Error body per the contract: { "error": { "code", "message", "details"? } }
       const error = (payload as { error?: { code?: string; message?: string; details?: unknown } } | null)?.error;
       const retryable = RETRYABLE_STATUS.has(response.status);
+      // A 401 means the Scriba session is gone. There is nothing to refresh from here: the user
+      // signs in to Scriba again. It is never retried and never triggers a sign-in by itself.
       lastError = new ApiError(
-        error?.message ?? `HTTP ${response.status}`,
+        response.status === 401 ? 'Your Scriba session has ended. Sign in to Scriba again, then reload this page.' : (error?.message ?? `HTTP ${response.status}`),
         response.status,
         error?.code ?? (response.status === 401 ? 'unauthenticated' : `http_${response.status}`),
         retryable,
         error?.details,
       );
-      if (retryable && attempt < this.retry.attempts) {
+      if (retryable && attempt < tries) {
         await this.sleep(this.backoff(attempt, response.headers.get('Retry-After')));
         continue;
       }

@@ -50,6 +50,11 @@ const nullable =
     if (v === undefined) out.push(`${p}: missing (nullable fields must be present and set to null)`);
     else if (v !== null) inner(v, p, out);
   };
+const optional =
+  (inner: Check): Check =>
+  (v, p, out) => {
+    if (v !== undefined) inner(v, p, out);
+  };
 const arrayOf =
   (inner: Check): Check =>
   (v, p, out) => {
@@ -214,7 +219,7 @@ const meta = shape({
   sandbox: bool,
   principal: shape({ name: str, email: str, timezone: str }),
   simulatedNow: nullable(instant),
-  capabilities: shape({ evaluation: bool, faultInjection: bool, chat: bool, tokenUsage: bool }),
+  capabilities: shape({ evaluation: bool, faultInjection: bool, chat: bool, tokenUsage: bool, idempotentPosts: optional(bool) }),
 });
 
 function run1(check: Check, label: string) {

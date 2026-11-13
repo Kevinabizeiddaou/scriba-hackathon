@@ -131,7 +131,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       principal: this.info.principal,
       simulatedNow: NOW,
       // No model is called, so there are no tokens to report.
-      capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false },
+      capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false, idempotentPosts: true },
     };
   }
 

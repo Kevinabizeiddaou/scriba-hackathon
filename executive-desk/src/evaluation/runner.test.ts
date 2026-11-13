@@ -193,8 +193,8 @@ describe('runEvaluation and summarize', () => {
     const progress: number[] = [];
     const report = await runEvaluation(target, EVALUATION_CASES.slice(0, 3), { ...fast, onProgress: (p) => progress.push(p.done) });
 
-    expect(report.target).toEqual({ name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test', contractVersion: '1.0.0', sandbox: true });
-    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.0.0', caseSet: { id: 'ad-hoc', provenance: 'synthetic', caseCount: 3 } });
+    expect(report.target).toEqual({ name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test', contractVersion: '1.1.0', sandbox: true });
+    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.1.0', caseSet: { id: 'ad-hoc', provenance: 'synthetic', caseCount: 3 } });
     expect(report.results.every((r) => r.provenance === 'synthetic' && r.dataSource === 'live')).toBe(true);
     expect(report.results.map((r) => [r.caseId, r.verdict, r.human.rescued])).toEqual([
       ['EVAL-001', 'pass', true],

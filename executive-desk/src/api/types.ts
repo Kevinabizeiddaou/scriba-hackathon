@@ -1,5 +1,5 @@
 /**
- * Scriba Executive Desk: API contract, version 1.0.0 (frozen).
+ * Scriba Executive Desk: API contract, version 1.1.0.
  *
  * This file is the single source of truth for every shape that crosses the
  * frontend/backend boundary; docs/API_CONTRACT.md is its written form. The
@@ -27,7 +27,7 @@ export type DataSource = 'simulated' | 'live';
  * Semantic version of this contract. The major number is also in the URL (/v1).
  * Major: a breaking change. Minor: new optional fields or endpoints. Patch: wording only.
  */
-export const CONTRACT_VERSION = '1.0.0';
+export const CONTRACT_VERSION = '1.1.0';
 /** Sent by the client on every request and by the server on every response. */
 export const CONTRACT_HEADER = 'X-Executive-Desk-Contract';
 /** Sent by the client on every POST. See "Idempotency" in docs/API_CONTRACT.md. */
@@ -57,6 +57,12 @@ export interface DeskMeta {
     chat: boolean;
     /** Runs report token usage. Without it, cost per run cannot be computed. */
     tokenUsage: boolean;
+    /**
+     * The service stores Idempotency-Key values and replays the first answer for a repeated key.
+     * Only then does the client send a POST again after a timeout or a lost response.
+     * Absent or false: a write is tried once and never repeated automatically.
+     */
+    idempotentPosts?: boolean;
   };
 }
 

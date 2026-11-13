@@ -1,7 +1,7 @@
 {
   "format": "executive-desk.case-set/1",
   "notice": "Synthetic development fixtures for Scriba Executive Desk. Invented people, companies and calendars. Not customer data. Generated from src/evaluation/fixtures/*.ts: edit there, then run npm run fixtures:export.",
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "caseSet": {
     "id": "synthetic-v2",
     "provenance": "synthetic",

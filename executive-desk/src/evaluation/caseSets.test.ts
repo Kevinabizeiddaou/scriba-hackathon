@@ -30,7 +30,7 @@ describe('case-set files', () => {
   it('ships the synthetic fixtures as a valid, clearly labelled case set', () => {
     const file = shipped();
     expect(caseSetProblems(file)).toEqual([]);
-    expect(file).toMatchObject({ format: CASE_SET_FORMAT, contractVersion: '1.0.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
+    expect(file).toMatchObject({ format: CASE_SET_FORMAT, contractVersion: '1.1.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
     expect(file.notice).toMatch(/Synthetic development fixtures.*Not customer data/);
     expect(file.cases.every((c) => c.provenance.kind === 'synthetic')).toBe(true);
     const loaded = loadCaseSet(file);
@@ -92,7 +92,7 @@ describe('machine-readable output', () => {
     const report = await runEvaluation(asLiveTarget(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES.slice(0, 2), { pollIntervalMs: 1, caseSet: SYNTHETIC_CASE_SET });
     const parsed = JSON.parse(JSON.stringify(report)) as EvaluationReport;
     expect(isReport(parsed)).toBe(true);
-    expect(parsed).toMatchObject({ format: REPORT_FORMAT, harnessVersion: '1.0.0', contractVersion: '1.0.0', caseSet: SYNTHETIC_CASE_SET, target: { dataSource: 'live', sandbox: true } });
+    expect(parsed).toMatchObject({ format: REPORT_FORMAT, harnessVersion: '1.0.0', contractVersion: '1.1.0', caseSet: SYNTHETIC_CASE_SET, target: { dataSource: 'live', sandbox: true } });
     expect(Object.keys(parsed.results[0])).toEqual(
       expect.arrayContaining(['caseId', 'provenance', 'dataSource', 'verdict', 'checks', 'expected', 'actual', 'human', 'errors', 'timing', 'usage', 'estimatedCostUsd', 'costSource', 'run', 'approvals']),
     );

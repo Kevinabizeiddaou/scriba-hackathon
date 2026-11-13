@@ -70,7 +70,7 @@ describe('handshake', () => {
     expect(s.requests.map((r) => `${r.method} ${r.path}`)).toEqual(['GET /meta', 'GET /conversations']);
     expect(api.info).toMatchObject({
       name: 'executive-desk-reference-server',
-      contractVersion: '1.0.0',
+      contractVersion: '1.1.0',
       baseUrl: s.baseUrl,
       principal: { name: PRINCIPAL, timezone: 'Asia/Beirut' },
       // The reference server is scripted, so it is simulated even though it was reached over HTTP.
@@ -89,7 +89,7 @@ describe('handshake', () => {
   it('sends the contract version on every request', async () => {
     const { api, server: s } = await start();
     await api.listRequests();
-    expect(s.requests.every((r) => r.headers[CONTRACT_HEADER.toLowerCase()] === '1.0.0')).toBe(true);
+    expect(s.requests.every((r) => r.headers[CONTRACT_HEADER.toLowerCase()] === '1.1.0')).toBe(true);
   });
 
   it('refuses a backend on a different major version, and says which', async () => {
@@ -279,38 +279,60 @@ describe('tool aliases', () => {
 });
 
 describe('authentication', () => {
-  it('sends the bearer token in the Authorization header and never in the URL', async () => {
-    const { api, server: s } = await start({ token: 'test-token-1' }, { getToken: () => 'test-token-1' });
+  it('uses the session cookie and sends no Authorization header at all', async () => {
+    const { api, server: s } = await start({ session: 'sess-1' }, { sessionCookie: () => 'desk_session=sess-1' });
     await api.listRequests({ status: ['received'] });
-    expect(s.requests.every((r) => r.headers.authorization === 'Bearer test-token-1')).toBe(true);
-    expect(s.requests.some((r) => JSON.stringify(r.query).includes('test-token-1') || r.path.includes('test-token-1'))).toBe(false);
+    expect(s.requests.every((r) => r.headers.cookie === 'desk_session=sess-1')).toBe(true);
+    expect(s.requests.some((r) => 'authorization' in r.headers)).toBe(false);
+    expect(s.requests.some((r) => JSON.stringify(r.query).includes('sess-1') || r.path.includes('sess-1'))).toBe(false);
   });
 
-  it('reports 401 as unauthenticated without retrying when there is no token', async () => {
-    const { api, server: s, sleeps } = await start({ token: 'test-token-1' });
-    await expect(api.listRequests()).rejects.toMatchObject({ status: 401, code: 'unauthenticated', retryable: false });
+  it('asks the browser to send its cookies', async () => {
+    const seen: RequestInit[] = [];
+    const s = await ReferenceServer.start({ mock: { stepDelayMs: 0, seed: false } });
+    server = s;
+    const api = new HttpExecutiveDesk({
+      baseUrl: s.baseUrl,
+      fetchImpl: ((url: RequestInfo | URL, init?: RequestInit) => {
+        seen.push(init ?? {});
+        return fetch(url, init);
+      }) as typeof fetch,
+    });
+    await api.getMeta();
+    expect(seen[0].credentials).toBe('include');
+  });
+
+  it('reports a missing or ended session once, without retrying and without starting a sign-in', async () => {
+    const { api, server: s, sleeps } = await start({ session: 'sess-1' });
+    await expect(api.listRequests()).rejects.toMatchObject({ status: 401, code: 'unauthenticated', retryable: false, message: expect.stringContaining('Sign in to Scriba again') });
     expect(s.requests).toHaveLength(1);
     expect(sleeps).toEqual([]);
   });
 
-  it('refreshes the token once on 401 and repeats the request', async () => {
-    const refresh = vi.fn(async () => 'test-token-2');
-    const { api, server: s } = await start({ token: 'test-token-2' }, { getToken: () => 'expired-token', onUnauthorized: refresh });
-    await expect(api.getMeta()).resolves.toMatchObject({ contractVersion: '1.0.0' });
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(s.requests.map((r) => r.headers.authorization)).toEqual(['Bearer expired-token', 'Bearer test-token-2']);
+  it('rejects a wrong session value the same way', async () => {
+    const { api } = await start({ session: 'sess-1' }, { sessionCookie: () => 'desk_session=someone-else' });
+    await expect(api.getMeta()).rejects.toMatchObject({ status: 401, code: 'unauthenticated' });
+  });
+});
+
+describe('writes are not repeated unless the backend says it is safe', () => {
+  it('tries a POST once when the backend does not advertise idempotent POSTs', async () => {
+    const { api, server: s, sleeps } = await start({ meta: { capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false } } });
+    const [approval] = await api.listApprovals({ status: ['pending'] });
+    s.inject({ method: 'POST', path: /\/decision$/, times: 1, kind: 'status', status: 503 });
+    await expect(api.decideApproval(approval.id, { decision: 'approve', decidedBy: PRINCIPAL })).rejects.toMatchObject({ status: 503, retryable: true });
+    expect(calls(s, 'POST', /\/decision$/)).toHaveLength(1);
+    expect(sleeps).toEqual([]);
+    // The caller re-reads the state instead: the approval is still pending.
+    expect((await api.listApprovals({ runId: approval.runId }))[0].status).toBe('pending');
   });
 
-  it('gives up when the refresh has no new token, or the new token is rejected too', async () => {
-    const none = await start({ token: 'right' }, { getToken: () => 'wrong', onUnauthorized: async () => null });
-    await expect(none.api.getMeta()).rejects.toMatchObject({ status: 401, code: 'unauthenticated' });
-    await none.server.stop();
-
-    const refresh = vi.fn(async () => 'still-wrong');
-    const again = await start({ token: 'right' }, { getToken: () => 'wrong', onUnauthorized: refresh });
-    await expect(again.api.getMeta()).rejects.toMatchObject({ status: 401 });
-    expect(refresh).toHaveBeenCalledTimes(1); // no refresh loop
-    expect(again.server.requests).toHaveLength(2);
+  it('still retries reads on such a backend', async () => {
+    const { api, server: s } = await start({ meta: { capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false, idempotentPosts: false } } });
+    await api.getMeta();
+    s.inject({ method: 'GET', path: /^\/requests$/, times: 2, kind: 'status', status: 503 });
+    await expect(api.listRequests()).resolves.toHaveLength(12);
+    expect(calls(s, 'GET', /^\/requests$/)).toHaveLength(3);
   });
 });
 
@@ -444,8 +466,10 @@ describe('browser access', () => {
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:5183');
     expect(preflight.headers.get('Access-Control-Allow-Headers')).toContain(IDEMPOTENCY_HEADER);
+    expect(preflight.headers.get('Access-Control-Allow-Headers')).not.toContain('Authorization');
+    expect(preflight.headers.get('Access-Control-Allow-Credentials')).toBe('true');
     const meta = await fetch(`${s.baseUrl}/meta`);
-    expect(meta.headers.get(CONTRACT_HEADER)).toBe('1.0.0');
+    expect(meta.headers.get(CONTRACT_HEADER)).toBe('1.1.0');
   });
 });
 
@@ -457,8 +481,8 @@ describe('evaluation runner over HTTP', () => {
     const notPassing = report.results.filter((r) => r.verdict !== 'pass').map((r) => `${r.caseId}: ${r.verdict} ${r.checks.filter((c) => !c.passed).map((c) => `${c.id} (${c.actual})`).join('; ')} ${r.errors.map((e) => e.message).join('; ')}`);
     expect(notPassing).toEqual([]);
     expect(report.results).toHaveLength(20);
-    expect(report.target).toEqual({ name: 'executive-desk-reference-server', dataSource: 'simulated', baseUrl: s.baseUrl, contractVersion: '1.0.0', sandbox: true });
-    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.0.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
+    expect(report.target).toEqual({ name: 'executive-desk-reference-server', dataSource: 'simulated', baseUrl: s.baseUrl, contractVersion: '1.1.0', sandbox: true });
+    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.1.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
     expect(calls(s, 'POST', /^\/evaluation\/runs$/)).toHaveLength(20);
     // The case travels in the request body exactly as the fixture defines it.
     expect(calls(s, 'POST', /^\/evaluation\/runs$/)[0].body).toEqual({ caseId: 'EVAL-001', input: getCase('EVAL-001').input, context: getCase('EVAL-001').context, mode: 'sandbox' });

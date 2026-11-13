@@ -30,8 +30,11 @@ export interface ReferenceServerOptions {
   host?: string;
   /** Defaults to /api/executive-desk/v1. */
   basePath?: string;
-  /** When set, every request must carry `Authorization: Bearer <token>`. */
-  token?: string | null;
+  /**
+   * When set, every request must carry this session cookie (`desk_session=<value>`), the way
+   * Scriba's own API expects its session cookie. There is no token scheme.
+   */
+  session?: string | null;
   /** Value of Access-Control-Allow-Origin. */
   allowOrigin?: string;
   mock?: MockOptions;
@@ -148,7 +151,7 @@ export class ReferenceServer {
       sandbox: true,
       principal,
       simulatedNow,
-      capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false },
+      capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false, idempotentPosts: true },
       ...this.options.meta,
     };
   }
@@ -156,7 +159,9 @@ export class ReferenceServer {
   private cors(res: ServerResponse): void {
     res.setHeader('Access-Control-Allow-Origin', this.options.allowOrigin ?? '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', `Authorization, Content-Type, ${IDEMPOTENCY_HEADER}, ${CONTRACT_HEADER}`);
+    // A cookie session across origins needs a named origin and Allow-Credentials; "*" is not allowed with them.
+    if ((this.options.allowOrigin ?? '*') !== '*') res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', `Content-Type, ${IDEMPOTENCY_HEADER}, ${CONTRACT_HEADER}`);
     res.setHeader('Access-Control-Expose-Headers', `${CONTRACT_HEADER}, Retry-After`);
     res.setHeader(CONTRACT_HEADER, this.options.meta?.contractVersion ?? CONTRACT_VERSION);
   }
@@ -225,10 +230,9 @@ export class ReferenceServer {
     try {
       if (path === null) throw new HttpProblem(404, 'not_found', `Nothing is served outside ${this.basePath}.`);
 
-      if (this.options.token) {
-        const header = recorded.headers.authorization ?? '';
-        if (!header.startsWith('Bearer ')) throw new HttpProblem(401, 'unauthenticated', 'Send an Authorization: Bearer token.');
-        if (header.slice(7) !== this.options.token) throw new HttpProblem(401, 'unauthenticated', 'The bearer token is not valid.');
+      if (this.options.session) {
+        const cookies = (recorded.headers.cookie ?? '').split(';').map((part) => part.trim());
+        if (!cookies.includes(`desk_session=${this.options.session}`)) throw new HttpProblem(401, 'unauthenticated', 'No valid session.');
       }
 
       const wanted = recorded.headers[CONTRACT_HEADER.toLowerCase()];

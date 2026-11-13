@@ -8,7 +8,8 @@
  * Options
  *   --target <mock|http>    where to run. Defaults to http when --base-url is given.
  *   --base-url <url>        backend root including the version, e.g. http://localhost:8000/api/executive-desk/v1
- *   --token-env <NAME>      read the bearer token from this environment variable (never pass a token as an argument)
+ *   --cookie-env <NAME>     read the Cookie header of an existing Scriba session from this environment variable
+ *                           (never pass a session value as an argument)
  *   --cases <file>          case-set file to run instead of the built-in synthetic set
  *   --only <ids>            comma-separated case ids to run
  *   --skip <ids>            comma-separated case ids to skip
@@ -41,7 +42,7 @@ import { runEvaluation } from '../src/evaluation/runner';
 import { runSelfTest } from '../src/evaluation/selfTest';
 import { fmtDuration } from '../src/lib/time';
 
-const KNOWN = ['target', 'base-url', 'token-env', 'cases', 'only', 'skip', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
+const KNOWN = ['target', 'base-url', 'cookie-env', 'cases', 'only', 'skip', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
 
 function parseArgs(argv: string[]): Record<string, string | true> {
   const args: Record<string, string | true> = {};
@@ -154,12 +155,12 @@ async function main(): Promise<number> {
   if (targetKind === 'mock') {
     target = new MockExecutiveDesk({ stepDelayMs: 0, seed: false });
   } else {
-    const tokenEnv = str(args['token-env']);
-    const token = tokenEnv ? process.env[tokenEnv] : undefined;
-    if (tokenEnv && !token) throw new Error(`Environment variable ${tokenEnv} is not set.`);
+    const cookieEnv = str(args['cookie-env']);
+    const cookie = cookieEnv ? process.env[cookieEnv] : undefined;
+    if (cookieEnv && !cookie) throw new Error(`Environment variable ${cookieEnv} is not set.`);
     target = new HttpExecutiveDesk({
       baseUrl: baseUrl!.replace(/\/$/, ''),
-      getToken: () => token ?? null,
+      sessionCookie: () => cookie ?? null,
       timeoutMs: Number(str(args['request-timeout']) ?? 15_000),
     });
     // Fail early, with the real reason, if the backend is unreachable or speaks another contract.

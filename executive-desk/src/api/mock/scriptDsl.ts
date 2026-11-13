@@ -33,6 +33,8 @@ export interface ActionStep {
   durationMs: number;
   fail: RunError | null;
   simulated: boolean;
+  /** Self-test only: force a key, to script a retry that wrongly uses a new one. */
+  idempotencyKey?: string;
 }
 
 export interface ApprovalStep {

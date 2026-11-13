@@ -1,6 +1,7 @@
 import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { EvaluationCase, EvaluationResult } from '../api/types';
+import { totalTokens } from '../evaluation/pricing';
 import { usd } from '../lib/labels';
 import { fmtDayTime, fmtDuration, fmtRange } from '../lib/time';
 import { ActionTimeline } from './ActionTimeline';
@@ -192,10 +193,11 @@ export function CaseResult({ result, timeZone }: { result: EvaluationResult; tim
           {result.usage ? (
             <>
               <p className="tabular-nums text-ink">
-                {result.usage.inputTokens + (result.usage.cachedInputTokens ?? 0)} in, {result.usage.outputTokens} out
+                {totalTokens(result.usage).input} in, {totalTokens(result.usage).output} out
               </p>
               <p className="tabular-nums text-mute">
-                {result.usage.model} · {result.estimatedCostUsd !== null ? `${usd(result.estimatedCostUsd)} (${result.costSource === 'backend' ? 'from backend' : 'from price table'})` : 'no price configured'}
+                {result.usage.models.map((m) => `${m.model} x${m.calls}`).join(', ') || 'no model named'} ·{' '}
+                {result.estimatedCostUsd !== null ? `${usd(result.estimatedCostUsd)} (${result.costSource === 'backend' ? 'from backend' : 'from price table'})` : 'no price configured'}
               </p>
             </>
           ) : (

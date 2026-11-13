@@ -9,6 +9,8 @@ import { HttpExecutiveDesk } from './httpAdapter';
 import { MockExecutiveDesk } from './mock/mockAdapter';
 import { PRINCIPAL } from '../evaluation/fixtures/world';
 
+export const TOKEN_STORAGE_KEY = 'executive-desk.token';
+
 let instance: ExecutiveDeskApi | null = null;
 
 export function createApi(env: Record<string, string | undefined>): ExecutiveDeskApi {
@@ -16,14 +18,10 @@ export function createApi(env: Record<string, string | undefined>): ExecutiveDes
     if (!env.VITE_API_BASE_URL) throw new Error('VITE_API_MODE=http needs VITE_API_BASE_URL.');
     return new HttpExecutiveDesk({
       baseUrl: env.VITE_API_BASE_URL.replace(/\/$/, ''),
-      principal: {
-        name: env.VITE_PRINCIPAL_NAME ?? 'Principal',
-        email: env.VITE_PRINCIPAL_EMAIL ?? '',
-        timezone: env.VITE_PRINCIPAL_TIMEZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      // Session handling is Role 1's decision. Until it is settled, a token can be kept in
-      // sessionStorage under this key for local testing. Never commit one.
-      getToken: () => (typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem('executive-desk.token')),
+      // The principal, the contract version and whether the agent is real all come from GET /meta.
+      // Until Role 1 settles how a browser session gets its token, one can be put in
+      // sessionStorage under this key for local testing. Never commit one or put it in a URL.
+      getToken: () => (typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(TOKEN_STORAGE_KEY)),
     });
   }
   return new MockExecutiveDesk({ stepDelayMs: 700, seed: true });

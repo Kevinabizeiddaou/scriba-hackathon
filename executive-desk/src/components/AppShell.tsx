@@ -41,9 +41,13 @@ function DataSourceNote() {
         <span aria-hidden className={clsx('h-1.5 w-1.5 rounded-full', simulated ? 'bg-warn' : 'bg-ok')} />
         {simulated ? 'Mock data' : 'Live backend'}
       </p>
-      <p className="mt-1 text-soft">
-        {simulated ? 'Scripted adapter. No real email is sent and no calendar is changed.' : info.baseUrl}
-      </p>
+      <p className="mt-1 text-soft">{simulated ? 'Scripted agent. No real email is sent and no calendar is changed.' : `${info.name}. Approvals you give here are carried out for real.`}</p>
+      {info.baseUrl && (
+        <p className="mt-1 break-all text-mute">
+          {info.baseUrl}
+          {info.contractVersion && ` · contract ${info.contractVersion}`}
+        </p>
+      )}
       {info.simulatedNow && <p className="mt-1 text-mute">Simulated clock: {fmtDayTime(info.simulatedNow, info.principal.timezone)}</p>}
     </div>
   );

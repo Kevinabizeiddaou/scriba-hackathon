@@ -4,9 +4,10 @@
  * points at one rule. Most of these come from the independent code review.
  */
 import { describe, expect, it } from 'vitest';
-import { ApiError, type EvaluationTarget } from '../api/client';
+import { ApiError } from '../api/client';
 import { MockExecutiveDesk } from '../api/mock/mockAdapter';
 import type { AgentAction, AgentRun, ApprovalRequest, CheckResult, EvaluationResult } from '../api/types';
+import { asLiveTarget } from '../test/liveTarget';
 import { EVALUATION_CASES, SYNTHETIC_CASE_SET, getCase } from './fixtures';
 import { DAY, bt } from './fixtures/world';
 import { estimateCost } from './pricing';
@@ -45,16 +46,7 @@ function extra(run: AgentRun, like: AgentAction, input: Record<string, unknown>,
   return action;
 }
 
-function wrap(inner: EvaluationTarget, patch: Partial<EvaluationTarget>): EvaluationTarget {
-  return {
-    info: { ...inner.info, name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test' },
-    startEvaluationRun: (input) => inner.startEvaluationRun(input),
-    getRun: (id) => inner.getRun(id),
-    listApprovals: (filter) => inner.listApprovals(filter),
-    decideApproval: (id, input) => inner.decideApproval(id, input),
-    ...patch,
-  };
-}
+const wrap = asLiveTarget;
 
 describe('approval gate', () => {
   it('does not accept an approval the harness did not decide, whatever status the backend reports', async () => {
@@ -235,11 +227,42 @@ describe('malformed data fails closed', () => {
   });
 
   it('does not turn missing cost into a cost of zero', () => {
-    const usage = { model: 'm', inputTokens: 10, outputTokens: 5, cachedInputTokens: null } as never;
+    const usage = { models: [{ model: 'm', calls: 1, inputTokens: 10, outputTokens: 5, cachedInputTokens: null }] } as never; // no estimatedCostUsd at all
     expect(estimateCost(usage, {})).toEqual({ usd: null, source: null });
     const result = { verdict: 'pass', human: { rescued: false, mandatoryApprovals: 0, unexpectedApprovals: 0 }, timing: { wallClockMs: 5 }, usage: undefined, estimatedCostUsd: undefined } as unknown as EvaluationResult;
     const summary = summarize([result]);
     expect(summary).toMatchObject({ casesWithUsage: 0, casesWithCost: 0, totalCostUsd: null, costPerRunUsd: null, totalInputTokens: null });
+  });
+});
+
+describe('idempotency keys', () => {
+  it('passes when every side effect has a key and a retry reuses it', async () => {
+    const { rescore, result } = await reference('EVAL-017'); // one failed create, then a successful retry
+    const creates = result.run!.actions.filter((a) => a.tool === 'calendar.create_event');
+    expect(creates.map((a) => a.status)).toEqual(['failed', 'succeeded']);
+    expect(creates[0].idempotencyKey).toBe(creates[1].idempotencyKey);
+    expect(rescore(() => {}).idempotency.passed).toBe(true);
+  });
+
+  it('fails a side effect with no key, a retry under a new key, and one key used for two effects', async () => {
+    const { rescore } = await reference('EVAL-017');
+    const missing = rescore((run) => { find(run, 'email.send').idempotencyKey = null; }).idempotency;
+    expect(missing.passed).toBe(false);
+    expect(missing.actual).toMatch(/has no idempotency key/);
+
+    const fresh = rescore((run) => { find(run, 'calendar.create_event').idempotencyKey = 'another-key'; }).idempotency;
+    expect(fresh.passed).toBe(false);
+    expect(fresh.actual).toMatch(/different idempotency keys/);
+
+    const shared = rescore((run) => { find(run, 'email.send').idempotencyKey = find(run, 'calendar.create_event').idempotencyKey; }).idempotency;
+    expect(shared.passed).toBe(false);
+    expect(shared.actual).toMatch(/used for 2 different effects/);
+  });
+
+  it('does not ask reads for a key', async () => {
+    const { result } = await reference('EVAL-012');
+    expect(result.run!.actions.every((a) => a.idempotencyKey === null)).toBe(true);
+    expect(result.checks.find((c) => c.id === 'idempotency')).toMatchObject({ passed: true, actual: 'no side effects' });
   });
 });
 

@@ -18,25 +18,38 @@ export interface ModelPrice {
   cachedInputPerMTokUsd?: number;
 }
 
-/** Keyed by TokenUsage.model, exactly as the backend reports it. */
+/** Keyed by ModelUsage.model, exactly as the backend reports it. */
 export type PriceTable = Record<string, ModelPrice>;
 
 export const DEFAULT_PRICE_TABLE: PriceTable = {};
 
 /**
- * TokenUsage.inputTokens counts uncached input only; cachedInputTokens is billed separately.
- * Returns null when the model has no entry in the table.
+ * Prices a run from its per-model token counts. `inputTokens` is uncached input only;
+ * cached input is billed at its own rate (or the input rate when none is given).
+ * Returns null when any model in the run has no price: a partial sum would look like a
+ * real cost while leaving part of the run out.
  */
 export function costFromPriceTable(usage: TokenUsage, table: PriceTable): number | null {
-  const price = table[usage.model];
-  if (!price) return null;
-  const cached = usage.cachedInputTokens ?? 0;
-  return (
-    (usage.inputTokens * price.inputPerMTokUsd +
-      usage.outputTokens * price.outputPerMTokUsd +
-      cached * (price.cachedInputPerMTokUsd ?? price.inputPerMTokUsd)) /
-    1_000_000
-  );
+  if (!Array.isArray(usage.models) || usage.models.length === 0) return null;
+  let microDollars = 0;
+  for (const model of usage.models) {
+    const price = table[model.model];
+    if (!price) return null;
+    microDollars +=
+      (model.inputTokens ?? 0) * price.inputPerMTokUsd +
+      (model.outputTokens ?? 0) * price.outputPerMTokUsd +
+      (model.cachedInputTokens ?? 0) * (price.cachedInputPerMTokUsd ?? price.inputPerMTokUsd);
+  }
+  return microDollars / 1_000_000;
+}
+
+/** Input tokens (cached included) and output tokens of a run, over all its models. */
+export function totalTokens(usage: TokenUsage): { input: number; output: number } {
+  const models = Array.isArray(usage.models) ? usage.models : [];
+  return {
+    input: models.reduce((sum, m) => sum + (m.inputTokens ?? 0) + (m.cachedInputTokens ?? 0), 0),
+    output: models.reduce((sum, m) => sum + (m.outputTokens ?? 0), 0),
+  };
 }
 
 export function estimateCost(usage: TokenUsage | null, table: PriceTable): { usd: number | null; source: 'backend' | 'price_table' | null } {

@@ -9,6 +9,7 @@ import { EVALUATION_CASES } from './evaluation/fixtures';
 import { SYNTHETIC_CASE_SET } from './evaluation/fixtures';
 import { runEvaluation } from './evaluation/runner';
 import { PROBES } from './evaluation/selfTest';
+import { asLiveTarget, usageOf } from './test/liveTarget';
 import { evaluationSession } from './evaluation/session';
 
 let desk: MockExecutiveDesk;
@@ -55,7 +56,7 @@ describe('app shell', () => {
     ]);
     expect(within(nav).getByRole('link', { name: /Request Inbox/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Secretary Chat/ })).not.toHaveAttribute('aria-current');
-    expect(screen.getByText(/No real email is sent and no calendar is changed/)).toBeInTheDocument();
+    expect(screen.getByText(/Scripted agent\. No real email is sent and no calendar is changed/)).toBeInTheDocument();
     await waitFor(() => expect(within(nav).getByLabelText('4 new requests')).toBeInTheDocument());
     expect(within(nav).getByLabelText('4 approvals waiting')).toBeInTheDocument();
   });
@@ -271,16 +272,13 @@ describe('secretary chat', () => {
 });
 
 describe('evaluation dashboard', () => {
-  const live = (inner: MockExecutiveDesk): EvaluationTarget => ({
-    info: { ...inner.info, name: 'Staging backend', dataSource: 'live', baseUrl: 'http://backend.test' },
-    startEvaluationRun: (input) => inner.startEvaluationRun(input),
-    getRun: async (id) => {
-      const run = await inner.getRun(id);
-      return { ...run, usage: run.status === 'completed' ? { model: 'test-model', inputTokens: 9_000, outputTokens: 1_000, cachedInputTokens: null, estimatedCostUsd: 0.02 } : null };
-    },
-    listApprovals: (filter) => inner.listApprovals(filter),
-    decideApproval: (id, input) => inner.decideApproval(id, input),
-  });
+  const live = (inner: MockExecutiveDesk): EvaluationTarget =>
+    asLiveTarget(inner, {
+      getRun: async (id) => {
+        const run = await inner.getRun(id);
+        return { ...run, usage: run.status === 'completed' ? usageOf({ inputTokens: 9_000, outputTokens: 1_000, cachedInputTokens: null }, 0.02) : null };
+      },
+    });
 
   it('shows placeholders, not numbers, before any real run', async () => {
     await open('#/evaluation');
@@ -359,7 +357,8 @@ describe('evaluation dashboard', () => {
     const panel = document.getElementById('case-panel-EVAL-008')!;
     expect(within(panel).getByText('Expected versus actual')).toBeInTheDocument();
     expect(within(panel).getByText('Execution trace')).toBeInTheDocument();
-    expect(within(panel).getByText(/10000 in, 1000 out|9000 in, 1000 out/)).toBeInTheDocument();
+    expect(within(panel).getByText('9000 in, 1000 out')).toBeInTheDocument();
+    expect(within(panel).getByText(/test-model x3/)).toBeInTheDocument();
   }, 20_000);
 
   it('will not save a report that left cases out as a day snapshot', async () => {

@@ -6,7 +6,7 @@ import { CASES_11_20 } from './cases-11-20';
 export const EVALUATION_CASES: EvaluationCase[] = [...CASES_01_10, ...CASES_11_20];
 
 /** Identifies the full synthetic set. Bump the suffix when a case's expectations change. */
-export const SYNTHETIC_CASE_SET: CaseSetInfo = { id: 'synthetic-v2', caseCount: EVALUATION_CASES.length };
+export const SYNTHETIC_CASE_SET: CaseSetInfo = { id: 'synthetic-v2', provenance: 'synthetic', caseCount: EVALUATION_CASES.length };
 
 export const CASE_CATEGORIES: { id: CaseCategory; label: string }[] = [
   { id: 'straightforward', label: 'Straightforward booking' },

@@ -1,12 +1,14 @@
 /** Aggregates case results into a report summary and day snapshots. */
-import type {
-  EvaluationReport,
-  EvaluationResult,
-  EvaluationSnapshot,
-  EvaluationSummary,
-  SnapshotDay,
-  Verdict,
+import {
+  REPORT_FORMAT,
+  type EvaluationReport,
+  type EvaluationResult,
+  type EvaluationSnapshot,
+  type EvaluationSummary,
+  type SnapshotDay,
+  type Verdict,
 } from '../api/types';
+import { totalTokens } from './pricing';
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 1) return sorted[0];
@@ -46,8 +48,8 @@ export function summarize(results: EvaluationResult[]): EvaluationSummary {
           }
         : null,
     casesWithUsage: withUsage.length,
-    totalInputTokens: withUsage.length > 0 ? withUsage.reduce((sum, r) => sum + r.usage!.inputTokens + (r.usage!.cachedInputTokens ?? 0), 0) : null,
-    totalOutputTokens: withUsage.length > 0 ? withUsage.reduce((sum, r) => sum + r.usage!.outputTokens, 0) : null,
+    totalInputTokens: withUsage.length > 0 ? withUsage.reduce((sum, r) => sum + totalTokens(r.usage!).input, 0) : null,
+    totalOutputTokens: withUsage.length > 0 ? withUsage.reduce((sum, r) => sum + totalTokens(r.usage!).output, 0) : null,
     casesWithCost: withCost.length,
     totalCostUsd: withCost.length > 0 ? totalCost : null,
     costPerRunUsd: withCost.length > 0 ? totalCost / withCost.length : null,
@@ -85,7 +87,7 @@ export function buildSnapshot(report: EvaluationReport, day: SnapshotDay, savedA
   if (blocker) throw new Error(blocker);
   const verdicts: Record<string, Verdict> = {};
   for (const result of report.results) verdicts[result.caseId] = result.verdict;
-  return { day, savedAt, reportId: report.id, label: report.label, target: report.target, summary: report.summary, verdicts };
+  return { day, savedAt, reportId: report.id, label: report.label, caseSet: report.caseSet, target: report.target, summary: report.summary, verdicts };
 }
 
 export function isSnapshot(value: unknown): value is EvaluationSnapshot {
@@ -106,6 +108,7 @@ export function isReport(value: unknown): value is EvaluationReport {
   return (
     !!v &&
     typeof v === 'object' &&
+    v.format === REPORT_FORMAT &&
     typeof v.id === 'string' &&
     Array.isArray(v.results) &&
     !!v.summary &&

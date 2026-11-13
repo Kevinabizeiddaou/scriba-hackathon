@@ -13,6 +13,7 @@ import type {
   CalendarEvent,
   CaseContext,
   CaseExpectation,
+  CaseProvenance,
   ExpectedToolCall,
   FaultInjection,
   ForbiddenToolCall,
@@ -23,6 +24,9 @@ import type {
 } from '../../api/types';
 
 export const PRINCIPAL_TZ = 'Asia/Beirut';
+
+/** Stamped on every case in this folder. */
+export const SYNTHETIC: CaseProvenance = { kind: 'synthetic', note: 'Invented for development. Not derived from any real request or customer.' };
 
 export const DAY = {
   mon: '2026-11-16',

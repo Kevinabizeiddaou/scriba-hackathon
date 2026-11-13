@@ -1,10 +1,11 @@
 /**
- * Scriba Executive Desk: API contract, v0.1 (draft).
+ * Scriba Executive Desk: API contract, version 1.0.0 (frozen).
  *
  * This file is the single source of truth for every shape that crosses the
- * frontend/backend boundary. It is a proposal from the frontend side: Role 1
- * confirms or amends it after the Scriba repository audit. The JSON form of each
- * type is documented in docs/API_CONTRACT.md.
+ * frontend/backend boundary; docs/API_CONTRACT.md is its written form. The
+ * contract is frozen from the frontend side: from here on it changes only through
+ * the change log in that document, with a version bump. The points Role 1 still has
+ * to confirm are listed in docs/handoff/ASSUMPTIONS.md.
  *
  * Conventions
  * - All timestamps are RFC 3339 strings with an explicit offset ("2026-11-17T11:00:00+02:00").
@@ -17,6 +18,47 @@ export type IanaTimeZone = string;
 
 /** Where the numbers on screen came from. "simulated" data must never be reported as agent performance. */
 export type DataSource = 'simulated' | 'live';
+
+// ---------------------------------------------------------------------------
+// Versioning and handshake
+// ---------------------------------------------------------------------------
+
+/**
+ * Semantic version of this contract. The major number is also in the URL (/v1).
+ * Major: a breaking change. Minor: new optional fields or endpoints. Patch: wording only.
+ */
+export const CONTRACT_VERSION = '1.0.0';
+/** Sent by the client on every request and by the server on every response. */
+export const CONTRACT_HEADER = 'X-Executive-Desk-Contract';
+/** Sent by the client on every POST. See "Idempotency" in docs/API_CONTRACT.md. */
+export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+
+/** GET /meta: what is behind the URL. The first call a client makes. */
+export interface DeskMeta {
+  contractVersion: string;
+  /** Name of the service, for display and for reports. */
+  service: string;
+  /**
+   * "real" when a model-driven agent produces the runs; "scripted" for a stand-in such as
+   * the reference server. Clients label everything from a scripted service as simulated.
+   */
+  agent: 'real' | 'scripted';
+  /** True when the service cannot reach real mailboxes or calendars. */
+  sandbox: boolean;
+  principal: Participant & { timezone: IanaTimeZone };
+  /** The service's fixed clock when it has one (sandbox fixtures); null when it runs on real time. */
+  simulatedNow: ISODateTime | null;
+  capabilities: {
+    /** POST /evaluation/runs is available. */
+    evaluation: boolean;
+    /** Evaluation runs honour CaseContext.faults. Without it, the two API-failure cases are skipped. */
+    faultInjection: boolean;
+    /** The conversation endpoints are available. */
+    chat: boolean;
+    /** Runs report token usage. Without it, cost per run cannot be computed. */
+    tokenUsage: boolean;
+  };
+}
 
 // ---------------------------------------------------------------------------
 // People and calendar
@@ -95,32 +137,27 @@ export function isSideEffectTool(tool: string): tool is SideEffectTool {
 // SecretaryRequest
 // ---------------------------------------------------------------------------
 
-export type RequestClassification =
-  | 'new_meeting'
-  | 'reschedule'
-  | 'cancellation'
-  | 'availability_query'
-  | 'unclear'
-  | 'not_meeting_related';
+export const REQUEST_CLASSIFICATIONS = ['new_meeting', 'reschedule', 'cancellation', 'availability_query', 'unclear', 'not_meeting_related'] as const;
+export type RequestClassification = (typeof REQUEST_CLASSIFICATIONS)[number];
 
-export type RequestPriority = 'urgent' | 'high' | 'normal' | 'low';
+export const REQUEST_PRIORITIES = ['urgent', 'high', 'normal', 'low'] as const;
+export type RequestPriority = (typeof REQUEST_PRIORITIES)[number];
 
-export type RequestStatus =
-  | 'received' // in the inbox, not yet picked up by the agent
-  | 'processing' // an agent run is working on it
-  | 'awaiting_approval' // the agent proposed side effects and is waiting for a human decision
-  | 'awaiting_reply' // the agent replied (clarification or alternatives) and is waiting for the requester
-  | 'completed' // nothing further to do
-  | 'escalated' // handed to a human; the agent will not act further
-  | 'declined' // a human rejected the proposal
-  | 'failed'; // the run failed and nothing was handed over
+/**
+ * received:          in the inbox, not yet picked up by the agent
+ * processing:        an agent run is working on it
+ * awaiting_approval: the agent proposed side effects and is waiting for a human decision
+ * awaiting_reply:    the agent replied (clarification or alternatives) and is waiting for the requester
+ * completed:         nothing further to do
+ * escalated:         handed to a human; the agent will not act further
+ * declined:          a human rejected the proposal
+ * failed:            the run failed and nothing was handed over
+ */
+export const REQUEST_STATUSES = ['received', 'processing', 'awaiting_approval', 'awaiting_reply', 'completed', 'escalated', 'declined', 'failed'] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 
-export type RequestFlag =
-  | 'prompt_injection_suspected'
-  | 'duplicate'
-  | 'timezone_ambiguous'
-  | 'unverified_sender'
-  | 'outside_working_hours';
+export const REQUEST_FLAGS = ['prompt_injection_suspected', 'duplicate', 'timezone_ambiguous', 'unverified_sender', 'outside_working_hours'] as const;
+export type RequestFlag = (typeof REQUEST_FLAGS)[number];
 
 export interface ExtractedMeetingDetails {
   title: string | null;
@@ -169,19 +206,13 @@ export interface SecretaryRequest {
 // AgentRun and AgentAction
 // ---------------------------------------------------------------------------
 
-export type RunStatus = 'queued' | 'running' | 'awaiting_approval' | 'completed' | 'failed' | 'cancelled';
+export const RUN_STATUSES = ['queued', 'running', 'awaiting_approval', 'completed', 'failed', 'cancelled'] as const;
+export type RunStatus = (typeof RUN_STATUSES)[number];
 
 export const TERMINAL_RUN_STATUSES: readonly RunStatus[] = ['completed', 'failed', 'cancelled'];
 
-export type RunOutcome =
-  | 'scheduled'
-  | 'rescheduled'
-  | 'cancelled_meeting'
-  | 'alternatives_proposed'
-  | 'clarification_requested'
-  | 'no_action'
-  | 'escalated'
-  | 'declined';
+export const RUN_OUTCOMES = ['scheduled', 'rescheduled', 'cancelled_meeting', 'alternatives_proposed', 'clarification_requested', 'no_action', 'escalated', 'declined'] as const;
+export type RunOutcome = (typeof RUN_OUTCOMES)[number];
 
 export interface RunError {
   /** Stable machine code, for example "calendar_unavailable" or "model_error". */
@@ -191,12 +222,23 @@ export interface RunError {
   retryable: boolean;
 }
 
-export interface TokenUsage {
+/** Tokens one model consumed during a run, summed over every call to that model. */
+export interface ModelUsage {
+  /** Model identifier exactly as the provider names it. It is the key into the price table. */
   model: string;
+  /** Number of requests made to this model in the run. */
+  calls: number;
+  /** Uncached input tokens only. Cached input is counted separately because it is billed differently. */
   inputTokens: number;
   outputTokens: number;
+  /** Input tokens served from a prompt cache. Null when the provider does not report it. */
   cachedInputTokens: number | null;
-  /** Cost computed by the backend, when it knows its own pricing. Null means "not reported". */
+}
+
+/** Token usage of one run. One entry per model, so an agent that uses two models is priced correctly. */
+export interface TokenUsage {
+  models: ModelUsage[];
+  /** Cost of the whole run computed by the backend, when it knows its own pricing. Null means "not reported". */
   estimatedCostUsd: number | null;
 }
 
@@ -220,14 +262,9 @@ export interface RunTriage {
   extracted: ExtractedMeetingDetails | null;
 }
 
-export type ActionStatus =
-  | 'planned'
-  | 'awaiting_approval'
-  | 'running'
-  | 'succeeded'
-  | 'failed'
-  | 'rejected' // its approval was rejected; it never ran
-  | 'skipped';
+/** rejected: its approval was rejected, it never ran. skipped: it never ran for another reason. */
+export const ACTION_STATUSES = ['planned', 'awaiting_approval', 'running', 'succeeded', 'failed', 'rejected', 'skipped'] as const;
+export type ActionStatus = (typeof ACTION_STATUSES)[number];
 
 /** Statuses that mean the tool call actually went out. */
 export const EXECUTED_ACTION_STATUSES: readonly ActionStatus[] = ['running', 'succeeded', 'failed'];
@@ -235,6 +272,10 @@ export const EXECUTED_ACTION_STATUSES: readonly ActionStatus[] = ['running', 'su
 export interface AgentAction {
   id: string;
   runId: string;
+  /**
+   * Position in the trace, starting at 1. Actions that have started come first, in the order
+   * they started; actions still waiting follow. The scorer falls back to it when timestamps tie.
+   */
   sequence: number;
   tool: ToolName;
   sideEffect: boolean;
@@ -248,6 +289,12 @@ export interface AgentAction {
   durationMs: number | null;
   /** Approval that gates this action. Required on every side-effect action. */
   approvalId: string | null;
+  /**
+   * Identifies the one real-world effect this action is meant to have. Required on every
+   * side-effect action; null on reads. A retry of the same effect carries the same key, and the
+   * backend passes it to the provider so that a retry can never send or create twice.
+   */
+  idempotencyKey: string | null;
   error: RunError | null;
   /** True when no real email or calendar change was made (mock adapter, sandbox or evaluation mode). */
   simulated: boolean;
@@ -307,8 +354,10 @@ export type ProposedChange =
       notifyAttendees: boolean;
     };
 
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
-export type ApprovalExecutionStatus = 'not_started' | 'executing' | 'executed' | 'failed';
+export const APPROVAL_STATUSES = ['pending', 'approved', 'rejected', 'expired'] as const;
+export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
+export const APPROVAL_EXECUTION_STATUSES = ['not_started', 'executing', 'executed', 'failed'] as const;
+export type ApprovalExecutionStatus = (typeof APPROVAL_EXECUTION_STATUSES)[number];
 
 export interface ApprovalRequest {
   id: string;
@@ -325,6 +374,8 @@ export interface ApprovalRequest {
   changes: ProposedChange[];
   status: ApprovalStatus;
   createdAt: ISODateTime;
+  /** When a pending approval lapses into "expired". Null when approvals do not expire. */
+  expiresAt: ISODateTime | null;
   decidedAt: ISODateTime | null;
   decidedBy: string | null;
   decisionNote: string | null;
@@ -339,6 +390,10 @@ export interface ApprovalRequest {
 
 export interface ApprovalDecisionInput {
   decision: 'approve' | 'reject';
+  /**
+   * Display name of the person deciding. A backend with authentication records the
+   * authenticated identity instead and treats this as a fallback.
+   */
   decidedBy: string;
   note?: string | null;
 }
@@ -520,13 +575,22 @@ export interface CaseExpectation {
   flags: RequestFlag[];
 }
 
+/**
+ * synthetic:  invented for development. Every person, company and calendar entry is made up.
+ * real_world: derived from a real request. It must be anonymised, and someone must have
+ *             agreed to its use; both facts are recorded here and checked when a set is loaded.
+ */
+export type CaseProvenance =
+  | { kind: 'synthetic'; note: string }
+  | { kind: 'real_world'; source: string; anonymized: true; consentReference: string };
+
 export interface EvaluationCase {
   id: string;
   title: string;
   category: CaseCategory;
   tags: string[];
-  /** Always true. These are synthetic development fixtures, not customer cases. */
-  synthetic: true;
+  /** Where the case comes from. Synthetic fixtures and real-world cases are never mixed in one set. */
+  provenance: CaseProvenance;
   description: string;
   input: CaseInput;
   context: CaseContext;
@@ -574,6 +638,9 @@ export interface EvaluationResult {
   caseId: string;
   caseTitle: string;
   category: CaseCategory;
+  /** Whether the case is a synthetic fixture or derived from a real request. */
+  provenance: CaseProvenance['kind'];
+  /** Whether a real agent produced the run ("live") or a scripted stand-in ("simulated"). */
   dataSource: DataSource;
   /**
    * pass:    every check passed (see `human.rescued` for whether a person helped).
@@ -641,16 +708,31 @@ export interface EvaluationSummary {
 /** Which set of cases a report covers. A snapshot must cover the whole set. */
 export interface CaseSetInfo {
   id: string;
+  /** Every case in a set has the same kind of provenance, so a report is about one or the other. */
+  provenance: CaseProvenance['kind'];
   /** Number of cases in the full set, whether or not this report ran them all. */
   caseCount: number;
 }
 
+/** Identifies the report file format, so other tools can check what they are reading. */
+export const REPORT_FORMAT = 'executive-desk.evaluation-report/1';
+
 export interface EvaluationReport {
+  format: typeof REPORT_FORMAT;
   id: string;
   label: string;
   harnessVersion: string;
+  contractVersion: string;
   caseSet: CaseSetInfo;
-  target: { name: string; dataSource: DataSource; baseUrl: string | null };
+  target: {
+    name: string;
+    dataSource: DataSource;
+    baseUrl: string | null;
+    /** Contract version the target reported in GET /meta. Null when the handshake never succeeded. */
+    contractVersion: string | null;
+    /** Whether the target said it was in sandbox mode. Null when the handshake never succeeded. */
+    sandbox: boolean | null;
+  };
   startedAt: ISODateTime;
   finishedAt: ISODateTime;
   results: EvaluationResult[];
@@ -665,6 +747,7 @@ export interface EvaluationSnapshot {
   savedAt: ISODateTime;
   reportId: string;
   label: string;
+  caseSet: CaseSetInfo;
   target: EvaluationReport['target'];
   summary: EvaluationSummary;
   verdicts: Record<string, Verdict>;

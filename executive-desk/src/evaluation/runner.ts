@@ -11,12 +11,16 @@
  */
 import { ApiError, type EvaluationTarget } from '../api/client';
 import {
+  CONTRACT_VERSION,
   EXECUTED_ACTION_STATUSES,
+  REPORT_FORMAT,
   TERMINAL_RUN_STATUSES,
   isSideEffectTool,
   type AgentRun,
   type ApprovalRequest,
   type CaseSetInfo,
+  type DataSource,
+  type DeskMeta,
   type EvaluationCase,
   type EvaluationError,
   type EvaluationReport,
@@ -26,7 +30,7 @@ import { DEFAULT_PRICE_TABLE, estimateCost, type PriceTable } from './pricing';
 import { summarize } from './report';
 import { scoreRun, type HarnessObservations } from './scoring';
 
-export const HARNESS_VERSION = '0.2.0';
+export const HARNESS_VERSION = '1.0.0';
 
 export interface RunnerOptions {
   /** How often to poll a run that has not finished. */
@@ -55,6 +59,18 @@ export interface EvaluationOptions extends RunnerOptions {
 
 class HarnessTimeout extends Error {}
 
+/** The harness declines to run a case against this target. */
+class HarnessRefusal extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+const dataSourceOf = (meta: DeskMeta): DataSource => (meta.agent === 'real' ? 'live' : 'simulated');
+
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Rejects if `promise` has not settled within `ms`. The underlying call is abandoned, not cancelled. */
@@ -74,13 +90,14 @@ function withDeadline<T>(promise: Promise<T>, ms: number, what: string): Promise
   });
 }
 
-function emptyResult(testCase: EvaluationCase, target: EvaluationTarget): EvaluationResult {
+function emptyResult(testCase: EvaluationCase, dataSource: DataSource): EvaluationResult {
   const { expected } = testCase;
   return {
     caseId: testCase.id,
     caseTitle: testCase.title,
     category: testCase.category,
-    dataSource: target.info.dataSource,
+    provenance: testCase.provenance.kind,
+    dataSource,
     verdict: 'skipped',
     checks: [],
     expected: {
@@ -109,7 +126,7 @@ export async function runCase(target: EvaluationTarget, testCase: EvaluationCase
   const timeoutMs = options.timeoutMs ?? 120_000;
   const decidedBy = options.decidedBy ?? 'evaluation-harness';
 
-  const result = emptyResult(testCase, target);
+  const result = emptyResult(testCase, target.info.dataSource);
   const startedMs = now();
   result.timing.startedAt = new Date(startedMs).toISOString();
 
@@ -136,6 +153,19 @@ export async function runCase(target: EvaluationTarget, testCase: EvaluationCase
   };
 
   try {
+    // The handshake decides how the result is labelled and whether the case may run at all.
+    const meta = await call('Reading the backend description', () => target.getMeta());
+    result.dataSource = dataSourceOf(meta);
+    if (!meta.capabilities.evaluation) throw new HarnessRefusal('evaluation_unsupported', 'The backend reports that it has no evaluation endpoint.');
+    if ((options.requireSimulated ?? true) && !meta.sandbox) {
+      throw new HarnessRefusal('not_sandbox', 'The backend reports sandbox: false. Evaluation cases are not run against a service that can reach real mailboxes or calendars.');
+    }
+    if (testCase.context.faults.length > 0 && !meta.capabilities.faultInjection) {
+      result.timing.finishedAt = result.timing.startedAt;
+      result.skipReason = 'The backend does not support fault injection, which this case needs.';
+      return result;
+    }
+
     run = await call('Starting the run', () => target.startEvaluationRun({ caseId: testCase.id, input: testCase.input, context: testCase.context, mode: 'sandbox' }));
     const runId = run.id;
 
@@ -175,6 +205,7 @@ export async function runCase(target: EvaluationTarget, testCase: EvaluationCase
   } catch (cause) {
     harnessFailed = true;
     if (cause instanceof HarnessTimeout) errors.push({ source: 'harness', code: 'timeout', message: cause.message });
+    else if (cause instanceof HarnessRefusal) errors.push({ source: 'harness', code: cause.code, message: cause.message });
     else if (cause instanceof ApiError) errors.push({ source: 'backend', code: cause.code, message: cause.message });
     else errors.push({ source: 'harness', code: 'exception', message: cause instanceof Error ? cause.message : String(cause) });
   }
@@ -251,11 +282,27 @@ export async function runEvaluation(target: EvaluationTarget, cases: EvaluationC
   const startedAt = new Date(now()).toISOString();
   const results: EvaluationResult[] = [];
 
+  // Synthetic fixtures and real-world cases are reported separately, never as one number.
+  const kinds = new Set(cases.map((c) => c.provenance.kind));
+  if (kinds.size > 1) throw new Error('A case set must not mix synthetic and real-world cases. Run them as two evaluations.');
+  const provenance = cases[0]?.provenance.kind ?? 'synthetic';
+  if (options.caseSet && options.caseSet.provenance !== provenance) {
+    throw new Error(`The case set is declared as ${options.caseSet.provenance}, but its cases are ${provenance}.`);
+  }
+
+  let meta: DeskMeta | null = null;
+  try {
+    meta = await withDeadline(target.getMeta(), options.timeoutMs ?? 120_000, 'Reading the backend description');
+  } catch {
+    // Every case will report the failure itself; the report is then labelled from what is known locally.
+  }
+  const dataSource = meta ? dataSourceOf(meta) : target.info.dataSource;
+
   for (const testCase of cases) {
     options.onProgress?.({ done: results.length, total: cases.length, current: testCase.id, last: results.at(-1) ?? null });
     const skipReason = options.signal?.aborted ? 'The evaluation was stopped before this case ran.' : options.skip?.[testCase.id];
     if (skipReason) {
-      results.push({ ...emptyResult(testCase, target), skipReason });
+      results.push({ ...emptyResult(testCase, dataSource), skipReason });
       continue;
     }
     results.push(await runCase(target, testCase, options));
@@ -263,11 +310,19 @@ export async function runEvaluation(target: EvaluationTarget, cases: EvaluationC
   options.onProgress?.({ done: results.length, total: cases.length, current: null, last: results.at(-1) ?? null });
 
   return {
+    format: REPORT_FORMAT,
     id: `report-${startedAt.replace(/[^0-9]/g, '').slice(0, 14)}`,
-    label: options.label ?? (target.info.dataSource === 'live' ? 'Evaluation run' : 'Harness self-test'),
+    label: options.label ?? (dataSource === 'live' ? 'Evaluation run' : 'Scripted run (simulated)'),
     harnessVersion: HARNESS_VERSION,
-    caseSet: options.caseSet ?? { id: 'ad-hoc', caseCount: cases.length },
-    target: { name: target.info.name, dataSource: target.info.dataSource, baseUrl: target.info.baseUrl },
+    contractVersion: CONTRACT_VERSION,
+    caseSet: options.caseSet ?? { id: 'ad-hoc', provenance, caseCount: cases.length },
+    target: {
+      name: meta?.service ?? target.info.name,
+      dataSource,
+      baseUrl: target.info.baseUrl,
+      contractVersion: meta?.contractVersion ?? null,
+      sandbox: meta?.sandbox ?? null,
+    },
     startedAt,
     finishedAt: new Date(now()).toISOString(),
     results,

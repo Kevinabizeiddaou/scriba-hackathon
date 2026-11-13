@@ -30,7 +30,7 @@ describe('evaluation fixtures', () => {
 
   it('marks every case synthetic and uses only reserved .example addresses', () => {
     for (const c of EVALUATION_CASES) {
-      expect(c.synthetic).toBe(true);
+      expect(c.provenance.kind).toBe('synthetic');
       const addresses = JSON.stringify(c).match(/[\w.+-]+@[\w.-]+\.[a-z]+/gi) ?? [];
       expect(addresses.length).toBeGreaterThan(0);
       for (const address of addresses) expect(address, `${c.id}: ${address}`).toMatch(/\.example$/);

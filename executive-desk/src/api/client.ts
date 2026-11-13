@@ -17,6 +17,7 @@ import type {
   Conversation,
   ConversationMessage,
   DataSource,
+  DeskMeta,
   EvaluationRunInput,
   IanaTimeZone,
   ISODateTime,
@@ -35,10 +36,15 @@ export interface ApiInfo {
   simulatedNow: ISODateTime | null;
   /** Example prompts for the chat composer. The mock lists the ones it has scripts for. */
   suggestedPrompts: string[];
+  /** Contract version the backend reported in GET /meta. Null until the handshake has happened. */
+  contractVersion: string | null;
 }
 
 export interface ExecutiveDeskApi {
   readonly info: ApiInfo;
+
+  /** GET /meta: version, what kind of agent is behind the URL, and what it can do. */
+  getMeta(): Promise<DeskMeta>;
 
   // Requests ---------------------------------------------------------------
   /** GET /requests */
@@ -85,14 +91,19 @@ export interface ExecutiveDeskApi {
 /** The part of the API the evaluation runner needs. Anything that implements it can be evaluated. */
 export type EvaluationTarget = Pick<
   ExecutiveDeskApi,
-  'info' | 'startEvaluationRun' | 'getRun' | 'listApprovals' | 'decideApproval'
+  'info' | 'getMeta' | 'startEvaluationRun' | 'getRun' | 'listApprovals' | 'decideApproval'
 >;
 
 export class ApiError extends Error {
   constructor(
     message: string,
+    /** HTTP status, or null when no response was received (network error, timeout, bad payload). */
     readonly status: number | null,
+    /** Stable machine code: the backend's `error.code`, or one of the client codes in docs/API_CONTRACT.md. */
     readonly code: string,
+    /** True when sending the same request again may succeed. */
+    readonly retryable = false,
+    readonly details: unknown = undefined,
   ) {
     super(message);
     this.name = 'ApiError';

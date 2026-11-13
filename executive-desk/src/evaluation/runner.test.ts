@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ApiError, type EvaluationTarget } from '../api/client';
 import { MockExecutiveDesk } from '../api/mock/mockAdapter';
 import { MOCK_SCRIPTS } from '../api/mock/scripts';
-import type { AgentRun, ApprovalRequest, EvaluationCase, TokenUsage } from '../api/types';
+import type { AgentRun, ApprovalRequest, EvaluationCase } from '../api/types';
+import { asLiveTarget, usageOf } from '../test/liveTarget';
 import { EVALUATION_CASES, getCase } from './fixtures';
 import { costFromPriceTable, estimateCost, parsePriceTable } from './pricing';
 import { buildSnapshot, summarize } from './report';
@@ -13,18 +14,15 @@ const fast = { pollIntervalMs: 1, timeoutMs: 2_000 };
 /** Wraps a target so a test can change what the runner sees. Marked live to stand in for a real backend. */
 function wrap(inner: EvaluationTarget, patch: Partial<EvaluationTarget> & { mapRun?: (run: AgentRun) => AgentRun }): EvaluationTarget {
   const mapRun = patch.mapRun ?? ((run: AgentRun) => run);
-  return {
-    info: { ...inner.info, name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test' },
+  return asLiveTarget(inner, {
     startEvaluationRun: async (input) => mapRun(await inner.startEvaluationRun(input)),
     getRun: async (id) => mapRun(await inner.getRun(id)),
-    listApprovals: (filter) => inner.listApprovals(filter),
-    decideApproval: (id, input) => inner.decideApproval(id, input),
     ...patch,
-  };
+  });
 }
 
 const mock = () => new MockExecutiveDesk({ stepDelayMs: 0, seed: false });
-const usage = (over: Partial<TokenUsage> = {}): TokenUsage => ({ model: 'test-model', inputTokens: 12_000, outputTokens: 800, cachedInputTokens: 4_000, estimatedCostUsd: null, ...over });
+const usage = (cost: number | null = null) => usageOf({}, cost);
 
 describe('runCase', () => {
   it('sends the case input and context to the target in sandbox mode', async () => {
@@ -104,9 +102,9 @@ describe('runCase', () => {
   });
 
   it('takes the cost from the backend when it reports one', async () => {
-    const target = wrap(mock(), { mapRun: (run) => ({ ...run, usage: usage({ estimatedCostUsd: 0.0421 }) }) });
+    const target = wrap(mock(), { mapRun: (run) => ({ ...run, usage: usage(0.0421) }) });
     const result = await runCase(target, getCase('EVAL-012'), fast);
-    expect(result.usage).toMatchObject({ model: 'test-model', inputTokens: 12_000, outputTokens: 800 });
+    expect(result.usage!.models).toEqual([{ model: 'test-model', calls: 3, inputTokens: 12_000, outputTokens: 800, cachedInputTokens: 4_000 }]);
     expect(result.estimatedCostUsd).toBe(0.0421);
     expect(result.costSource).toBe('backend');
   });
@@ -187,7 +185,7 @@ describe('runEvaluation and summarize', () => {
         if (caseTitle.startsWith('Intro call') && run.status === 'completed') {
           return { ...run, humanInterventions: [...run.humanInterventions, { at: run.finishedAt!, kind: 'rescue', by: 'Operator', note: null }] };
         }
-        if (caseTitle.startsWith('Q1 hiring')) return { ...run, usage: usage({ estimatedCostUsd: 0.05 }) };
+        if (caseTitle.startsWith('Q1 hiring')) return { ...run, usage: usage(0.05) };
         if (caseTitle.startsWith('Revised contract') && run.status === 'completed') return { ...run, outcome: 'scheduled' };
         return run;
       },
@@ -195,7 +193,9 @@ describe('runEvaluation and summarize', () => {
     const progress: number[] = [];
     const report = await runEvaluation(target, EVALUATION_CASES.slice(0, 3), { ...fast, onProgress: (p) => progress.push(p.done) });
 
-    expect(report.target).toEqual({ name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test' });
+    expect(report.target).toEqual({ name: 'Test backend', dataSource: 'live', baseUrl: 'http://backend.test', contractVersion: '1.0.0', sandbox: true });
+    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.0.0', caseSet: { id: 'ad-hoc', provenance: 'synthetic', caseCount: 3 } });
+    expect(report.results.every((r) => r.provenance === 'synthetic' && r.dataSource === 'live')).toBe(true);
     expect(report.results.map((r) => [r.caseId, r.verdict, r.human.rescued])).toEqual([
       ['EVAL-001', 'pass', true],
       ['EVAL-002', 'pass', false],
@@ -210,6 +210,52 @@ describe('runEvaluation and summarize', () => {
 
     const failed = report.results[2].checks.find((c) => c.id === 'outcome')!;
     expect(failed).toMatchObject({ passed: false, expected: 'alternatives_proposed', actual: 'scheduled' });
+  });
+
+  it('labels results from what the backend says it is, not from how it was reached', async () => {
+    // The plain mock says agent: scripted, so everything is simulated.
+    const scripted = await runEvaluation(mock(), EVALUATION_CASES.slice(0, 1), fast);
+    expect(scripted.target).toMatchObject({ dataSource: 'simulated', sandbox: true });
+    expect(scripted.results[0].dataSource).toBe('simulated');
+  });
+
+  it('refuses to run against a backend that says it is not a sandbox', async () => {
+    const inner = mock();
+    let started = 0;
+    const production = asLiveTarget(inner, {
+      getMeta: async () => ({ ...(await inner.getMeta()), agent: 'real', sandbox: false }),
+      startEvaluationRun: (input) => {
+        started += 1;
+        return inner.startEvaluationRun(input);
+      },
+    });
+    const result = await runCase(production, getCase('EVAL-001'), fast);
+    expect(started).toBe(0);
+    expect(result.verdict).toBe('error');
+    expect(result.errors).toEqual([expect.objectContaining({ source: 'harness', code: 'not_sandbox' })]);
+  });
+
+  it('skips fault-injection cases when the backend cannot inject faults, and runs the rest', async () => {
+    const inner = mock();
+    const limited = asLiveTarget(inner, {
+      getMeta: async () => {
+        const meta = await inner.getMeta();
+        return { ...meta, agent: 'real', capabilities: { ...meta.capabilities, faultInjection: false } };
+      },
+    });
+    const cases = EVALUATION_CASES.filter((c) => ['EVAL-016', 'EVAL-017', 'EVAL-018'].includes(c.id));
+    const report = await runEvaluation(limited, cases, fast);
+    expect(report.results.map((r) => [r.caseId, r.verdict])).toEqual([['EVAL-016', 'pass'], ['EVAL-017', 'skipped'], ['EVAL-018', 'skipped']]);
+    expect(report.results[1].skipReason).toMatch(/fault injection/);
+    expect(report.summary).toMatchObject({ executed: 1, skipped: 2 });
+  });
+
+  it('refuses a case set that mixes synthetic and real-world cases', async () => {
+    const real: EvaluationCase = { ...getCase('EVAL-001'), id: 'REAL-001', provenance: { kind: 'real_world', source: 'pilot user, week 46', anonymized: true, consentReference: 'consent-0001' } };
+    await expect(runEvaluation(mock(), [getCase('EVAL-001'), real], fast)).rejects.toThrow(/must not mix/);
+    const report = await runEvaluation(mock(), [real], fast);
+    expect(report.caseSet).toMatchObject({ provenance: 'real_world', caseCount: 1 });
+    expect(report.results[0].provenance).toBe('real_world');
   });
 
   it('refuses to save a simulated report as a snapshot and accepts a live one', async () => {
@@ -230,6 +276,22 @@ describe('pricing', () => {
 
   it('bills cached tokens at the input price when no cached price is given', () => {
     expect(costFromPriceTable(usage(), { 'test-model': { inputPerMTokUsd: 2, outputPerMTokUsd: 10 } })).toBeCloseTo(0.04, 10);
+  });
+
+  it('prices each model at its own rate and refuses a partial sum', () => {
+    const twoModels = {
+      models: [
+        { model: 'small', calls: 4, inputTokens: 1_000_000, outputTokens: 0, cachedInputTokens: null },
+        { model: 'large', calls: 1, inputTokens: 0, outputTokens: 1_000_000, cachedInputTokens: null },
+      ],
+      estimatedCostUsd: null,
+    };
+    const table = { small: { inputPerMTokUsd: 1, outputPerMTokUsd: 5 }, large: { inputPerMTokUsd: 3, outputPerMTokUsd: 15 } };
+    expect(costFromPriceTable(twoModels, table)).toBe(16);
+    // One model without a price: no cost at all, rather than the cost of the other one alone.
+    expect(costFromPriceTable(twoModels, { small: table.small })).toBeNull();
+    expect(estimateCost(twoModels, { small: table.small })).toEqual({ usd: null, source: null });
+    expect(costFromPriceTable({ models: [], estimatedCostUsd: null }, table)).toBeNull();
   });
 
   it('validates a price table loaded from JSON', () => {

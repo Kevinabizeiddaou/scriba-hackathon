@@ -6,7 +6,7 @@ import { getApi } from '../api';
 import type { EvaluationResult, EvaluationSnapshot, SnapshotDay, Verdict } from '../api/types';
 import { CaseResult, CaseSpecification } from '../components/CaseDetail';
 import { Button, ErrorNote, PageHeader, Pill, SimulatedTag } from '../components/ui';
-import { CASE_CATEGORIES, EVALUATION_CASES, categoryLabel } from '../evaluation/fixtures';
+import { CASE_CATEGORIES, EVALUATION_CASES, SYNTHETIC_CASE_SET, categoryLabel } from '../evaluation/fixtures';
 import { SNAPSHOT_DAYS, snapshotBlocker } from '../evaluation/report';
 import type { SelfTestReport } from '../evaluation/selfTest';
 import { VERDICT, percent, usd } from '../lib/labels';
@@ -377,6 +377,9 @@ export function EvaluationPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[15px] font-semibold text-ink">Cases</h2>
+              <Pill tone="neutral" icon={null}>
+                Synthetic fixtures ({SYNTHETIC_CASE_SET.id})
+              </Pill>
               {tableSimulated && <SimulatedTag />}
               {tableSimulated && <span className="text-[12px] text-mute">Verdicts below come from the scripted mock, not from the agent.</span>}
             </div>

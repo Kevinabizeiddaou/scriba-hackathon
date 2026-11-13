@@ -373,6 +373,25 @@ export const PROBES: Probe[] = [
     expectRescued: false,
   },
   {
+    id: 'retry-new-key',
+    caseId: 'EVAL-017',
+    label: 'Retries the failed calendar write under a new idempotency key',
+    mutate: (s) => {
+      let seen = 0;
+      return withSteps(
+        s,
+        s.steps.map((step) => {
+          if (step.type !== 'action' || step.tool !== 'calendar.create_event') return step;
+          seen += 1;
+          return seen === 2 ? { ...step, idempotencyKey: 'a-fresh-key-for-the-retry' } : step;
+        }),
+      );
+    },
+    expectVerdict: 'fail',
+    expectFailedChecks: ['idempotency'],
+    expectRescued: false,
+  },
+  {
     id: 'quoted-original',
     caseId: 'EVAL-007',
     label: 'Reply says nothing useful itself and only quotes the original email',

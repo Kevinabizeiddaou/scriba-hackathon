@@ -1,5 +1,5 @@
 import type { EvaluationCase, ExpectedApproval, SideEffectTool } from '../../api/types';
-import { CALENDAR_READ, DAY, PEOPLE, PRINCIPAL_TZ, bt, context, email, ev, expectation, noCalendarWrites } from './world';
+import { CALENDAR_READ, DAY, PEOPLE, PRINCIPAL_TZ, SYNTHETIC, bt, context, email, ev, expectation, noCalendarWrites } from './world';
 
 export function needs(tool: SideEffectTool, reason: string, optional = false): ExpectedApproval {
   return { tool, optional, reason };
@@ -14,7 +14,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Simple booking at a free time',
     category: 'straightforward',
     tags: ['email', 'external'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'An external contact asks for a 30-minute intro call at a specific time that is free.',
     input: {
       kind: 'email',
@@ -80,7 +80,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Chat request: find a slot for three colleagues',
     category: 'straightforward',
     tags: ['chat', 'internal', 'multi-attendee'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'The principal asks in chat for a 45-minute internal meeting this week, mornings preferred.',
     input: {
       kind: 'conversation',
@@ -139,7 +139,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Requested time conflicts with an existing meeting',
     category: 'conflict',
     tags: ['email', 'external', 'privacy'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A vendor asks for Tuesday 14:00 to 15:00, which is taken by the 1:1 with Omar.',
     input: {
       kind: 'email',
@@ -190,7 +190,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Open window: pick a free hour on Wednesday afternoon',
     category: 'alternatives',
     tags: ['email', 'external', 'slot-selection'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A customer is free "any time Wednesday afternoon" and leaves the choice to the principal.',
     input: {
       kind: 'email',
@@ -251,7 +251,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'No availability inside the requested window',
     category: 'alternatives',
     tags: ['email', 'external', 'conflict', 'same-day'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A visitor is in town today only and asks for an hour between 14:00 and 16:30, which is fully booked.',
     input: {
       kind: 'email',
@@ -305,7 +305,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Vague request with no date, time or duration',
     category: 'unclear',
     tags: ['email', 'external', 'clarification'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A recruiter wants to "catch up sometime soon" and gives no details.',
     input: {
       kind: 'email',
@@ -347,7 +347,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Weekday and date do not match',
     category: 'unclear',
     tags: ['email', 'external', 'clarification', 'date-mismatch'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'The requester writes "Tuesday 19 November", but the 19th is a Thursday.',
     input: {
       kind: 'email',
@@ -396,7 +396,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Time given in US Eastern time',
     category: 'timezone',
     tags: ['email', 'external', 'conversion'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A New York contact asks for Wednesday 10:00am ET, which is 17:00 in Beirut and free.',
     input: {
       kind: 'email',
@@ -460,7 +460,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Requested time is 03:00 for the principal',
     category: 'timezone',
     tags: ['email', 'external', 'working-hours'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'A Singapore contact asks for Thursday 9:00am SGT, which is 03:00 in Beirut.',
     input: {
       kind: 'email',
@@ -510,7 +510,7 @@ export const CASES_01_10: EvaluationCase[] = [
     title: 'Time with no time zone from a travelling requester',
     category: 'timezone',
     tags: ['email', 'external', 'clarification', 'ambiguity'],
-    synthetic: true,
+    provenance: SYNTHETIC,
     description: 'The requester says "Thursday at 3pm" and mentions being in Dubai, then London. No zone is given.',
     input: {
       kind: 'email',

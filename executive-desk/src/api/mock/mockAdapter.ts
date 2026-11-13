@@ -8,6 +8,7 @@
 import { ApiError, type ApiInfo, type ExecutiveDeskApi } from '../client';
 import { inputForChange, summaryForChange } from '../changes';
 import {
+  CONTRACT_VERSION,
   isSideEffectTool,
   type AgentAction,
   type AgentRun,
@@ -16,6 +17,7 @@ import {
   type ApprovalStatus,
   type Conversation,
   type ConversationMessage,
+  type DeskMeta,
   type EvaluationRunInput,
   type RequestStatus,
   type RunOutcome,
@@ -92,6 +94,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     principal: { name: PRINCIPAL.name, email: PRINCIPAL.email, timezone: PRINCIPAL.timezone },
     simulatedNow: NOW,
     suggestedPrompts: CHAT_SUGGESTIONS,
+    contractVersion: CONTRACT_VERSION,
   };
 
   private readonly requests = new Map<string, SecretaryRequest>();
@@ -118,6 +121,19 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
   }
 
   // --- public API -------------------------------------------------------------
+
+  async getMeta(): Promise<DeskMeta> {
+    return {
+      contractVersion: CONTRACT_VERSION,
+      service: 'Mock adapter',
+      agent: 'scripted',
+      sandbox: true,
+      principal: this.info.principal,
+      simulatedNow: NOW,
+      // No model is called, so there are no tokens to report.
+      capabilities: { evaluation: true, faultInjection: true, chat: true, tokenUsage: false },
+    };
+  }
 
   async listRequests(filter?: { status?: RequestStatus[] }): Promise<SecretaryRequest[]> {
     await this.ready;
@@ -404,6 +420,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       finishedAt: null,
       durationMs: null,
       approvalId,
+      idempotencyKey: null,
       error: null,
       simulated: true,
     };
@@ -431,7 +448,15 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     let action = sideEffect
       ? run.actions.find((a) => a.status === 'awaiting_approval' && a.tool === step.tool && a.approvalId === pb.gate)
       : undefined;
-    if (!action) action = this.newAction(run, step.tool, step.summary, step.input, sideEffect ? pb.gate : null);
+    if (!action) {
+      action = this.newAction(run, step.tool, step.summary, step.input, sideEffect ? pb.gate : null);
+      if (sideEffect) {
+        // A retry is the same intended effect, so it reuses the key of the attempt before it.
+        const earlier = pb.gate ? run.actions.find((a) => a !== action && a.approvalId === pb.gate && a.tool === step.tool) : undefined;
+        action.idempotencyKey = earlier?.idempotencyKey ?? `${run.id}:${step.tool}:${run.actions.length}`;
+      }
+    }
+    if (step.idempotencyKey) action.idempotencyKey = step.idempotencyKey;
 
     this.promote(run, action);
     action.status = 'running';
@@ -470,6 +495,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       changes: clone(step.changes),
       status: 'pending',
       createdAt: this.now(),
+      expiresAt: null,
       decidedAt: null,
       decidedBy: null,
       decisionNote: null,
@@ -484,10 +510,11 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     ask.startedAt = ask.finishedAt = this.now();
     ask.output = { approvalId: approval.id };
 
-    for (const change of step.changes) {
+    step.changes.forEach((change, index) => {
       const planned = this.newAction(run, change.tool, summaryForChange(change, 'future'), inputForChange(change), approval.id);
       planned.status = 'awaiting_approval';
-    }
+      planned.idempotencyKey = `${approval.id}:${index}`;
+    });
 
     if (step.selfApproved) {
       // Deliberately wrong behaviour, used only by the harness self-test.
@@ -556,6 +583,9 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
   private decide(id: string, input: ApprovalDecisionInput): ApprovalRequest {
     const approval = this.mustGet(this.approvals, id, 'approval');
     if (approval.status !== 'pending') {
+      // Repeating the decision that was already made is harmless and returns the same answer.
+      const same = (approval.status === 'approved' && input.decision === 'approve') || (approval.status === 'rejected' && input.decision === 'reject');
+      if (same) return approval;
       throw new ApiError(`This approval was already ${approval.status}.`, 409, 'already_decided');
     }
     const run = this.mustGet(this.runs, approval.runId, 'run');

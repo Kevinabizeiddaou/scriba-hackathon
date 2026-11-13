@@ -17,7 +17,7 @@ function renderCase(c: EvaluationCase): string {
   const out: string[] = [];
 
   out.push(`## ${c.id}: ${c.title}`, '');
-  out.push(`**Category:** ${categoryLabel(c.category)}. **Tags:** ${c.tags.join(', ')}. Synthetic fixture.`, '', c.description, '');
+  out.push(`**Category:** ${categoryLabel(c.category)}. **Tags:** ${c.tags.join(', ')}. ${c.provenance.kind === 'synthetic' ? 'Synthetic fixture.' : `Real-world case (anonymised). Source: ${c.provenance.source}.`}`, '', c.description, '');
 
   if (input.kind === 'email') {
     out.push('### Sample incoming email', '');

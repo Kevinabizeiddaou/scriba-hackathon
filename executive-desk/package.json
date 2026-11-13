@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "eval": "tsx scripts/eval.ts",
     "fixtures:export": "tsx scripts/export-fixtures.ts",
-    "docs:generate": "tsx scripts/generate-docs.ts"
+    "docs:generate": "tsx scripts/generate-docs.ts",
+    "contract:server": "tsx scripts/contract-server.ts",
+    "dev:reference": "tsx scripts/dev-reference.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

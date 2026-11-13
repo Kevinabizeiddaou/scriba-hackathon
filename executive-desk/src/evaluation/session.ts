@@ -9,7 +9,7 @@
 import { useSyncExternalStore } from 'react';
 import type { EvaluationTarget } from '../api/client';
 import type { EvaluationReport, EvaluationSnapshot, SnapshotDay } from '../api/types';
-import { EVALUATION_CASES, SYNTHETIC_CASE_SET } from './fixtures';
+import { DESK_CASE_SET, DESK_SUITE } from './fixtures';
 import { buildSnapshot, isReport, isSnapshot } from './report';
 import { runEvaluation } from './runner';
 import { runSelfTest, type SelfTestReport } from './selfTest';
@@ -54,10 +54,10 @@ export const evaluationSession = {
   async runLive(target: EvaluationTarget): Promise<void> {
     if (current().progress) return;
     abort = new AbortController();
-    set({ error: null, notice: null, progress: { done: 0, total: EVALUATION_CASES.length, current: EVALUATION_CASES[0].id } });
+    set({ error: null, notice: null, progress: { done: 0, total: DESK_SUITE.length, current: DESK_SUITE[0].id } });
     try {
-      const report = await runEvaluation(target, EVALUATION_CASES, {
-        caseSet: SYNTHETIC_CASE_SET,
+      const report = await runEvaluation(target, DESK_SUITE, {
+        caseSet: DESK_CASE_SET,
         signal: abort.signal,
         onProgress: ({ done, total, current: caseId }) => set({ progress: { done, total, current: caseId } }),
       });

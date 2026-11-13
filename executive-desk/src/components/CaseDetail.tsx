@@ -1,6 +1,8 @@
+import clsx from 'clsx';
 import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { EvaluationCase, EvaluationResult } from '../api/types';
+import { describeArgs } from '../evaluation/matchers';
 import { totalTokens } from '../evaluation/pricing';
 import { usd } from '../lib/labels';
 import { fmtDayTime, fmtDuration, fmtRange } from '../lib/time';
@@ -72,6 +74,30 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
               </li>
             ))}
           </ul>
+          {context.tasks.length > 0 && (
+            <ul aria-label="Tasks when the request arrives" className="mt-2 divide-y divide-line rounded-lg border border-line bg-sunken/70">
+              {context.tasks.map((task) => (
+                <li key={task.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 text-[12.5px]">
+                  <span className="w-[178px] shrink-0 text-mute">Task, {task.status}{task.dueAt ? `, due ${fmtDayTime(task.dueAt, tz)}` : ''}</span>
+                  <span className="min-w-0 flex-1 text-ink">{task.title}</span>
+                  <span className="font-mono text-[11px] text-mute">{task.id}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {context.followUps.length > 0 && (
+            <ul aria-label="Replies awaited when the request arrives" className="mt-2 divide-y divide-line rounded-lg border border-line bg-sunken/70">
+              {context.followUps.map((followUp) => (
+                <li key={followUp.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 text-[12.5px]">
+                  <span className="w-[178px] shrink-0 text-mute">Awaited by {fmtDayTime(followUp.expectedBy, tz)}</span>
+                  <span className="min-w-0 flex-1 text-ink">
+                    {followUp.subject}, from {followUp.waitingOn.name}
+                  </span>
+                  <span className="font-mono text-[11px] text-mute">{followUp.id}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           {context.faults.length > 0 && (
             <p className="mt-2 rounded-lg border border-warn/25 bg-warn/[0.07] px-3 py-2 text-[12.5px] text-warn">
               Injected fault:{' '}
@@ -93,6 +119,18 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
               <dt className="w-24 shrink-0 text-mute">Classification</dt>
               <dd className="font-mono text-soft">{expected.classifications.join(' or ')}</dd>
             </div>
+            {expected.priorities.length > 0 && (
+              <div className="flex gap-2">
+                <dt className="w-24 shrink-0 text-mute">Priority</dt>
+                <dd className="font-mono text-soft">{expected.priorities.join(' or ')}</dd>
+              </div>
+            )}
+            {expected.harnessDecision === 'reject' && (
+              <div className="flex gap-2">
+                <dt className="w-24 shrink-0 text-mute">Human</dt>
+                <dd className="text-soft">The harness rejects the proposal.</dd>
+              </div>
+            )}
             {expected.flags.length > 0 && (
               <div className="flex gap-2">
                 <dt className="w-24 shrink-0 text-mute">Flags</dt>
@@ -128,6 +166,22 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
             </ul>
           )}
         </Block>
+
+        {expected.state.length > 0 && (
+          <Block title="State after the run">
+            <ul className="space-y-1.5">
+              {expected.state.map((assertion, i) => (
+                <li key={i} className="text-[13px]">
+                  <span className={clsx('font-mono text-[12px]', assertion.must === 'exist' ? 'text-ok' : 'text-danger')}>
+                    {assertion.must === 'exist' ? 'must exist' : 'must not exist'}: {assertion.entity.replace('_', '-')}
+                  </span>
+                  <span className="block text-soft">{assertion.why}</span>
+                  <span className="block font-mono text-[11.5px] text-mute">{describeArgs(assertion.where)}</span>
+                </li>
+              ))}
+            </ul>
+          </Block>
+        )}
 
         <Block title="Required human approval">
           {expected.approvals.length > 0 ? (

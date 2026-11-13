@@ -6,8 +6,9 @@ import { getApi } from '../api';
 import type { EvaluationResult, EvaluationSnapshot, SnapshotDay, Verdict } from '../api/types';
 import { CaseResult, CaseSpecification } from '../components/CaseDetail';
 import { Button, ErrorNote, PageHeader, Pill, SimulatedTag } from '../components/ui';
-import { CASE_CATEGORIES, EVALUATION_CASES, SYNTHETIC_CASE_SET, categoryLabel } from '../evaluation/fixtures';
-import { SNAPSHOT_DAYS, snapshotBlocker } from '../evaluation/report';
+import { DESK_AREAS } from '../api/types';
+import { AREA_LABEL, DESK_CASE_SET, DESK_SUITE, categoryLabel } from '../evaluation/fixtures';
+import { SNAPSHOT_DAYS, snapshotBlocker, summarizeByArea } from '../evaluation/report';
 import type { SelfTestReport } from '../evaluation/selfTest';
 import { VERDICT, percent, usd } from '../lib/labels';
 import { fmtDayTime, fmtDuration } from '../lib/time';
@@ -98,7 +99,7 @@ function SelfTestPanel({ report }: { report: SelfTestReport }) {
         <SimulatedTag />
       </div>
       <p className="mt-2 max-w-3xl text-[13px] text-soft">
-        The runner was pointed at the scripted mock. This checks the harness itself: that all twenty cases can be satisfied, and that a planted defect is caught by the right check. It is not a measurement of the agent, so the tiles above stay empty.
+        The runner was pointed at the scripted mock. This checks the harness itself: that every case can be satisfied, and that a planted defect is caught by the right check. It is not a measurement of the agent, so the tiles above stay empty.
       </p>
       <dl className="mt-3 grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl bg-white/[0.04] px-3.5 py-2.5">
@@ -182,14 +183,15 @@ export function EvaluationPage() {
     if (file) evaluationSession.importJson(await file.text());
   }
 
-  const cases = category === 'all' ? EVALUATION_CASES : EVALUATION_CASES.filter((c) => c.category === category);
+  const cases = category === 'all' ? DESK_SUITE : DESK_SUITE.filter((c) => c.area === category);
+  const areaSummary = liveReport ? summarizeByArea(liveReport.results) : [];
   const errorEvents = liveReport ? liveReport.results.reduce((n, r) => n + r.errors.length, 0) : 0;
 
   return (
     <div>
       <PageHeader
         title="Evaluation Dashboard"
-        subtitle="Twenty synthetic meeting-coordination cases, scored automatically. Numbers appear only after a run against the real backend."
+        subtitle="Twenty synthetic cases across the secretary's work: inbox, email, scheduling, tasks, follow-ups, workflows and safety. Scored automatically. Numbers appear only after a run against the real backend."
         actions={
           <>
             <input ref={fileInput} type="file" accept="application/json,.json" className="sr-only" aria-label="Import evaluation results" onChange={onImport} tabIndex={-1} />
@@ -253,7 +255,7 @@ export function EvaluationPage() {
 
         {/* Headline numbers: live data only */}
         <section aria-label="Headline results" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-          <Kpi label="Cases executed" empty={!summary} value={summary ? `${summary.executed} / ${EVALUATION_CASES.length}` : `0 / ${EVALUATION_CASES.length}`} caption={summary ? `${summary.skipped} skipped` : 'Twenty cases are defined and ready.'} />
+          <Kpi label="Cases executed" empty={!summary} value={summary ? `${summary.executed} / ${DESK_SUITE.length}` : `0 / ${DESK_SUITE.length}`} caption={summary ? `${summary.skipped} skipped` : 'Twenty cases are defined and ready.'} />
           <Kpi
             label="Pass rate"
             empty={!summary || summary.passRate === null}
@@ -298,12 +300,22 @@ export function EvaluationPage() {
             <h2 className="text-[15px] font-semibold text-ink">Twenty-case progress</h2>
             <p className="text-[12px] text-mute">{liveReport ? `${liveReport.label} · ${liveReport.target.name} · finished ${fmtDayTime(liveReport.finishedAt, timeZone)}` : 'Not run against a live backend yet'}</p>
           </div>
-          <ol className="mt-3 grid grid-cols-10 gap-1.5 sm:gap-2">
-            {EVALUATION_CASES.map((c) => {
+          <div className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
+            {DESK_AREAS.map((area) => {
+              const inArea = DESK_SUITE.filter((c) => c.area === area);
+              const row = areaSummary.find((x) => x.area === area);
+              return (
+                <div key={area} role="group" aria-label={AREA_LABEL[area]}>
+                  <p className="mb-1.5 flex items-baseline justify-between gap-2 text-[12px]">
+                    <span className="font-semibold text-soft">{AREA_LABEL[area]}</span>
+                    <span className="tabular-nums text-mute">{row && row.executed > 0 ? `${row.passedUnassisted} of ${row.executed} passed` : `${inArea.length} cases`}</span>
+                  </p>
+                  <ol className="flex flex-wrap gap-1.5">
+            {inArea.map((c) => {
               const verdict: Verdict | 'none' = liveResults.get(c.id)?.verdict ?? 'none';
               const text = verdict === 'none' ? 'not run' : VERDICT[verdict].label.toLowerCase();
               return (
-                <li key={c.id}>
+                <li key={c.id} className="w-11">
                   <button
                     type="button"
                     onClick={() => {
@@ -323,8 +335,12 @@ export function EvaluationPage() {
                 </li>
               );
             })}
-          </ol>
-          <p className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-mute">
+                  </ol>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-mute">
             <span>P pass</span>
             <span>F fail</span>
             <span>E error</span>
@@ -378,22 +394,22 @@ export function EvaluationPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-[15px] font-semibold text-ink">Cases</h2>
               <Pill tone="neutral" icon={null}>
-                Synthetic fixtures ({SYNTHETIC_CASE_SET.id})
+                Synthetic fixtures ({DESK_CASE_SET.id})
               </Pill>
               {tableSimulated && <SimulatedTag />}
               {tableSimulated && <span className="text-[12px] text-mute">Verdicts below come from the scripted mock, not from the agent.</span>}
             </div>
             <div className="flex items-center gap-2">
               <label htmlFor="case-category" className="text-[12.5px] text-mute">
-                Category
+                Area
               </label>
               <select id="case-category" value={category} onChange={(e) => setCategory(e.target.value)} className="field h-9 w-auto py-0 text-[13px]">
                 <option value="all" className="bg-surface">
-                  All ({EVALUATION_CASES.length})
+                  All ({DESK_SUITE.length})
                 </option>
-                {CASE_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-surface">
-                    {c.label} ({EVALUATION_CASES.filter((x) => x.category === c.id).length})
+                {DESK_AREAS.map((area) => (
+                  <option key={area} value={area} className="bg-surface">
+                    {AREA_LABEL[area]} ({DESK_SUITE.filter((x) => x.area === area).length})
                   </option>
                 ))}
               </select>
@@ -404,7 +420,7 @@ export function EvaluationPage() {
               <thead className="text-[12px] text-mute">
                 <tr className="border-b border-line">
                   <th scope="col" className="px-4 py-2.5 font-semibold sm:pl-5">Case</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold">Category</th>
+                  <th scope="col" className="px-3 py-2.5 font-semibold">Area</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Verdict</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Checks</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold">Approvals</th>
@@ -431,7 +447,10 @@ export function EvaluationPage() {
                             <span className="block font-semibold text-ink hover:text-accent">{c.title}</span>
                           </button>
                         </th>
-                        <td className="px-3 py-2.5 text-soft">{categoryLabel(c.category)}</td>
+                        <td className="px-3 py-2.5 text-soft">
+                          <span className="block">{AREA_LABEL[c.area]}</span>
+                          <span className="block text-[11.5px] text-mute">{categoryLabel(c.category)}</span>
+                        </td>
                         <td className="px-3 py-2.5">
                           {result ? (
                             <Pill tone={VERDICT[result.verdict].tone}>

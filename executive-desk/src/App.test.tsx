@@ -5,8 +5,7 @@ import { App } from './App';
 import { getWorkspace, setApi } from './api';
 import type { EvaluationTarget, ExecutiveDeskApi } from './api/client';
 import { MockExecutiveDesk } from './api/mock/mockAdapter';
-import { EVALUATION_CASES } from './evaluation/fixtures';
-import { SYNTHETIC_CASE_SET } from './evaluation/fixtures';
+import { ALL_CASES, DESK_CASE_SET, DESK_SUITE } from './evaluation/fixtures';
 import { runEvaluation } from './evaluation/runner';
 import { PROBES } from './evaluation/selfTest';
 import { asLiveTarget, usageOf } from './test/liveTarget';
@@ -633,13 +632,37 @@ describe('evaluation dashboard', () => {
     expect(within(panel).getByText('Finance review')).toBeInTheDocument();
   });
 
+  it('filters the suite by area and shows state assertions and the starting tasks of a case', async () => {
+    const user = userEvent.setup();
+    await open('#/evaluation');
+    const cases = screen.getByRole('region', { name: 'Evaluation cases' });
+    expect(within(cases).getByText('Synthetic fixtures (desk-v1)')).toBeInTheDocument();
+    const options = within(screen.getByLabelText('Area')).getAllByRole('option').map((o) => o.textContent);
+    expect(options).toEqual(['All (20)', 'Inbox triage (3)', 'Email replies (3)', 'Scheduling (5)', 'Tasks and reminders (3)', 'Follow-ups (2)', 'Multi-step workflows (2)', 'Security and failure (2)']);
+
+    await user.selectOptions(screen.getByLabelText('Area'), 'task_reminder');
+    expect(within(cases).getAllByRole('rowheader').map((th) => th.textContent)).toEqual([
+      expect.stringContaining('EVAL-026'),
+      expect.stringContaining('EVAL-027'),
+      expect.stringContaining('EVAL-028'),
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Show details for EVAL-028' }));
+    const panel = document.getElementById('case-panel-EVAL-028')!;
+    expect(within(within(panel).getByRole('list', { name: 'Tasks when the request arrives' })).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(panel).getByText('State after the run')).toBeInTheDocument();
+    expect(within(panel).getByText('The NDA task is done.')).toBeInTheDocument();
+    expect(within(panel).getByText('id "task-nda"; status "done"')).toBeInTheDocument();
+    expect(within(panel).getByText('must not: task.create')).toBeInTheDocument();
+  });
+
   it('runs the harness self-test without filling in the headline numbers', async () => {
     const user = userEvent.setup();
     await open('#/evaluation');
     await user.click(screen.getByRole('button', { name: 'Run harness self-test' }));
     const panel = await screen.findByRole('region', { name: 'Harness self-test result' }, { timeout: 15_000 });
     expect(within(panel).getByText('Harness behaves as specified')).toBeInTheDocument();
-    expect(within(panel).getByText('20 of 20')).toBeInTheDocument();
+    expect(within(panel).getByText(`${ALL_CASES.length} of ${ALL_CASES.length}`)).toBeInTheDocument(); // every case's reference script, not only the twenty shown
     expect(within(panel).getByText(`${PROBES.length} of ${PROBES.length}`)).toBeInTheDocument();
 
     // Still no real run: the banner stays and every headline number stays empty.
@@ -654,7 +677,7 @@ describe('evaluation dashboard', () => {
   }, 20_000);
 
   it('shows real numbers from a live report and saves a day snapshot from it', async () => {
-    const report = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES, { pollIntervalMs: 1, label: 'Saturday noon', caseSet: SYNTHETIC_CASE_SET });
+    const report = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), DESK_SUITE, { pollIntervalMs: 1, label: 'Saturday noon', caseSet: DESK_CASE_SET });
     localStorage.setItem('executive-desk.eval.lastLiveReport', JSON.stringify(report));
     const user = userEvent.setup();
     await open('#/evaluation');
@@ -669,6 +692,9 @@ describe('evaluation dashboard', () => {
     expect(within(tiles).getByText(/20 passed unassisted, 0 more with a rescue, 0 failed/)).toBeInTheDocument();
     expect(within(tiles).getByText(`Rescues only. ${report.summary.mandatoryApprovals} mandatory approvals are counted separately.`)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'EVAL-001, Simple booking at a free time: pass' })).toBeInTheDocument();
+    // The progress is grouped by area of the secretary's work, with a count for each.
+    expect(within(screen.getByRole('group', { name: 'Follow-ups' })).getByText('2 of 2 passed')).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'Scheduling' })).getAllByRole('button')).toHaveLength(5);
 
     await user.selectOptions(screen.getByLabelText('Day to save the current report under'), 'saturday');
     await user.click(screen.getByRole('button', { name: 'Save current report' }));
@@ -687,7 +713,7 @@ describe('evaluation dashboard', () => {
   }, 20_000);
 
   it('will not save a report that left cases out as a day snapshot', async () => {
-    const partial = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES, { pollIntervalMs: 1, caseSet: SYNTHETIC_CASE_SET, skip: { 'EVAL-018': 'Fault injection not ready.' } });
+    const partial = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), DESK_SUITE, { pollIntervalMs: 1, caseSet: DESK_CASE_SET, skip: { 'EVAL-018': 'Fault injection not ready.' } });
     localStorage.setItem('executive-desk.eval.lastLiveReport', JSON.stringify(partial));
     await open('#/evaluation');
     expect(within(screen.getByRole('region', { name: 'Headline results' })).getByText('19 / 20')).toBeInTheDocument();
@@ -718,7 +744,7 @@ describe('evaluation dashboard', () => {
   }, 20_000);
 
   it('ignores a simulated report left in storage', async () => {
-    const simulated = await runEvaluation(new MockExecutiveDesk({ stepDelayMs: 0, seed: false }), EVALUATION_CASES.slice(0, 2), { pollIntervalMs: 1 });
+    const simulated = await runEvaluation(new MockExecutiveDesk({ stepDelayMs: 0, seed: false }), DESK_SUITE.slice(0, 2), { pollIntervalMs: 1 });
     localStorage.setItem('executive-desk.eval.lastLiveReport', JSON.stringify(simulated));
     await open('#/evaluation');
     expect(screen.getByText('No real evaluation has been run yet.')).toBeInTheDocument();

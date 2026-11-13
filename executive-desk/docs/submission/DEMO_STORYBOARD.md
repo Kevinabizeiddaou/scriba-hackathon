@@ -1,5 +1,7 @@
 # Two-minute demo storyboard (draft)
 
+> Scope note, 13 November 2026: drafted when the project covered meeting coordination only. The screens and the evaluation suite now cover the secretary's wider work; this draft has not been rewritten to match and should be revised by whoever owns the submission.
+
 Target length: 120 seconds. One continuous screen recording with voiceover, no cuts inside a flow.
 
 **Before recording.** The demo must run on the real backend. If the sidebar still says "Mock data", what is on screen is a scripted replay, and the recording has to say so. Do not present a mock run as the agent working. Use a test mailbox and a test calendar. Check the times below against a rehearsal; they are a plan, not measurements.

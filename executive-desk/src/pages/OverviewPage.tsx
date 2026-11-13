@@ -29,7 +29,7 @@ function Stat({ icon: Icon, label, value, hint, page, tone = 'neutral' }: { icon
 }
 
 const More = ({ page, children }: { page: Page; children: string }) => (
-  <a href={hrefFor(page)} className="inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">
+  <a href={hrefFor(page)} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">
     {children}
     <ArrowRight aria-hidden className="h-3.5 w-3.5" />
   </a>
@@ -85,8 +85,8 @@ export function OverviewPage() {
               <Stat icon={Reply} label="Replies awaited" value={waitingFollowUps.length} hint={overdueFollowUps.length > 0 ? `${overdueFollowUps.length} overdue` : 'None overdue'} page="tasks" tone={overdueFollowUps.length > 0 ? 'attention' : 'neutral'} />
             </section>
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-              <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+              <div className="min-w-0 space-y-5">
                 <Section title="Waiting for your decision" action={<More page="approvals">Approval center</More>}>
                   {(approvals.data?.length ?? 0) === 0 ? (
                     <p className="text-[13px] text-mute">Nothing is waiting for you.</p>
@@ -149,7 +149,7 @@ export function OverviewPage() {
                 </Section>
               </div>
 
-              <div className="space-y-5">
+              <div className="min-w-0 space-y-5">
                 <Section title="Today" action={<More page="calendar">Calendar</More>}>
                   {todayEvents.length === 0 ? (
                     <p className="text-[13px] text-mute">No meetings today.</p>

@@ -59,7 +59,7 @@ function TaskRow({ task, onError }: { task: WorkTask; onError: (error: Error) =>
           )}
           <span className="text-[12px] text-mute">{task.origin === 'extracted' ? 'Found in an email' : 'Added by you'}</span>
           {task.sourceEmailId && (
-            <a href={hrefFor('inbox', task.sourceEmailId)} className="text-[12px] font-medium text-accent hover:underline">
+            <a href={hrefFor('inbox', task.sourceEmailId)} className="tap inline-flex items-center text-[12px] font-medium text-accent hover:underline">
               Open the email
             </a>
           )}
@@ -92,7 +92,7 @@ function ReminderRow({ reminder, onError }: { reminder: Reminder; onError: (erro
         <p className="mt-0.5 flex flex-wrap items-center gap-x-3">
           <Due iso={reminder.remindAt} done={!active} />
           {reminder.sourceEmailId && (
-            <a href={hrefFor('inbox', reminder.sourceEmailId)} className="text-[12px] font-medium text-accent hover:underline">
+            <a href={hrefFor('inbox', reminder.sourceEmailId)} className="tap inline-flex items-center text-[12px] font-medium text-accent hover:underline">
               Open the email
             </a>
           )}
@@ -137,7 +137,7 @@ function FollowUpRow({ followUp, onError }: { followUp: FollowUp; onError: (erro
         <div className="min-w-0">
           <p className="text-[13.5px] font-semibold text-ink">{followUp.subject}</p>
           <p className="text-[12.5px] text-soft">
-            Waiting on {followUp.waitingOn.name} <span className="text-mute">&lt;{followUp.waitingOn.email}&gt;</span>
+            {followUp.status === 'replied' ? 'Answered by' : 'Waiting on'} {followUp.waitingOn.name} <span className="text-mute">&lt;{followUp.waitingOn.email}&gt;</span>
           </p>
         </div>
         <Pill tone={status.tone}>{status.label}</Pill>
@@ -172,7 +172,7 @@ function FollowUpRow({ followUp, onError }: { followUp: FollowUp; onError: (erro
           )
         )}
         {followUp.emailId && (
-          <a href={hrefFor('inbox', followUp.emailId)} className="text-[12.5px] font-medium text-accent hover:underline">
+          <a href={hrefFor('inbox', followUp.emailId)} className="tap inline-flex items-center text-[12.5px] font-medium text-accent hover:underline">
             Open the thread
           </a>
         )}

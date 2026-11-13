@@ -92,7 +92,7 @@ export function ActionTimeline({ actions, timeZone, detailed = false }: { action
               )}
               {detailed && (
                 <details className="group mt-1">
-                  <summary className="cursor-pointer select-none text-[11.5px] font-medium text-accent hover:underline">Input and output</summary>
+                  <summary className="tap inline-flex cursor-pointer select-none items-center text-[11.5px] font-medium text-accent hover:underline">Input and output</summary>
                   <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-line bg-sunken p-2.5 font-mono text-[11.5px] leading-[17px] text-soft">
                     {JSON.stringify({ input: action.input, output: action.output }, null, 2)}
                   </pre>

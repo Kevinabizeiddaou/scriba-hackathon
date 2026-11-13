@@ -49,7 +49,7 @@ function EmailDetail({ email }: { email: InboxEmail }) {
 
   return (
     <article className="space-y-4 p-4 sm:p-6" aria-label={`Email: ${email.subject}`}>
-      <a href={hrefFor('inbox')} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline lg:hidden">
+      <a href={hrefFor('inbox')} className="tap inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline lg:hidden">
         <ArrowLeft aria-hidden className="h-4 w-4" />
         Inbox
       </a>
@@ -105,7 +105,7 @@ function EmailDetail({ email }: { email: InboxEmail }) {
           </>
         )}
         {email.taskIds.length > 0 && (
-          <a href={hrefFor('tasks')} className="mt-3 inline-block text-[12.5px] font-medium text-accent hover:underline">
+          <a href={hrefFor('tasks')} className="tap mt-3 inline-flex items-center text-[12.5px] font-medium text-accent hover:underline">
             {email.taskIds.length === 1 ? 'A task was recorded from this email' : `${email.taskIds.length} tasks were recorded from this email`}
           </a>
         )}

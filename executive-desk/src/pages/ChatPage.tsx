@@ -201,7 +201,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
                 ))}
               </select>
             )}
-            <Button variant="secondary" icon={MessageSquarePlus} aria-label="New conversation" className="px-2.5" onClick={startNew} />
+            <Button variant="secondary" icon={MessageSquarePlus} aria-label="New conversation" className="tap px-2.5" onClick={startNew} />
           </div>
         </div>
 

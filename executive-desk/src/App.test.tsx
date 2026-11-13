@@ -448,7 +448,7 @@ describe('approval center', () => {
   it('explains a failed execution step by step and hands the request back to the secretary', async () => {
     const user = userEvent.setup();
     const failed = (await desk.listApprovals()).find((a) => a.execution.status === 'failed')!;
-    await open(`#/approvals/${failed.id}`);
+    const view = await open(`#/approvals/${failed.id}`);
     const card = await screen.findByRole('article', { name: 'Approval: Book signing prep with Daniel Reyes' });
     const steps = within(within(card).getByRole('list', { name: 'Steps' })).getAllByRole('listitem');
     expect(steps[0]).toHaveTextContent(/Step 1 of 2.*Failed.*3 attempts/);
@@ -469,6 +469,25 @@ describe('approval center', () => {
     expect(runs).toHaveLength(before + 1);
     expect(runs.filter((r) => r.status === 'awaiting_approval')).toHaveLength(1);
     expect((await desk.listApprovals()).find((a) => a.id === failed.id)!.execution.status).toBe('failed');
+
+    // The request is being handled again, so the old card no longer offers to start it, even after a reload.
+    view.unmount();
+    await open(`#/approvals/${failed.id}`);
+    const again = await screen.findByRole('article', { name: 'Approval: Book signing prep with Daniel Reyes' });
+    expect(within(again).getByRole('alert')).toHaveTextContent('This did not complete');
+    expect(within(again).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+  });
+
+  it('shows the result of the attempt that counted when a step was retried', async () => {
+    const retried = (await desk.listApprovals()).find((a) => a.title === 'Book shortlist review with Tom Becker')!;
+    await open(`#/approvals/${retried.id}`);
+    const card = await screen.findByRole('article', { name: 'Approval: Book shortlist review with Tom Becker' });
+    const steps = within(within(card).getByRole('list', { name: 'Steps' })).getAllByRole('listitem');
+    expect(steps[0]).toHaveTextContent(/Step 1 of 2.*Done.*Worked on attempt 2/); // the first attempt failed, the retry succeeded
+    expect(steps[1]).toHaveTextContent(/Step 2 of 2.*Done/);
+    expect(steps[1]).not.toHaveTextContent('attempt');
+    expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuetext', '2 of 2 steps done');
+    expect(within(card).queryByRole('alert')).not.toBeInTheDocument();
   });
 });
 

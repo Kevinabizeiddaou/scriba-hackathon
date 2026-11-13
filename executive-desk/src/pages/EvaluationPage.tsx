@@ -116,7 +116,7 @@ function SelfTestPanel({ report }: { report: SelfTestReport }) {
         </div>
       </dl>
       <details className="mt-3">
-        <summary className="cursor-pointer select-none text-[13px] font-medium text-accent hover:underline">Show the planted defects</summary>
+        <summary className="tap inline-flex cursor-pointer select-none items-center text-[13px] font-medium text-accent hover:underline">Show the planted defects</summary>
         <div className="relative mt-2 overflow-x-auto rounded-lg border border-line">
           <table className="w-full min-w-[620px] text-left text-[12.5px]">
             <thead className="bg-white/[0.03] text-mute">

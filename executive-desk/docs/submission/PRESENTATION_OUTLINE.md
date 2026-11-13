@@ -1,5 +1,7 @@
 # Final presentation outline (draft)
 
+> Scope note, 13 November 2026: drafted when the project covered meeting coordination only. The screens and the evaluation suite now cover the secretary's wider work; this draft has not been rewritten to match and should be revised by whoever owns the submission.
+
 Nine slides, about five minutes plus the two-minute demo. Confirm the time limit and any required sections against the challenge brief; this outline assumes none beyond what we were told.
 
 Every number on a slide comes from a live evaluation report. Where one does not exist yet, the slide says "not measured yet". Bracketed items are to be filled in on the day.
@@ -12,7 +14,7 @@ Every number on a slide comes from a live evaluation report. Where one does not 
 | 4 | How it works | Trigger, seven steps, done criteria. One diagram: request, read calendar, propose, approve, execute, record. | `INDEX_CARD.md` |
 | 5 | Demo | The two-minute recording. | `DEMO_STORYBOARD.md` |
 | 6 | Human in the loop | What needs approval (every email, every calendar change) and what the approver sees: the reason, the exact email, the exact event. What the agent refuses to do. | Approval Center screenshot, back of the index card |
-| 7 | Evidence | Twenty cases across ten categories. Pass rate, rescues, mandatory approvals (separately), errors. Friday, Saturday, Sunday progress. | Evaluation Dashboard snapshots: [Fri], [Sat], [Sun] |
+| 7 | Evidence | Twenty cases across seven areas of the secretary's work (inbox, email, scheduling, tasks and reminders, follow-ups, multi-step workflows, security and failure). Pass rate, rescues, mandatory approvals (separately), errors. Friday, Saturday, Sunday progress. | Evaluation Dashboard snapshots: [Fri], [Sat], [Sun] |
 | 8 | Cost and speed | AI cost per run, cost per unassisted pass, median and p95 time to final status. Method in one line. | `COST_PER_RUN.md`, evaluation report: [cost], [latency] |
 | 9 | Limits and next steps | What it does not handle yet, what failed in evaluation and why, what we would build next. | Failed cases from the Sunday report |
 

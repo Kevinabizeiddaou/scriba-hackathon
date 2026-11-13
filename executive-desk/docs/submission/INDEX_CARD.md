@@ -1,5 +1,7 @@
 # Index card (draft)
 
+> Scope note, 13 November 2026: this draft was written when the project covered meeting coordination only. The project now covers the secretary's wider work (inbox, replies, calendar, tasks, follow-ups), and the team's index card is Role 1's `docs/INDEX_CARD.md` on the `main` branch. This file is kept as input for that card and has not been rewritten to the wider scope.
+
 Draft for the private AlphaHack simulation. Check the wording against the challenge's own index-card format before using it; this follows the four headings we were given: job, trigger, steps, done criteria.
 
 ## Front of the card

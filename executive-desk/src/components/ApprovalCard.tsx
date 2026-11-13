@@ -87,7 +87,7 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
             {origin && (
               <>
                 {' · from '}
-                <a href={origin.href} className="font-medium text-accent hover:underline">
+                <a href={origin.href} className="tap inline-flex items-center font-medium text-accent hover:underline">
                   {origin.label}
                 </a>
               </>

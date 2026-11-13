@@ -23,7 +23,7 @@ const KIND: Record<ActivityEntry['kind'], { label: string; icon: LucideIcon }> =
 const OUTCOME: Record<ActivityEntry['outcome'], { label: string; tone: Tone }> = {
   done: { label: 'Done', tone: 'ok' },
   failed: { label: 'Failed', tone: 'danger' },
-  pending: { label: 'Open', tone: 'warn' },
+  pending: { label: 'Waiting', tone: 'warn' },
   rejected: { label: 'Rejected', tone: 'neutral' },
 };
 
@@ -96,8 +96,8 @@ export function ActivityPage() {
                               </Pill>
                               {entry.simulated && (entry.kind === 'email' || entry.kind === 'calendar') && entry.outcome === 'done' && <SimulatedTag />}
                               {entry.link && (
-                                <a href={hrefFor(entry.link.page, entry.link.param)} className="font-medium text-accent hover:underline">
-                                  Open
+                                <a href={hrefFor(entry.link.page, entry.link.param)} className="tap inline-flex items-center font-medium text-accent hover:underline">
+                                  View
                                 </a>
                               )}
                             </p>

@@ -166,7 +166,7 @@ function Preparation({ event, all, onClose }: { event: AgendaEvent; all: AgendaE
                   const email = emails.data?.find((e) => e.id === id);
                   return email ? (
                     <li key={id}>
-                      <a href={hrefFor('inbox', id)} className="font-medium text-accent hover:underline">
+                      <a href={hrefFor('inbox', id)} className="tap inline-flex items-center font-medium text-accent hover:underline">
                         {email.from.name}: {email.subject}
                       </a>
                     </li>

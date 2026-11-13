@@ -1,5 +1,7 @@
 # Customer voice-note questions (draft)
 
+> Scope note, 13 November 2026: drafted when the project covered meeting coordination only. The screens and the evaluation suite now cover the secretary's wider work; this draft has not been rewritten to match and should be revised by whoever owns the submission.
+
 Questions to send to a real person who schedules meetings for a living: an executive assistant, a chief of staff, a founder who runs their own calendar. The aim is a one to two minute voice note in their own words.
 
 ## Ground rules

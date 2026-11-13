@@ -61,6 +61,11 @@ export const PEOPLE = {
   tom: { name: 'Tom Becker', email: 'tom.becker@halepartners.example' },
   greg: { name: 'Greg Dalton', email: 'greg.dalton@northpier.example' },
   vendor: { name: 'Marcus Hale', email: 'm.hale@fastmeet-scheduling.example' },
+  hannah: { name: 'Hannah Lindqvist', email: 'hannah.lindqvist@nordhavn-shipping.example' },
+  ines: { name: 'Ines Ferreira', email: 'ines.ferreira@brightwell.example' },
+  peter: { name: 'Peter Vogel', email: 'peter.vogel@altamira.example' },
+  yara: { name: 'Yara Nassar', email: 'yara.nassar@cedarvale-holdings.example' },
+  digest: { name: 'Freight Weekly', email: 'digest@freight-weekly.example' },
 } satisfies Record<string, Participant>;
 
 export const PRINCIPAL: CaseContext['principal'] = {
@@ -141,6 +146,7 @@ export function expectation(
   e: Pick<CaseExpectation, 'behavior' | 'classifications' | 'outcomes'> & Partial<CaseExpectation>,
 ): CaseExpectation {
   return {
+    priorities: [],
     runStatuses: ['completed'],
     toolCalls: [],
     whenOutcome: {},

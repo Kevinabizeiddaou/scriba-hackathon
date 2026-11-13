@@ -618,6 +618,8 @@ export interface CaseExpectation {
   behavior: string;
   /** Acceptable classifications; any one passes. */
   classifications: RequestClassification[];
+  /** Acceptable triage priorities; any one passes. Empty means the priority is not checked. */
+  priorities: RequestPriority[];
   /** Acceptable outcomes; any one passes. */
   outcomes: RunOutcome[];
   /** Acceptable terminal run statuses. Normally just "completed". */

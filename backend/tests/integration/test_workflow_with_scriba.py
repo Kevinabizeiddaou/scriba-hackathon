@@ -320,3 +320,38 @@ def test_an_unreadable_calendar_at_intake_proposes_no_event():
         run = post(world, "/intake", json={"provider": "gmail", "id": "m1"}).json()
         assert run["actions"] == [] and run["held"]["reason"] == "availability_unknown"
         assert world["store"].rows == {}
+
+
+# ── sweep on Scriba's real app ─────────────────────────────────────────────
+
+def test_a_sweep_opens_runs_whose_cards_execute_once_through_scribas_engine():
+    with desk_world() as world:
+        world["sign_in"](ALICE, google=["alice@gmail.example"], gmail_mail=True)
+        world["data"].world(ALICE)["emails"]["gmail"] = [
+            email("a1", "Board pack", "Please note the deadline is Friday.",
+                  from_addr="Omar <omar@client.example>", account="alice@gmail.example"),
+            email("n1", "Weekly digest", "Unsubscribe here.",
+                  from_addr="News <no-reply@news.example>", account="alice@gmail.example")]
+
+        swept = post(world, "/intake/sweep", json={}).json()
+        assert swept["status"] == "completed" and [r["id"] for r in swept["opened"]] == ["a1"], swept
+        assert world["created"].calls == []                     # a sweep proposes, it does not act
+
+        run = get(world, f"/runs/{swept['opened'][0]['runId']}").json()
+        action = run["actions"][0]
+        assert action["tool_name"] == "create_task" and action["status"] == "awaiting_approval"
+        approved = world["client"].post(action["approve"]["path"], json={}, headers=ORIGIN)
+        assert approved.status_code == 200, approved.text
+        assert len(world["created"].calls) == 1
+
+        again = post(world, "/intake/sweep", json={}).json()
+        assert again["opened"] == [] and again["existing"] == 1
+        assert len(world["created"].calls) == 1 and len(world["store"].rows) == 1
+
+
+def test_a_sweep_from_another_site_is_blocked_by_scribas_guard():
+    with desk_world() as world:
+        world["sign_in"](ALICE, google=["alice@gmail.example"], gmail_mail=True)
+        blocked = world["client"].post(f"{world['prefix']}/desk/intake/sweep", json={},
+                                       headers={"Origin": "https://elsewhere.example.test"})
+        assert blocked.status_code == 403 and blocked.json()["errorCode"] == "cross_site_blocked"

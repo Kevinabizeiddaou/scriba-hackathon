@@ -358,6 +358,35 @@ export interface DeskRun {
 export const startDeskIntake = (body: { provider: MailProvider; id: string; mailbox?: string }) =>
   postJson<DeskRun>('/desk/intake', body, { timeout: 120_000 })
 
+export interface DeskSweepItem {
+  provider: MailProvider
+  id: string
+  subject: string | null
+  category: string
+}
+
+/** Result of POST /desk/intake/sweep. Nothing is sent or written by a sweep. */
+export interface DeskSweep {
+  account: string
+  /** `already_running`: another sweep for this user is in progress and nothing was done. */
+  status: 'completed' | 'already_running'
+  examined: number
+  opened: Array<DeskSweepItem & { runId: number; state: string }>
+  existing: number
+  skipped: number
+  /** Need a run but were over `max_new`; call again to take them. */
+  deferred: DeskSweepItem[]
+  failed: Array<DeskSweepItem & { error: string }>
+  sources: DeskInbox['sources']
+  /** False when a connected mailbox could not be read. */
+  complete: boolean
+}
+
+/** Open runs for recent mail that needs one. Bounded (`max_new` 1-10, default 5) and safe to repeat. */
+export const sweepDeskInbox = (
+  body: { provider?: 'all' | MailProvider; limit?: number; max_new?: number; mailbox?: string } = {},
+) => postJson<DeskSweep>('/desk/intake/sweep', body, { timeout: 300_000 })
+
 export const fetchDeskRuns = () =>
   getJson<{ account: string; runs: Array<{ runId: number; subject: string; category: TriageCategory; created_at: string }> }>(
     '/desk/runs',

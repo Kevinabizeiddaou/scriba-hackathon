@@ -279,3 +279,94 @@ def test_intake_requires_a_session_and_a_known_provider(world):
     assert client.post("/desk/intake", json={"provider": "gmail", "id": "a1"}).status_code == 401
     assert intake(client, "a1", provider="slack").status_code == 422
     assert intake(client, "missing").status_code == 404
+
+
+# ── sweep: recent mail becomes runs without a click per message ────────────
+
+def sweep(client, user=EXEC, **body):
+    return client.post("/desk/intake/sweep", json=body, headers={"x-test-user": user})
+
+
+def _mixed_inbox(gateway):
+    gateway.world(EXEC)["emails"]["gmail"] = [
+        email("a1", "Board pack", "Please note the deadline is Friday.", from_addr="Omar <omar@client.example>"),
+        email("n1", "Weekly digest", "Unsubscribe here.", from_addr="News <no-reply@news.example>"),
+        email("i1", "FYI", "The office is closed on Monday.", from_addr="Lina <lina@client.example>"),
+        email("q1", "Quick question", "Did you get my invoice?", from_addr="Rami <rami@client.example>"),
+    ]
+
+
+def test_a_sweep_opens_runs_only_for_mail_that_needs_one(world):
+    gateway, client = world
+    _mixed_inbox(gateway)
+    body = sweep(client).json()
+    assert body["status"] == "completed" and body["examined"] == 4
+    opened = {row["id"]: row for row in body["opened"]}
+    assert "n1" not in opened and "i1" not in opened
+    assert set(opened) == {row["id"] for row in body["opened"]} and len(opened) + body["skipped"] == 4
+    assert all(isinstance(row["runId"], int) for row in opened.values())
+    assert len(client.get("/desk/runs", headers={"x-test-user": EXEC}).json()["runs"]) == len(opened)
+
+
+def test_a_repeated_sweep_opens_nothing_new(world):
+    gateway, client = world
+    _mixed_inbox(gateway)
+    first = sweep(client).json()
+    second = sweep(client).json()
+    assert second["opened"] == [] and second["existing"] == len(first["opened"])
+    assert len(client.get("/desk/runs", headers={"x-test-user": EXEC}).json()["runs"]) == len(first["opened"])
+
+
+def test_a_sweep_is_bounded_and_defers_the_rest_to_the_next_call(world):
+    gateway, client = world
+    gateway.world(EXEC)["emails"]["gmail"] = [
+        email(f"a{n}", f"Report {n}", "Please note the deadline is Friday.",
+              from_addr="Omar <omar@client.example>") for n in range(4)]
+    first = sweep(client, max_new=2).json()
+    assert len(first["opened"]) == 2 and len(first["deferred"]) == 2
+    second = sweep(client, max_new=2).json()
+    assert len(second["opened"]) == 2 and second["existing"] == 2 and second["deferred"] == []
+    assert {r["id"] for r in first["opened"]}.isdisjoint({r["id"] for r in second["opened"]})
+
+
+def test_one_failing_message_does_not_stop_the_sweep(world, monkeypatch):
+    gateway, client = world
+    gateway.world(EXEC)["emails"]["gmail"] = [
+        email("a1", "Board pack", "Please note the deadline is Friday.", from_addr="Omar <omar@client.example>"),
+        email("a2", "Contract", "Please note the deadline is Monday.", from_addr="Omar <omar@client.example>"),
+    ]
+    real = gateway.open_run
+
+    def flaky(user, *, title, meta, summary):
+        if meta["email_id"] == "a1":
+            raise RuntimeError("store unavailable")
+        return real(user, title=title, meta=meta, summary=summary)
+
+    monkeypatch.setattr(gateway, "open_run", flaky)
+    body = sweep(client).json()
+    assert [row["id"] for row in body["failed"]] == ["a1"] and body["failed"][0]["error"] == "RuntimeError"
+    assert [row["id"] for row in body["opened"]] == ["a2"]
+
+
+def test_a_sweep_says_when_a_mailbox_could_not_be_read(world):
+    gateway, client = world
+    gateway.add_user(1, EXEC, google=["exec@gmail.example"], outlook="exec@contoso.example",
+                     gmail_mail=True, outlook_mail=True)
+    _mixed_inbox(gateway)
+    gateway.world(EXEC)["mail_error"]["outlook"] = True
+    body = sweep(client).json()
+    assert body["complete"] is False and body["opened"]
+
+
+def test_a_sweep_never_opens_runs_from_another_users_mail(world):
+    gateway, client = world
+    _mixed_inbox(gateway)
+    body = sweep(client, user=OTHER).json()
+    assert body["examined"] == 0 and body["opened"] == []
+    assert client.get("/desk/runs", headers={"x-test-user": EXEC}).json()["runs"] == []
+
+
+def test_sweep_rejects_out_of_range_bounds(world):
+    _, client = world
+    assert sweep(client, max_new=50).status_code == 422
+    assert sweep(client, provider="slack").status_code == 422

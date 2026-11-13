@@ -251,6 +251,25 @@ if (email && password) {
       return `run ${run.runId}: ${run.category}, state ${run.state}, ${run.actions.length} action(s)`
     })
 
+    await check('desk: POST /desk/intake/sweep is bounded and opens nothing twice', async () => {
+      // max_new: 1 keeps this to at most one model call on a backend with a real model.
+      const body = { limit: 10, max_new: 1 }
+      const first = await call('/desk/intake/sweep', { method: 'POST', body })
+      expect(first.response.status === 200, `status ${first.response.status}`)
+      const sweep = first.json
+      expect(sweep.status === 'completed' && Array.isArray(sweep.opened) && Array.isArray(sweep.deferred),
+        'unexpected shape')
+      expect(sweep.opened.length + sweep.failed.length <= 1, 'the bound was not respected')
+      const before = (await call('/desk/runs')).json.runs.length
+      const openedIds = new Set(sweep.opened.map(row => `${row.provider}:${row.id}`))
+      const again = (await call('/desk/intake/sweep', { method: 'POST', body })).json
+      expect(again.opened.every(row => !openedIds.has(`${row.provider}:${row.id}`)), 'a message was opened twice')
+      const after = (await call('/desk/runs')).json.runs.length
+      expect(after === before + again.opened.length, 'run count does not match what the sweep reported')
+      return `examined ${sweep.examined}, opened ${sweep.opened.length}, existing ${sweep.existing}, ` +
+        `skipped ${sweep.skipped}, deferred ${sweep.deferred.length}, failed ${sweep.failed.length}`
+    })
+
     if (withDeskChat) {
       // Each chat turn below reaches Scriba's planner, so on a backend with a
       // real model it costs model calls. It never proposes or approves a write.

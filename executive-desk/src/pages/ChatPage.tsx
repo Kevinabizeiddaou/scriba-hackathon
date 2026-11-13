@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { MessageSquarePlus, MessageSquareText, SendHorizontal } from 'lucide-react';
+import { MessageSquarePlus, MessageSquareText, RotateCcw, SendHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { getApi } from '../api';
 import type { AgentRun, ApprovalRequest, ConversationMessage } from '../api/types';
@@ -18,7 +18,16 @@ function AssistantAvatar() {
   );
 }
 
-function Message({ message, run, approvals, timeZone }: { message: ConversationMessage; run: AgentRun | undefined; approvals: ApprovalRequest[]; timeZone: string }) {
+interface MessageProps {
+  message: ConversationMessage;
+  run: AgentRun | undefined;
+  approvals: ApprovalRequest[];
+  timeZone: string;
+  /** Sends the request behind this reply again. Only offered on the latest reply, and only after a failure. */
+  onRetry?: () => Promise<unknown>;
+}
+
+function Message({ message, run, approvals, timeZone, onRetry }: MessageProps) {
   if (message.role === 'user') {
     return (
       <li className="rise-in flex justify-end">
@@ -53,8 +62,16 @@ function Message({ message, run, approvals, timeZone }: { message: ConversationM
         </div>
         {run && (run.actions.length > 0 || working) && <RunCard run={run} timeZone={timeZone} defaultOpen={working || run.status === 'awaiting_approval'} />}
         {approvals.map((approval) => (
-          <ApprovalCard key={approval.id} approval={approval} run={run} origin={null} compact />
+          <ApprovalCard key={approval.id} approval={approval} run={run} origin={null} compact onRetry={onRetry} />
         ))}
+        {onRetry && run?.status === 'failed' && !approvals.some((a) => a.execution.status === 'failed') && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-danger/25 bg-danger/[0.07] px-3.5 py-2.5">
+            <p className="text-[12.5px] text-soft">This request did not finish. Nothing is repeated automatically.</p>
+            <Button variant="secondary" icon={RotateCcw} onClick={() => void onRetry()}>
+              Try again
+            </Button>
+          </div>
+        )}
       </div>
     </li>
   );
@@ -133,6 +150,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
   };
 
   const messages = thread.data?.messages ?? [];
+  const lastAsked = messages.filter((m) => m.role === 'user').at(-1);
   const approvalsFor = (message: ConversationMessage) => (message.role === 'assistant' && message.runId ? (thread.data?.approvals ?? []).filter((a) => a.runId === message.runId) : []);
 
   return (
@@ -171,7 +189,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <h1 className="truncate text-[16px] font-bold text-ink">{conversations.data?.find((c) => c.id === activeId)?.title ?? 'Secretary Chat'}</h1>
-            <p className="hidden text-[12px] text-mute sm:block">Ask Scriba to book, move or cancel meetings. Anything that sends or changes something waits for your approval.</p>
+            <p className="hidden text-[12px] text-mute sm:block">Ask Scriba to handle mail, meetings, tasks and reminders. Anything that sends or changes something waits for your approval.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 md:hidden">
             {conversations.data && conversations.data.length > 1 && (
@@ -192,15 +210,18 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
           {thread.error && <ErrorNote error={thread.error} onRetry={thread.reload} />}
           {!thread.loading && messages.length === 0 && (
             <div className="mx-auto mt-8 max-w-lg">
-              <EmptyState icon={MessageSquareText} title="What should Scriba arrange?">
-                Describe the meeting in your own words. Scriba checks your calendar, proposes what to do, and asks before it sends or changes anything.
+              <EmptyState icon={MessageSquareText} title="What should Scriba take care of?">
+                Describe it in your own words: a meeting to arrange, a reply to draft, something to be reminded of. Scriba checks your calendars, proposes what to do, and asks before it sends or changes anything.
               </EmptyState>
             </div>
           )}
           <ol className="mx-auto max-w-3xl space-y-5">
-            {messages.map((message) => (
-              <Message key={message.id} message={message} run={message.runId ? runsById.get(message.runId) : undefined} approvals={approvalsFor(message)} timeZone={principal.timezone} />
-            ))}
+            {messages.map((message) => {
+              const run = message.runId ? runsById.get(message.runId) : undefined;
+              // Only the latest request can be retried, by sending the message that asked for it once more.
+              const asked = message.role === 'assistant' && run?.status === 'failed' && lastAsked?.runId === message.runId ? lastAsked : undefined;
+              return <Message key={message.id} message={message} run={run} approvals={approvalsFor(message)} timeZone={principal.timezone} onRetry={asked ? () => send(asked.text) : undefined} />;
+            })}
           </ol>
         </div>
 

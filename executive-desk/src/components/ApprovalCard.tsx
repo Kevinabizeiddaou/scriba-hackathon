@@ -1,8 +1,10 @@
 import clsx from 'clsx';
-import { AlertTriangle, Check, ChevronDown, Info, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Info, RotateCcw, X } from 'lucide-react';
 import { useId, useState } from 'react';
 import { getApi } from '../api';
+import { summaryForChange } from '../api/changes';
 import type { AgentRun, ApprovalRequest } from '../api/types';
+import { STEP_STATE, executionSteps } from '../lib/executionSteps';
 import { APPROVAL_STATUS, EXECUTION_STATUS } from '../lib/labels';
 import { fmtDayTime } from '../lib/time';
 import { ActionTimeline } from './ActionTimeline';
@@ -17,9 +19,15 @@ interface Props {
   origin?: { label: string; href: string } | null;
   compact?: boolean;
   highlighted?: boolean;
+  /**
+   * Starts the work again after a failed execution, when the caller knows how: by asking the
+   * secretary to handle the request again, or by sending the chat message again. That produces a
+   * new proposal that needs its own approval. Nothing is ever re-run from this card directly.
+   */
+  onRetry?: () => Promise<unknown>;
 }
 
-export function ApprovalCard({ approval, run, origin, compact = false, highlighted = false }: Props) {
+export function ApprovalCard({ approval, run, origin, compact = false, highlighted = false, onRetry }: Props) {
   const api = getApi();
   const { principal, dataSource } = api.info;
   const noteId = useId();
@@ -32,6 +40,26 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
   const status = APPROVAL_STATUS[approval.status];
   const execution = EXECUTION_STATUS[approval.execution.status];
   const executed = run?.actions.filter((a) => a.approvalId === approval.id && a.tool !== 'approval.request') ?? [];
+  const steps = executionSteps(approval, run);
+  const multi = steps.length > 1;
+  const doneCount = steps.filter((step) => step.state === 'done').length;
+  const failedExecution = approval.status === 'approved' && approval.execution.status === 'failed';
+  const [retrying, setRetrying] = useState(false);
+  const [retried, setRetried] = useState(false);
+
+  async function retry() {
+    if (!onRetry) return;
+    setRetrying(true);
+    setError(null);
+    try {
+      await onRetry();
+      setRetried(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause : new Error(String(cause)));
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   async function decide(decision: 'approve' | 'reject') {
     setBusy(decision);
@@ -101,11 +129,47 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
           {pending ? 'If you approve, the agent will' : approval.status === 'approved' ? 'What was approved' : 'What was proposed'}
           {approval.changes.length > 1 && pending && `, in this order`}
         </p>
-        <div className="space-y-2.5">
-          {approval.changes.map((change, i) => (
-            <ChangePreview key={i} change={change} timeZone={principal.timezone} principalEmail={principal.email} />
-          ))}
-        </div>
+        {multi && approval.status === 'approved' && (
+          <div className="mb-2.5 flex items-center gap-3">
+            <div
+              role="progressbar"
+              aria-label="Execution progress"
+              aria-valuemin={0}
+              aria-valuemax={steps.length}
+              aria-valuenow={doneCount}
+              aria-valuetext={`${doneCount} of ${steps.length} steps done`}
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.08]"
+            >
+              <div className={clsx('h-full rounded-full transition-[width] duration-300', failedExecution ? 'bg-danger' : 'bg-ok')} style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+            </div>
+            <span className="shrink-0 text-[12px] tabular-nums text-soft">
+              {doneCount} of {steps.length} steps done
+            </span>
+          </div>
+        )}
+        <ol aria-label="Steps" className="space-y-2.5">
+          {steps.map((step, i) => {
+            const label = STEP_STATE[step.state];
+            return (
+              <li key={i}>
+                {multi && (
+                  <p className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-mute">
+                    <span className="font-semibold tabular-nums text-soft">
+                      Step {i + 1} of {steps.length}
+                    </span>
+                    {!pending && (
+                      <Pill tone={label.tone} spin={step.state === 'running'}>
+                        {label.label}
+                      </Pill>
+                    )}
+                    {step.attempts > 1 && <span>{step.state === 'done' ? `Worked on attempt ${step.attempts}` : `${step.attempts} attempts`}</span>}
+                  </p>
+                )}
+                <ChangePreview change={step.change} timeZone={principal.timezone} principalEmail={principal.email} />
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       {pending ? (
@@ -148,10 +212,43 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
             {approval.status === 'rejected' && '. Nothing was sent and the calendar was not changed.'}
             {approval.decisionNote && <span className="mt-1 block text-mute">Note: {approval.decisionNote}</span>}
           </p>
-          {approval.execution.error && (
-            <p role="alert" className="rounded-lg border border-danger/25 bg-danger/[0.07] px-3 py-2 text-[12.5px] text-danger">
-              Execution failed: {approval.execution.error.message}
-            </p>
+          {failedExecution && (
+            <div role="alert" className="rounded-xl border border-danger/25 bg-danger/[0.07] px-3.5 py-3">
+              <p className="text-[13px] font-semibold text-danger">This did not complete{approval.execution.error ? `: ${approval.execution.error.message}` : '.'}</p>
+              <ul className="mt-2 space-y-1 text-[12.5px] text-soft">
+                {steps.map((step, i) => (
+                  <li key={i}>
+                    <span className={clsx('font-semibold', step.state === 'done' ? 'text-ok' : step.state === 'failed' ? 'text-danger' : 'text-soft')}>{step.state === 'done' ? 'Done' : step.state === 'failed' ? 'Failed' : 'Not run'}:</span>{' '}
+                    {summaryForChange(step.change, step.state === 'done' ? 'past' : 'future')}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[12.5px] text-soft">
+                Nothing is repeated automatically, so nothing can be sent or booked twice. {onRetry ? 'Trying again makes a new proposal that you approve before anything runs.' : origin ? 'Open where this came from to pick it up again.' : ''}
+              </p>
+              {error && (
+                <div className="mt-2">
+                  <ErrorNote error={error} />
+                </div>
+              )}
+              {(onRetry || origin) && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  {onRetry &&
+                    (retried ? (
+                      <span className="text-[12.5px] font-medium text-ok">Started again. A new proposal will appear for your approval.</span>
+                    ) : (
+                      <Button variant="secondary" icon={RotateCcw} busy={retrying} onClick={retry}>
+                        Try again
+                      </Button>
+                    ))}
+                  {origin && (
+                    <a href={origin.href} className="tap inline-flex items-center text-[12.5px] font-medium text-accent hover:underline">
+                      Open {origin.label}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           )}
           {executed.length > 0 && !compact && (
             <div>

@@ -347,6 +347,9 @@ export class MockWorkspace implements WorkspaceApi {
     { id: 'rem-permit', text: 'Renew the parking permit', remindAt: bt('2026-11-13', '10:00'), status: 'done', sourceEmailId: null },
   ];
 
+  /** Status changes for tasks and reminders that a scripted run recorded, which live in the run and not in the lists above. */
+  private readonly recordedStatus = new Map<string, { status: string; at: string }>();
+
   constructor(private readonly desk: MockExecutiveDesk) {
     desk.subscribe(() => this.emit());
   }
@@ -502,27 +505,64 @@ export class MockWorkspace implements WorkspaceApi {
     };
   }
 
+  /** Successful internal writes of one kind, from runs a person started (not evaluation runs). */
+  private async recorded(tool: 'task.create' | 'reminder.create') {
+    const runs = await this.desk.listRuns();
+    return runs
+      .filter((run) => run.trigger !== 'evaluation')
+      .flatMap((run) => run.actions)
+      .filter((action) => action.tool === tool && action.status === 'succeeded');
+  }
+
   async listTasks(): Promise<WorkTask[]> {
-    return structuredClone(this.tasks);
+    const fromRuns: WorkTask[] = (await this.recorded('task.create')).map((action) => {
+      const changed = this.recordedStatus.get(action.id);
+      const done = changed?.status === 'done';
+      return {
+        id: action.id,
+        title: String(action.input.title),
+        detail: null,
+        dueAt: typeof action.input.dueAt === 'string' ? action.input.dueAt : null,
+        status: done ? 'done' : 'open',
+        priority: 'normal',
+        origin: typeof action.input.sourceEmailId === 'string' ? 'extracted' : 'manual',
+        sourceEmailId: typeof action.input.sourceEmailId === 'string' ? action.input.sourceEmailId : null,
+        createdAt: action.finishedAt ?? this.now(),
+        completedAt: done ? changed.at : null,
+      };
+    });
+    return [...structuredClone(this.tasks), ...fromRuns];
   }
 
   async setTaskStatus(id: string, status: WorkTask['status']): Promise<void> {
-    const task = this.tasks.find((t) => t.id === id);
+    const task = this.tasks.find((t) => t.id === id) ?? (await this.listTasks()).find((t) => t.id === id);
     if (!task) throw new Error(`No task ${id}`);
-    task.status = status;
-    task.completedAt = status === 'done' ? this.now() : null;
+    if (this.tasks.includes(task)) {
+      task.status = status;
+      task.completedAt = status === 'done' ? this.now() : null;
+    } else {
+      this.recordedStatus.set(id, { status, at: this.now() });
+    }
     this.localActivity.push({ id: `act-task-${id}-${this.localActivity.length}`, at: this.now(), kind: 'task', actor: 'human', title: `${status === 'done' ? 'Completed' : 'Reopened'}: ${task.title}`, detail: null, outcome: 'done', simulated: true, link: { page: 'tasks', param: null } });
     this.emit();
   }
 
   async listReminders(): Promise<Reminder[]> {
-    return structuredClone(this.reminders);
+    const fromRuns: Reminder[] = (await this.recorded('reminder.create')).map((action) => ({
+      id: action.id,
+      text: String(action.input.text),
+      remindAt: String(action.input.remindAt),
+      status: (this.recordedStatus.get(action.id)?.status as Reminder['status'] | undefined) ?? 'scheduled',
+      sourceEmailId: null,
+    }));
+    return [...structuredClone(this.reminders), ...fromRuns];
   }
 
   async setReminderStatus(id: string, status: Reminder['status']): Promise<void> {
     const reminder = this.reminders.find((r) => r.id === id);
-    if (!reminder) throw new Error(`No reminder ${id}`);
-    reminder.status = status;
+    if (reminder) reminder.status = status;
+    else if ((await this.listReminders()).some((r) => r.id === id)) this.recordedStatus.set(id, { status, at: this.now() });
+    else throw new Error(`No reminder ${id}`);
     this.emit();
   }
 

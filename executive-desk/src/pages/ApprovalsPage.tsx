@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { getApi } from '../api';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { EmptyState, ErrorNote, PageHeader, SkeletonRows } from '../components/ui';
 import { hrefFor } from '../lib/router';
@@ -55,6 +56,13 @@ export function ApprovalsPage({ approvalId }: { approvalId: string | null }) {
     return null;
   }
 
+  /** Only a meeting request can be handed back to the secretary; a failed request is open for processing again. */
+  function retryFor(requestId: string | null) {
+    const request = requestId ? data.data?.requests.find((r) => r.id === requestId) : undefined;
+    if (!request || (request.status !== 'failed' && request.status !== 'escalated')) return undefined;
+    return () => getApi().processRequest(request.id);
+  }
+
   return (
     <div>
       <PageHeader
@@ -103,6 +111,7 @@ export function ApprovalsPage({ approvalId }: { approvalId: string | null }) {
               run={data.data?.runs.find((r) => r.id === approval.runId)}
               origin={originOf(approval.requestId, approval.conversationId)}
               highlighted={approval.id === approvalId}
+              onRetry={retryFor(approval.requestId)}
             />
           ))}
         </div>

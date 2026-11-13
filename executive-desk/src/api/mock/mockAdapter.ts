@@ -682,7 +682,8 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
 
     this.tick(1_000);
     const pending = [...this.approvals.values()].filter((a) => a.status === 'pending');
-    const run = this.newRun('chat_message', null, conversationId, scriptForChat(trimmed, pending));
+    const attempt = thread.filter((m) => m.role === 'user' && m.text === trimmed).length + 1;
+    const run = this.newRun('chat_message', null, conversationId, scriptForChat(trimmed, pending, attempt));
     const message = this.addMessage(conversationId, 'user', trimmed, run.id, 'final');
     this.addMessage(conversationId, 'assistant', '', run.id, 'streaming');
     this.emit();

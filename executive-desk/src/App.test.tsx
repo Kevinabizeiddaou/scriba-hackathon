@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { App } from './App';
-import { setApi } from './api';
+import { getWorkspace, setApi } from './api';
 import type { EvaluationTarget, ExecutiveDeskApi } from './api/client';
 import { MockExecutiveDesk } from './api/mock/mockAdapter';
 import { EVALUATION_CASES } from './evaluation/fixtures';
@@ -427,6 +427,50 @@ describe('approval center', () => {
     expect(within(card).getByText('Execution failed')).toBeInTheDocument();
     expect(within(card).getByRole('alert')).toHaveTextContent('Calendar service error after 3 attempts.');
   });
+
+  it('previews a multi-step proposal as numbered steps and reports progress once approved', async () => {
+    const user = userEvent.setup();
+    await open('#/approvals');
+    const name = 'Approval: Book intro call with Sofia Marchetti';
+    const card = await screen.findByRole('article', { name });
+    const steps = within(within(card).getByRole('list', { name: 'Steps' })).getAllByRole('listitem');
+    expect(steps.map((li) => li.textContent)).toEqual([expect.stringContaining('Step 1 of 2'), expect.stringContaining('Step 2 of 2')]);
+    expect(within(card).getByText(/If you approve, the agent will, in this order/)).toBeInTheDocument();
+    expect(within(card).queryByRole('progressbar')).not.toBeInTheDocument(); // nothing has run yet
+
+    await user.click(within(card).getByRole('button', { name: 'Approve all 2' }));
+    await settle();
+    const after = await screen.findByRole('article', { name });
+    await waitFor(() => expect(within(after).getByRole('progressbar', { name: 'Execution progress' })).toHaveAttribute('aria-valuetext', '2 of 2 steps done'));
+    const done = within(within(after).getByRole('list', { name: 'Steps' })).getAllByRole('listitem');
+    expect(done.every((li) => within(li).queryByText('Done') !== null)).toBe(true);
+  });
+
+  it('explains a failed execution step by step and hands the request back to the secretary', async () => {
+    const user = userEvent.setup();
+    const failed = (await desk.listApprovals()).find((a) => a.execution.status === 'failed')!;
+    await open(`#/approvals/${failed.id}`);
+    const card = await screen.findByRole('article', { name: 'Approval: Book signing prep with Daniel Reyes' });
+    const steps = within(within(card).getByRole('list', { name: 'Steps' })).getAllByRole('listitem');
+    expect(steps[0]).toHaveTextContent(/Step 1 of 2.*Failed.*3 attempts/);
+    expect(steps[1]).toHaveTextContent(/Step 2 of 2.*Not run/);
+    expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuetext', '0 of 2 steps done');
+
+    const alert = within(card).getByRole('alert');
+    expect(alert).toHaveTextContent('Failed: Create "Contract signing prep: Altamira Freight"');
+    expect(alert).toHaveTextContent('Not run: Send "Re: Signing prep" to daniel.reyes@altamira.example');
+    expect(alert).toHaveTextContent('Nothing is repeated automatically, so nothing can be sent or booked twice.');
+    expect(within(alert).getByRole('link', { name: 'Open Daniel Reyes: Signing prep' })).toHaveAttribute('href', '#/inbox/req-018');
+
+    const before = (await desk.listRuns({ requestId: 'req-018' })).length;
+    await user.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await settle();
+    // A new run with a new proposal: nothing ran on the old approval, and the new one waits for a person.
+    const runs = await desk.listRuns({ requestId: 'req-018' });
+    expect(runs).toHaveLength(before + 1);
+    expect(runs.filter((r) => r.status === 'awaiting_approval')).toHaveLength(1);
+    expect((await desk.listApprovals()).find((a) => a.id === failed.id)!.execution.status).toBe('failed');
+  });
 });
 
 describe('secretary chat', () => {
@@ -466,7 +510,7 @@ describe('secretary chat', () => {
     await user.click(within(history).getByRole('button', { name: 'New' }));
     await settle();
     await waitFor(() => expect(within(history).getAllByRole('link')).toHaveLength(2));
-    expect(await screen.findByText('What should Scriba arrange?')).toBeInTheDocument();
+    expect(await screen.findByText('What should Scriba take care of?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
     await user.type(screen.getByLabelText('Message Scriba'), '   {Enter}');
     expect((await desk.listRuns()).filter((r) => r.trigger === 'chat_message')).toHaveLength(1);
@@ -488,6 +532,67 @@ describe('secretary chat', () => {
     await act(async () => {
       await slow.whenIdle();
     });
+  });
+
+  it('runs a multi-step request: one approval, then the move, the email and a private reminder', async () => {
+    const user = userEvent.setup();
+    await open('#/chat');
+    const thread = await screen.findByRole('region', { name: 'Conversation' });
+    await user.type(screen.getByLabelText('Message Scriba'), 'Move my 1:1 with Omar to Wednesday at 14:00, let him know, and remind me to bring the hiring numbers.{Enter}');
+    await settle();
+
+    const card = await within(thread).findByRole('article', { name: 'Approval: Move the 1:1 with Omar to Wednesday and tell him' });
+    expect(within(within(card).getByRole('list', { name: 'Steps' })).getAllByRole('listitem')).toHaveLength(2);
+    expect(await getWorkspace().listReminders()).toHaveLength(3); // the reminder waits for the approved steps
+
+    await user.click(within(card).getByRole('button', { name: 'Approve all 2' }));
+    await settle();
+    await waitFor(() => expect(within(thread).getByText(/Done\. The 1:1 with Omar is now on Wed 18 Nov, 14:00 to 15:00/)).toBeInTheDocument());
+    expect(within(thread).getByText('Set a reminder: Bring the hiring numbers to the 1:1 with Omar')).toBeInTheDocument();
+    expect((await getWorkspace().listReminders()).at(-1)).toMatchObject({ text: 'Bring the hiring numbers to the 1:1 with Omar', status: 'scheduled' });
+    // The calendar shows the meeting in its new place, and the clash with the Holdings calendar is gone.
+    const agenda = await getWorkspace().listAgenda();
+    expect(agenda.find((e) => e.id === 'evt-omar-1on1')).toMatchObject({ start: '2026-11-18T14:00:00+02:00', conflictsWith: [] });
+  });
+
+  it('sets a reminder straight away, with no approval, because nothing leaves the desk', async () => {
+    const user = userEvent.setup();
+    await open('#/chat');
+    const thread = await screen.findByRole('region', { name: 'Conversation' });
+    const waiting = (await desk.listApprovals({ status: ['pending'] })).length;
+    await user.type(screen.getByLabelText('Message Scriba'), 'Remind me tomorrow at 9 to call Peter Vogel about the fuel-surcharge terms.{Enter}');
+    await settle();
+    await waitFor(() => expect(within(thread).getByText(/I will remind you on Tue 17 Nov at 09:00/)).toBeInTheDocument());
+    expect(await desk.listApprovals({ status: ['pending'] })).toHaveLength(waiting);
+    expect((await getWorkspace().listReminders()).at(-1)).toMatchObject({ text: 'Call Peter Vogel about the fuel-surcharge terms', remindAt: '2026-11-17T09:00:00+02:00' });
+  });
+
+  it('shows a failed booking, sends nothing, and recovers when you try again', async () => {
+    const user = userEvent.setup();
+    await open('#/chat');
+    const thread = await screen.findByRole('region', { name: 'Conversation' });
+    await user.type(screen.getByLabelText('Message Scriba'), 'Book 30 minutes with Yara on Thursday at 15:00 about the insurance renewal and send her the invite.{Enter}');
+    await settle();
+    const name = 'Approval: Book insurance renewal preparation with Yara Nassar';
+    await user.click(within(await within(thread).findByRole('article', { name })).getByRole('button', { name: 'Approve all 2' }));
+    await settle();
+
+    const alert = await within(await within(thread).findByRole('article', { name })).findByRole('alert');
+    expect(alert).toHaveTextContent('This did not complete: The calendar service did not respond.');
+    expect(alert).toHaveTextContent('Failed: Create "Insurance renewal: preparation"');
+    expect(alert).toHaveTextContent('Not run: Send "Insurance renewal: 30 minutes on Thursday"');
+    expect(within(thread).getByText(/I could not book this/)).toBeInTheDocument();
+    const firstRun = (await desk.listRuns()).find((r) => r.status === 'failed' && r.conversationId)!;
+    expect(firstRun.actions.filter((a) => a.tool === 'email.send').map((a) => a.status)).toEqual(['skipped']);
+
+    await user.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await settle();
+    const cards = await within(thread).findAllByRole('article', { name });
+    expect(cards).toHaveLength(2); // the failed one stays on the record; the retry is a new proposal
+    await user.click(within(cards[1]).getByRole('button', { name: 'Approve all 2' }));
+    await settle();
+    await waitFor(() => expect(within(thread).getByText(/Done\. The insurance renewal preparation is booked for Thu 19 Nov, 15:00 to 15:30/)).toBeInTheDocument());
+    expect(within(thread).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 });
 

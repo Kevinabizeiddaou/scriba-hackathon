@@ -39,3 +39,9 @@ Thumbs.db
 playwright-report/
 test-results/
 smoke-report*.json
+
+# Frontend: evaluation output. Day snapshots under eval-results/snapshots/ are committed.
+frontend/eval-results/*
+!frontend/eval-results/snapshots/
+!frontend/eval-results/.gitkeep
+*.tsbuildinfo

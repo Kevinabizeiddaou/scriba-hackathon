@@ -1,16 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "useDefineForClassFields": true,
-
-    /* The codebase mixes a few plain .js helpers with .tsx — allow importing
-       them, but don't type-check their bodies (checkJs:false). */
-    "allowJs": true,
-    "checkJs": false,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -18,14 +13,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-
-    /* Type safety. Kept pragmatic so CI is green on the current code; the unused
-       checks can be ratcheted on later once the codebase is clean. */
     "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src"]
+  "include": ["src", "scripts", "vite.config.ts"]
 }

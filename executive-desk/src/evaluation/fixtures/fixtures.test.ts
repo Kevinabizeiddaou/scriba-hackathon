@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { SIDE_EFFECT_TOOLS, TOOL_NAMES, type CaseCategory, type EvaluationCase } from '../../api/types';
 import { localParts, overlaps } from '../../lib/time';
 import { CASE_CATEGORIES, EVALUATION_CASES } from './index';
+import { renderCasesMarkdown } from './markdown';
 
 const WEEKDAY_NAMES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -110,5 +111,11 @@ describe('evaluation fixtures', () => {
     const file = resolve(__dirname, '../../../fixtures/evaluation-cases.json');
     const exported = JSON.parse(readFileSync(file, 'utf8'));
     expect(exported.cases).toEqual(JSON.parse(JSON.stringify(EVALUATION_CASES)));
+  });
+
+  it('keeps docs/TEST_CASES.md in step with the TypeScript source', () => {
+    const file = resolve(__dirname, '../../../docs/TEST_CASES.md');
+    const onDisk = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+    expect(onDisk).toBe(renderCasesMarkdown(EVALUATION_CASES));
   });
 });

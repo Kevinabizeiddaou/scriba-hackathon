@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "eval": "tsx scripts/eval.ts",
-    "fixtures:export": "tsx scripts/export-fixtures.ts"
+    "fixtures:export": "tsx scripts/export-fixtures.ts",
+    "docs:generate": "tsx scripts/generate-docs.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

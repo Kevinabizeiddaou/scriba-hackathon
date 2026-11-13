@@ -10,9 +10,13 @@ product, by progressively transferring and adapting Scriba's working code
 rather than rebuilding it. This is a private simulation of the AlphaHack 2026
 challenge.
 
-> **Where it stands:** Phase 1 of four. The Desk today is a read-only shell
-> on Scriba's API. It does not yet triage, draft, schedule or act, and no
-> end-to-end agent run has happened. See [docs/BASELINE.md](docs/BASELINE.md).
+> **Where it stands:** the workspace runs on Scriba's API: unified inbox with
+> rule-based triage, calendar, tasks, Scriba's chat agent, and an approval
+> center on Scriba's action records. It was exercised on Scriba's seeded test
+> backend only. No live mailbox or calendar and no model has been used, mail
+> and calendar approvals are switched off in the Desk, and no end-to-end agent
+> run has happened. See [docs/frontend/LIVE_INTEGRATION.md](docs/frontend/LIVE_INTEGRATION.md)
+> and [docs/BASELINE.md](docs/BASELINE.md).
 
 ## The job
 
@@ -127,12 +131,18 @@ npm run dev          # http://localhost:5173 (this port is required)
 ```
 
 By default the Desk on `localhost:5173` talks to a Scriba backend on
-`localhost:8000`. Set `VITE_API_BASE_URL` to use another Scriba API.
+`localhost:8000`. Set `VITE_API_BASE_URL` to use another Scriba API. The
+inbox, triage and briefing need the backend to run with the Desk overlay
+([backend/README.md](backend/README.md)).
+
+`npm run dev:demo` runs the same screens on an in-memory mock with fictional
+people and no backend. It is labelled as mock data on every screen.
 
 ## Tests
 
 ```bash
 cd frontend && npm test && npm run build     # unit tests, typecheck, build
+cd frontend && npm run eval                  # evaluation harness self-test (no backend, no agent)
 node scripts/smoke.mjs --base <scriba api>   # read-only API smoke
 node scripts/check-no-secrets.mjs            # run before every commit
 ```

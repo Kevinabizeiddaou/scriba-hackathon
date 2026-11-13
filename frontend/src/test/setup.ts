@@ -1,9 +1,9 @@
-// Transferred unchanged from Scriba: Gmail/frontend/src/test/setup.ts @ 3ae3a2aa.
-// Vitest test setup: jest-dom matchers + automatic RTL cleanup between tests.
+// Vitest setup: jest-dom matchers. With `globals: true` (vite.config.ts) React Testing Library
+// registers its own cleanup after each test, so none is declared here.
 import '@testing-library/jest-dom/vitest'
-import { afterEach } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { configure } from '@testing-library/react'
 
-afterEach(() => {
-  cleanup()
-})
+// findBy* and waitFor give up after one second by default. The harness self-test and the
+// scripted runs take longer than that on a busy machine, and a query that gives up early leaves
+// its run finishing inside the next test.
+configure({ asyncUtilTimeout: 15_000 })

@@ -24,7 +24,7 @@ import {
   type SecretaryRequest,
   type ToolName,
 } from '../types';
-import { EVALUATION_CASES } from '../../evaluation/fixtures';
+import { EVALUATION_CASES, baseCaseId } from '../../evaluation/fixtures';
 import { NOW, PRINCIPAL } from '../../evaluation/fixtures/world';
 import { CHAT_SUGGESTIONS, scriptForChat } from './chatIntents';
 import type { ActionStep, ApprovalStep, FinishStep, MockScript } from './scriptDsl';
@@ -119,7 +119,8 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
 
   constructor(options: MockOptions = {}) {
     this.delay = options.stepDelayMs ?? 700;
-    this.scriptFor = (caseId) => options.scriptFor?.(caseId) ?? MOCK_SCRIPTS[caseId];
+    // A holdout variation shares its base case's situation and expectations, so the same reference script satisfies it.
+    this.scriptFor = (caseId) => options.scriptFor?.(caseId) ?? MOCK_SCRIPTS[caseId] ?? MOCK_SCRIPTS[baseCaseId(caseId)];
     this.ready = options.seed === false ? Promise.resolve() : this.seed();
   }
 

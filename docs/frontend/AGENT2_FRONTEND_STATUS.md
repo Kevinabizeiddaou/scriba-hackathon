@@ -20,6 +20,8 @@ Nothing in this report is a result about the agent. No real model, mailbox or ca
 | `8ba44ca` | Evaluation: reliability campaigns and run-to-run comparison |
 | `5ad0cd8` | Approval cards: explain each safety hold, confirm recipients, link to the run |
 | `bcac917` | Docs, feature status and screenshots for the new screens |
+| `b655f04` | Campaign cost fix found by a mutation check; the check recorded |
+| next | Holdout variations: one reworded variation per desk case, with the official expectations |
 
 No file under `backend/`, `docs/BACKEND_CONTRACT.md` or `frontend/src/api/` was changed.
 
@@ -42,6 +44,7 @@ means covered only by frontend tests on the contract's shapes.
 | Safety holds explained on the card; recipient confirmation | `output.error_code`; approve with `desk_confirmed_recipients` | Tests |
 | Overview and navigation: runs that need the user | the run queue | Browser (none needing the user on seeded data); tests |
 | Reliability campaigns and run comparison | report files only | Tests, and the command line on the scripted mock |
+| Holdout variations of the desk suite (`--suite holdout`) | none needed | Tests: all twenty are consistent with the official expectations. No agent has been run on them |
 | Bundle | | Live Desk code 237 kB, React 219 kB, data libraries 93 kB; the evaluation harness (226 kB) and demo mode load on demand. Before: one 754 kB script |
 
 Unchanged and still passing: inbox, message detail, calendar, tasks, reminders, chat, approval
@@ -119,7 +122,7 @@ drift (`deskRuns.test.ts`, `LiveScheduling.test.tsx`, `LiveWork.test.tsx`).
 | Backend with integration tests on the real Scriba app at `3ae3a2a` | 196 passed |
 | API smoke on the seeded backend (`scripts/smoke.mjs --desk`) | 27 of 27 checks passed |
 | Frontend type check | Clean |
-| Frontend tests | 364 passed in 19 files (`main` before this branch: 284 in 15) |
+| Frontend tests | 372 passed in 20 files (`main` before this branch: 284 in 15) |
 | Production build | Passes; no chunk over 500 kB |
 | Harness self-test | 32 of 32 reference scripts scored as passing; 36 of 36 planted defects caught. A check of the harness, not an agent result |
 | Runner against the seeded backend with sign-in | Stops at the missing `/desk/eval/v1/meta`; nothing sent |

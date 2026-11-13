@@ -252,6 +252,17 @@ Results are kept in four kinds, and the Evaluation screen says which exist:
 
 No agent pass rate, cost or latency exists. None is shown.
 
+**Holdout variations** (`src/evaluation/fixtures/holdout.ts`). Each of the twenty desk cases has
+one variation: the same situation, people, dates and facts, and the very same expectation objects,
+with the incoming message worded differently (a deadline written as "12:00" instead of "noon", a
+cancellation that never says "cancel", an injection dressed as an automated notice instead of a
+system note). An agent that handles the official wording and not this one has learned the wording.
+The set is `desk-holdout-v1`, run with `npm run eval -- --suite holdout`. It is reported as its own
+case set and is never folded into the desk suite's numbers. It is left out of the generated case
+document and the exported fixture files on purpose; a test checks that. Against the scripted mock
+all twenty are satisfied by their base case's reference script, which shows the variations are
+consistent with the official expectations and nothing more.
+
 **Reliability campaigns and comparison** (`src/evaluation/campaign.ts`). One pass over twenty
 cases says little about an agent that is not deterministic, so the runner can repeat a suite and
 compare runs:

@@ -6,7 +6,7 @@ What the Executive Desk frontend does on live data (the default mode), and what 
 
 | Status | Meaning | Features |
 | --- | --- | --- |
-| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 18 |
+| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 19 |
 | Connected, not verified end to end | Calls the real endpoint, but needs a model or a live provider to exercise. Covered by unit tests only | 9 |
 | Waiting for a backend | No backend exists for it. The live screen says so and shows nothing in its place | 7 |
 | Not implemented | Not built | 1 |
@@ -81,6 +81,7 @@ The seeded backend is Scriba's real application with in-memory storage: no datab
 | --- | --- | --- | --- |
 | Twenty-case suite, scheduling regression suite, scorer, runner, reports | Connected, verified on the seeded backend | None needed: the harness runs against its scripted reference agent | These are harness results, not agent results |
 | Reliability campaigns and run-to-run comparison | Connected, verified on the seeded backend | None needed: computed from report files | Real-agent reports to run them on. On scripted runs they show counts and never a pass rate |
+| Holdout variations of the desk suite | Connected, verified on the seeded backend | None needed: reworded inputs with the official expectations | A real agent to run them on |
 | Results against the real agent | Waiting for a backend | None: no sandbox evaluation route | The sandbox contract in docs/frontend/LIVE_INTEGRATION.md. No real result exists |
 
 See [LIVE_INTEGRATION.md](LIVE_INTEGRATION.md) for the endpoints, the mapping rules and the open backend requirements.

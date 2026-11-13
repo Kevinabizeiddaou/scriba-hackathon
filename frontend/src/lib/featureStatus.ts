@@ -77,6 +77,7 @@ export const FEATURES: Feature[] = [
 
   { area: 'Evaluation', name: 'Twenty-case suite, scheduling regression suite, scorer, runner, reports', status: 'connected', backend: 'None needed: the harness runs against its scripted reference agent', needs: 'These are harness results, not agent results' },
   { area: 'Evaluation', name: 'Reliability campaigns and run-to-run comparison', status: 'connected', backend: 'None needed: computed from report files', needs: 'Real-agent reports to run them on. On scripted runs they show counts and never a pass rate' },
+  { area: 'Evaluation', name: 'Holdout variations of the desk suite', status: 'connected', backend: 'None needed: reworded inputs with the official expectations', needs: 'A real agent to run them on' },
   { area: 'Evaluation', name: 'Results against the real agent', status: 'waiting', backend: 'None: no sandbox evaluation route', needs: 'The sandbox contract in docs/frontend/LIVE_INTEGRATION.md. No real result exists' },
 ];
 

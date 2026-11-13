@@ -14,7 +14,7 @@
  *                           environment, and use the session cookie Scriba sets for the run
  *   --cookie-env <NAME>     read the Cookie header of an existing Scriba session from this environment variable
  *                           (never pass a session value or a password as an argument)
- *   --suite <name>          built-in suite: desk (default), scheduling, or all
+ *   --suite <name>          built-in suite: desk (default), scheduling, holdout (reworded variations of desk), or all
  *   --cases <file>          case-set file to run instead of a built-in suite
  *   --only <ids>            comma-separated case ids to run
  *   --skip <ids>            comma-separated case ids to skip

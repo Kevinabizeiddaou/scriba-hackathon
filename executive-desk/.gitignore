@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tsbuildinfo
+# Evaluation output. Day snapshots under eval-results/snapshots/ are meant to be committed.
+eval-results/*
+!eval-results/snapshots/
+!eval-results/.gitkeep
+.claude/

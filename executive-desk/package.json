@@ -1,0 +1,43 @@
+{
+  "name": "scriba-executive-desk",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Scriba Executive Desk: frontend, mock API contract and evaluation harness (Role 2 workspace).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "eval": "tsx scripts/eval.ts",
+    "fixtures:export": "tsx scripts/export-fixtures.ts",
+    "docs:generate": "tsx scripts/generate-docs.ts",
+    "contract:server": "tsx scripts/contract-server.ts",
+    "dev:reference": "tsx scripts/dev-reference.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.9"
+  }
+}

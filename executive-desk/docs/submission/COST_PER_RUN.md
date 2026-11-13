@@ -7,21 +7,21 @@ No cost has been measured yet. This file contains the method and blank tables. E
 One run is one request handled from trigger to final status, including every model call and every retry inside it.
 
 ```
-AI cost of one run =
-      uncached input tokens  x  input price per token
-    + cached input tokens    x  cached-input price per token
-    + output tokens          x  output price per token
+AI cost of one run = for each model the run used, the sum of
+      uncached input tokens  x  that model's input price per token
+    + cached input tokens    x  that model's cached-input price per token
+    + output tokens          x  that model's output price per token
 
 AI cost per run = sum of the cost of every priced run / number of priced runs
 ```
 
-Tokens are summed over all model calls in the run. The backend reports them in `AgentRun.usage` (`inputTokens` counts uncached input only; `cachedInputTokens` is separate). Runs with no reported usage are left out of both the sum and the count, and the report says how many were priced (`casesWithCost`).
+The backend reports tokens per model in `AgentRun.usage.models[]`, summed over every call to that model in the run (`inputTokens` counts uncached input only; `cachedInputTokens` is separate). If the run used a model that has no price in the table, the run has no cost at all: a partial sum would look like a real cost while leaving part of the run out. Runs without a cost are left out of both the sum and the count, and the report says how many were priced (`casesWithCost`).
 
 ## Where the numbers come from
 
 | Quantity | Source | Field |
 | --- | --- | --- |
-| Tokens per run | Backend, per run | `AgentRun.usage` |
+| Tokens per run, per model | Backend, per run | `AgentRun.usage.models[]` |
 | Cost per run, if the backend computes it | Backend | `AgentRun.usage.estimatedCostUsd` |
 | Prices, if the backend reports tokens only | The model provider's published price list on the day of the run | `--pricing prices.json` |
 | Cost per run across the suite | Evaluation report | `summary.costPerRunUsd`, `summary.totalCostUsd`, `summary.casesWithCost` |

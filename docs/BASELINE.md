@@ -8,8 +8,23 @@ Recorded 2026-11-13, at the end of Phase 1.
 card has not been run, in whole or in part, from this repository. No email
 has been sent and no calendar event has been created, changed or cancelled.
 
-**Scheduling evaluation suite: 0 of 20 cases run.** The suite and its harness
-do not exist yet.
+**Scheduling evaluation: 0 of 20 cases executed.**
+
+| Measure | Value |
+| --- | --- |
+| Cases defined | 20 |
+| Cases executed against a real backend | 0 |
+| Cases passed | Not measured |
+| Cases failed | Not measured |
+| Pass rate | Not measured |
+
+This is "nothing has been run", not "everything failed" and not "0% passed".
+There is no pass rate until cases are executed against a real backend.
+
+The 20 cases and the evaluation harness are on the
+`role2/frontend-evaluation` branch. That harness has only been pointed at
+its own scripted mock, which checks the harness, not the agent. Results from
+the mock are not agent results and are not counted here.
 
 ## What Phase 1 does demonstrate
 

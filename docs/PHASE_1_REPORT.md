@@ -12,7 +12,12 @@ Recorded 2026-11-13.
 ## Submission
 
 The index card is [INDEX_CARD.md](INDEX_CARD.md): whose weekly job, the
-trigger, the workflow steps, and what successful completion means.
+trigger, the workflow steps, and what successful completion means. This is
+the canonical first submission.
+
+An alternative draft card is kept for reference on the
+`role2/frontend-evaluation` branch at
+`executive-desk/docs/submission/INDEX_CARD.md`.
 
 ## Files transferred from Scriba
 
@@ -47,7 +52,8 @@ No backend code was transferred. The Desk calls Scriba's existing API.
 
 ## Baseline
 
-Zero end-to-end secretary runs and zero of 20 evaluation cases. Live Google
+Zero end-to-end secretary runs, and zero of 20 evaluation cases executed
+(so no pass rate exists; this is not a 0% result). Live Google
 and Microsoft data have not been tested from the Desk. Details and the list
 of what is unverified are in [BASELINE.md](BASELINE.md).
 
@@ -59,7 +65,9 @@ of what is unverified are in [BASELINE.md](BASELINE.md).
   configuration decisions in [ARCHITECTURE.md](ARCHITECTURE.md).
 - Backend issues found in Scriba are tracked privately in Scriba's
   repository; none is fixed yet.
-- The frontend and evaluation role has not yet started on its branch.
+- The frontend and evaluation work is on the `role2/frontend-evaluation`
+  branch, which has an unrelated history. It is preserved as is and has not
+  been merged into `main`. It runs on a scripted mock, not on Scriba's API.
 
 ## What Phase 2 will include
 

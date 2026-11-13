@@ -27,6 +27,9 @@ def main() -> None:
         sys.exit("Set SCRIBA_BACKEND_PATH to the Gmail/ directory of a Scriba checkout.")
 
     sys.path.insert(0, str(BACKEND))
+    # This process serves only the Desk, so Scriba's chat agent is scoped to
+    # the Desk's tools here. Set DESK_CHAT_SCOPE=off to run without the scope.
+    os.environ.setdefault("DESK_CHAT_SCOPE", "on")
 
     import uvicorn
 

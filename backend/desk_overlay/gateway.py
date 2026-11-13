@@ -70,6 +70,15 @@ class ScribaGateway:
         user = authenticated_user(request, requested_account=request.query_params.get("account"))
         return DeskUser(id=user.id, email=user.email)
 
+    def user_for_email(self, email: str) -> Optional[DeskUser]:
+        """The Scriba user behind an account address (chat passes the address)."""
+        from app.db import get_user_by_email
+
+        row = get_user_by_email(email) if email else None
+        if not row or row.get("id") is None:
+            return None
+        return DeskUser(id=int(row["id"]), email=str(row.get("email") or email).strip().lower())
+
     def scriba_commit(self) -> Optional[str]:
         import os
 

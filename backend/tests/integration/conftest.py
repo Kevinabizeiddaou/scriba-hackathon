@@ -34,6 +34,10 @@ if AVAILABLE:
     for path in (SCRIBA, str(Path(SCRIBA) / "tests")):
         if path not in sys.path:
             sys.path.insert(0, path)
+    # Scriba's contract harness pins the session secret and cookie profile in
+    # the environment, and Scriba reads them when its modules are first
+    # imported. Load it before any test can import a Scriba module.
+    import contract_harness  # noqa: E402,F401
 
 
 @pytest.fixture(scope="session")

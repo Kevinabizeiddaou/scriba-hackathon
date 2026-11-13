@@ -40,6 +40,7 @@ class FakeGateway:
     def __init__(self) -> None:
         self.users: Dict[str, Dict[str, Any]] = {}
         self.calls: List[tuple] = []
+        self.acting_as: Optional[str] = None
 
     def add_user(self, user_id: int, address: str, *, google: Optional[List[str]] = None,
                  outlook: Optional[str] = None, gmail_mail: bool = False, outlook_mail: bool = False,
@@ -89,8 +90,16 @@ class FakeGateway:
     def scriba_commit(self) -> Optional[str]:
         return "test"
 
+    def user_for_email(self, address: str) -> Optional[DeskUser]:
+        world = self.users.get(str(address or "").strip().lower())
+        return world["user"] if world else None
+
     def provider_status(self, request: Any) -> Dict[str, Any]:
-        return self.users[request.headers["x-test-user"]]["status"]
+        # A chat tool has no request: the session user is ambient there, and
+        # tests name it with ``acting_as``.
+        headers = getattr(request, "headers", None)
+        address = headers["x-test-user"] if headers is not None else self.acting_as
+        return self.users[address]["status"]
 
     def preferences(self, user: DeskUser) -> Dict[str, Any]:
         return self.users[user.email]["prefs"]

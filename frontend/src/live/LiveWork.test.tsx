@@ -3,6 +3,8 @@
  * These tests prove what the Desk does with the run contract's shapes and with failures. They
  * prove nothing about a running backend or about the agent.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -49,6 +51,7 @@ import App from '../App'
 import { advanceDeskRun, fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns, startDeskIntake, sweepDeskInbox } from '../api/desk'
 import { fetchCalendarEvents, fetchProviderStatus } from '../api/scriba'
 import { deskAction, deskRun, executedAction } from '../test/deskFixtures'
+import { HOLD_CODES, explainHold, unverifiedRecipients } from './deskHolds'
 import { AUTO_CHECK_MS } from './LiveWorkQueuePage'
 import { approveChatToolCall, createDraftFromRequest, fetchChatConversations, fetchChatMessages, fetchChatToolCall, fetchDrafts, fetchReminders, fetchTasks } from './scribaApi'
 
@@ -373,6 +376,98 @@ describe('checking for new work', () => {
     expect(startDeskIntake).toHaveBeenCalledWith({ provider: 'gmail', id: 'm-new', mailbox: 'exec@gmail.example' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Contract renewal: decision by Friday' })).toBeInTheDocument()
     expect(window.location.hash).toBe('#/work/13')
+  })
+})
+
+describe('actions held by a safety check', () => {
+  const HELD_EMAIL = (output: Record<string, unknown>) =>
+    card({ id: 52, tool_name: 'send_email', status: 'needs_info', input: { to: 'maya@example.test, billing@payments.example', subject: 'Re: Invoice', body: 'Please see attached.', provider: 'gmail', provider_account_id: 'acct-1' }, output })
+  const runWithHeldEmail = () => deskRun({ runId: 7, actions: [deskAction({ toolCallId: 52, tool_name: 'send_email', status: 'needs_info' })] })
+  const UNVERIFIED = { blocked: true, error_code: 'unverified_recipient', unverified_recipients: ['billing@payments.example'], message: 'One recipient could not be verified.' }
+
+  it('names the unverified address and why it is held, and cannot be approved while sending is switched off', async () => {
+    serveRuns([runWithHeldEmail()])
+    vi.mocked(fetchChatToolCall).mockResolvedValue(HELD_EMAIL(UNVERIFIED))
+    renderApp('#/work/7')
+    const why = await screen.findByRole('status', { name: 'Why this is held' })
+    expect(why).toHaveTextContent('Held: A recipient has not been verified')
+    expect(why).toHaveTextContent('It may have come from the text of an email, which is untrusted.')
+    expect(within(why).getByRole('list', { name: 'Unverified recipients' })).toHaveTextContent('billing@payments.example')
+    expect(screen.getByRole('button', { name: 'Approve and run' })).toBeDisabled()
+    expect(screen.queryByRole('checkbox', { name: /I have checked this address/ })).not.toBeInTheDocument() // no way to confirm what cannot be sent
+    expect(screen.queryByRole('link', { name: 'Answer in chat' })).not.toBeInTheDocument()
+  })
+
+  it('sends the confirmation the backend honours, and only after the user ticks it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ externalWrites: { enabled: true, revision: 'test' } }))
+    serveRuns([runWithHeldEmail()])
+    vi.mocked(fetchChatToolCall).mockResolvedValue(HELD_EMAIL(UNVERIFIED))
+    vi.mocked(approveChatToolCall).mockResolvedValue({ tool_call: HELD_EMAIL({}) })
+    renderApp('#/work/7')
+    const approve = await screen.findByRole('button', { name: 'Approve and run' })
+    expect(approve).toBeDisabled()
+    await user.click(screen.getByRole('checkbox', { name: /I have checked this address and want it to receive this: billing@payments.example/ }))
+    expect(approve).toBeEnabled()
+    await user.click(approve)
+    expect(approveChatToolCall).toHaveBeenCalledWith(52, { desk_confirmed_recipients: ['billing@payments.example'] })
+  })
+
+  it('does not offer an approval when the thread has moved on, even with sending switched on', async () => {
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ externalWrites: { enabled: true, revision: 'test' } }))
+    serveRuns([runWithHeldEmail()])
+    vi.mocked(fetchChatToolCall).mockResolvedValue(HELD_EMAIL({ blocked: true, error_code: 'reply_target_changed', message: 'A newer message arrived in this thread.' }))
+    renderApp('#/work/7')
+    const why = await screen.findByRole('status', { name: 'Why this is held' })
+    expect(why).toHaveTextContent('Held: The thread has moved on')
+    expect(why).toHaveTextContent('It cannot be approved as it is.')
+    expect(screen.getByRole('button', { name: 'Approve and run' })).toBeDisabled()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Answer in chat' })).not.toBeInTheDocument() // the fix is in the thread, not in chat
+    expect(screen.getByRole('button', { name: 'Cancel action' })).toBeEnabled()
+  })
+
+  it('offers no way past a hold it does not recognise', async () => {
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ externalWrites: { enabled: true, revision: 'test' } }))
+    serveRuns([runWithHeldEmail()])
+    vi.mocked(fetchChatToolCall).mockResolvedValue(HELD_EMAIL({ blocked: true, error_code: 'policy_review_required', message: 'Held for review.' }))
+    renderApp('#/work/7')
+    const why = await screen.findByRole('status', { name: 'Why this is held' })
+    expect(why).toHaveTextContent('Reason code: policy_review_required. This version of the Desk does not know it, so it offers no way to approve past it.')
+    expect(screen.getByRole('button', { name: 'Approve and run' })).toBeDisabled()
+  })
+
+  it('explains every hold code the backend can emit, each with one way forward', () => {
+    const read = (name: string) => readFileSync(resolve(__dirname, '../../../backend/desk_overlay', name), 'utf8')
+    const codes = new Set<string>([
+      ...[...read('safeguards.py').matchAll(/return \(?"([a-z_]+)",/g)].map(match => match[1]),
+      ...[...read('chat_scope.py').matchAll(/"error_code": "([a-z_]+)"/g)].map(match => match[1]),
+      ...[...read('chat_scope.py').matchAll(/output, "([a-z_]+)"/g)].map(match => match[1]),
+    ])
+    codes.delete('needs_info') // a card status that shares a call signature with the codes, not a hold code
+    expect(codes.size).toBeGreaterThanOrEqual(10)
+    for (const code of codes) expect(explainHold(code), code).not.toBeNull()
+    // Only two holds are passed by an approval, and each needs its own explicit override.
+    const approvable = HOLD_CODES.filter(code => ['confirm_recipients', 'book_anyway'].includes(explainHold(code)!.resolution))
+    expect(approvable.sort()).toEqual(['availability_unknown', 'calendar_conflict', 'unverified_recipient'])
+    expect(explainHold('something_else')).toBeNull()
+    expect(unverifiedRecipients({ output: { unverified_recipients: ['a@example.test', ''] } })).toEqual(['a@example.test'])
+    expect(unverifiedRecipients({ output: {} })).toEqual([])
+  })
+})
+
+describe('approval center', () => {
+  it('says which incoming message an action came from and links to its run', async () => {
+    serveRuns([TASK_RUN])
+    vi.mocked(fetchChatConversations).mockResolvedValue([{ id: 7, title: 'Desk: Board pack by Thursday', status: 'active' }])
+    vi.mocked(fetchChatMessages).mockResolvedValue({
+      conversation: { id: 7, title: 'Desk: Board pack by Thursday', status: 'active' },
+      messages: [{ id: 5, conversation_id: 7, role: 'assistant', content: 'Classified as action_item. Proposed for your approval: create_task.', status: 'complete', tool_calls: [card({ id: 31 })] }],
+    })
+    renderApp('#/approvals')
+    const waiting = await screen.findByRole('region', { name: 'Waiting for your decision' })
+    const link = await within(waiting).findByRole('link', { name: 'From the message: Board pack by Thursday' })
+    expect(link).toHaveAttribute('href', '#/work/7')
   })
 })
 

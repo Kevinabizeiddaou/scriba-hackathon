@@ -119,15 +119,50 @@ Some of these are disabled on servers where Scriba's desktop feature is off,
 and automations cannot yet create or change a calendar event. Do not build
 the secretary workflow on them yet.
 
-## 4. Proposed endpoints (not implemented)
+## 4. Desk overlay endpoints (Tested on the seeded backend)
 
-Names and shapes are a starting point for review, not a commitment.
+These exist only when the backend runs with the Desk overlay
+([backend/README.md](../backend/README.md)). All need a session, all are
+read-only, and all sit behind Scriba's own session and cross-site guards.
+Types and client functions: `frontend/src/api/desk.ts`.
 
-| Method and path | Purpose | Response sketch |
+"Tested" here means: unit and route tests, integration tests on the real
+Scriba application with providers replaced at the SDK boundary, and the
+smoke test on Scriba's seeded backend. **No live Google or Microsoft
+calendar has been read through these routes yet.**
+
+| Method and path | Purpose | Type |
 | --- | --- | --- |
-| `GET /desk/health` | Overlay loaded, Scriba commit, enabled capabilities | `{ok, scribaCommit, capabilities: []}` |
-| `GET /desk/availability?start=&end=&duration_minutes=&attendees=` | Busy intervals and free slots across every connected Google and Microsoft calendar, inside the user's working hours | `{timezone, calendars: [{provider, account, ok, error?}], busy: [{start, end, provider, account}], slots: [{start, end}]}` |
-| `POST /desk/slots/check` `{start, end}` | Is one slot free everywhere, and what does it collide with | `{free, conflicts: [{provider, account, title?, start, end}]}` |
+| `GET /desk/health` | Overlay present, version, `writes: false` | `DeskHealth` |
+| `GET /desk/connections` | The four Desk capabilities, readiness, sending mailboxes. Excluded integrations are removed on the server | `DeskConnections` |
+| `GET /desk/inbox?provider=all\|gmail\|outlook&limit=&mailbox=` | Gmail and Outlook merged, newest first; every row keeps `provider` and `provider_account_id` and gains `triage` | `DeskInbox` |
+| `GET /desk/inbox/item?provider=&id=&mailbox=&days=` | One message: triage, the messages of its thread found in the recent inbox, the mailbox a reply must come from, and for a meeting request the next working days across both calendars | `DeskInboxItem` |
+| `GET /desk/availability?start=&end=&duration_minutes=&buffer_minutes=&timezone=&max_slots=` | Busy time from every connected Google and Outlook calendar, existing cross-calendar conflicts, and free slots inside working hours | `DeskAvailability` |
+| `POST /desk/slots/check` `{start, end, timezone?, buffer_minutes?}` | One proposed time against both calendars | `DeskSlotCheck` |
 
-A calendar that cannot be read must appear with `ok: false` rather than be
-treated as free.
+Triage `category` is one of `meeting_request`, `needs_reply`, `action_item`,
+`informational`, `automated`, with `outcome` `schedule`, `reply`, `task` or
+`none`. It is rule-based (Scriba's reply classifier plus deadline and
+meeting-intent patterns) and works on the subject and snippet, not the full
+body. It makes no model call.
+
+Rules a client can rely on:
+
+- `slots` is empty unless `complete` is true. `complete` is false when no
+  calendar is connected (`reason: "no_calendar_connected"`) or when any
+  connected calendar could not be read (`"calendar_unreadable"`); the failed
+  calendar is in `calendars` with `ok: false` and an `error`.
+- Slot check `free` is `true`, `false` or `null`. `null` means unknown: do
+  not present it as free.
+- Defaults for time zone, working hours, weekdays, buffer and duration are
+  the user's Scriba preferences; query parameters override them.
+- Errors: 400 for an unreadable date, a reversed or over-31-day range, or an
+  unknown time zone; 422 for out-of-range numbers; 401 and 403 as in
+  section 1; 404 from `/desk/inbox/item` when the id is not in the recent
+  inbox.
+- Google busy intervals have no title (Google's free/busy does not give
+  one); Outlook intervals do.
+
+Not in the overlay, because Scriba's existing API already covers it: drafts,
+sending, calendar writes, chat, approvals, tasks, reminders, notifications,
+daily brief (`POST /daily-brief`), automations. Use section 3.

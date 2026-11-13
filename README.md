@@ -1,7 +1,8 @@
 # Scriba Executive Desk
 
-An AI executive secretary that handles incoming meeting requests and
-coordinates an executive's schedule across Gmail, Outlook Mail, Google
+An autonomous executive secretary for daily inbox-to-action management. It
+does one repeatable job: **turn an executive's incoming correspondence into
+verified administrative outcomes**, across Gmail, Outlook Mail, Google
 Calendar and Outlook Calendar.
 
 It is built on [Scriba](https://scribaassist.com), an existing assistant
@@ -9,65 +10,96 @@ product, by progressively transferring and adapting Scriba's working code
 rather than rebuilding it. This is a private simulation of the AlphaHack 2026
 challenge.
 
+> **Where it stands:** Phase 1 of four. The Desk today is a read-only shell
+> on Scriba's API. It does not yet triage, draft, schedule or act, and no
+> end-to-end agent run has happened. See [docs/BASELINE.md](docs/BASELINE.md).
+
 ## The job
 
-Someone who manages an executive's calendar spends hours each week on the
-same loop: read a meeting request, check the calendars, propose or confirm a
-time, book it, reply. The Desk automates that loop and asks for approval
-before anything leaves the building.
+Someone who runs an executive's inbox and calendar repeats the same loop all
+day: read what arrived, decide what each message needs, answer it, arrange
+the meeting, note the task, chase the reply that never came, and report
+back. The Desk is meant to do that loop and to ask for approval before
+anything is sent or changed.
 
-**Trigger:** a new email in the executive's Gmail or Outlook mailbox asking
-to set up, move or cancel a meeting.
+**Trigger:** a new email in the executive's Gmail or Outlook inbox. The
+executive can also start the job from chat, and a daily briefing runs on a
+schedule.
 
 **Planned workflow:**
 
 1. Read the message and its thread.
-2. Extract the request: intent, attendees, dates, duration.
-3. Check availability in the connected Google and Outlook calendars.
-4. Detect conflicts.
-5. Choose the requested time or propose alternatives.
-6. Ask the executive to approve the reply and the calendar change.
-7. Create, update or cancel the event.
-8. Reply in the original thread from the mailbox that received it.
-9. Log the run and open a follow-up when an answer is awaited.
+2. Triage it: what kind of message, how urgent.
+3. Decide the outcome: reply, meeting, task or reminder, follow-up, or none.
+4. Gather context from the thread, both calendars and existing tasks.
+5. Prepare the action: draft the reply, check availability and conflicts,
+   write the task.
+6. Ask the executive to approve anything outbound or calendar-changing.
+7. Execute: reply in the original thread, change the calendar, create the
+   task or reminder.
+8. Verify the provider accepted it and record the result.
+9. Track awaited replies and raise overdue ones.
+10. Brief the executive daily.
 
-The full index card is in [docs/INDEX_CARD.md](docs/INDEX_CARD.md).
+The full index card is [docs/INDEX_CARD.md](docs/INDEX_CARD.md).
+
+## Target capabilities
+
+All of these serve the one job above. "Planned" means not in the Desk yet.
+
+| Capability | In the Desk today |
+| --- | --- |
+| Gmail and Outlook inbox management | Read-only list per provider |
+| Email triage and prioritisation | Planned |
+| Contextual replies and drafts | Planned |
+| Google and Outlook calendar coordination | Read-only list |
+| Tasks and reminders | Planned |
+| Follow-up management | Planned |
+| Daily executive briefings | Planned |
+| Natural-language chat | Planned |
+| Trigger-based automations | Planned |
+| Human approvals | Planned |
+| Action verification, audit history, cost tracking | Planned |
+
+Most of these already exist in Scriba and will be reused directly; a few
+need small adaptations and a few are new. The capability-by-capability
+breakdown is [docs/ROADMAP.md](docs/ROADMAP.md).
+
+Not part of the product: Slack, Teams, Google Drive, OneDrive, Jira and
+desktop automation.
 
 ## What is reused from Scriba
 
-Scriba's backend is the Desk's backend. The Desk does not have its own
-authentication, database or provider registrations.
+Scriba's backend is the Desk's backend. The Desk has no authentication,
+database or provider registration of its own, and none will be created.
 
-| Reused as it runs today | Used by the Desk in Phase 1 |
-| --- | --- |
-| Sign-in and sessions | Yes |
-| Google and Microsoft account connections | Yes (status and connect links) |
-| Gmail and Outlook Mail reading | Yes |
-| Google Calendar and Outlook Calendar reading | Yes |
-| Mail sending and threaded replies | Not yet |
-| Calendar create, update, cancel | Not yet |
-| Chat agent with approval cards | Not yet |
-| Automations triggered by incoming mail | Not yet |
+In use today: sign-in and sessions, Google and Microsoft account
+connections, Gmail and Outlook mail reading, Google and Outlook calendar
+reading.
+
+To be reused in later phases: message priority and triage, search, reply
+drafts, sending and threaded replies, calendar changes, the chat agent with
+approval cards, tasks, reminders, suggestions and alerts, daily briefs,
+automations triggered by incoming mail, approvals, and action records.
 
 Frontend pieces transferred from Scriba (`Gmail/frontend` at `3ae3a2aa`),
 each marked with its source: the API client, API base-URL resolution, the
 provider-status hook, the design tokens and component styles, and the
 Tailwind and TypeScript configuration.
 
-Not part of the Desk: Slack, Teams, Google Drive, OneDrive, Jira and desktop
-automation.
-
 ## Present limitations
 
-- **Phase 1 is a read-only shell.** It signs in, shows which of the four
-  accounts are connected, lists mail per provider, lists calendar events and
-  reports API health. It does not run the secretary workflow.
-- No end-to-end agent run has happened. See [docs/BASELINE.md](docs/BASELINE.md).
+- The Desk is a read-only shell: sign-in, four connection cards, a mail list
+  per provider, a calendar list, API health.
+- No end-to-end agent run has happened, and none of the 20 evaluation cases
+  has been executed.
 - Live Google and Microsoft data have not been tested from the Desk; tests
   ran against Scriba's seeded test backend.
-- Availability across both calendars, conflict detection, follow-ups and a
-  meeting-booking automation do not exist yet in Scriba and are later-phase
-  work.
+- Some target capabilities do not exist in Scriba yet: availability across
+  both calendars, tracking of awaited replies, a meeting-booking automation,
+  cost per run. See the roadmap.
+- Triage state lives in Scriba; the Desk will not archive, label or move
+  mail in Gmail or Outlook.
 - The Desk runs locally on `http://localhost:5173`. Hosting it needs
   configuration decisions listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -76,12 +108,12 @@ automation.
 Work proceeds one submission checkpoint at a time; a phase starts only when
 authorized.
 
-1. **Shell and index card** (done)
-2. Backend safety and a read-only availability service
-3. Secretary workflow with approvals
-4. Triggers, follow-ups and execution history
-5. Evaluation: 20 scheduling cases, reliability, cost per run
-6. Final interface and demo
+| Phase | Scope | Status |
+| --- | --- | --- |
+| 1 | Index card and foundation | Done |
+| 2 | Unified inbox, chatbot, calendar reads and triage (read-only) | Not started |
+| 3 | Scheduling, tasks, reminders, automations and approvals | Not started |
+| Final | Reliable integrated product, 20 real cases, metrics and demo | Not started |
 
 ## Run it
 
@@ -115,11 +147,11 @@ own session.
   private configuration is committed.
 - Scriba's repository and its production service are not modified from here.
   Nothing is deployed without explicit authorization.
-- Collaborators work on separate branches of this repository.
+- `main` is the official branch. Collaborators work on separate branches.
 
 | Path | Owner |
 | --- | --- |
 | `frontend/src/api/`, `frontend/src/lib/apiBase.ts`, `frontend/src/lib/connections.ts`, `scripts/`, `docs/`, later `backend/` | Backend and contract |
 | Visual pages, chat UI, evaluation dashboard, scenario fixtures | Frontend and evaluation (the shell under `frontend/src/shell/` is a starting point) |
 
-More: [architecture](docs/ARCHITECTURE.md) · [backend contract](docs/BACKEND_CONTRACT.md) · [baseline](docs/BASELINE.md)
+More: [index card](docs/INDEX_CARD.md) · [roadmap](docs/ROADMAP.md) · [baseline](docs/BASELINE.md) · [architecture](docs/ARCHITECTURE.md) · [backend contract](docs/BACKEND_CONTRACT.md) · [Phase 1 report](docs/PHASE_1_REPORT.md)

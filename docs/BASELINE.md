@@ -54,8 +54,18 @@ sign-out.
 | Signed-in use of the hosted Scriba API from the Desk | Not tested. It needs a real user session. |
 | Google or Microsoft sign-in started from the Desk | Not tested end to end. The shell links to Scriba's sign-in routes. |
 | Reading a thread, extracting a request, checking availability, proposing slots | Not built. |
+| Triage, reply drafts, tasks, reminders, follow-ups, daily briefing, chat, automations | Not built in the Desk. Scriba has most of these; the Desk has not called them. |
 | Approval, calendar write, threaded reply, follow-up, execution log | Not exercised from the Desk. |
 | Cost per run | No runs, so no cost. |
+
+## Scope note
+
+The product scope was widened after these checks, from meeting scheduling to
+the whole inbox-to-action job. The results above are unchanged and still
+describe the same Phase 1 shell. None of the added capabilities (triage,
+drafts, tasks, reminders, follow-ups, briefings, chat, automations,
+approvals, audit history, cost tracking) has been built or tested in the
+Desk; each is "not built" in [ROADMAP.md](ROADMAP.md).
 
 ## How to reproduce
 

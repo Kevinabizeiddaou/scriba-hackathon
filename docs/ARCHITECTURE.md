@@ -72,14 +72,14 @@ Only Phase 1 is implemented.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 1. Shell and index card | Desk shell on Scriba's existing API: sign-in, connection status, mail and calendar read for Google and Microsoft, health, smoke tests; index card; baseline | Done |
-| 2. Backend safety and availability | Fixes to existing backend issues, made in Scriba's own repository through its review process; a read-only availability service across Google and Outlook calendars (busy intervals, working hours, buffers, conflicts, suggested slots) | Not started |
-| 3. Secretary workflow | An inbound meeting request produces a proposed reply and calendar action as approval cards; approval executes them through Scriba's existing action and approval machinery | Not started |
-| 4. Triggers, follow-ups, execution history | Run the workflow from Scriba's inbound-mail trigger; follow-ups for unanswered proposals; a run history view | Not started |
-| 5. Evaluation | The 20-case scheduling suite, reliability measurement, cost per run | Not started |
-| 6. Final interface and demo | Desk-only tool scope, final UI, demo and submission | Not started |
+| 1. Index card and foundation | Desk shell on Scriba's existing API: sign-in, connection status, mail and calendar read for Google and Microsoft, health, smoke tests; index card; baseline | Done |
+| 2. Unified inbox, chatbot, calendar reads and triage | Read-only: one inbox across Gmail and Outlook, priority and triage, search, reply drafts for review, chat on Scriba's agent, calendar views, notifications, on-demand briefing | Not started |
+| 3. Scheduling, tasks, reminders, automations and approvals | Availability and conflicts across both calendars, approvals, approved replies and calendar changes, tasks, reminders, follow-ups, automations; backend fixes made in Scriba's own repository first | Not started |
+| Final. Reliable integrated product | The whole job on real mail and calendars, 20 real cases, cost per run, audit history, demo | Not started |
 
-### The backend overlay (Phase 2 onward)
+The capability-by-capability reuse matrix is [ROADMAP.md](ROADMAP.md).
+
+### The backend overlay (Phase 3 onward)
 
 New backend code is versioned in this repository but runs inside Scriba's
 process, because it needs Scriba's session, database and provider

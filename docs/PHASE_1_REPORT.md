@@ -7,7 +7,8 @@ Recorded 2026-11-13.
 
 - https://github.com/Kevinabizeiddaou/scriba-hackathon, branch `main`
 - Stage 1 code: commit `f8b933b`
-- Phase 1 submission documents: the commit that adds this file
+- Phase 1 submission documents: the commits after it on `main`; the latest
+  one is the official submission
 
 ## Submission
 
@@ -69,20 +70,31 @@ of what is unverified are in [BASELINE.md](BASELINE.md).
   branch, which has an unrelated history. It is preserved as is and has not
   been merged into `main`. It runs on a scripted mock, not on Scriba's API.
 
+## Expanded scope
+
+After the first version of this report the product was redefined, from
+meeting scheduling to the whole job of turning an executive's incoming
+correspondence into verified administrative outcomes. This changed the
+documents only: the index card, the README and the new
+[ROADMAP.md](ROADMAP.md) with the feature reuse matrix and the feature-by-
+phase plan. No code changed, and the test results above are the same runs.
+
+The index card keeps a placeholder for the real job-holder, to be supplied
+by the project lead.
+
 ## What Phase 2 will include
 
-Not started, and not to be started without authorization.
+Not started, and not to be started without authorization. Phase 2 is
+read-only: nothing is sent and no calendar is changed.
 
-- Fixes to existing Scriba backend issues, as small separately reviewable
-  pull requests in Scriba's repository, each with a regression test. No merge
-  or deploy without authorization.
-- A read-only availability service under `/desk/*`: real Google and Outlook
-  calendar availability for the signed-in user, combined busy intervals,
-  timezone, working hours, duration and buffers, conflicts across both
-  providers, suggested free slots, provider and account identity preserved,
-  no calendar writes.
-- The overlay source versioned in this repository with reproducible
-  integration instructions, and a typed contract for the frontend role.
-- Validation across Google-only, Microsoft-only, both, none, conflicts,
-  expired permissions, time zones, cross-user isolation, API failures and
-  fully booked calendars.
+- A live signed-in read on Gmail, Outlook Mail, Google Calendar and Outlook
+  Calendar, to replace seeded data as the evidence.
+- One inbox across Gmail and Outlook, with threads.
+- Priority and triage, search, and reply drafts for review.
+- Chat on Scriba's existing agent.
+- Day and week calendar views across both calendars.
+- Notifications and an on-demand daily briefing.
+
+Scheduling, tasks, reminders, automations, approvals and all outbound
+actions are Phase 3. The 20 real cases, metrics and demo are the final
+phase. See [ROADMAP.md](ROADMAP.md).

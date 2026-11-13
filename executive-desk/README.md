@@ -37,6 +37,8 @@ Open http://localhost:5183. The sidebar shows "Mock data" while the mock adapter
 - **Approval Center** (`#/approvals`): each proposed email and calendar change, why the agent proposes it, approve and reject, and what was executed.
 - **Evaluation Dashboard** (`#/evaluation`): the twenty cases, expected versus actual, traces, and Friday, Saturday and Sunday snapshots.
 
+Screenshots of each screen on mock data are in [docs/screenshots](docs/screenshots).
+
 ## Mock data and real data
 
 The UI talks to one interface, `ExecutiveDeskApi` in `src/api/client.ts`. `src/api/index.ts` picks the implementation:

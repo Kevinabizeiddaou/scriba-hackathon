@@ -6,10 +6,10 @@ import { fmtRange } from '../lib/time';
 function Frame({ icon: Icon, verb, children }: { icon: LucideIcon; verb: string; children: ReactNode }) {
   return (
     <section className="overflow-hidden rounded-xl border border-line bg-sunken/70">
-      <h4 className="flex items-center gap-2 border-b border-line bg-white/[0.03] px-3.5 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-soft">
+      <h3 className="flex items-center gap-2 border-b border-line bg-white/[0.03] px-3.5 py-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-soft">
         <Icon aria-hidden className="h-3.5 w-3.5 text-accent" />
         {verb}
-      </h4>
+      </h3>
       <div className="space-y-2 px-3.5 py-3">{children}</div>
     </section>
   );

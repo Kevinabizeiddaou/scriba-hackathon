@@ -18,6 +18,9 @@
  *   --cases <file>          case-set file to run instead of a built-in suite
  *   --only <ids>            comma-separated case ids to run
  *   --skip <ids>            comma-separated case ids to skip
+ *   --repeat <n>            run the selected cases n times (2 to 20) and write a reliability campaign
+ *   --compare <file>        compare two report files instead of running anything; needs --with
+ *   --with <file>           the report to compare against the one given to --compare
  *   --label <text>          label stored in the report
  *   --out <dir>             where the report is written (default: eval-results)
  *   --junit <file>          also write the results as JUnit XML
@@ -43,12 +46,13 @@ import { loadCaseSet } from '../src/evaluation/caseSets';
 import { AREA_LABEL, SUITES, type SuiteName } from '../src/evaluation/fixtures';
 import { toJUnit } from '../src/evaluation/junit';
 import { parsePriceTable, type PriceTable } from '../src/evaluation/pricing';
-import { buildSnapshot, snapshotBlocker, summarizeByArea } from '../src/evaluation/report';
+import { buildSnapshot, isReport, snapshotBlocker, summarizeByArea } from '../src/evaluation/report';
+import { aggregateCampaign, compareReports, renderCampaignMarkdown, renderComparisonMarkdown } from '../src/evaluation/campaign';
 import { runEvaluation } from '../src/evaluation/runner';
 import { runSelfTest } from '../src/evaluation/selfTest';
 import { fmtDuration } from '../src/lib/time';
 
-const KNOWN = ['target', 'base-url', 'scriba-url', 'signin', 'cookie-env', 'suite', 'cases', 'only', 'skip', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
+const KNOWN = ['target', 'base-url', 'scriba-url', 'signin', 'cookie-env', 'suite', 'cases', 'only', 'skip', 'repeat', 'compare', 'with', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
 
 function parseArgs(argv: string[]): Record<string, string | true> {
   const args: Record<string, string | true> = {};
@@ -67,6 +71,7 @@ function parseArgs(argv: string[]): Record<string, string | true> {
   return args;
 }
 
+const stamp = () => new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
 const str = (value: string | true | undefined): string | undefined => (typeof value === 'string' ? value : undefined);
 const pad = (text: string, width: number) => (text.length > width ? `${text.slice(0, width - 1)}…` : text.padEnd(width));
 
@@ -131,6 +136,32 @@ async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
   if (args['print-json']) say = (line) => console.error(line);
 
+  const compareFile = str(args.compare);
+  if (compareFile || args.with) {
+    const withFile = str(args.with);
+    if (!compareFile || !withFile) throw new Error('--compare <before.json> needs --with <after.json>.');
+    const load = (file: string) => {
+      const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+      if (!isReport(parsed)) throw new Error(`${file} is not an evaluation report.`);
+      return parsed;
+    };
+    const comparison = compareReports(load(compareFile), load(withFile));
+    const markdown = renderComparisonMarkdown(comparison);
+    console.log(markdown);
+    if (args.out) {
+      const outDir = resolve(str(args.out)!);
+      mkdirSync(outDir, { recursive: true });
+      const file = resolve(outDir, `comparison-${stamp()}${comparison.dataSource === 'live' ? '' : '.simulated'}.md`);
+      writeFileSync(file, markdown);
+      console.error(`Comparison written to ${file}`);
+    }
+    // A regression or a new safety violation is a failing exit code, so a script can gate on it.
+    return comparison.counts.regressed + comparison.cases.filter((item) => item.newSafetyViolation).length > 0 ? 1 : 0;
+  }
+
+  const repeat = Number(str(args.repeat) ?? 1);
+  if (!Number.isInteger(repeat) || repeat < 1 || repeat > 20) throw new Error('--repeat must be a whole number from 1 to 20.');
+
   const scribaUrl = str(args['scriba-url'])?.replace(/[/]+$/, '');
   if (args.signin === true && !scribaUrl) throw new Error('--signin needs --scriba-url.');
   const baseUrl = str(args['base-url']) ?? (scribaUrl ? `${scribaUrl}${EVALUATION_BASE_PATH}` : undefined);
@@ -160,6 +191,7 @@ async function main(): Promise<number> {
   if (snapshotDay && !['friday', 'saturday', 'sunday'].includes(snapshotDay)) throw new Error('--snapshot must be friday, saturday or sunday.');
   if (snapshotDay && targetKind !== 'http') throw new Error('--snapshot needs a real backend. Simulated results are never saved as snapshots.');
   if (snapshotDay && (only || skipIds.length > 0)) throw new Error('A snapshot must cover the whole case set. Remove --only and --skip.');
+  if (snapshotDay && repeat > 1) throw new Error('A snapshot is one run. Remove --repeat.');
 
   let pricing: PriceTable | undefined;
   const pricingFile = str(args.pricing);
@@ -199,8 +231,16 @@ async function main(): Promise<number> {
 
   const selected = cases.filter((c) => !only || only.includes(c.id));
   say(`Running ${selected.length} ${caseSet.provenance} case(s) from ${caseSet.id} against ${targetKind === 'mock' ? 'the scripted mock' : baseUrl}\n`);
-  const report = await runEvaluation(target, selected, {
-    label: str(args.label) ?? `${targetKind === 'mock' ? 'Scripted mock' : 'Evaluation'} ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+  const baseLabel = str(args.label) ?? `${targetKind === 'mock' ? 'Scripted mock' : 'Evaluation'} ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`;
+  const outDir = resolve(str(args.out) ?? 'eval-results');
+  mkdirSync(outDir, { recursive: true });
+  const reports: EvaluationReport[] = [];
+  let report!: EvaluationReport;
+  let json = '';
+  for (let round = 1; round <= repeat; round += 1) {
+  if (repeat > 1) say(`\n--- Run ${round} of ${repeat} ---`);
+  report = await runEvaluation(target, selected, {
+    label: repeat > 1 ? `${baseLabel} (run ${round} of ${repeat})` : baseLabel,
     caseSet,
     skip: Object.fromEntries(skipIds.map((id) => [id, 'Skipped with --skip.'])),
     pricing,
@@ -213,12 +253,25 @@ async function main(): Promise<number> {
   });
   printSummary(report);
 
-  const outDir = resolve(str(args.out) ?? 'eval-results');
-  mkdirSync(outDir, { recursive: true });
+  // Runs of a campaign can finish within the same second; each keeps its own id and file.
+  if (repeat > 1) report.id = `${report.id}-run${round}`;
   const file = resolve(outDir, `${report.id}${report.target.dataSource === 'live' ? '' : '.simulated'}.json`);
-  const json = `${JSON.stringify(report, null, 2)}\n`;
+  json = `${JSON.stringify(report, null, 2)}\n`;
   writeFileSync(file, json);
   say(`\nReport written to ${file}`);
+  reports.push(report);
+  }
+
+  if (repeat > 1) {
+    const campaign = aggregateCampaign(reports);
+    const suffix = campaign.dataSource === 'live' ? '' : '.simulated';
+    const name = `campaign-${stamp()}`;
+    writeFileSync(resolve(outDir, `${name}${suffix}.json`), `${JSON.stringify(campaign, null, 2)}\n`);
+    const markdown = renderCampaignMarkdown(campaign);
+    writeFileSync(resolve(outDir, `${name}${suffix}.md`), markdown);
+    say(`\n${markdown}`);
+    say(`Campaign written to ${resolve(outDir, `${name}${suffix}.md`)} and .json`);
+  }
 
   const junitFile = str(args.junit);
   if (junitFile) {
@@ -238,7 +291,7 @@ async function main(): Promise<number> {
   }
 
   if (args['print-json']) process.stdout.write(json);
-  return report.summary.failed + report.summary.errored > 0 ? 1 : 0;
+  return reports.some((item) => item.summary.failed + item.summary.errored > 0) ? 1 : 0;
 }
 
 main()

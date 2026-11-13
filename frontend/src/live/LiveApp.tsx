@@ -4,11 +4,11 @@ import { ApiClientError, getApiBaseUrl, setUnauthenticatedHandler } from '../api
 import { fetchDeskHealth } from '../api/desk'
 import { logout } from '../api/scriba'
 import { ShellBadgesContext, type ShellBadges } from '../components/AppShell'
-import { Desk } from '../Desk'
 import { setApi } from '../harness'
 import { PROVIDER_STATUS_QUERY_KEY, clearProviderStatusCache, useProviderStatus } from '../hooks/useProviderStatus'
 import { SignIn } from '../shell/SignIn'
 import { LiveDesk, ScribaWorkspace } from './liveDesk'
+import { LiveRoutes } from './LiveRoutes'
 import { useWorkQueue } from './LiveWorkPages'
 import { runsNeedingUser, useRunQueue } from './LiveWorkQueuePage'
 import { LiveSessionProvider, useRequiredLiveSession, type LiveSession } from './session'
@@ -97,7 +97,7 @@ function SignedIn({ email, name }: { email: string | null; name: string | null }
   return (
     <LiveSessionProvider value={session}>
       <WithBadges>
-        <Desk />
+        <LiveRoutes />
       </WithBadges>
     </LiveSessionProvider>
   )

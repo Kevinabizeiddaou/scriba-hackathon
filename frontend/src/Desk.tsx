@@ -1,12 +1,7 @@
 import { useEffect } from 'react';
 import { AppShell } from './components/AppShell';
-import { getWorkspace } from './harness';
-import { useRoute, type Page } from './lib/router';
-import { LiveChatPage } from './live/LiveChatPage';
-import { LiveOverviewPage } from './live/LiveOverviewPage';
-import { LiveSchedulingPage } from './live/LiveSchedulingPage';
-import { LiveActivityPage, LiveApprovalsPage } from './live/LiveWorkPages';
-import { LiveWorkQueuePage, WorkQueueDemoNotice } from './live/LiveWorkQueuePage';
+import { useRoute } from './lib/router';
+import { PAGE_TITLES } from './lib/pageTitles';
 import { ActivityPage } from './pages/ActivityPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { CalendarPage } from './pages/CalendarPage';
@@ -15,48 +10,33 @@ import { EvaluationPage } from './pages/EvaluationPage';
 import { InboxPage } from './pages/InboxPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { TasksPage } from './pages/TasksPage';
-
-/** `#/calendar/find-a-time`: the scheduling workspace. Any other parameter is an event id. */
-export const FIND_A_TIME = 'find-a-time';
-
-const TITLES: Record<Page, string> = {
-  overview: 'Overview',
-  inbox: 'Inbox',
-  calendar: 'Calendar',
-  tasks: 'Tasks and follow-ups',
-  work: 'Work queue',
-  chat: 'Secretary chat',
-  approvals: 'Approval center',
-  activity: 'Activity',
-  evaluation: 'Evaluation',
-};
+import { WorkQueueDemoNotice } from './pages/WorkQueueDemoNotice';
 
 /**
- * The workspace: one shell, one set of routes.
+ * The workspace on mock data: demo mode, the contract-v1 mode and the screen tests.
  *
- * Inbox, calendar and tasks are the same screens on live and on mock data; they read view models
- * and the data layer decides where those come from. The overview, chat, approvals and activity
- * have a live version, because on Scriba those run on its chat agent and its action records,
- * which the mock's scripted runs do not resemble.
+ * The live application has its own route table (src/live/LiveRoutes.tsx). Inbox, calendar and
+ * tasks are the same screens in both; they read view models and the data layer decides where
+ * those come from. The overview, chat, approvals and activity differ, because on Scriba those run
+ * on its chat agent and its action records, which the mock's scripted runs do not resemble.
  */
 export function Desk() {
   const route = useRoute();
-  const live = getWorkspace().availability === 'live';
 
   useEffect(() => {
-    document.title = `${TITLES[route.page]} · Scriba Executive Desk`;
+    document.title = `${PAGE_TITLES[route.page]} · Scriba Executive Desk`;
   }, [route.page]);
 
   return (
     <AppShell page={route.page}>
-      {route.page === 'overview' && (live ? <LiveOverviewPage /> : <OverviewPage />)}
+      {route.page === 'overview' && <OverviewPage />}
       {route.page === 'inbox' && <InboxPage emailId={route.param} />}
-      {route.page === 'calendar' && (live && route.param === FIND_A_TIME ? <LiveSchedulingPage /> : <CalendarPage eventId={route.param} />)}
+      {route.page === 'calendar' && <CalendarPage eventId={route.param} />}
       {route.page === 'tasks' && <TasksPage tab={route.param} />}
-      {route.page === 'work' && (live ? <LiveWorkQueuePage runId={route.param} /> : <WorkQueueDemoNotice />)}
-      {route.page === 'chat' && (live ? <LiveChatPage conversationId={route.param} /> : <ChatPage conversationId={route.param} />)}
-      {route.page === 'approvals' && (live ? <LiveApprovalsPage /> : <ApprovalsPage approvalId={route.param} />)}
-      {route.page === 'activity' && (live ? <LiveActivityPage /> : <ActivityPage />)}
+      {route.page === 'work' && <WorkQueueDemoNotice />}
+      {route.page === 'chat' && <ChatPage conversationId={route.param} />}
+      {route.page === 'approvals' && <ApprovalsPage approvalId={route.param} />}
+      {route.page === 'activity' && <ActivityPage />}
       {route.page === 'evaluation' && <EvaluationPage />}
     </AppShell>
   );

@@ -15,7 +15,7 @@ Everything below was run against the scripted mock or the reference server. Noth
 | Desk suite against the mock | `npm run eval -- --target mock` | 20 of 20 scripted runs scored as expected; report written as `*.simulated.json` |
 | Scheduling set against the mock | `npm run eval -- --target mock --suite scheduling` | 20 of 20 scripted runs scored as expected |
 | Desk suite over HTTP | integration test against the reference server | The same 20 of 20, through the HTTP adapter |
-| Mutation check | deliberate defects, one at a time | 20 defects were prepared and 4 were run, all in the state-assertion code; all 4 were caught. The other 16 have not been run yet, so the tests for the approval card, chat retry, area breakdown and cookie handling are not yet proven this way. |
+| Mutation check | deliberate defects, one at a time | 57 defects over three rounds. 55 caught at once; the 2 that were not each led to a new or tighter test and are now caught |
 | Responsive check | Browser at 375 px, 792 px and 1440 px | No sideways scroll on any of the eight screens; every link and control at least 44 px on touch |
 
 "Scored as expected" for a scripted run means the hand-written reference script satisfies the case. It says the cases and the scorer agree with each other. It is not a pass rate, and no pass rate is shown for a scripted target anywhere.
@@ -110,7 +110,11 @@ The 13 added with the desk suite cover the rest of the secretary's work:
 To confirm the tests can fail, defects were put into the code one at a time and the whole suite run each time.
 
 - Rounds one and two, before the workspace was expanded: 37 defects in the scorer, runner, report, pricing, matchers, mock, HTTP adapter, case-set loader and UI. 36 were caught immediately. One was not: removing the "one request in flight" rule from the data-loading hook failed no test. A direct test of the hook was added, and that defect is now caught.
-- Round three, on the code added for the expanded workspace and suite: 20 defects were prepared and 4 were run, all in the state-assertion code; all 4 were caught. The other 16 have not been run yet, so the tests for the approval card, chat retry, area breakdown and cookie handling are not yet proven this way.
+- Round three, on the code added for the expanded workspace and suite: 20 defects in the scorer's state assertions, priority and sandbox checks, the area breakdown, the approval card's step results and recovery block, the chat retry rule, the workspace selection, the write-retry rule and the cookie default. 19 were caught immediately. One was not: making an old chat failure retryable after a later attempt had succeeded failed no test, because the test only looked at the page it had just clicked on. The test now reloads the conversation and checks that the old failure offers no retry, and the defect is caught. The first 4 of the 20 were run against the whole suite; the other 16 against the test files that cover the changed file.
+
+## A flaky test found and fixed
+
+During the final runs one chat test failed once in about fifteen runs of the whole suite: "does not start a second run with Enter while one is still working". The code was right; the test typed its second message key by key, and on a loaded machine that could outlast the first scripted run, after which a second message is allowed. The test now pastes the message, asserts that the first run is still working at that moment, and uses a longer scripted delay. It passed three full runs in a row afterwards and still fails when the guard it covers is removed.
 
 ## Mock safety
 

@@ -536,7 +536,7 @@ describe('secretary chat', () => {
 
   it('does not start a second run with Enter while one is still working', async () => {
     const user = userEvent.setup();
-    const slow = new MockExecutiveDesk({ stepDelayMs: 150, seed: false });
+    const slow = new MockExecutiveDesk({ stepDelayMs: 400, seed: false });
     setApi(slow);
     desk = slow;
     window.location.hash = '#/chat';
@@ -544,7 +544,12 @@ describe('secretary chat', () => {
     const input = await screen.findByLabelText('Message Scriba');
     await user.type(input, 'Move my 1:1 with Omar to Wednesday at 11.{Enter}');
     await screen.findByText('Working on it');
-    await user.type(input, "What's on my calendar today?{Enter}");
+    // Pasted, not typed key by key: on a busy machine slow typing could outlast the first run,
+    // and once that run is waiting for approval a second message is allowed.
+    await user.click(input);
+    await user.paste("What's on my calendar today?");
+    expect((await slow.listRuns()).map((r) => r.status)).toEqual(['running']); // the first run really is still working
+    await user.keyboard('{Enter}');
     expect(await slow.listRuns()).toHaveLength(1);
     expect(input).toHaveValue("What's on my calendar today?"); // kept, not sent and not lost
     await act(async () => {
@@ -587,7 +592,7 @@ describe('secretary chat', () => {
 
   it('shows a failed booking, sends nothing, and recovers when you try again', async () => {
     const user = userEvent.setup();
-    await open('#/chat');
+    const view = await open('#/chat');
     const thread = await screen.findByRole('region', { name: 'Conversation' });
     await user.type(screen.getByLabelText('Message Scriba'), 'Book 30 minutes with Yara on Thursday at 15:00 about the insurance renewal and send her the invite.{Enter}');
     await settle();
@@ -611,6 +616,15 @@ describe('secretary chat', () => {
     await settle();
     await waitFor(() => expect(within(thread).getByText(/Done\. The insurance renewal preparation is booked for Thu 19 Nov, 15:00 to 15:30/)).toBeInTheDocument());
     expect(within(thread).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+
+    // After a reload the failed attempt is still on the record, but only the latest request could be
+    // retried, and that one succeeded. Offering "Try again" here would book the meeting a second time.
+    view.unmount();
+    await open('#/chat');
+    const reopened = await screen.findByRole('region', { name: 'Conversation' });
+    const old = (await within(reopened).findAllByRole('article', { name }))[0];
+    expect(within(old).getByRole('alert')).toHaveTextContent('This did not complete');
+    expect(within(reopened).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 });
 

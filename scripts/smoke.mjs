@@ -22,6 +22,8 @@ const flag = name => {
 const base = (flag('base') || process.env.SMOKE_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '')
 // The browser origin the Desk is served from. Scriba trusts this one by default.
 const origin = flag('origin') || process.env.SMOKE_ORIGIN || 'http://localhost:5173'
+// --desk: the backend has the Desk overlay mounted; also check /desk/*.
+const withDesk = args.includes('--desk')
 const email = process.env.SMOKE_EMAIL || ''
 const password = process.env.SMOKE_PASSWORD || ''
 
@@ -127,6 +129,13 @@ for (const path of ['/emails?provider=gmail', '/emails?provider=outlook',
   })
 }
 
+if (withDesk) {
+  await check('desk: anonymous GET /desk/health is refused with 401', async () => {
+    const { response, json } = await call('/desk/health')
+    expect(response.status === 401 && json?.errorCode === 'unauthenticated', `status ${response.status}`)
+  })
+}
+
 // ── Signed-in checks: only with SMOKE_EMAIL / SMOKE_PASSWORD ──
 
 if (email && password) {
@@ -172,6 +181,65 @@ if (email && password) {
     const { response } = await call('/emails?provider=gmail&account=someone-else@example.test')
     expect(response.status === 403, `status ${response.status}`)
   })
+
+  if (withDesk) {
+    await check('desk: GET /desk/health reports a read-only overlay', async () => {
+      const { response, json } = await call('/desk/health')
+      expect(response.status === 200, `status ${response.status}`)
+      expect(json?.service === 'scriba-desk-overlay' && json?.writes === false, 'unexpected health body')
+      return `version ${json.version}`
+    })
+
+    await check('desk: GET /desk/connections lists exactly the four Desk capabilities', async () => {
+      const { json } = await call('/desk/connections')
+      const ids = (json?.capabilities ?? []).map(item => item.id)
+      expect(ids.join(',') === 'gmail,google_calendar,outlook_mail,outlook_calendar', `got ${ids}`)
+      expect(!/slack|teams|jira|drive/i.test(JSON.stringify(json)), 'an excluded integration leaked')
+      return json.capabilities.map(item => `${item.id}=${item.state}`).join(' ')
+    })
+
+    await check('desk: GET /desk/inbox returns triaged mail with provider and account kept', async () => {
+      const { response, json } = await call('/desk/inbox?limit=10')
+      expect(response.status === 200, `status ${response.status}`)
+      expect(Array.isArray(json?.items) && Array.isArray(json?.sources), 'unexpected shape')
+      for (const item of json.items) {
+        expect(['gmail', 'outlook'].includes(item.provider), `provider ${item.provider}`)
+        expect(item.triage && typeof item.triage.category === 'string', 'row without triage')
+      }
+      return `${json.items.length} item(s); ` +
+        json.sources.map(source => `${source.provider}=${source.ok ? 'ok' : source.error}`).join(' ')
+    })
+
+    await check('desk: GET /desk/availability never offers slots without a complete read', async () => {
+      const start = new Date(Date.now() + 86_400_000).toISOString()
+      const end = new Date(Date.now() + 3 * 86_400_000).toISOString()
+      const { response, json } = await call(
+        `/desk/availability?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
+      expect(response.status === 200, `status ${response.status}`)
+      expect(Array.isArray(json?.calendars) && Array.isArray(json?.slots), 'unexpected shape')
+      expect(json.complete || json.slots.length === 0, 'slots offered from an incomplete read')
+      return `${json.calendars.length} calendar(s), complete=${json.complete}` +
+        (json.reason ? ` (${json.reason})` : '') + `, ${json.slots.length} slot(s)`
+    })
+
+    await check('desk: GET /desk/briefing is built from Scriba records', async () => {
+      const { response, json } = await call('/desk/briefing')
+      expect(response.status === 200, `status ${response.status}`)
+      expect(typeof json?.headline === 'string' && json?.counts, 'unexpected shape')
+      expect(Array.isArray(json.unavailable), 'no unavailable list')
+      return json.headline + (json.unavailable.length ? ` unavailable: ${json.unavailable}` : '')
+    })
+
+    await check('desk: a slot check from another site is blocked', async () => {
+      const { response, json } = await call('/desk/slots/check', {
+        method: 'POST',
+        sendOrigin: 'https://not-the-desk.example.test',
+        body: { start: '2030-01-07T10:00:00Z', end: '2030-01-07T10:30:00Z' },
+      })
+      expect(response.status === 403 && json?.errorCode === 'cross_site_blocked',
+        `status ${response.status}`)
+    })
+  }
 
   await check('session: a state-changing request from another site is blocked', async () => {
     const { response, json } = await call('/auth/logout', {

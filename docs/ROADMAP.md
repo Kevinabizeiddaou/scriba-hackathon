@@ -11,7 +11,9 @@ Two things are kept strictly apart in this document:
   "Working" have been run from this repository, and only against Scriba's
   seeded test backend (see [BASELINE.md](BASELINE.md)).
 
-No end-to-end agent run has happened in the Desk.
+No end-to-end agent run has happened in the Desk. "Backend working on seeded data" means the route runs inside the real Scriba application against Scriba's seeded test backend; it does not mean live Google or Microsoft data.
+
+The Desk backend overlay lives in [`backend/`](../backend/README.md) on the `agent1/backend` branch.
 
 ## Feature reuse and migration matrix
 
@@ -25,20 +27,20 @@ does not have it; built as a small addition on top of Scriba's parts.
 | Google and Microsoft account connections | Yes: connect routes and connection status | Direct | Nothing | Working (status and connect links) | 1 |
 | Gmail inbox reading | Yes: `GET /emails` | Direct | Nothing | Working (seeded data) | 1 |
 | Outlook inbox reading | Yes: `GET /emails` | Direct | Live-data check | Route answers; no live data seen | 1 |
-| Unified inbox across both mailboxes | Yes, per provider | Adapt | One merged, ordered list; thread view | Not built | 2 |
-| Triage and prioritisation | Yes: priority on every message, user override (`POST /emails/priority`), read state (`POST /emails/read`), bulk-mail filtering | Direct | Triage view; message categories for the secretary job | Not built | 2 |
+| Unified inbox across both mailboxes | Yes, per provider | Adapt | Thread view in the UI | Backend working on seeded data: `GET /desk/inbox` (overlay) | 2 |
+| Triage and prioritisation | Yes: priority on every message, user override (`POST /emails/priority`), read state (`POST /emails/read`), bulk-mail filtering | Direct | Triage view in the UI | Backend working on seeded data: every inbox row carries a rule-based triage record | 2 |
 | Search | Yes: `GET /search` | Direct | Search box | Not built | 2 |
 | Google and Outlook calendar reading | Yes: `GET /calendar/events`, `GET /agenda/today`, `GET /agenda/week` | Direct | Day and week views | Working as a list (empty in seeded data) | 1, then 2 |
 | Natural-language chat | Yes: conversations, streaming replies, proposed-action cards | Direct | Chat page wired to Scriba's chat API | Not built (a mock chat exists on the frontend branch) | 2 |
 | Chat limited to Desk capabilities | No: chat can still offer excluded integrations | Adapt | A Desk-only tool scope | Not built | 2 to Final |
 | Notifications | Yes: `GET /notifications`, read, dismiss, snooze | Direct | Notification list | Not built | 2 |
 | Preferences (time zone, working hours, reply style) | Yes: `GET`/`POST /preferences` | Direct | Settings panel | Not built | 2 |
-| Daily executive briefing | Yes: on-demand brief (`POST /daily-brief`), scheduled brief by email | Adapt | Briefing view; delivery from an Outlook mailbox | Not built | 2 (view), 3 (delivery) |
-| Contextual reply drafts | Yes: draft generation and a drafts list (`/drafts`) | Direct | Draft review in the inbox | Not built | 2 |
+| Daily executive briefing | Yes: on-demand brief (`POST /daily-brief`), scheduled brief by email | Adapt | Briefing view; delivery from an Outlook mailbox | Backend working on seeded data: `GET /desk/briefing` (records only, no model) | 2 (view), 3 (delivery) |
+| Contextual reply drafts | Yes: draft generation and a drafts list (`/drafts`) | Direct | Draft review in the inbox | `GET /desk/inbox/item` returns the request for Scriba's draft endpoint; the draft call itself is not yet verified | 2 |
 | Sending replies and new mail | Yes: `POST /reply`, `POST /send`, draft send | Direct | Approval UI; backend fixes first | Not built | 3 |
 | Calendar create, update, cancel | Yes: `/calendar/events` for Google and Outlook | Direct | Approval UI; backend fixes first | Not built | 3 |
-| Availability across both calendars | Partly: free/busy and slot logic exist internally, with no API and not used by chat | New | A read-only `/desk/availability` service built on Scriba's calendar clients and slot logic | Not built | 3 |
-| Conflict detection and slot proposal | Partly: a meeting-conflict notification and slot ranking exist | Adapt | Use them before proposing or booking | Not built | 3 |
+| Availability across both calendars | Partly: free/busy and slot logic exist internally, with no API and not used by chat | New | Live verification on real Google and Outlook calendars | Backend built and tested with providers replaced at the SDK boundary: `GET /desk/availability`, `POST /desk/slots/check`. No live calendar read yet | 3 |
+| Conflict detection and slot proposal | Partly: a meeting-conflict notification and slot ranking exist | Adapt | Use them before proposing or booking | Backend built: cross-calendar conflicts and slot checks in the overlay; draft requests carry only verified free times. Not yet wired into chat | 3 |
 | Tasks | Yes: list, complete, discard, pin, prioritise; created through chat actions and automations | Direct | Task list; create flow | Not built | 3 |
 | Reminders | Yes: upcoming list, cancel; created through chat actions and automations | Adapt | Reminder list; confirm how due reminders are delivered | Not built | 3 |
 | Follow-up management | Partly: unanswered-important-email alerts, suggestions (`/suggestions`), post-meeting follow-up reminders | Adapt | Track replies awaited on sent mail and raise overdue ones | Not built | 3 |
@@ -88,7 +90,7 @@ Scriba does not have these today; they are the real new work.
 | --- | --- | --- |
 | The scope is now the whole inbox-to-action job, with the final submission days away | Breadth can crowd out reliability | Phase 2 is read-only and almost entirely direct reuse; writes arrive only in Phase 3, behind approvals |
 | No live Google or Microsoft data has been tested from the Desk | Seeded data cannot show provider quirks | First task of Phase 2: a signed-in live read on both providers |
-| Known backend issues must be fixed before the Desk sends mail or writes calendars | A mistake in an outbound action is visible to third parties and cannot be recalled | Fixes go through Scriba's own review; the Desk enables writes only after them |
+| Known backend issues must be fixed before the Desk sends mail or writes calendars | A mistake in an outbound action is visible to third parties and cannot be recalled | Fixes are submitted for review in Scriba's own repository and are not merged or deployed yet; the Desk enables writes only after them |
 | The Desk and the frontend branch are separate histories with separate API contracts | Two contracts drift | Agree one contract before merging; merge is a deliberate, reviewed step |
 | The Desk only runs on the local development origin | A hosted demo needs settings on the existing API service | Listed in [ARCHITECTURE.md](ARCHITECTURE.md); no change without authorization |
 | Model behaviour decides the quality of triage, drafts and scheduling | It cannot be proven by unit tests | The 20-case evaluation, run early and repeatedly on a real backend |

@@ -23,7 +23,9 @@ const base = (flag('base') || process.env.SMOKE_BASE_URL || 'http://localhost:80
 // The browser origin the Desk is served from. Scriba trusts this one by default.
 const origin = flag('origin') || process.env.SMOKE_ORIGIN || 'http://localhost:5173'
 // --desk: the backend has the Desk overlay mounted; also check /desk/*.
-const withDesk = args.includes('--desk')
+const withDesk = args.includes('--desk') || args.includes('--desk-chat')
+// --desk-chat: also run chat turns through Scriba's chat with the Desk scope.
+const withDeskChat = args.includes('--desk-chat')
 const email = process.env.SMOKE_EMAIL || ''
 const password = process.env.SMOKE_PASSWORD || ''
 
@@ -229,6 +231,67 @@ if (email && password) {
       expect(Array.isArray(json.unavailable), 'no unavailable list')
       return json.headline + (json.unavailable.length ? ` unavailable: ${json.unavailable}` : '')
     })
+
+    await check('desk: POST /desk/intake opens one run per message and proposes nothing unapproved', async () => {
+      const inbox = await call('/desk/inbox?limit=5')
+      const item = inbox.json?.items?.[0]
+      if (!item) return 'no mail to take in (skipped)'
+      const body = { provider: item.provider, id: item.id }
+      const first = await call('/desk/intake', { method: 'POST', body })
+      expect(first.response.status === 200, `status ${first.response.status}`)
+      const run = first.json
+      expect(typeof run.runId === 'number' && Array.isArray(run.actions), 'unexpected shape')
+      // Nothing is executed by intake: every action still waits for approval.
+      expect(run.actions.every(action => action.verified === false || run.duplicate),
+        'an action was executed by intake')
+      const again = await call('/desk/intake', { method: 'POST', body })
+      expect(again.json.runId === run.runId && again.json.duplicate === true, 'a duplicate run was created')
+      const fetched = await call(`/desk/runs/${run.runId}`)
+      expect(fetched.response.status === 200 && fetched.json.runId === run.runId, 'run not readable')
+      return `run ${run.runId}: ${run.category}, state ${run.state}, ${run.actions.length} action(s)`
+    })
+
+    if (withDeskChat) {
+      // Each chat turn below reaches Scriba's planner, so on a backend with a
+      // real model it costs model calls. It never proposes or approves a write.
+      let conversationId = null
+      const turn = async hint => {
+        const { response, json } = await call(`/chat/conversations/${conversationId}/messages`, {
+          method: 'POST',
+          body: { content: 'When am I free this week?', tool_hint: hint },
+        })
+        expect(response.status === 200, `status ${response.status}`)
+        const message = json?.assistant_message ?? json?.message ?? json
+        return message?.tool_calls ?? json?.tool_calls ?? []
+      }
+
+      await check('desk chat: the scope is enforced in this process', async () => {
+        const { json } = await call('/desk/health')
+        expect(json?.chatScope === 'enforced', `chatScope is ${json?.chatScope}`)
+        const tools = [...json.chatTools.read, ...json.chatTools.approval]
+        expect(!tools.some(name => /slack|teams|jira|drive|onedrive/.test(name)), 'an excluded tool is in scope')
+        const created = await call('/chat/conversations', { method: 'POST', body: { title: 'Desk smoke' } })
+        conversationId = (created.json?.conversation ?? created.json)?.id
+        expect(conversationId, 'no conversation id')
+        return `${tools.length} tools`
+      })
+
+      await check('desk chat: find_free_slots runs through Scriba chat and never invents slots', async () => {
+        const calls = await turn('find_free_slots')
+        const tool = calls.find(item => item.tool_name === 'find_free_slots')
+        expect(tool && tool.status === 'executed', `tool call ${JSON.stringify(calls.map(c => c.status))}`)
+        expect(tool.output.complete || tool.output.slots.length === 0, 'slots from an incomplete read')
+        return `complete=${tool.output.complete}` + (tool.output.reason ? ` (${tool.output.reason})` : '') +
+          `, ${tool.output.slots.length} slot(s)`
+      })
+
+      await check('desk chat: an excluded tool cannot be run through chat', async () => {
+        for (const hint of ['recent_slack_messages', 'search_google_drive', 'list_jira_issues']) {
+          const calls = await turn(hint)
+          expect(!calls.some(item => item.tool_name === hint), `${hint} ran`)
+        }
+      })
+    }
 
     await check('desk: a slot check from another site is blocked', async () => {
       const { response, json } = await call('/desk/slots/check', {

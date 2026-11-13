@@ -20,6 +20,9 @@ export interface DeskHealth {
   capabilities: string[]
   /** Always false: the overlay does not send mail or write calendars. */
   writes: false
+  /** 'enforced' when Scriba's chat agent is limited to the Desk's tools in this backend. */
+  chatScope?: 'enforced' | 'off'
+  chatTools?: { read: string[]; approval: string[] }
 }
 
 export interface DeskCapability {
@@ -282,3 +285,108 @@ export const checkDeskSlot = (body: {
   timezone?: string
   buffer_minutes?: number
 }) => postJson<DeskSlotCheck>('/desk/slots/check', body)
+
+// ── Desk workflow: one incoming email to proposed, approvable actions ───────
+
+export type RunState =
+  | 'awaiting_approval'
+  | 'executing'
+  | 'completed'
+  | 'partial'
+  | 'failed'
+  | 'cancelled'
+  | 'no_action_proposed'
+
+export interface DeskAction {
+  /** Scriba chat tool-call id. Approve, cancel and retry go through Scriba's chat routes. */
+  toolCallId: number
+  tool_name: 'create_task' | 'create_calendar_event' | 'send_email' | string
+  /** Scriba's tool-call status (see BACKEND_CONTRACT section 3). */
+  status: string
+  requiresApproval: true
+  input: Record<string, unknown>
+  message: string | null
+  error: string | null
+  /** Present on calendar-event cards when the Desk chat scope is enforced. */
+  availability: Partial<DeskSlotCheck> | null
+  assistantActionId: number | null
+  /** True only when the card executed AND Scriba recorded the action. Never inferred. */
+  verified: boolean
+  /** Present while the card can be approved. POST it with `{}` (or payload_overrides). */
+  approve: { method: 'POST'; path: string } | null
+}
+
+export interface DeskRunHeld {
+  reason:
+    | 'calendar_conflict'
+    | 'availability_unknown'
+    | 'time_not_understood'
+    | 'change_request'
+    | 'invalid_preferences'
+  message: string
+  /** Verified free times to offer instead. Empty when calendars could not be read. */
+  slots: Slot[]
+  calendars: CalendarRead[]
+  requested?: Slot
+  conflicts?: BusyInterval[]
+}
+
+export interface DeskRun {
+  runId: number
+  /** True when this message already had a run and nothing new was proposed. */
+  duplicate: boolean
+  state: RunState
+  email: {
+    provider: MailProvider
+    email_id: string
+    thread_id: string | null
+    provider_account_id: string | null
+    from_addr: string
+    subject: string
+  }
+  category: TriageCategory
+  outcome: Triage['outcome']
+  createdAt: string
+  /** Why nothing was proposed for booking, for a meeting request. */
+  held: DeskRunHeld | null
+  draftRequest: DraftRequest | null
+  actions: DeskAction[]
+  /** 'advance': call advanceDeskRun. 'draft_reply': post draftRequest to Scriba. */
+  next: Array<'advance' | 'draft_reply'>
+}
+
+export const startDeskIntake = (body: { provider: MailProvider; id: string; mailbox?: string }) =>
+  postJson<DeskRun>('/desk/intake', body, { timeout: 120_000 })
+
+export const fetchDeskRuns = () =>
+  getJson<{ account: string; runs: Array<{ runId: number; subject: string; category: TriageCategory; created_at: string }> }>(
+    '/desk/runs',
+  )
+
+export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
+
+export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+/** "Book anyway" for a calendar card held by the booking gate. */
+export const DESK_AVAILABILITY_OVERRIDE = { payload_overrides: { desk_availability_override: true } } as const
+
+// ── Desk safeguards (BACKEND_CONTRACT section 7) ────────────────────────────
+
+/** `output.error_code` values with which the Desk holds a card. */
+export type DeskHoldCode =
+  | 'unverified_recipient'
+  | 'reply_target_changed'
+  | 'reply_target_unverified'
+  | 'recipient_required'
+  | 'body_required'
+  | 'title_required'
+  | 'reminder_incomplete'
+  | 'start_required'
+  | 'calendar_conflict'
+  | 'availability_unknown'
+  | 'desk_check_failed'
+
+/** Approve body that accepts recipients the user confirmed or typed on the card. */
+export const confirmDeskRecipients = (addresses: string[], extra: Record<string, unknown> = {}) => ({
+  payload_overrides: { ...extra, desk_confirmed_recipients: addresses },
+})

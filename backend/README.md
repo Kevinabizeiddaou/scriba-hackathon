@@ -20,6 +20,10 @@ It is read-only. Nothing here sends mail or writes to a calendar.
 | `desk_overlay/triage.py` | Secretary triage on top of Scriba's classifier (pure) |
 | `desk_overlay/capabilities.py` | The four Desk capabilities from Scriba's provider status (pure) |
 | `desk_overlay/briefing.py` | The executive briefing from Scriba records (pure) |
+| `desk_overlay/service.py` | The operations shared by the routes and the chat tools |
+| `desk_overlay/chat_scope.py` | The Desk scope for Scriba's chat agent: tool scope, availability tools, booking gate |
+| `desk_overlay/workflow.py` | One incoming email to proposed, approvable Scriba action cards |
+| `desk_overlay/safeguards.py` | The Desk's own checks on a proposed action: completeness, recipient provenance, reply target (pure) |
 | `desk_overlay/scriba_transferred/` | Scriba's slot search and time rules, transferred unchanged |
 | `dev/seeded_desk_server.py` | Scriba's seeded test backend with the overlay mounted |
 | `tests/` | Unit and route tests (no Scriba needed) and `tests/integration/` (real Scriba app) |
@@ -115,3 +119,14 @@ prove the integration with Scriba's code, not with live provider data.
 
 The API contract for clients is [../docs/BACKEND_CONTRACT.md](../docs/BACKEND_CONTRACT.md),
 with types in `frontend/src/api/desk.ts`.
+
+## Chat scope
+
+`DESK_CHAT_SCOPE=on` narrows Scriba's own chat agent to the Desk's tools,
+adds the availability tools, and puts the booking gate on Scriba's validation
+(see `desk_overlay/chat_scope.py` and section 5 of the contract). It applies
+to the **whole process**, so turn it on only in a process that serves the
+Desk and nobody else. `dev/seeded_desk_server.py` turns it on by default; with
+a real local Scriba backend, add `DESK_CHAT_SCOPE=on` to the command above.
+`GET /desk/health` reports whether it is enforced. Do not set it on a backend
+that Scriba's own users also use.

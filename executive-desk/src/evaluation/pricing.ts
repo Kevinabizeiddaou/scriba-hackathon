@@ -41,7 +41,8 @@ export function costFromPriceTable(usage: TokenUsage, table: PriceTable): number
 
 export function estimateCost(usage: TokenUsage | null, table: PriceTable): { usd: number | null; source: 'backend' | 'price_table' | null } {
   if (!usage) return { usd: null, source: null };
-  if (usage.estimatedCostUsd !== null) return { usd: usage.estimatedCostUsd, source: 'backend' };
+  // A missing field is not a price of zero: only a number the backend actually sent counts.
+  if (typeof usage.estimatedCostUsd === 'number' && Number.isFinite(usage.estimatedCostUsd)) return { usd: usage.estimatedCostUsd, source: 'backend' };
   const usd = costFromPriceTable(usage, table);
   return { usd, source: usd === null ? null : 'price_table' };
 }

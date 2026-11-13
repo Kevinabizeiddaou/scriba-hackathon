@@ -6,7 +6,10 @@ import { setApi } from './api';
 import type { EvaluationTarget } from './api/client';
 import { MockExecutiveDesk } from './api/mock/mockAdapter';
 import { EVALUATION_CASES } from './evaluation/fixtures';
+import { SYNTHETIC_CASE_SET } from './evaluation/fixtures';
 import { runEvaluation } from './evaluation/runner';
+import { PROBES } from './evaluation/selfTest';
+import { evaluationSession } from './evaluation/session';
 
 let desk: MockExecutiveDesk;
 
@@ -29,6 +32,7 @@ async function settle() {
 
 beforeEach(() => {
   localStorage.clear();
+  evaluationSession.reset();
   desk = new MockExecutiveDesk({ stepDelayMs: 0 });
   setApi(desk);
 });
@@ -246,6 +250,24 @@ describe('secretary chat', () => {
     await user.type(screen.getByLabelText('Message Scriba'), '   {Enter}');
     expect((await desk.listRuns()).filter((r) => r.trigger === 'chat_message')).toHaveLength(1);
   });
+
+  it('does not start a second run with Enter while one is still working', async () => {
+    const user = userEvent.setup();
+    const slow = new MockExecutiveDesk({ stepDelayMs: 150, seed: false });
+    setApi(slow);
+    desk = slow;
+    window.location.hash = '#/chat';
+    render(<App />);
+    const input = await screen.findByLabelText('Message Scriba');
+    await user.type(input, 'Move my 1:1 with Omar to Wednesday at 11.{Enter}');
+    await screen.findByText('Working on it');
+    await user.type(input, "What's on my calendar today?{Enter}");
+    expect(await slow.listRuns()).toHaveLength(1);
+    expect(input).toHaveValue("What's on my calendar today?"); // kept, not sent and not lost
+    await act(async () => {
+      await slow.whenIdle();
+    });
+  });
 });
 
 describe('evaluation dashboard', () => {
@@ -295,7 +317,7 @@ describe('evaluation dashboard', () => {
     const panel = await screen.findByRole('region', { name: 'Harness self-test result' }, { timeout: 15_000 });
     expect(within(panel).getByText('Harness behaves as specified')).toBeInTheDocument();
     expect(within(panel).getByText('20 of 20')).toBeInTheDocument();
-    expect(within(panel).getByText('12 of 12')).toBeInTheDocument();
+    expect(within(panel).getByText(`${PROBES.length} of ${PROBES.length}`)).toBeInTheDocument();
 
     // Still no real run: the banner stays and every headline number stays empty.
     expect(screen.getByText('No real evaluation has been run yet.')).toBeInTheDocument();
@@ -309,27 +331,27 @@ describe('evaluation dashboard', () => {
   }, 20_000);
 
   it('shows real numbers from a live report and saves a day snapshot from it', async () => {
-    const report = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES, { pollIntervalMs: 1, label: 'Saturday noon', skip: { 'EVAL-018': 'Fault injection not ready.' } });
+    const report = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES, { pollIntervalMs: 1, label: 'Saturday noon', caseSet: SYNTHETIC_CASE_SET });
     localStorage.setItem('executive-desk.eval.lastLiveReport', JSON.stringify(report));
     const user = userEvent.setup();
     await open('#/evaluation');
 
     expect(screen.queryByText('No real evaluation has been run yet.')).not.toBeInTheDocument();
     const tiles = screen.getByRole('region', { name: 'Headline results' });
-    expect(within(tiles).getByText('19 / 20')).toBeInTheDocument();
+    expect(within(tiles).getByText('20 / 20')).toBeInTheDocument();
     expect(within(tiles).getByText('100%')).toBeInTheDocument();
     expect(within(tiles).getByText('$0.0200')).toBeInTheDocument();
+    // EVAL-018 ends as a failed run, so it reports no usage and is left out of the cost average.
     expect(within(tiles).getByText(/Mean over 19 priced runs/)).toBeInTheDocument();
-    expect(within(tiles).getByText(/19 passed unassisted, 0 more with a rescue, 0 failed/)).toBeInTheDocument();
+    expect(within(tiles).getByText(/20 passed unassisted, 0 more with a rescue, 0 failed/)).toBeInTheDocument();
     expect(within(tiles).getByText(`Rescues only. ${report.summary.mandatoryApprovals} mandatory approvals are counted separately.`)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'EVAL-018, Calendar API stays down: skipped' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'EVAL-001, Simple booking at a free time: pass' })).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Day to save the current report under'), 'saturday');
     await user.click(screen.getByRole('button', { name: 'Save current report' }));
     const saturday = screen.getByTestId('snapshot-saturday');
     expect(within(saturday).getByText('100%')).toBeInTheDocument();
-    expect(within(saturday).getByText('19 of 19 unassisted')).toBeInTheDocument();
+    expect(within(saturday).getByText('20 of 20 unassisted')).toBeInTheDocument();
     expect(within(saturday).getByText('$0.0200')).toBeInTheDocument();
     expect(within(screen.getByTestId('snapshot-friday')).getByText('No snapshot recorded yet.')).toBeInTheDocument();
 
@@ -338,6 +360,37 @@ describe('evaluation dashboard', () => {
     expect(within(panel).getByText('Expected versus actual')).toBeInTheDocument();
     expect(within(panel).getByText('Execution trace')).toBeInTheDocument();
     expect(within(panel).getByText(/10000 in, 1000 out|9000 in, 1000 out/)).toBeInTheDocument();
+  }, 20_000);
+
+  it('will not save a report that left cases out as a day snapshot', async () => {
+    const partial = await runEvaluation(live(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), EVALUATION_CASES, { pollIntervalMs: 1, caseSet: SYNTHETIC_CASE_SET, skip: { 'EVAL-018': 'Fault injection not ready.' } });
+    localStorage.setItem('executive-desk.eval.lastLiveReport', JSON.stringify(partial));
+    await open('#/evaluation');
+    expect(within(screen.getByRole('region', { name: 'Headline results' })).getByText('19 / 20')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'EVAL-018, Calendar API stays down: skipped' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save current report' })).toBeDisabled();
+    expect(screen.getByText(/A snapshot must cover all 20 cases/)).toBeInTheDocument();
+  });
+
+  it('keeps a self-test result when you leave the page and come back', async () => {
+    const user = userEvent.setup();
+    const view = await open('#/evaluation');
+    await user.click(screen.getByRole('button', { name: 'Run harness self-test' }));
+    await screen.findByRole('region', { name: 'Harness self-test result' }, { timeout: 15_000 });
+    view.unmount();
+    await open('#/evaluation');
+    expect(screen.getByRole('region', { name: 'Harness self-test result' })).toBeInTheDocument();
+  }, 20_000);
+
+  it('does not show a measured duration for a scripted run', async () => {
+    const user = userEvent.setup();
+    await open('#/evaluation');
+    await user.click(screen.getByRole('button', { name: 'Run harness self-test' }));
+    await screen.findByRole('region', { name: 'Harness self-test result' }, { timeout: 15_000 });
+    await user.click(screen.getByRole('button', { name: 'Show details for EVAL-001' }));
+    const panel = document.getElementById('case-panel-EVAL-001')!;
+    expect(within(panel).getByText(/Not measured: a scripted run does no real work/)).toBeInTheDocument();
+    expect(within(panel).queryByText(/ms measured| s measured/)).not.toBeInTheDocument();
   }, 20_000);
 
   it('ignores a simulated report left in storage', async () => {

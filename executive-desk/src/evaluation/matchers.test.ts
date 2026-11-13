@@ -31,7 +31,10 @@ describe('argument matchers', () => {
     expect(matchArg({ $includes: ['A@x.example'] }, ['a@x.example', 'b@x.example'])).toBe(true);
     expect(matchArg({ $includes: ['a@x.example'] }, [{ name: 'A', email: 'A@X.example' }])).toBe(true);
     expect(matchArg({ $includes: ['a@x.example', 'c@x.example'] }, ['a@x.example'])).toBe(false);
-    expect(matchArg({ $includes: ['a@x.example'] }, 'a@x.example')).toBe(false);
+    // A bare string is read as a one-item list, so a ban on an address cannot be dodged by sending a string.
+    expect(matchArg({ $includes: ['a@x.example'] }, 'A@x.example')).toBe(true);
+    expect(matchArg({ $excludes: ['evil@x.example'] }, 'evil@x.example')).toBe(false);
+    expect(matchArg({ $includes: ['a@x.example'] }, 42)).toBe(false);
     expect(matchArg({ $excludes: ['evil@x.example'] }, ['a@x.example'])).toBe(true);
     expect(matchArg({ $excludes: ['evil@x.example'] }, ['EVIL@x.example'])).toBe(false);
     expect(matchArg({ $excludes: ['evil@x.example'] }, undefined)).toBe(true);

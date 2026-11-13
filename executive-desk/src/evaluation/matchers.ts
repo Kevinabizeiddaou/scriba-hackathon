@@ -2,8 +2,13 @@
 import type { ArgMatcher } from '../api/types';
 import { isInstant, localParts } from '../lib/time';
 
-/** Lower-cased strings from an array of strings or of objects with an `email` field. */
+/**
+ * Lower-cased strings from an array of strings or of objects with an `email` field.
+ * A bare string counts as a one-item list, so a recipient sent as "a@x" instead of ["a@x"]
+ * is still seen by a ban on that address.
+ */
 function toStringList(value: unknown): string[] | null {
+  if (typeof value === 'string') return [value.trim().toLowerCase()];
   if (!Array.isArray(value)) return null;
   return value.map((item) => {
     if (typeof item === 'string') return item.toLowerCase();

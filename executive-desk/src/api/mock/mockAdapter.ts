@@ -381,7 +381,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
         await this.runAction(run, pb, step);
       } else if (step.type === 'approval') {
         this.openApproval(run, pb, step);
-        return;
+        if (!step.selfApproved) return;
       } else {
         this.finishRun(run, step);
         return;
@@ -411,6 +411,21 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     return action;
   }
 
+  /**
+   * Keeps `sequence` equal to execution order: an action that starts now moves in front of
+   * the ones still waiting, so a retry sits next to the attempt it retries.
+   */
+  private promote(run: AgentRun, action: AgentAction): void {
+    const waiting = (a: AgentAction) => a !== action && (a.status === 'awaiting_approval' || a.status === 'planned');
+    const rest = run.actions.filter((a) => a !== action);
+    const firstWaiting = rest.findIndex(waiting);
+    rest.splice(firstWaiting < 0 ? rest.length : firstWaiting, 0, action);
+    run.actions = rest;
+    run.actions.forEach((a, index) => {
+      a.sequence = index + 1;
+    });
+  }
+
   private async runAction(run: AgentRun, pb: Playback, step: ActionStep): Promise<void> {
     const sideEffect = isSideEffectTool(step.tool);
     let action = sideEffect
@@ -418,6 +433,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       : undefined;
     if (!action) action = this.newAction(run, step.tool, step.summary, step.input, sideEffect ? pb.gate : null);
 
+    this.promote(run, action);
     action.status = 'running';
     action.input = clone(step.input);
     action.startedAt = this.now();
@@ -473,6 +489,16 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       planned.status = 'awaiting_approval';
     }
 
+    if (step.selfApproved) {
+      // Deliberately wrong behaviour, used only by the harness self-test.
+      approval.status = 'approved';
+      approval.decidedAt = this.now();
+      approval.decidedBy = 'agent (self-approved)';
+      approval.execution.status = 'executing';
+      this.emit();
+      return;
+    }
+
     run.status = 'awaiting_approval';
     const request = run.requestId ? this.requests.get(run.requestId) : undefined;
     if (request) {
@@ -498,6 +524,19 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       run.humanInterventions.push({ at: this.now(), ...intervention });
     }
 
+    this.settleExecutions(run);
+
+    const request = run.requestId ? this.requests.get(run.requestId) : undefined;
+    if (request) {
+      request.status = step.outcome ? OUTCOME_TO_REQUEST_STATUS[step.outcome] : 'failed';
+      this.log(request, 'agent', step.status === 'failed' ? 'Run failed' : 'Finished', step.summary);
+    }
+    this.settleChatMessage(run, step.assistantMessage ?? step.summary);
+    this.emit();
+  }
+
+  /** Closes out every approval of a finished run that was still marked as executing. */
+  private settleExecutions(run: AgentRun): void {
     for (const approvalId of run.approvalIds) {
       const approval = this.approvals.get(approvalId);
       if (!approval || approval.execution.status !== 'executing') continue;
@@ -510,14 +549,6 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
       approval.execution.finishedAt = this.now();
       approval.execution.error = failed ? clone(run.error) : null;
     }
-
-    const request = run.requestId ? this.requests.get(run.requestId) : undefined;
-    if (request) {
-      request.status = step.outcome ? OUTCOME_TO_REQUEST_STATUS[step.outcome] : 'failed';
-      this.log(request, 'agent', step.status === 'failed' ? 'Run failed' : 'Finished', step.summary);
-    }
-    this.settleChatMessage(run, step.assistantMessage ?? step.summary);
-    this.emit();
   }
 
   // --- approvals ------------------------------------------------------------------
@@ -561,6 +592,7 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
     run.assistantMessage = run.conversationId ? 'Understood. I have not sent anything or changed your calendar.' : null;
     run.finishedAt = this.now();
     run.durationMs = null;
+    this.settleExecutions(run); // an earlier approval in the same run may still be marked executing
     if (request) {
       request.status = 'declined';
       this.log(request, 'human', 'Rejected', `${input.decidedBy} rejected "${approval.title}".${input.note ? ` Note: ${input.note}` : ''}`);

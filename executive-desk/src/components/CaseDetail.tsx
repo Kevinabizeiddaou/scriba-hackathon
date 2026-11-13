@@ -178,8 +178,14 @@ export function CaseResult({ result, timeZone }: { result: EvaluationResult; tim
         </div>
         <div>
           <p className="eyebrow mb-1">Duration</p>
-          <p className="tabular-nums text-ink">{fmtDuration(result.timing.wallClockMs)} measured</p>
-          <p className="tabular-nums text-mute">{result.timing.agentReportedMs !== null ? `${fmtDuration(result.timing.agentReportedMs)} reported by the agent` : 'agent reported none'}</p>
+          {result.dataSource === 'live' ? (
+            <>
+              <p className="tabular-nums text-ink">{fmtDuration(result.timing.wallClockMs)} measured</p>
+              <p className="tabular-nums text-mute">{result.timing.agentReportedMs !== null ? `${fmtDuration(result.timing.agentReportedMs)} reported by the agent` : 'agent reported none'}</p>
+            </>
+          ) : (
+            <p className="text-mute">Not measured: a scripted run does no real work.</p>
+          )}
         </div>
         <div>
           <p className="eyebrow mb-1">Tokens and cost</p>

@@ -91,7 +91,8 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    // `busy` is checked here as well as on the button, because Enter does not go through the button.
+    if (!trimmed || sending || busy) return;
     setSending(true);
     setSendError(null);
     try {

@@ -135,6 +135,7 @@ export function expectation(
   return {
     runStatuses: ['completed'],
     toolCalls: [],
+    whenOutcome: {},
     forbidden: [],
     order: [],
     approvals: [],

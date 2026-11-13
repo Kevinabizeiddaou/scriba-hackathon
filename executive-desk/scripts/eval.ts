@@ -22,7 +22,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { HttpExecutiveDesk } from '../src/api/httpAdapter';
 import type { EvaluationReport, EvaluationResult, SnapshotDay } from '../src/api/types';
-import { EVALUATION_CASES } from '../src/evaluation/fixtures';
+import { EVALUATION_CASES, SYNTHETIC_CASE_SET } from '../src/evaluation/fixtures';
 import { PRINCIPAL } from '../src/evaluation/fixtures/world';
 import { parsePriceTable, type PriceTable } from '../src/evaluation/pricing';
 import { buildSnapshot } from '../src/evaluation/report';
@@ -120,6 +120,7 @@ async function main(): Promise<number> {
   console.log(`Running ${cases.length} case(s) against ${baseUrl}\n`);
   const report = await runEvaluation(target, cases, {
     label: str(args.label) ?? `Evaluation ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+    caseSet: SYNTHETIC_CASE_SET,
     skip: Object.fromEntries(skipIds.map((id) => [id, 'Skipped with --skip.'])),
     pricing,
     timeoutMs: Number(str(args.timeout) ?? 120_000),

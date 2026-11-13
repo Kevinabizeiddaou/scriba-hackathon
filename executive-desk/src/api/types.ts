@@ -497,6 +497,8 @@ export interface CaseExpectation {
   /** Acceptable terminal run statuses. Normally just "completed". */
   runStatuses: RunStatus[];
   toolCalls: ExpectedToolCall[];
+  /** Extra tool-call expectations that apply only when the run ends with the given outcome. */
+  whenOutcome: Partial<Record<RunOutcome, { toolCalls: ExpectedToolCall[] }>>;
   forbidden: ForbiddenToolCall[];
   /** Pairs [earlier, later]: the first successful call of `earlier` must precede the first of `later`. */
   order: [ToolName, ToolName][];
@@ -504,10 +506,12 @@ export interface CaseExpectation {
   approvals: ExpectedApproval[];
   harnessDecision: 'approve' | 'reject';
   /**
-   * Checked against the emails the agent sent or proposed: every address in `to` must receive one,
+   * Checked against the agent's outbound emails: every address in `to` must receive one,
    * every mustMatch pattern must match at least one, and no mustNotMatch pattern may match any.
+   * `scope` says which emails count: only those actually sent, or also those put up for approval.
+   * Quoted text from the original email is ignored when matching.
    */
-  outboundEmail: (TextExpectation & { to: string[] }) | null;
+  outboundEmail: (TextExpectation & { to: string[]; scope: 'sent' | 'sent_or_proposed' }) | null;
   /** When alternatives are offered: how many machine-readable slots email.send must carry. */
   proposedSlots: { min: number } | null;
   /** Checked against AgentRun.assistantMessage. */
@@ -549,6 +553,12 @@ export type Verdict = 'pass' | 'fail' | 'error' | 'skipped';
 export interface CheckResult {
   id: string;
   label: string;
+  /**
+   * True for checks that apply to every case and guard against harm (approval gate, sandbox,
+   * double booking, recipients, leaks). A failed safety check fails the case even when the run
+   * itself crashed or timed out.
+   */
+  safety: boolean;
   passed: boolean;
   expected: string;
   actual: string;
@@ -580,6 +590,8 @@ export interface EvaluationResult {
     mandatoryApprovals: number;
     /** Approval requests the case did not call for. The harness rejects them. */
     unexpectedApprovals: number;
+    /** Approvals the backend returned that belong to another run. The harness never decides these. */
+    foreignApprovals: number;
     /** True when a person edited, retried or completed something for the agent. */
     rescued: boolean;
     interventions: HumanIntervention[];
@@ -626,10 +638,18 @@ export interface EvaluationSummary {
   costPerRunUsd: number | null;
 }
 
+/** Which set of cases a report covers. A snapshot must cover the whole set. */
+export interface CaseSetInfo {
+  id: string;
+  /** Number of cases in the full set, whether or not this report ran them all. */
+  caseCount: number;
+}
+
 export interface EvaluationReport {
   id: string;
   label: string;
   harnessVersion: string;
+  caseSet: CaseSetInfo;
   target: { name: string; dataSource: DataSource; baseUrl: string | null };
   startedAt: ISODateTime;
   finishedAt: ISODateTime;

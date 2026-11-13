@@ -21,8 +21,8 @@ export function summarize(results: EvaluationResult[]): EvaluationSummary {
   const passed = executed.filter((r) => r.verdict === 'pass');
   const passedUnassisted = passed.filter((r) => !r.human.rescued);
   const durations = executed.filter((r) => r.verdict !== 'error').map((r) => r.timing.wallClockMs).sort((a, b) => a - b);
-  const withUsage = executed.filter((r) => r.usage !== null);
-  const withCost = executed.filter((r) => r.estimatedCostUsd !== null);
+  const withUsage = executed.filter((r) => r.usage != null);
+  const withCost = executed.filter((r) => typeof r.estimatedCostUsd === 'number');
   const totalCost = withCost.reduce((sum, r) => sum + (r.estimatedCostUsd ?? 0), 0);
 
   return {
@@ -64,10 +64,25 @@ export const SNAPSHOT_DAYS: { day: SnapshotDay; label: string; date: string }[] 
  * Freezes a report as a day's snapshot. Refuses simulated reports: a snapshot is a record
  * of how the real agent did, and scripted mock output must never end up in one.
  */
-export function buildSnapshot(report: EvaluationReport, day: SnapshotDay, savedAt: string): EvaluationSnapshot {
-  if (report.target.dataSource !== 'live') {
-    throw new Error('Only a report from a live backend can be saved as a snapshot. This report is simulated.');
+/**
+ * Why a report cannot be frozen as a day's snapshot, or null when it can.
+ * A snapshot is the day's record for the whole case set: a partial run would look like a result
+ * for every case, and a run that never reached the backend would look like a real 0%.
+ */
+export function snapshotBlocker(report: EvaluationReport): string | null {
+  if (report.target.dataSource !== 'live') return 'Only a report from a live backend can be saved as a snapshot. This report is simulated.';
+  const { summary, caseSet } = report;
+  if (report.results.length !== caseSet.caseCount || summary.skipped > 0) {
+    const missing = summary.skipped + Math.max(caseSet.caseCount - report.results.length, 0);
+    return `A snapshot must cover all ${caseSet.caseCount} cases. This report executed ${summary.executed} and left out ${missing}.`;
   }
+  if (summary.errored === summary.executed) return 'Every case ended in an error, so this report says nothing about the agent. Fix the connection and run again.';
+  return null;
+}
+
+export function buildSnapshot(report: EvaluationReport, day: SnapshotDay, savedAt: string): EvaluationSnapshot {
+  const blocker = snapshotBlocker(report);
+  if (blocker) throw new Error(blocker);
   const verdicts: Record<string, Verdict> = {};
   for (const result of report.results) verdicts[result.caseId] = result.verdict;
   return { day, savedAt, reportId: report.id, label: report.label, target: report.target, summary: report.summary, verdicts };
@@ -94,6 +109,7 @@ export function isReport(value: unknown): value is EvaluationReport {
     typeof v.id === 'string' &&
     Array.isArray(v.results) &&
     !!v.summary &&
+    typeof v.caseSet?.caseCount === 'number' &&
     (v.target?.dataSource === 'live' || v.target?.dataSource === 'simulated')
   );
 }

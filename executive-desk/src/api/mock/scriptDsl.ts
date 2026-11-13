@@ -41,6 +41,11 @@ export interface ApprovalStep {
   explanation: string;
   riskNotes: string[];
   changes: ProposedChange[];
+  /**
+   * Self-test only: the "backend" marks its own approval as approved and carries on without
+   * waiting for a human. The harness must catch this.
+   */
+  selfApproved?: boolean;
 }
 
 export interface FinishStep {

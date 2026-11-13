@@ -1,15 +1,14 @@
 import clsx from 'clsx';
 import { ChevronDown, FlaskConical, Info, Play, Save, Square, Upload } from 'lucide-react';
 import { Fragment, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { evaluationSession, useEvaluationSession } from '../evaluation/session';
 import { getApi } from '../api';
-import type { EvaluationReport, EvaluationResult, EvaluationSnapshot, SnapshotDay, Verdict } from '../api/types';
+import type { EvaluationResult, EvaluationSnapshot, SnapshotDay, Verdict } from '../api/types';
 import { CaseResult, CaseSpecification } from '../components/CaseDetail';
 import { Button, ErrorNote, PageHeader, Pill, SimulatedTag } from '../components/ui';
 import { CASE_CATEGORIES, EVALUATION_CASES, categoryLabel } from '../evaluation/fixtures';
-import { SNAPSHOT_DAYS, buildSnapshot, isReport, isSnapshot } from '../evaluation/report';
-import { runEvaluation } from '../evaluation/runner';
-import { runSelfTest, type SelfTestReport } from '../evaluation/selfTest';
-import { loadLastLiveReport, loadSnapshots, saveLastLiveReport, saveSnapshot } from '../evaluation/snapshotStore';
+import { SNAPSHOT_DAYS, snapshotBlocker } from '../evaluation/report';
+import type { SelfTestReport } from '../evaluation/selfTest';
 import { VERDICT, percent, usd } from '../lib/labels';
 import { fmtDayTime, fmtDuration } from '../lib/time';
 
@@ -158,16 +157,10 @@ export function EvaluationPage() {
   const live = api.info.dataSource === 'live';
   const timeZone = api.info.principal.timezone;
 
-  const [liveReport, setLiveReport] = useState<EvaluationReport | null>(() => loadLastLiveReport());
-  const [selfTest, setSelfTest] = useState<SelfTestReport | null>(null);
-  const [snapshots, setSnapshots] = useState(() => loadSnapshots());
-  const [progress, setProgress] = useState<{ done: number; total: number; current: string | null } | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const { liveReport, selfTest, snapshots, progress, error, notice } = useEvaluationSession();
   const [openCase, setOpenCase] = useState<string | null>(null);
   const [category, setCategory] = useState<string>('all');
   const [snapshotDay, setSnapshotDay] = useState<SnapshotDay>('friday');
-  const abort = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const running = progress !== null;
@@ -177,75 +170,16 @@ export function EvaluationPage() {
   const tableSimulated = tableReport?.target.dataSource === 'simulated';
   const results = useMemo(() => new Map<string, EvaluationResult>((tableReport?.results ?? []).map((r) => [r.caseId, r])), [tableReport]);
   const liveResults = useMemo(() => new Map<string, EvaluationResult>((liveReport?.results ?? []).map((r) => [r.caseId, r])), [liveReport]);
+  const snapshotBlocked = liveReport ? snapshotBlocker(liveReport) : null;
 
-  async function runLive() {
-    setError(null);
-    setNotice(null);
-    abort.current = new AbortController();
-    setProgress({ done: 0, total: EVALUATION_CASES.length, current: EVALUATION_CASES[0].id });
-    try {
-      const report = await runEvaluation(api, EVALUATION_CASES, {
-        signal: abort.current.signal,
-        onProgress: ({ done, total, current }) => setProgress({ done, total, current }),
-      });
-      setLiveReport(report);
-      saveLastLiveReport(report);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    } finally {
-      setProgress(null);
-      abort.current = null;
-    }
-  }
-
-  async function runCheck() {
-    setError(null);
-    setNotice(null);
-    setProgress({ done: 0, total: 1, current: null });
-    try {
-      setSelfTest(await runSelfTest({ onProgress: (done, total) => setProgress({ done, total, current: null }) }));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    } finally {
-      setProgress(null);
-    }
-  }
+  const runLive = () => void evaluationSession.runLive(api);
+  const runCheck = () => void evaluationSession.runSelfTest();
+  const saveDay = () => evaluationSession.saveSnapshot(snapshotDay);
 
   async function onImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
-    setError(null);
-    setNotice(null);
-    try {
-      const parsed: unknown = JSON.parse(await file.text());
-      if (isSnapshot(parsed)) {
-        saveSnapshot(parsed);
-        setSnapshots(loadSnapshots());
-        setNotice(`Imported the ${parsed.day} snapshot.`);
-      } else if (isReport(parsed)) {
-        if (parsed.target.dataSource !== 'live') throw new Error('That file is a simulated report. Only reports from a live backend are shown as results.');
-        setLiveReport(parsed);
-        saveLastLiveReport(parsed);
-        setNotice(`Imported "${parsed.label}".`);
-      } else {
-        throw new Error('That file is not an evaluation report or snapshot.');
-      }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    }
-  }
-
-  function saveDay() {
-    if (!liveReport) return;
-    setError(null);
-    try {
-      saveSnapshot(buildSnapshot(liveReport, snapshotDay, new Date().toISOString()));
-      setSnapshots(loadSnapshots());
-      setNotice(`Saved as the ${snapshotDay} snapshot in this browser.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause : new Error(String(cause)));
-    }
+    if (file) evaluationSession.importJson(await file.text());
   }
 
   const cases = category === 'all' ? EVALUATION_CASES : EVALUATION_CASES.filter((c) => c.category === category);
@@ -264,7 +198,7 @@ export function EvaluationPage() {
             </Button>
             {live ? (
               running ? (
-                <Button variant="danger" icon={Square} onClick={() => abort.current?.abort()}>
+                <Button variant="danger" icon={Square} onClick={() => evaluationSession.stop()}>
                   Stop after this case
                 </Button>
               ) : (
@@ -418,12 +352,17 @@ export function EvaluationPage() {
                     </option>
                   ))}
                 </select>
-                <Button variant="secondary" icon={Save} onClick={saveDay}>
+                <Button variant="secondary" icon={Save} onClick={saveDay} disabled={snapshotBlocked !== null || running} aria-describedby={snapshotBlocked ? 'snapshot-blocked' : undefined}>
                   Save current report
                 </Button>
               </div>
             )}
           </div>
+          {snapshotBlocked && (
+            <p id="snapshot-blocked" className="mb-2.5 text-[12.5px] text-warn">
+              The current report cannot be saved as a snapshot. {snapshotBlocked}
+            </p>
+          )}
           <div className="grid gap-3 md:grid-cols-3">
             {SNAPSHOT_DAYS.map((d, i) => (
               <SnapshotCard key={d.day} {...d} snapshot={snapshots[d.day]} previous={i > 0 ? snapshots[SNAPSHOT_DAYS[i - 1].day] : undefined} timeZone={timeZone} />

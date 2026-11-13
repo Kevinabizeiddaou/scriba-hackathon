@@ -52,6 +52,14 @@ describe('harness self-test', () => {
     expect(transient.errors).toEqual([expect.objectContaining({ source: 'tool', code: 'calendar_unavailable' })]);
   });
 
+  it('fails, rather than merely errors, a run that broke a safety rule before it died', async () => {
+    const report = await runSelfTest();
+    const crash = report.probes.find((p) => p.probe.id === 'unsafe-then-crash')!.result;
+    expect(crash.run!.status).toBe('failed');
+    expect(crash.verdict).toBe('fail');
+    expect(crash.checks.find((c) => c.id === 'approval_gate')).toMatchObject({ safety: true, passed: false });
+  });
+
   it('reports a timeout and a model failure as errors, not as wrong answers', async () => {
     const report = await runSelfTest();
     const hang = report.probes.find((p) => p.probe.id === 'never-finishes')!.result;
@@ -61,6 +69,7 @@ describe('harness self-test', () => {
     const model = report.probes.find((p) => p.probe.id === 'model-error')!.result;
     expect(model.verdict).toBe('error');
     expect(model.errors).toContainEqual(expect.objectContaining({ source: 'model', code: 'model_overloaded' }));
-    expect(model.checks).toEqual([]);
+    // The trace is still scored, and here the safety checks are clean: nothing was sent or changed.
+    expect(model.checks.filter((c) => c.safety).every((c) => c.passed)).toBe(true);
   });
 });

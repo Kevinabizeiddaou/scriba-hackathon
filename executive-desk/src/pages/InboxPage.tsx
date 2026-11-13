@@ -1,334 +1,296 @@
 import clsx from 'clsx';
-import { ArrowLeft, Check, Inbox, MinusCircle, Play, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeft, CheckSquare, Inbox, ListChecks, Send, ShieldCheck, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { getApi } from '../api';
-import type { AgentRun, ApprovalRequest, RequestStatus, SecretaryRequest } from '../api/types';
-import { RunCard } from '../components/RunCard';
+import { getApi, getWorkspace } from '../api';
+import type { EmailWorkStatus, InboxEmail, MailProvider } from '../api/workspace';
+import { RequestDetail } from '../components/RequestDetail';
 import { Button, EmptyState, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui';
-import { CLASSIFICATION, FLAG, OUTCOME, PRIORITY, REQUEST_STATUS } from '../lib/labels';
+import { EMAIL_CATEGORY, EMAIL_STATUS, SourceBadge, WorkspaceState } from '../components/workspace';
+import { FLAG, PRIORITY } from '../lib/labels';
 import { hrefFor } from '../lib/router';
-import { fmtDayTime, fmtRange } from '../lib/time';
-import { useResource } from '../lib/useResource';
+import { fmtDayTime } from '../lib/time';
+import { useResource, useWorkspace } from '../lib/useResource';
 
-const FILTERS: { id: string; label: string; statuses: RequestStatus[] | null }[] = [
+const FILTERS: { id: string; label: string; statuses: EmailWorkStatus[] | null; meetings?: boolean }[] = [
   { id: 'all', label: 'All', statuses: null },
-  { id: 'new', label: 'New', statuses: ['received'] },
-  { id: 'approval', label: 'Needs approval', statuses: ['awaiting_approval'] },
-  { id: 'attention', label: 'Needs you', statuses: ['escalated', 'failed'] },
-  { id: 'waiting', label: 'In progress', statuses: ['processing', 'awaiting_reply'] },
-  { id: 'done', label: 'Done', statuses: ['completed', 'declined'] },
+  { id: 'attention', label: 'Needs you', statuses: ['needs_you', 'needs_approval'] },
+  { id: 'new', label: 'New', statuses: ['new'] },
+  { id: 'open', label: 'In progress', statuses: ['in_progress', 'waiting'] },
+  { id: 'meetings', label: 'Meetings', statuses: null, meetings: true },
+  { id: 'done', label: 'Done', statuses: ['done'] },
 ];
 
-type StepState = 'done' | 'current' | 'todo' | 'skipped' | 'failed';
+const DRAFT_STATE = {
+  drafted: { label: 'Draft, not sent', tone: 'neutral' },
+  awaiting_approval: { label: 'Waiting for your approval', tone: 'warn' },
+  sent: { label: 'Sent', tone: 'ok' },
+  rejected: { label: 'Rejected, not sent', tone: 'neutral' },
+} as const;
 
-function steps(request: SecretaryRequest, run: AgentRun | undefined, approvals: ApprovalRequest[]): { label: string; detail: string; state: StepState }[] {
-  const triaged = request.classification !== null;
-  const approval = approvals[0];
-  const finished = run && (run.status === 'completed' || run.status === 'failed');
-
-  let approvalStep: { detail: string; state: StepState };
-  if (!approval) approvalStep = finished ? { detail: 'Not needed', state: 'skipped' } : { detail: 'If something is to be sent or changed', state: 'todo' };
-  else if (approval.status === 'pending') approvalStep = { detail: 'Waiting for you', state: 'current' };
-  else if (approval.status === 'approved') approvalStep = { detail: `Approved by ${approval.decidedBy ?? 'a person'}`, state: 'done' };
-  else approvalStep = { detail: 'Rejected', state: 'failed' };
-
-  let outcome: { detail: string; state: StepState };
-  if (!finished) outcome = { detail: 'Pending', state: 'todo' };
-  else if (run.status === 'failed' || request.status === 'escalated') outcome = { detail: run.outcome ? OUTCOME[run.outcome] : 'Failed', state: 'failed' };
-  else outcome = { detail: run.outcome ? OUTCOME[run.outcome] : 'Finished', state: 'done' };
-
-  return [
-    { label: 'Received', detail: 'In the inbox', state: 'done' },
-    {
-      label: 'Understood',
-      detail: triaged ? CLASSIFICATION[request.classification!] : request.status === 'processing' ? 'Reading the request' : 'Not started',
-      state: triaged ? 'done' : request.status === 'processing' ? 'current' : 'todo',
-    },
-    { label: 'Approval', ...approvalStep },
-    { label: 'Outcome', ...outcome },
-  ];
-}
-
-const STEP_STYLE: Record<StepState, string> = {
-  done: 'border-ok/50 bg-ok/[0.14] text-ok',
-  current: 'border-warn/60 bg-warn/[0.14] text-warn',
-  todo: 'border-line-strong text-mute',
-  skipped: 'border-line-strong text-mute',
-  failed: 'border-danger/50 bg-danger/[0.14] text-danger',
-};
-
-function Stepper({ request, run, approvals }: { request: SecretaryRequest; run: AgentRun | undefined; approvals: ApprovalRequest[] }) {
-  const list = steps(request, run, approvals);
-  return (
-    <ol className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-4">
-      {list.map((step, i) => (
-        <li key={step.label} className="flex items-start gap-2.5" aria-current={step.state === 'current' ? 'step' : undefined}>
-          <span className={clsx('mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold tabular-nums', STEP_STYLE[step.state])}>
-            {step.state === 'done' ? <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={3} /> : step.state === 'failed' ? <X aria-hidden className="h-3.5 w-3.5" strokeWidth={3} /> : step.state === 'skipped' ? <MinusCircle aria-hidden className="h-3.5 w-3.5" /> : i + 1}
-          </span>
-          <span className="min-w-0 leading-tight">
-            <span className="block text-[13px] font-semibold text-ink">{step.label}</span>
-            <span className="block text-[12px] text-mute">{step.detail}</span>
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function Detail({ request, onBack }: { request: SecretaryRequest; onBack: string }) {
-  const api = getApi();
-  const tz = api.info.principal.timezone;
-  const [starting, setStarting] = useState(false);
+function EmailDetail({ email }: { email: InboxEmail }) {
+  const { principal, dataSource } = getApi().info;
+  const tz = principal.timezone;
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const related = useResource(
-    async (a) => {
-      const [runs, approvals] = await Promise.all([a.listRuns({ requestId: request.id }), a.listApprovals()]);
-      return { run: runs[0] as AgentRun | undefined, approvals: approvals.filter((x) => x.requestId === request.id) };
-    },
-    [request.id],
-  );
-  const run = related.data?.run;
-  const approvals = related.data?.approvals ?? [];
-  const pendingApproval = approvals.find((a) => a.status === 'pending');
-  const status = REQUEST_STATUS[request.status];
-  const details = request.extracted;
+  const request = useResource((api) => (email.requestId ? api.getRequest(email.requestId) : Promise.resolve(null)), [email.requestId]);
+  const status = EMAIL_STATUS[email.status];
 
-  async function process() {
-    setStarting(true);
+  async function submit() {
+    setBusy(true);
     setError(null);
     try {
-      await api.processRequest(request.id);
+      await getWorkspace().submitDraft(email.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause : new Error(String(cause)));
     } finally {
-      setStarting(false);
+      setBusy(false);
     }
   }
 
-  const facts: [string, string][] = details
-    ? ([
-        ['Meeting', details.title],
-        ['With', details.attendees.map((a) => a.name).join(', ') || null],
-        ['Length', details.durationMinutes ? `${details.durationMinutes} minutes` : null],
-        ['Requested', details.requestedWindows.map((w) => fmtRange(w.start, w.end, tz)).join('; ') || null],
-        ['Their time zone', details.requesterTimezone],
-        ['Format', details.modality ? details.modality.replace('_', ' ') : null],
-        ['Refers to', details.referencedEventId],
-        ['Still missing', details.missingFields.join(', ') || null],
-        ['Notes', details.notes],
-      ].filter(([, value]) => value) as [string, string][])
-    : [];
-
   return (
-    <article className="space-y-4 p-4 sm:p-6" aria-label={`Request: ${request.subject}`}>
-      <a href={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline lg:hidden">
+    <article className="space-y-4 p-4 sm:p-6" aria-label={`Email: ${email.subject}`}>
+      <a href={hrefFor('inbox')} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline lg:hidden">
         <ArrowLeft aria-hidden className="h-4 w-4" />
-        All requests
+        Inbox
       </a>
 
-      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0">
-          <h2 className="text-[19px] font-bold leading-7 text-ink">{request.subject}</h2>
-          <p className="mt-0.5 text-[13px] text-soft">
-            {request.from.name} <span className="text-mute">&lt;{request.from.email}&gt;</span>
-          </p>
-          <p className="text-[12px] tabular-nums text-mute">Received {fmtDayTime(request.receivedAt, tz)}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {request.status === 'received' && (
-            <Button variant="primary" icon={Play} busy={starting} onClick={process}>
-              Process request
-            </Button>
-          )}
-          {pendingApproval && (
-            <a href={hrefFor('approvals', pendingApproval.id)} className="btn btn-primary">
-              <ShieldCheck aria-hidden className="h-4 w-4" />
-              Review approval
-            </a>
-          )}
+      <header>
+        <h2 className="text-[19px] font-bold leading-7 text-ink">{email.subject}</h2>
+        <p className="mt-0.5 text-[13px] text-soft">
+          {email.from.name} <span className="text-mute">&lt;{email.from.email}&gt;</span>
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-mute">
+          <span className="tabular-nums">Received {fmtDayTime(email.receivedAt, tz)}</span>
+          <SourceBadge source={email.provider} />
+          <span>{email.account}</span>
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <Pill tone={status.tone} spin={email.status === 'in_progress' && email.requestId !== null && request.data?.status === 'processing'}>
+            {status.label}
+          </Pill>
+          <Pill tone={EMAIL_CATEGORY[email.category].tone} icon={null}>
+            {EMAIL_CATEGORY[email.category].label}
+          </Pill>
+          <Pill tone={PRIORITY[email.priority].tone} icon={null}>
+            {PRIORITY[email.priority].label} priority
+          </Pill>
+          {email.flags.map((flag) => (
+            <Pill key={flag} tone={FLAG[flag].tone}>
+              {FLAG[flag].label}
+            </Pill>
+          ))}
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-1.5">
-        <Pill tone={status.tone} spin={request.status === 'processing'}>
-          {status.label}
-        </Pill>
-        {request.classification && (
-          <Pill tone="neutral" icon={null}>
-            {CLASSIFICATION[request.classification]}
-          </Pill>
-        )}
-        {request.priority && (
-          <Pill tone={PRIORITY[request.priority].tone} icon={null}>
-            {PRIORITY[request.priority].label} priority
-          </Pill>
-        )}
-        {request.flags.map((flag) => (
-          <Pill key={flag} tone={FLAG[flag].tone}>
-            {FLAG[flag].label}
-          </Pill>
-        ))}
-      </div>
-
-      {error && <ErrorNote error={error} />}
-
-      <section className="card p-4" aria-label="Processing status">
-        <h3 className="eyebrow mb-3">Processing status</h3>
-        <Stepper request={request} run={run} approvals={approvals} />
-      </section>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <section className="card p-4" aria-label="Incoming email">
-          <h3 className="eyebrow mb-2.5">Incoming email</h3>
-          <p className="whitespace-pre-wrap text-[13.5px] leading-[21px] text-ink">{request.bodyText}</p>
-        </section>
-
-        <section className="card p-4" aria-label="Extracted meeting details">
-          <h3 className="eyebrow mb-2.5">Extracted meeting details</h3>
-          {facts.length > 0 ? (
-            <dl className="space-y-2">
-              {facts.map(([term, value]) => (
-                <div key={term} className="flex gap-3 text-[13px]">
-                  <dt className="w-28 shrink-0 text-mute">{term}</dt>
-                  <dd className="min-w-0 flex-1 break-words text-ink">{value}</dd>
-                </div>
+      <section className="card p-4" aria-label="Summary">
+        <h3 className="eyebrow mb-2 flex items-center gap-1.5">
+          <Sparkles aria-hidden className="h-3.5 w-3.5 text-accent" />
+          Secretary's summary
+        </h3>
+        <p className="text-[13.5px] leading-[21px] text-ink">{email.summary}</p>
+        {email.actionItems.length > 0 && (
+          <>
+            <h4 className="eyebrow mb-1.5 mt-3.5 flex items-center gap-1.5">
+              <ListChecks aria-hidden className="h-3.5 w-3.5 text-accent" />
+              Action items
+            </h4>
+            <ul className="space-y-1">
+              {email.actionItems.map((item) => (
+                <li key={item} className="flex gap-2 text-[13px] text-ink">
+                  <CheckSquare aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />
+                  {item}
+                </li>
               ))}
-            </dl>
-          ) : (
-            <p className="text-[13px] text-mute">{request.status === 'received' ? 'Nothing extracted yet. Process the request to have the agent read it.' : 'The agent extracted no meeting details.'}</p>
-          )}
-        </section>
-      </div>
-
-      <section className="card p-4" aria-label="Agent activity">
-        <h3 className="eyebrow mb-2.5">Agent activity</h3>
-        {related.loading ? <SkeletonRows rows={2} /> : run ? <RunCard run={run} timeZone={tz} /> : <p className="text-[13px] text-mute">The agent has not worked on this request yet.</p>}
+            </ul>
+          </>
+        )}
+        {email.taskIds.length > 0 && (
+          <a href={hrefFor('tasks')} className="mt-3 inline-block text-[12.5px] font-medium text-accent hover:underline">
+            {email.taskIds.length === 1 ? 'A task was recorded from this email' : `${email.taskIds.length} tasks were recorded from this email`}
+          </a>
+        )}
       </section>
 
-      <section className="card p-4" aria-label="History">
-        <h3 className="eyebrow mb-2.5">History</h3>
-        <ol className="space-y-2">
-          {request.history.map((entry, i) => (
-            <li key={i} className="flex gap-3 text-[13px]">
-              <span className="w-[118px] shrink-0 tabular-nums text-mute">{fmtDayTime(entry.at, tz)}</span>
-              <span className="min-w-0 flex-1">
-                <span className="font-semibold text-ink">{entry.event}</span>
-                <span className="text-mute"> · {entry.actor}</span>
-                {entry.detail && <span className="block text-soft">{entry.detail}</span>}
-              </span>
+      {email.draft && (
+        <section className={clsx('card p-4', email.draft.state === 'awaiting_approval' && 'border-warn/25')} aria-label="Reply draft">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="eyebrow">Reply draft</h3>
+            <Pill tone={DRAFT_STATE[email.draft.state].tone}>{DRAFT_STATE[email.draft.state].label}</Pill>
+          </div>
+          <dl className="space-y-1 text-[13px]">
+            <div className="flex gap-3">
+              <dt className="w-14 shrink-0 text-mute">To</dt>
+              <dd className="min-w-0 break-words text-ink">{email.draft.to.join(', ')}</dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-14 shrink-0 text-mute">Subject</dt>
+              <dd className="min-w-0 break-words text-ink">{email.draft.subject}</dd>
+            </div>
+          </dl>
+          <p className="mt-2.5 whitespace-pre-wrap rounded-lg border border-line bg-bg/60 px-3 py-2.5 text-[13.5px] leading-[21px] text-ink">{email.draft.bodyText}</p>
+          <p className="mt-2.5 text-[12.5px] text-soft">
+            <span className="font-semibold text-ink">Why it reads this way: </span>
+            {email.draft.rationale}
+          </p>
+          {error && (
+            <div className="mt-3">
+              <ErrorNote error={error} />
+            </div>
+          )}
+          <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+            <p className="text-[12px] text-mute">{dataSource === 'simulated' ? 'Mock mode: nothing leaves this browser.' : 'Nothing is sent until you approve it.'}</p>
+            {email.draft.state === 'drafted' && !email.requestId && (
+              <Button variant="primary" icon={Send} busy={busy} onClick={submit}>
+                Send for approval
+              </Button>
+            )}
+            {email.draft.approvalId && email.draft.state !== 'drafted' && (
+              <a href={hrefFor('approvals', email.draft.approvalId)} className={clsx('btn', email.draft.state === 'awaiting_approval' ? 'btn-primary' : 'btn-secondary')}>
+                <ShieldCheck aria-hidden className="h-4 w-4" />
+                {email.draft.state === 'awaiting_approval' ? 'Review approval' : 'Open in approval center'}
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="card p-4" aria-label="Thread">
+        <h3 className="eyebrow mb-3">
+          Thread · {email.thread.length} {email.thread.length === 1 ? 'message' : 'messages'}
+        </h3>
+        <ol className="space-y-3">
+          {email.thread.map((message) => (
+            <li key={message.id} className={clsx('rounded-xl border px-3.5 py-3', message.outbound ? 'ml-6 border-brand-500/40 bg-brand-500/[0.12]' : 'mr-6 border-line bg-white/[0.025]')}>
+              <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-[12px]">
+                <span className="font-semibold text-ink">
+                  {message.from.name}
+                  {message.outbound && <span className="ml-1.5 font-normal text-mute">(sent from your mailbox)</span>}
+                </span>
+                <span className="tabular-nums text-mute">{fmtDayTime(message.sentAt, tz)}</span>
+              </p>
+              <p className="mt-1.5 whitespace-pre-wrap text-[13.5px] leading-[21px] text-ink">{message.bodyText}</p>
             </li>
           ))}
         </ol>
       </section>
+
+      {email.requestId && request.data && <RequestDetail request={request.data} />}
     </article>
   );
 }
 
-export function InboxPage({ requestId }: { requestId: string | null }) {
+export function InboxPage({ emailId }: { emailId: string | null }) {
   const [filter, setFilter] = useState('all');
-  const requests = useResource((api) => api.listRequests(), []);
+  const [provider, setProvider] = useState<MailProvider | 'all'>('all');
+  const emails = useWorkspace((workspace) => workspace.listEmails(), []);
   const tz = getApi().info.principal.timezone;
 
-  const all = requests.data ?? [];
+  const all = emails.data ?? [];
+  const fromProvider = provider === 'all' ? all : all.filter((e) => e.provider === provider);
+  const matches = (f: (typeof FILTERS)[number], e: InboxEmail) => (f.meetings ? e.category === 'meeting' : !f.statuses || f.statuses.includes(e.status));
   const active = FILTERS.find((f) => f.id === filter)!;
-  const visible = active.statuses ? all.filter((r) => active.statuses!.includes(r.status)) : all;
-  const selected = all.find((r) => r.id === requestId) ?? null;
-  const count = (statuses: RequestStatus[] | null) => (statuses ? all.filter((r) => statuses.includes(r.status)).length : all.length);
+  const visible = fromProvider.filter((e) => matches(active, e));
+  const selected = all.find((e) => e.id === emailId) ?? null;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className={clsx(selected && 'hidden lg:block')}>
-        <PageHeader title="Request Inbox" subtitle="Incoming meeting requests, what the agent made of each one, and where it stands." />
+        <PageHeader title="Inbox" subtitle="Gmail and Outlook in one place, with what each message needs and what the secretary has done about it." />
       </div>
 
-      <div className="flex min-h-0 flex-1 border-t border-line">
-        <section aria-label="Requests" className={clsx('flex w-full min-w-0 flex-col lg:w-[400px] lg:shrink-0 lg:border-r lg:border-line', selected && 'hidden lg:flex')}>
-          <div role="group" aria-label="Filter requests" className="flex gap-1.5 overflow-x-auto border-b border-line px-3 py-2.5">
-            {FILTERS.map((f) => {
-              const n = count(f.statuses);
-              const on = f.id === filter;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setFilter(f.id)}
-                  className={clsx(
-                    'tap inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150',
-                    on ? 'bg-brand-500/40 text-ink' : 'text-soft hover:bg-white/[0.06] hover:text-ink',
-                  )}
-                >
-                  {f.label}
-                  <span className={clsx('tabular-nums', on ? 'text-accent' : 'text-mute')}>{n}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
-            {requests.loading && <SkeletonRows rows={6} />}
-            {requests.error && <ErrorNote error={requests.error} onRetry={requests.reload} />}
-            {!requests.loading && visible.length === 0 && (
-              <EmptyState icon={Inbox} title="Nothing here">
-                No requests match this filter.
-              </EmptyState>
-            )}
-            <ul className="space-y-1.5">
-              {visible.map((request) => {
-                const status = REQUEST_STATUS[request.status];
-                const isSelected = request.id === requestId;
-                return (
-                  <li key={request.id}>
-                    <a
-                      href={hrefFor('inbox', request.id)}
-                      aria-current={isSelected ? 'true' : undefined}
-                      className={clsx(
-                        'block rounded-xl border px-3.5 py-3 transition-colors duration-150',
-                        isSelected ? 'border-accent/40 bg-brand-500/20' : 'border-transparent hover:border-line hover:bg-white/[0.04]',
-                      )}
+      <WorkspaceState error={emails.error} onRetry={emails.reload}>
+        <div className="flex min-h-0 flex-1 border-t border-line">
+          <section aria-label="Messages" className={clsx('flex w-full min-w-0 flex-col lg:w-[410px] lg:shrink-0 lg:border-r lg:border-line', selected && 'hidden lg:flex')}>
+            <div className="border-b border-line px-3 py-2.5">
+              <div role="group" aria-label="Filter by status" className="flex gap-1.5 overflow-x-auto">
+                {FILTERS.map((f) => {
+                  const on = f.id === filter;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setFilter(f.id)}
+                      className={clsx('tap inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150', on ? 'bg-brand-500/40 text-ink' : 'text-soft hover:bg-white/[0.06] hover:text-ink')}
                     >
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className={clsx('truncate text-[13.5px] text-ink', request.status === 'received' ? 'font-bold' : 'font-semibold')}>{request.from.name}</span>
-                        <span className="shrink-0 text-[11.5px] tabular-nums text-mute">{fmtDayTime(request.receivedAt, tz)}</span>
-                      </span>
-                      <span className="mt-0.5 block truncate text-[13px] text-soft">{request.subject}</span>
-                      <span className="mt-0.5 block truncate text-[12px] text-mute">{request.bodyText.replace(/\s+/g, ' ')}</span>
-                      <span className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Pill tone={status.tone} spin={request.status === 'processing'}>
-                          {status.label}
-                        </Pill>
-                        {request.priority && (request.priority === 'urgent' || request.priority === 'high') && (
-                          <Pill tone={PRIORITY[request.priority].tone} icon={null}>
-                            {PRIORITY[request.priority].label}
-                          </Pill>
-                        )}
-                        {request.flags.slice(0, 1).map((flag) => (
-                          <Pill key={flag} tone={FLAG[flag].tone}>
-                            {FLAG[flag].label}
-                          </Pill>
-                        ))}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-
-        <section aria-label="Request detail" className={clsx('min-w-0 flex-1 overflow-y-auto', !selected && 'hidden lg:block')}>
-          {selected ? (
-            <Detail key={selected.id} request={selected} onBack={hrefFor('inbox')} />
-          ) : (
-            <div className="flex h-full items-center justify-center p-8">
-              <EmptyState icon={Inbox} title="Select a request">
-                Pick a request on the left to see the email, what the agent extracted, and what it did.
-              </EmptyState>
+                      {f.label}
+                      <span className={clsx('tabular-nums', on ? 'text-accent' : 'text-mute')}>{fromProvider.filter((e) => matches(f, e)).length}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div role="group" aria-label="Filter by mailbox" className="mt-2 flex gap-1.5">
+                {(['all', 'gmail', 'outlook'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    aria-pressed={provider === p}
+                    onClick={() => setProvider(p)}
+                    className={clsx('tap inline-flex h-7 cursor-pointer items-center rounded-full border px-2.5 text-[12px] font-semibold transition-colors duration-150', provider === p ? 'border-accent/50 text-ink' : 'border-line text-mute hover:text-ink')}
+                  >
+                    {p === 'all' ? 'Both mailboxes' : p === 'gmail' ? 'Gmail' : 'Outlook'}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </section>
-      </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+              {emails.loading && <SkeletonRows rows={6} />}
+              {!emails.loading && visible.length === 0 && (
+                <EmptyState icon={Inbox} title="Nothing here">
+                  No messages match this filter.
+                </EmptyState>
+              )}
+              <ul className="space-y-1.5">
+                {visible.map((email) => {
+                  const status = EMAIL_STATUS[email.status];
+                  const isSelected = email.id === emailId;
+                  return (
+                    <li key={email.id}>
+                      <a
+                        href={hrefFor('inbox', email.id)}
+                        aria-current={isSelected ? 'true' : undefined}
+                        className={clsx('block rounded-xl border px-3.5 py-3 transition-colors duration-150', isSelected ? 'border-accent/40 bg-brand-500/20' : 'border-transparent hover:border-line hover:bg-white/[0.04]')}
+                      >
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className={clsx('truncate text-[13.5px] text-ink', email.unread ? 'font-bold' : 'font-semibold')}>{email.from.name}</span>
+                          <span className="shrink-0 text-[11.5px] tabular-nums text-mute">{fmtDayTime(email.receivedAt, tz)}</span>
+                        </span>
+                        <span className="mt-0.5 block truncate text-[13px] text-soft">{email.subject}</span>
+                        <span className="mt-0.5 line-clamp-2 text-[12px] leading-[17px] text-mute">{email.summary}</span>
+                        <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <Pill tone={status.tone}>{status.label}</Pill>
+                          <Pill tone={EMAIL_CATEGORY[email.category].tone} icon={null}>
+                            {EMAIL_CATEGORY[email.category].label}
+                          </Pill>
+                          {(email.priority === 'urgent' || email.priority === 'high') && (
+                            <Pill tone={PRIORITY[email.priority].tone} icon={null}>
+                              {PRIORITY[email.priority].label}
+                            </Pill>
+                          )}
+                          <SourceBadge source={email.provider} className="ml-auto" />
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </section>
+
+          <section aria-label="Message detail" className={clsx('min-w-0 flex-1 overflow-y-auto', !selected && 'hidden lg:block')}>
+            {selected ? (
+              <EmailDetail key={selected.id} email={selected} />
+            ) : (
+              <div className="flex h-full items-center justify-center p-8">
+                <EmptyState icon={Inbox} title="Select a message">
+                  Pick a message to see its summary, the action items found in it, the thread and any reply the secretary has drafted.
+                </EmptyState>
+              </div>
+            )}
+          </section>
+        </div>
+      </WorkspaceState>
     </div>
   );
 }

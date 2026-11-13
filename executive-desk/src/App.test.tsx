@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { App } from './App';
 import { setApi } from './api';
-import type { EvaluationTarget } from './api/client';
+import type { EvaluationTarget, ExecutiveDeskApi } from './api/client';
 import { MockExecutiveDesk } from './api/mock/mockAdapter';
 import { EVALUATION_CASES } from './evaluation/fixtures';
 import { SYNTHETIC_CASE_SET } from './evaluation/fixtures';
@@ -44,107 +44,327 @@ afterEach(() => {
   window.location.hash = '';
 });
 
-describe('app shell', () => {
-  it('shows the four sections, marks the current one, and says the data is mock data', async () => {
-    await open('#/inbox');
+describe('workspace shell', () => {
+  it('opens on the overview, groups the destinations, and says the data is mock data', async () => {
+    await open('');
+    expect(await screen.findByRole('heading', { level: 1, name: /Good morning, Layla/ })).toBeInTheDocument();
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0];
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual([
-      'Secretary Chat',
-      expect.stringContaining('Request Inbox'),
-      expect.stringContaining('Approval Center'),
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent!.replace(/\d+$/, ''))).toEqual([
+      'Overview',
+      'Inbox',
+      'Calendar',
+      'Tasks and follow-ups',
+      'Secretary chat',
+      'Approval center',
+      'Activity',
       'Evaluation',
     ]);
-    expect(within(nav).getByRole('link', { name: /Request Inbox/ })).toHaveAttribute('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: /Secretary Chat/ })).not.toHaveAttribute('aria-current');
-    expect(screen.getByText(/Scripted agent\. No real email is sent and no calendar is changed/)).toBeInTheDocument();
-    await waitFor(() => expect(within(nav).getByLabelText('4 new requests')).toBeInTheDocument());
-    expect(within(nav).getByLabelText('4 approvals waiting')).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Overview/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText(/Scripted agent and fictional people\. No real email is sent and no calendar is changed/)).toBeInTheDocument();
+    await waitFor(() => expect(within(nav).getByLabelText('4 approvals waiting')).toBeInTheDocument());
+    expect(within(nav).getByLabelText('4 new requests')).toBeInTheDocument();
+    expect(within(nav).getByLabelText('2 overdue items')).toBeInTheDocument(); // one task, one follow-up
   });
 
-  it('falls back to the inbox for an unknown address', async () => {
+  it('falls back to the overview for an unknown address', async () => {
     await open('#/nowhere');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Request Inbox' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Good morning/ })).toBeInTheDocument();
+  });
+
+  it('gives phones a bottom bar with the rest of the destinations behind More', async () => {
+    const user = userEvent.setup();
+    await open('#/overview');
+    const bottom = screen.getAllByRole('navigation', { name: 'Main' })[1];
+    expect(within(bottom).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Overview', 'Inbox', 'Calendar', 'Approvals']);
+    await user.click(within(bottom).getByRole('button', { name: /More/ }));
+    const menu = screen.getByRole('dialog', { name: 'More destinations' });
+    expect(within(menu).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Tasks and follow-ups', 'Secretary chat', 'Activity', 'Evaluation']);
   });
 });
 
-describe('request inbox', () => {
-  it('lists every request and filters by status', async () => {
+describe('overview', () => {
+  it('summarises approvals, mail, meetings, tasks and awaited replies, each linking to its screen', async () => {
+    await open('#/overview');
+    const glance = await screen.findByRole('region', { name: 'At a glance' });
+    const tile = (name: RegExp) => within(glance).getByRole('link', { name });
+    expect(tile(/Waiting for your approval/)).toHaveAttribute('href', '#/approvals');
+    expect(tile(/Waiting for your approval/)).toHaveTextContent('4');
+    expect(tile(/Open in the inbox/)).toHaveTextContent('13');
+    expect(tile(/Meetings today/)).toHaveTextContent('3');
+    expect(tile(/Open tasks/)).toHaveTextContent(/5.*1 overdue/);
+    expect(tile(/Replies awaited/)).toHaveTextContent(/3.*1 overdue/);
+
+    const decisions = screen.getByRole('region', { name: 'Waiting for your decision' });
+    expect(within(decisions).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(decisions).getByText('Move an event, then Send an email')).toBeInTheDocument();
+
+    const today = screen.getByRole('region', { name: 'Today' });
+    expect(within(today).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      expect.stringContaining('Weekly leadership sync'),
+      expect.stringContaining('Holdings board pre-read'),
+      expect.stringContaining('Vendor review: Altamira Freight'),
+    ]);
+    expect(within(today).getByText('Outlook')).toBeInTheDocument();
+
+    const due = screen.getByRole('region', { name: 'Due and overdue' });
+    expect(within(due).getByText('Overdue since Fri 13 Nov', { selector: 'li:first-child span' })).toBeInTheDocument();
+    expect(within(due).getByText(/No reply from Peter Vogel/)).toBeInTheDocument();
+  });
+
+  it('reports the integration status honestly: nothing is connected yet', async () => {
+    await open('#/overview');
+    const status = await screen.findByRole('region', { name: 'Integration status' });
+    const count = (label: string) => within(status).getByText(label, { selector: 'dt' }).nextElementSibling!.textContent;
+    expect(count('Implemented and connected')).toBe('0');
+    expect(Number(count('Implemented with mock data'))).toBeGreaterThan(5);
+    expect(Number(count('Waiting for backend contract'))).toBeGreaterThan(5);
+    expect(Number(count('Not implemented'))).toBeGreaterThan(0);
+  });
+});
+
+describe('unified inbox', () => {
+  it('shows Gmail and Outlook together and filters by status and by mailbox', async () => {
     const user = userEvent.setup();
     await open('#/inbox');
-    const list = screen.getByRole('region', { name: 'Requests' });
-    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(12));
+    const list = await screen.findByRole('region', { name: 'Messages' });
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(20));
+    expect(within(list).getAllByText('Gmail', { selector: 'li span' }).length).toBeGreaterThan(10);
+    expect(within(list).getAllByText('Outlook', { selector: 'li span' })).toHaveLength(4);
 
-    await user.click(within(list).getByRole('button', { name: /^New/ }));
-    const fresh = within(list).getAllByRole('listitem');
-    expect(fresh).toHaveLength(4);
-    for (const row of fresh) expect(within(row).getByText('New')).toBeInTheDocument();
-    expect(within(list).getByRole('button', { name: /^New/ })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(list).getByRole('button', { name: 'Outlook' }));
+    expect(within(list).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(list).getByRole('button', { name: 'Outlook' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(list).getByRole('button', { name: 'Both mailboxes' }));
 
     await user.click(within(list).getByRole('button', { name: /^Needs you/ }));
-    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
-    expect(within(list).getByText('Signing prep')).toBeInTheDocument();
+    const attention = within(list).getAllByRole('listitem');
+    expect(attention).toHaveLength(5); // three approvals, the failed booking, and Omar's urgent email
+    expect(within(list).getByText(/Driver shortage at the Tripoli depot/)).toBeInTheDocument();
+
+    await user.click(within(list).getByRole('button', { name: /^Meetings/ }));
+    expect(within(list).getAllByRole('listitem')).toHaveLength(12);
   });
 
-  it('shows classification, priority, extracted details, status and history for a handled request', async () => {
-    await open('#/inbox/req-009');
-    const detail = await screen.findByRole('article', { name: 'Request: Regional ops review' });
-    expect(within(detail).getByText('Waiting for reply')).toBeInTheDocument();
-    expect(within(detail).getAllByText('New meeting')).toHaveLength(2); // the chip and the status step
-    expect(within(detail).getByText('Normal priority')).toBeInTheDocument();
-    expect(within(detail).getByText('Outside working hours')).toBeInTheDocument();
+  it('shows the summary, action items, thread and a thread-aware reply draft for an email', async () => {
+    await open('#/inbox/mail-ratecard');
+    const detail = await screen.findByRole('article', { name: 'Email: Re: Rate card for 2027' });
+    expect(within(detail).getByText('layla.mansour@cedarvale.example')).toBeInTheDocument();
+    expect(within(detail).getByText('Needs a reply')).toBeInTheDocument();
 
-    const extracted = within(detail).getByRole('region', { name: 'Extracted meeting details' });
-    expect(within(extracted).getByText('Regional ops review: Straits Cargo')).toBeInTheDocument();
-    expect(within(extracted).getByText('60 minutes')).toBeInTheDocument();
-    // 9:00am Singapore time shown in the principal's zone
-    expect(within(extracted).getByText('Thu 19 Nov, 03:00 to 04:00')).toBeInTheDocument();
-    expect(within(extracted).getByText('Asia/Singapore')).toBeInTheDocument();
+    const summary = within(detail).getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText(/applies a 6% increase on the Baltic lanes, although the thread shows you agreed a 4% cap/)).toBeInTheDocument();
+    expect(within(summary).getByText('Ask for a corrected rate card')).toBeInTheDocument();
 
-    const status = within(detail).getByRole('region', { name: 'Processing status' });
-    expect(within(status).getByText('Approved by Layla Mansour')).toBeInTheDocument();
-    expect(within(status).getByText('Alternatives offered')).toBeInTheDocument();
+    const thread = within(detail).getByRole('region', { name: 'Thread' });
+    const messages = within(thread).getAllByRole('listitem');
+    expect(messages).toHaveLength(3);
+    expect(messages[0]).toHaveTextContent('sent from your mailbox');
+    expect(messages[1]).toHaveTextContent('Agreed, 4% cap on the Baltic lanes');
 
-    const history = within(detail).getByRole('region', { name: 'History' });
-    expect(within(history).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      expect.stringContaining('Received'),
-      expect.stringContaining('Processing started'),
-      expect.stringContaining('Classified'),
-      expect.stringContaining('Approval requested'),
-      expect.stringContaining('Approved'),
-      expect.stringContaining('Finished'),
-    ]);
+    const draft = within(detail).getByRole('region', { name: 'Reply draft' });
+    expect(within(draft).getByText('Draft, not sent')).toBeInTheDocument();
+    expect(within(draft).getByText(/we agreed a 4% cap in your note of 5 November/)).toBeInTheDocument();
+    expect(within(draft).getByText(/relies on the earlier messages in this thread/)).toBeInTheDocument();
   });
 
-  it('processes a new request and ends up waiting for approval, with a link to it', async () => {
+  it('sends a reply draft through the approval center, and nothing is sent before approval', async () => {
     const user = userEvent.setup();
-    await open('#/inbox/req-004');
-    const detail = await screen.findByRole('article', { name: 'Request: Q4 delivery schedule review' });
-    expect(within(detail).getByText(/Nothing extracted yet/)).toBeInTheDocument();
-    expect(within(detail).queryByRole('link', { name: 'Review approval' })).not.toBeInTheDocument();
-
-    await user.click(within(detail).getByRole('button', { name: 'Process request' }));
+    await open('#/inbox/mail-ratecard');
+    const detail = await screen.findByRole('article', { name: 'Email: Re: Rate card for 2027' });
+    await user.click(within(detail).getByRole('button', { name: 'Send for approval' }));
     await settle();
 
-    await waitFor(() => expect(within(detail).getByText('Needs approval')).toBeInTheDocument());
-    expect(within(detail).queryByRole('button', { name: 'Process request' })).not.toBeInTheDocument();
-    const activity = within(detail).getByRole('region', { name: 'Agent activity' });
-    expect(within(activity).getByText(/Checked Wednesday afternoon/)).toBeInTheDocument();
-    expect(within(activity).getAllByText('Waiting for approval').length).toBeGreaterThanOrEqual(2);
+    const draft = within(detail).getByRole('region', { name: 'Reply draft' });
+    await waitFor(() => expect(within(draft).getByText('Waiting for your approval')).toBeInTheDocument());
+    expect(within(detail).getByRole('region', { name: 'Thread' }).querySelectorAll('li')).toHaveLength(3); // not sent yet
+    const approval = (await desk.listApprovals({ status: ['pending'] })).find((a) => a.title.startsWith('Reply to Hannah Lindqvist'))!;
+    expect(approval.changes).toEqual([expect.objectContaining({ type: 'email', to: ['hannah.lindqvist@nordhavn-shipping.example'] })]);
+    expect(within(draft).getByRole('link', { name: 'Review approval' })).toHaveAttribute('href', `#/approvals/${approval.id}`);
 
+    await desk.decideApproval(approval.id, { decision: 'approve', decidedBy: 'Layla Mansour' });
+    await settle();
+    await waitFor(() => expect(within(draft).getByText('Sent')).toBeInTheDocument());
+    expect(within(detail).getByRole('region', { name: 'Thread' }).querySelectorAll('li')).toHaveLength(4);
+    expect((await desk.listRuns({ requestId: 'mail-ratecard' }))[0]).toMatchObject({ outcome: 'replied' });
+  });
+
+  it('shows the scheduling detail for a meeting request and processes a new one', async () => {
+    const user = userEvent.setup();
+    await open('#/inbox/req-009');
+    const handled = await screen.findByRole('article', { name: 'Email: Regional ops review' });
+    expect(within(handled).getByText('Outside working hours')).toBeInTheDocument();
+    const extracted = await within(handled).findByRole('region', { name: 'Extracted meeting details' });
+    expect(within(extracted).getByText('Thu 19 Nov, 03:00 to 04:00')).toBeInTheDocument(); // 9:00am Singapore time, in the principal's zone
+    expect(within(within(handled).getByRole('region', { name: 'Processing status' })).getByText('Approved by Layla Mansour')).toBeInTheDocument();
+    expect(within(within(handled).getByRole('region', { name: 'Thread' })).getAllByRole('listitem')).toHaveLength(2); // the request and the reply that was sent
+    cleanup();
+
+    await open('#/inbox/req-004');
+    const fresh = await screen.findByRole('article', { name: 'Email: Q4 delivery schedule review' });
+    await user.click(await within(fresh).findByRole('button', { name: 'Process request' }));
+    await settle();
+    await waitFor(() => expect(within(fresh).getAllByText('Needs approval').length).toBeGreaterThan(0));
     const [approval] = await desk.listApprovals({ runId: (await desk.listRuns({ requestId: 'req-004' }))[0].id });
-    expect(within(detail).getByRole('link', { name: 'Review approval' })).toHaveAttribute('href', `#/approvals/${approval.id}`);
+    expect(within(fresh).getAllByRole('link', { name: 'Review approval' })[0]).toHaveAttribute('href', `#/approvals/${approval.id}`);
   });
 
   it('flags the injected email after processing and proposes nothing', async () => {
     const user = userEvent.setup();
     await open('#/inbox/req-019');
-    const detail = await screen.findByRole('article', { name: 'Request: Product demo next week' });
-    await user.click(within(detail).getByRole('button', { name: 'Process request' }));
+    const detail = await screen.findByRole('article', { name: 'Email: Product demo next week' });
+    await user.click(await within(detail).findByRole('button', { name: 'Process request' }));
     await settle();
     await waitFor(() => expect(within(detail).getByText('Suspected prompt injection')).toBeInTheDocument());
-    expect(within(detail).getByText('Needs you')).toBeInTheDocument();
+    expect(within(detail).getAllByText('Needs you').length).toBeGreaterThan(0);
     expect(within(detail).queryByRole('link', { name: 'Review approval' })).not.toBeInTheDocument();
     expect(await desk.listApprovals({ status: ['pending'] })).toHaveLength(4);
+  });
+});
+
+describe('calendar', () => {
+  it('shows both calendars in one week, with the clash between them and the proposed slots', async () => {
+    await open('#/calendar');
+    const week = await screen.findByRole('region', { name: 'Week view' });
+    const names = within(week).getAllByRole('button').map((b) => b.getAttribute('aria-label')!);
+    expect(names.filter((n) => n.includes('Cedar & Vale')).length).toBeGreaterThanOrEqual(10);
+    expect(names.filter((n) => n.includes('Holdings'))).toHaveLength(5);
+    expect(names.filter((n) => n.includes('in conflict')).sort()).toEqual([
+      '1:1 with Omar, Tue 17 Nov, 14:00 to 15:00, Cedar & Vale, in conflict',
+      'Group risk committee, Tue 17 Nov, 14:30 to 15:30, Holdings, in conflict',
+    ]);
+    expect(names.filter((n) => n.endsWith('proposed')).length).toBeGreaterThanOrEqual(6);
+    expect(screen.getByText('1 conflict between calendars this week')).toBeInTheDocument();
+    // An approved booking is on the calendar; a pending one is only proposed.
+    expect(names).toContain('Pilot results: Hudson Analytics, Wed 18 Nov, 17:00 to 17:30, Cedar & Vale');
+    expect(names).toContain('Intro call: Lumen Events, Tue 17 Nov, 11:00 to 11:30, proposed');
+  });
+
+  it('opens meeting preparation for an event and explains a cross-calendar conflict', async () => {
+    const user = userEvent.setup();
+    await open('#/calendar');
+    const week = await screen.findByRole('region', { name: 'Week view' });
+    await user.click(within(week).getByRole('button', { name: /^Group risk committee/ }));
+    const prep = await screen.findByRole('complementary', { name: 'Meeting preparation' });
+    expect(within(prep).getByRole('alert')).toHaveTextContent('Overlaps "1:1 with Omar" (Cedar & Vale, 14:00 to 15:00)');
+    await waitFor(() => expect(within(prep).getByText('Tripoli depot staffing risk')).toBeInTheDocument());
+    expect(within(prep).getByRole('link', { name: /Omar Saab: Driver shortage/ })).toHaveAttribute('href', '#/inbox/mail-tripoli');
+    expect(within(prep).getByText('Decide on driver cover for the Tripoli depot')).toBeInTheDocument();
+  });
+
+  it('links a proposed slot to its approval, and offers a day agenda', async () => {
+    const user = userEvent.setup();
+    await open('#/calendar');
+    const week = await screen.findByRole('region', { name: 'Week view' });
+    await user.click(within(week).getByRole('button', { name: /^Intro call: Lumen Events/ }));
+    const panel = await screen.findByRole('complementary', { name: 'Meeting preparation' });
+    const approval = (await desk.listApprovals({ status: ['pending'] })).find((a) => a.title.includes('Sofia'))!;
+    expect(within(panel).getByRole('link', { name: 'Review the proposal' })).toHaveAttribute('href', `#/approvals/${approval.id}`);
+
+    await user.click(screen.getByRole('button', { name: 'day' }));
+    await user.click(within(screen.getByRole('group', { name: 'Day' })).getByRole('button', { name: 'Tue 17 Nov' }));
+    const agenda = screen.getByRole('list', { name: 'Agenda' });
+    expect(within(agenda).getAllByText('Conflict')).toHaveLength(2);
+  });
+});
+
+describe('tasks and follow-ups', () => {
+  it('groups tasks by urgency and lets you complete one', async () => {
+    const user = userEvent.setup();
+    await open('#/tasks');
+    const overdue = await screen.findByRole('region', { name: 'Overdue' });
+    expect(within(overdue).getByText('Answer Nordhavn on the 2027 rate card')).toBeInTheDocument();
+    expect(within(overdue).getByText('Overdue since Fri 13 Nov')).toBeInTheDocument();
+    const today = screen.getByRole('region', { name: 'Due today' });
+    expect(within(today).getByText('Urgent')).toBeInTheDocument();
+    expect(within(today).getByRole('link', { name: 'Open the email' })).toHaveAttribute('href', '#/inbox/mail-tripoli');
+
+    await user.click(within(today).getByRole('checkbox', { name: 'Complete: Decide on driver cover for the Tripoli depot' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Due today' })).not.toBeInTheDocument());
+    expect(within(screen.getByRole('region', { name: 'Done' })).getByRole('checkbox', { name: /Reopen: Decide on driver cover/ })).toBeChecked();
+    expect(screen.getByRole('tab', { name: /^Tasks/ })).toHaveTextContent('4');
+  });
+
+  it('lists reminders and lets you dismiss one', async () => {
+    const user = userEvent.setup();
+    await open('#/tasks/reminders');
+    const list = await screen.findByRole('list', { name: 'Reminders' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    const first = within(list).getAllByRole('listitem')[0];
+    expect(first).toHaveTextContent('Call Karim before the board prep');
+    await user.click(within(first).getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() => expect(screen.getByRole('tab', { name: /^Reminders/ })).toHaveTextContent('1'));
+  });
+
+  it('tracks awaited replies, marks the overdue one, and drafts a reminder that still needs approval', async () => {
+    const user = userEvent.setup();
+    await open('#/tasks/followups');
+    const list = await screen.findByRole('list', { name: 'Follow-ups' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(4); // three tracked by hand, one from a request the secretary answered
+    expect(rows[0]).toHaveTextContent('Revised fuel-surcharge terms');
+    expect(within(rows[0]).getByText('Overdue')).toBeInTheDocument();
+    expect(within(list).getByText('Replied')).toBeInTheDocument();
+    expect(within(list).getByText('Regional ops review')).toBeInTheDocument();
+
+    await user.click(within(rows[0]).getByRole('button', { name: 'Draft a reminder' }));
+    await settle();
+    const link = await within(list).findByRole('link', { name: 'Review the reminder' });
+    const approval = (await desk.listApprovals({ status: ['pending'] })).find((a) => a.title.startsWith('Remind Peter Vogel'))!;
+    expect(link).toHaveAttribute('href', `#/approvals/${approval.id}`);
+    expect(approval.changes[0]).toMatchObject({ type: 'email', to: ['peter.vogel@altamira.example'] });
+
+    await desk.decideApproval(approval.id, { decision: 'approve', decidedBy: 'Layla Mansour' });
+    await settle();
+    await waitFor(() => expect(within(list).getByText('A reminder was sent today.')).toBeInTheDocument());
+    expect(within(list).queryByRole('link', { name: 'Review the reminder' })).not.toBeInTheDocument();
+  });
+});
+
+describe('activity', () => {
+  it('lists what the secretary did and what you decided, newest first, and filters by kind', async () => {
+    const user = userEvent.setup();
+    await open('#/activity');
+    const filters = await screen.findByRole('group', { name: 'Filter activity' });
+    await waitFor(() => expect(within(filters).getByRole('button', { name: /^All/ })).not.toHaveTextContent(/All0$/));
+    expect(screen.getByText(/Layla Mansour approved: Book pilot results call with Priya Nair/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Calendar service error/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Simulated').length).toBeGreaterThan(3);
+
+    await user.click(within(filters).getByRole('button', { name: /^Calendar/ }));
+    const entries = screen.getAllByRole('listitem');
+    expect(entries.length).toBeGreaterThanOrEqual(5);
+    expect(entries.some((li) => li.textContent!.includes('Failed'))).toBe(true); // the three failed calendar writes
+    expect(entries.every((li) => /Created|Moved|Cancelled|Create/.test(li.textContent!))).toBe(true);
+  });
+});
+
+describe('against a backend with no workspace contract', () => {
+  it('says each workspace screen is waiting for the backend contract instead of inventing data', async () => {
+    // Anything that is not the mock itself stands in for a real backend here: same answers, different object.
+    const real = {
+      info: desk.info,
+      getMeta: () => desk.getMeta(),
+      listRequests: (...a: Parameters<typeof desk.listRequests>) => desk.listRequests(...a),
+      getRequest: (id: string) => desk.getRequest(id),
+      processRequest: (id: string) => desk.processRequest(id),
+      getRun: (id: string) => desk.getRun(id),
+      listRuns: (...a: Parameters<typeof desk.listRuns>) => desk.listRuns(...a),
+      listApprovals: (...a: Parameters<typeof desk.listApprovals>) => desk.listApprovals(...a),
+      decideApproval: (...a: Parameters<typeof desk.decideApproval>) => desk.decideApproval(...a),
+      listConversations: () => desk.listConversations(),
+      createConversation: (...a: Parameters<typeof desk.createConversation>) => desk.createConversation(...a),
+      listMessages: (id: string) => desk.listMessages(id),
+      sendMessage: (...a: Parameters<typeof desk.sendMessage>) => desk.sendMessage(...a),
+      startEvaluationRun: (...a: Parameters<typeof desk.startEvaluationRun>) => desk.startEvaluationRun(...a),
+      subscribe: (listener: () => void) => desk.subscribe(listener),
+    } satisfies ExecutiveDeskApi;
+    setApi(real);
+    for (const hash of ['#/inbox', '#/calendar', '#/tasks', '#/activity', '#/overview']) {
+      window.location.hash = hash;
+      const view = render(<App />);
+      expect(await screen.findByText('Waiting for the backend contract')).toBeInTheDocument();
+      view.unmount();
+    }
   });
 });
 

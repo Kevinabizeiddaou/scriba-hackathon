@@ -44,7 +44,9 @@ export function ApprovalsPage({ approvalId }: { approvalId: string | null }) {
   function originOf(requestId: string | null, conversationId: string | null) {
     if (requestId) {
       const request = data.data?.requests.find((r) => r.id === requestId);
-      return request ? { label: `${request.from.name}: ${request.subject}`, href: hrefFor('inbox', request.id) } : null;
+      if (request) return { label: `${request.from.name}: ${request.subject}`, href: hrefFor('inbox', request.id) };
+      // Reply drafts and follow-up reminders come from the workspace, not from a meeting request.
+      return requestId.startsWith('fu-') ? { label: 'a follow-up', href: hrefFor('tasks', 'followups') } : { label: 'an email in the inbox', href: hrefFor('inbox', requestId) };
     }
     if (conversationId) {
       const conversation = data.data?.conversations.find((c) => c.id === conversationId);

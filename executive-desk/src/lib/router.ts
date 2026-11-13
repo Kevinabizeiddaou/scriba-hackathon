@@ -1,7 +1,7 @@
-/** Minimal hash router: "#/inbox/req-001" -> { page: 'inbox', param: 'req-001' }. Every screen is deep-linkable. */
+/** Minimal hash router: "#/inbox/req-001" -> { page: 'inbox', param: 'req-001' }. Every screen is deep-linkable. The default is the overview. */
 import { useEffect, useState } from 'react';
 
-export const PAGES = ['chat', 'inbox', 'approvals', 'evaluation'] as const;
+export const PAGES = ['overview', 'inbox', 'calendar', 'tasks', 'chat', 'approvals', 'activity', 'evaluation'] as const;
 export type Page = (typeof PAGES)[number];
 
 export interface Route {
@@ -12,7 +12,7 @@ export interface Route {
 export function parseHash(hash: string): Route {
   const [page, param] = hash.replace(/^#\/?/, '').split('/');
   return {
-    page: (PAGES as readonly string[]).includes(page) ? (page as Page) : 'inbox',
+    page: (PAGES as readonly string[]).includes(page) ? (page as Page) : 'overview',
     param: param ? decodeURIComponent(param) : null,
   };
 }

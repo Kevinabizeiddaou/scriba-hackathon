@@ -1,864 +1,191 @@
-/* Transferred from Scriba: Gmail/frontend/src/index.css @ 3ae3a2aa (lines 1-214, 269-539, 671-1047).
-   Left out: Autopilot/Slack frame styles (215-268) and landing-page 3D animations (540-670). */
-/* Icons and the app font are bundled and served from this origin, never a CDN:
-   a private installation must not send its users' browsers to Google or
-   Cloudflare, and an air-gapped one cannot reach them. Font Awesome Free stays
-   on 6.5.1 (the version the CDN served); src/ uses the solid (fas), regular
-   (far) and brands (fab) styles. Plus Jakarta Sans: the weights the Google
-   Fonts request asked for (300-800, plus 400 italic). */
-@import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
-@import '@fortawesome/fontawesome-free/css/brands.min.css';
-@import '@fortawesome/fontawesome-free/css/regular.min.css';
-@import '@fortawesome/fontawesome-free/css/solid.min.css';
-@import '@fontsource/plus-jakarta-sans/300.css';
+/* The app font is bundled and served from this origin, never a CDN: a private
+   installation must not send its users' browsers to Google, and an air-gapped
+   one cannot reach it. */
 @import '@fontsource/plus-jakarta-sans/400.css';
-@import '@fontsource/plus-jakarta-sans/400-italic.css';
 @import '@fontsource/plus-jakarta-sans/500.css';
 @import '@fontsource/plus-jakarta-sans/600.css';
 @import '@fontsource/plus-jakarta-sans/700.css';
-@import '@fontsource/plus-jakarta-sans/800.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ──────────────────────────────────────────── */
+/*
+ * Scriba Executive Desk: dark burgundy theme.
+ * Token values mirror Scriba's dark theme (bg #130a10, card #1c1118, ink #f3e9ee,
+ * accent #e98aa6, brand #8b2040). Muted text is a solid colour rather than Scriba's
+ * 55% alpha so that small labels stay above 4.5:1 on every surface.
+ */
 :root {
-  /* Shell geometry. The fixed app header is 56px tall (Header.tsx) and the
-     tab content wrapper pads 24px top/bottom from the md breakpoint up
-     (AppShell.tsx: md:p-6). Viewport-constrained views subtract these. */
-  --app-header-h: 56px;
-  --app-content-pad-y: 1.5rem;
-  color-scheme: light;
-
-  /* Brand palette */
-  --brand-ink:     #150810;
-  --brand-soft:    #6a5560;
-  --brand-mute:    rgba(106, 85, 96, 0.74);
-  --brand-line:    rgba(107, 24, 48, 0.08);
-  --brand-accent:  #6b1830;
-  --brand-deep:    #43101e;
-  --brand-card:    #fffbfa;
-  --brand-surface: rgba(252, 246, 243, 0.75);
-  --brand-bg:      #fdf5f1;
-
-  /* Elevation — all shadows hued toward brand */
-  --shadow-xs:  0 1px 2px rgba(74, 25, 40, 0.05);
-  --shadow-sm:  0 1px 3px rgba(74, 25, 40, 0.06), 0 4px 12px rgba(74, 25, 40, 0.05);
-  --shadow-md:  0 4px 16px rgba(74, 25, 40, 0.09), 0 1px 4px rgba(74, 25, 40, 0.05);
-  --shadow-lg:  0 8px 28px rgba(74, 25, 40, 0.12), 0 2px 6px rgba(74, 25, 40, 0.06);
-  --shadow-xl:  0 20px 56px rgba(74, 25, 40, 0.15), 0 4px 12px rgba(74, 25, 40, 0.07);
-
-  /* Legacy aliases */
-  --brand-shadow:       var(--shadow-sm);
-  --brand-shadow-md:    var(--shadow-md);
-  --brand-shadow-hover: var(--shadow-lg);
-  --brand-ring:         0 0 0 3px rgba(107, 24, 48, 0.13);
-
-  /* Easing — purposeful curves, not generic "ease" */
-  --ease-out:    cubic-bezier(0.25, 1, 0.5, 1);      /* element appearing */
-  --ease-in:     cubic-bezier(0.5, 0, 0.75, 0);      /* element leaving */
-  --ease-inout:  cubic-bezier(0.76, 0, 0.24, 1);     /* state toggling */
-  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);  /* playful pop */
-
-  /* Spacing (4pt base) */
-  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;
-  --sp-4: 16px;  --sp-5: 20px;  --sp-6: 24px;
-  --sp-8: 32px;  --sp-10: 40px; --sp-12: 48px;
-
-  /* Semantic status palette (dark variants overridden below) */
-  --status-online-bg: rgba(34,197,94,0.12);    --status-online-fg: #166534;  --status-online-dot: #22c55e;
-  --status-pending-bg: rgba(245,158,11,0.12);   --status-pending-fg: #b45309; --status-pending-dot: #f59e0b;
-  --status-disabled-bg: rgba(107,114,128,0.12); --status-disabled-fg: #4b5563; --status-disabled-dot: #6b7280;
-  --status-offline-bg: rgba(107,24,48,0.07);    --status-offline-fg: var(--brand-soft); --status-offline-dot: rgba(107,24,48,0.30);
-
-  /* Semantic error palette */
-  --error-text: #dc2626; --error-muted: #b91c1c; --error-dark: #991b1b;
-  --error-bg: rgba(239,68,68,0.07); --error-border: rgba(239,68,68,0.16);
-  --error-rec-bg: rgba(239,68,68,0.18); --error-rec-fg: #b91c1c; --error-rec-border: rgba(239,68,68,0.32);
-
-  /* Priority chip palette (theme-aware so dark mode stays soft/readable) */
-  --prio-urgent-bg: rgba(190,18,60,0.11); --prio-urgent-fg: #9f1239;
-  --prio-high-bg:   rgba(239,68,68,0.09); --prio-high-fg:   #b91c1c;
-  --prio-medium-bg: rgba(245,158,11,0.10); --prio-medium-fg: #b45309;
-  --prio-low-bg:    rgba(59,130,246,0.09); --prio-low-fg:    #1d4ed8;
-}
-
-/* ── Dark theme ─────────────────────────────────────────────────
-   The UI is variable-driven, so dark mode is mostly a palette swap on
-   <html data-theme="dark">. Component-class overrides below are left
-   unlayered so they reliably beat the @layer components defaults that
-   hardcode light surfaces. */
-:root[data-theme="dark"] {
   color-scheme: dark;
+  --bg: #130a10;
+  --surface: #1c1118;
+  --raised: #251620;
+  --sunken: #0e070b;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --ink: #f3e9ee;
+  --soft: #c7b2bc;
+  --mute: #a08a95;
+  --accent: #e98aa6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #fca5a5;
+  --info: #93c5fd;
 
-  --brand-ink:     #f3e9ee;
-  --brand-soft:    #c7b2bc;
-  --brand-mute:    rgba(199, 178, 188, 0.70);
-  --brand-line:    rgba(255, 255, 255, 0.09);
-  --brand-accent:  #e98aa6;
-  --brand-deep:    #2a0e18;
-  --brand-card:    #1c1118;
-  --brand-surface: rgba(40, 22, 32, 0.6);
-  --brand-bg:      #130a10;
-
-  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.30);
-  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.35);
-  --shadow-lg:  0 8px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.40);
-  --shadow-xl:  0 20px 56px rgba(0, 0, 0, 0.62), 0 4px 12px rgba(0, 0, 0, 0.45);
-
-  --brand-ring: 0 0 0 3px rgba(233, 138, 166, 0.30);
-
-  /* Status palette — dark */
-  --status-online-bg: rgba(34,197,94,0.18);    --status-online-fg: #4ade80;  --status-online-dot: #86efac;
-  --status-pending-bg: rgba(245,158,11,0.18);   --status-pending-fg: #fbbf24; --status-pending-dot: #fcd34d;
-  --status-disabled-bg: rgba(255,255,255,0.08); --status-disabled-fg: #d1d5db; --status-disabled-dot: #d1d5db;
-  --status-offline-bg: rgba(255,255,255,0.05);  --status-offline-fg: var(--brand-soft); --status-offline-dot: rgba(232,160,180,0.25);
-
-  /* Error palette — dark */
-  --error-text: #fca5a5; --error-muted: #fca5a5; --error-dark: #fecaca;
-  --error-bg: rgba(239,68,68,0.12); --error-border: rgba(239,68,68,0.24);
-  --error-rec-bg: rgba(239,68,68,0.20); --error-rec-fg: #fca5a5; --error-rec-border: rgba(239,68,68,0.40);
-
-  /* Priority chip palette — dark (softer text, slightly stronger fills) */
-  --prio-urgent-bg: rgba(190,18,60,0.22); --prio-urgent-fg: #fda4af;
-  --prio-high-bg:   rgba(239,68,68,0.16); --prio-high-fg:   #fca5a5;
-  --prio-medium-bg: rgba(245,158,11,0.16); --prio-medium-fg: #fcd34d;
-  --prio-low-bg:    rgba(59,130,246,0.16); --prio-low-fg:    #93c5fd;
+  /* The same colours as space-separated channels, for Tailwind opacity modifiers. */
+  --bg-rgb: 19 10 16;
+  --surface-rgb: 28 17 24;
+  --raised-rgb: 37 22 32;
+  --sunken-rgb: 14 7 11;
+  --ink-rgb: 243 233 238;
+  --soft-rgb: 199 178 188;
+  --mute-rgb: 160 138 149;
+  --accent-rgb: 233 138 166;
+  --ok-rgb: 74 222 128;
+  --warn-rgb: 251 191 36;
+  --danger-rgb: 252 165 165;
+  --info-rgb: 147 197 253;
 }
 
-/* Search fields that draw their own clear button: hide the browser's second one. */
-.input-search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
-[data-theme="dark"] .input {
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-[data-theme="dark"] textarea.input,
-[data-theme="dark"] select.input { background-color: rgba(255, 255, 255, 0.04); }
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
 
-/* Native <select> dropdowns render their <option> list with the OS default
-   (near-white) surface, so in dark mode the list showed faded text on white.
-   Give every option a solid, theme-matched background + readable text. Applies
-   to all selects app-wide, not just Settings. */
-select option,
-select optgroup {
-  background-color: var(--brand-card);
-  color: var(--brand-ink);
-}
-select option:checked {
-  background-color: var(--brand-card);
-  color: var(--brand-accent);
-  font-weight: 600;
-}
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 520px at 12% -10%, rgba(139, 32, 64, 0.22), transparent 62%),
+      radial-gradient(900px 480px at 100% 0%, rgba(107, 24, 48, 0.14), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-[data-theme="dark"] .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.30);
-}
-[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-}
+  ::selection {
+    background: rgba(233, 138, 166, 0.3);
+  }
 
-[data-theme="dark"] .btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.07); }
-[data-theme="dark"] .btn-ghost:active:not(:disabled) { background: rgba(255, 255, 255, 0.11); }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 
-[data-theme="dark"] .btn-icon {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.09);
-}
-[data-theme="dark"] .btn-icon:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.15);
-}
+  button,
+  [role='button'],
+  a {
+    touch-action: manipulation;
+  }
 
-[data-theme="dark"] .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, var(--brand-card) 70%);
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-[data-theme="dark"] .card-hover:hover {
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(233, 138, 166, 0.10),
-              inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  border-color: rgba(233, 138, 166, 0.18);
-}
-
-[data-theme="dark"] .feed-card { border-color: var(--brand-line); }
-[data-theme="dark"] .feed-card:hover { border-color: rgba(255, 255, 255, 0.16); }
-
-[data-theme="dark"] .surface-item {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border-color: var(--brand-line);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
-}
-[data-theme="dark"] .surface-item:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-[data-theme="dark"] .input-tags__chip {
-  background: rgba(233, 138, 166, 0.16);
-  border-color: rgba(233, 138, 166, 0.26);
-}
-[data-theme="dark"] .input-tags__chip-remove:hover { background: rgba(233, 138, 166, 0.22); }
-
-[data-theme="dark"] .chip,
-[data-theme="dark"] .tag,
-[data-theme="dark"] .count-badge,
-[data-theme="dark"] .section-label {
-  background: rgba(233, 138, 166, 0.12);
-  border-color: rgba(233, 138, 166, 0.20);
-}
-
-[data-theme="dark"] .empty-state {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-/* Hide scrollbar but keep scrolling (horizontal chip rows / nav strips) */
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-
-/* ── Shared surfaces & micro-interactions (UI overhaul) ─────────
-   Unlayered on purpose: these must win over @layer components and
-   adapt cleanly to [data-theme="dark"]. */
-
-::selection { background: rgba(107,24,48,0.16); }
-[data-theme="dark"] ::selection { background: rgba(233,138,166,0.30); }
-
-/* Popover — shared dropdown/menu surface (profile menu, notifications) */
-.popover {
-  background: var(--brand-card);
-  border: 1px solid var(--brand-line);
-  box-shadow: 0 16px 48px rgba(74,25,40,0.16), 0 2px 8px rgba(0,0,0,0.05);
-}
-[data-theme="dark"] .popover {
-  box-shadow: 0 16px 48px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.40);
-}
-
-/* Custom <Select> listbox — themed replacement for native option popups. */
-.select-pop {
-  border-radius: 12px;
-  padding: 6px;
-  list-style: none;
-  margin: 0;
-}
-.select-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.2;
-  color: var(--brand-ink);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.12s var(--ease-out);
-}
-.select-option.is-active { background: rgba(107,24,48,0.08); }
-[data-theme="dark"] .select-option.is-active { background: rgba(255,255,255,0.07); }
-.select-option[aria-selected="true"] { color: var(--brand-accent); font-weight: 600; }
-.select-option .sel-check { margin-left: auto; font-size: 10px; color: var(--brand-accent); }
-
-/* Modal panel — shared sizing for overlay dialogs (DriveModal, auth modal,
-   onboarding, tour). Caps the panel to the visible viewport (dvh where
-   supported, vh fallback) so tall content scrolls inside .modal-body instead
-   of clipping below the fold on short laptop screens. */
-.modal-panel {
-  min-height: 0;
-  max-height: calc(100vh - 32px);
-  max-height: calc(100dvh - 32px);
-}
-.modal-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.menu-anchor {
-  position: relative;
-  z-index: 0;
-}
-.menu-anchor[open] {
-  z-index: 60;
-}
-
-/* Pill group — segmented control container (header provider filter) */
-.pill-group {
-  background: rgba(255,252,251,0.92);
-  border: 1px solid rgba(107,24,48,0.09);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80);
-}
-[data-theme="dark"] .pill-group {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.09);
-  box-shadow: none;
-}
-
-/* Page transition — tab content slides up softly on switch */
-@keyframes pageEnter {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.page-enter { animation: pageEnter 0.32s var(--ease-out) both; }
-
-/* Gentle bob for empty-state icons */
-@keyframes floatSoft {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-5px); }
-}
-.float-soft { animation: floatSoft 3.4s ease-in-out infinite; }
-
-/* Chat "thinking" indicator — three softly blinking dots */
-@keyframes typingBlink {
-  0%, 70%, 100% { opacity: 0.3; transform: translateY(0); }
-  35%           { opacity: 1;   transform: translateY(-2px); }
-}
-.typing-dots { display: inline-flex; align-items: center; gap: 4px; }
-.typing-dots > span {
-  width: 5px; height: 5px; border-radius: 99px;
-  background: currentColor;
-  animation: typingBlink 1.25s var(--ease-inout) infinite;
-}
-.typing-dots > span:nth-child(2) { animation-delay: 0.16s; }
-.typing-dots > span:nth-child(3) { animation-delay: 0.32s; }
-
-/* Skeleton rows — preferred over spinners for content loading */
-.skeleton-row {
-  height: 14px;
-  border-radius: 7px;
-  background: linear-gradient(
-    90deg,
-    rgba(107,24,48,0.05) 25%,
-    rgba(107,24,48,0.10) 50%,
-    rgba(107,24,48,0.05) 75%
-  );
-  background-size: 200% auto;
-  animation: shimmer 1.5s linear infinite;
-}
-[data-theme="dark"] .skeleton-row {
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0.05) 25%,
-    rgba(255,255,255,0.10) 50%,
-    rgba(255,255,255,0.05) 75%
-  );
-  background-size: 200% auto;
-}
-
-/* Sidebar active-item accent bar */
-@keyframes accentGrow {
-  from { transform: scaleY(0); }
-  to   { transform: scaleY(1); }
-}
-.nav-accent {
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 99px;
-  background: linear-gradient(180deg, #f0b0c8, #b86a85);
-  box-shadow: 0 0 8px rgba(240,176,200,0.55);
-  transform-origin: center;
-  animation: accentGrow 0.26s var(--ease-spring) both;
-}
-
-/* ── Reset ──────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  line-height: 1.6;
-  font-size: 14px;
-  color: var(--brand-ink);
-  /* Ambient depth — soft brand blooms anchored to the corners. Fixed so the
-     backdrop stays put while content scrolls (premium "lit room" feel). */
-  background:
-    radial-gradient(1100px 620px at 100% -8%, rgba(123, 30, 58, 0.07), transparent 58%),
-    radial-gradient(900px 560px at -12% 108%, rgba(192, 72, 90, 0.055), transparent 55%),
-    var(--brand-bg);
-  background-attachment: fixed;
-  overscroll-behavior-y: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-[data-theme="dark"] body {
-  background:
-    radial-gradient(1100px 620px at 100% -8%, rgba(233, 138, 166, 0.08), transparent 58%),
-    radial-gradient(900px 560px at -12% 108%, rgba(123, 30, 58, 0.20), transparent 55%),
-    var(--brand-bg);
-  background-attachment: fixed;
-}
-
-button, a, [role="button"] { touch-action: manipulation; }
-
-#root { min-height: 100vh; }
-
-/* ── Accessibility: prefers-reduced-motion ──────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.26);
+    background-clip: content-box;
+    border: 2px solid transparent;
   }
 }
-
-/* ── Focus: visible but not intrusive ──────────────────────── */
-:focus { outline: none; }
-:focus-visible {
-  outline: none;
-  box-shadow: var(--brand-ring) !important;
-}
-
-/* ── Scrollbar ──────────────────────────────────────────────── */
-::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: rgba(107,24,48,0.14); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(107,24,48,0.26); }
-
-/* ── Keyframes ──────────────────────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes scalePop {
-  from { opacity: 0; transform: scale(0.97) translateY(4px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.55; }
-}
-@keyframes shimmer {
-  from { background-position: 200% center; }
-  to   { background-position: -200% center; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 4px 28px rgba(107,24,48,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
-  50%      { box-shadow: 0 6px 38px rgba(107,24,48,0.72), inset 0 1px 0 rgba(255,255,255,0.14); }
-}
-@keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-fade-up    { animation: fadeUp    0.26s var(--ease-out) both; }
-.animate-fade-in    { animation: fadeIn    0.20s var(--ease-out) both; }
-.animate-scale-pop  { animation: scalePop  0.22s var(--ease-out) both; }
-.animate-slide-down { animation: slideDown 0.22s var(--ease-out) both; }
-.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-.animate-float      { animation: float     6s ease-in-out infinite; }
-.animate-glow       { animation: glowPulse 3.2s ease-in-out infinite; }
-
-/* Staggered children */
-.stagger-children > * { animation: fadeUp 0.38s var(--ease-out) both; }
-.stagger-children > *:nth-child(1) { animation-delay: 0ms;   }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms;  }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
-.stagger-children > *:nth-child(9) { animation-delay: 480ms; }
-
 
 @layer components {
-
-  /* ── Card ───────────────────────────────────────────────────── */
   .card {
-    @apply rounded-[18px];
-    background: linear-gradient(180deg, #ffffff 0%, var(--brand-card) 100%);
-    border: 1px solid var(--brand-line);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    transition: transform 0.22s var(--ease-out),
-                box-shadow 0.22s var(--ease-out),
-                border-color 0.22s;
-  }
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(107, 24, 48, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    border-color: rgba(107, 24, 48, 0.16);
-  }
-  .card-hover:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    @apply rounded-card border border-line bg-surface shadow-card;
   }
 
-  /* ── Skeleton shimmer ───────────────────────────────────────── */
-  .skeleton {
-    @apply rounded-lg;
-    background: linear-gradient(
-      90deg,
-      rgba(107,24,48,0.05) 25%,
-      rgba(107,24,48,0.09) 50%,
-      rgba(107,24,48,0.05) 75%
-    );
-    background-size: 200% auto;
-    animation: shimmer 1.6s linear infinite;
+  .btn {
+    @apply inline-flex h-9 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-btn px-3.5 text-[13px] font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-45;
   }
-
-  /* ── Buttons ────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 h-9 rounded-[10px]
-           font-semibold text-sm text-white cursor-pointer border-none select-none;
-    background: linear-gradient(145deg, #7c1e3a 0%, #43101e 100%);
-    box-shadow: 0 2px 10px rgba(107,24,48,0.32), inset 0 1px 0 rgba(255,255,255,0.18);
-    letter-spacing: -0.01em;
-    transition: transform 0.16s var(--ease-out),
-                box-shadow 0.16s var(--ease-out),
-                background 0.16s;
+    @apply bg-brand-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] hover:bg-[#a02a4e] active:bg-brand-600 disabled:hover:bg-brand-500;
   }
-  .btn-primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(107,24,48,0.40), inset 0 1px 0 rgba(255,255,255,0.22);
-    background: linear-gradient(145deg, #871f3f 0%, #4b1124 100%);
-  }
-  .btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(107,24,48,0.20), inset 0 1px 0 rgba(255,255,255,0.08);
-  }
-  .btn-primary:disabled { @apply opacity-40 cursor-not-allowed; }
-
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 h-9 rounded-[10px]
-           font-semibold text-sm cursor-pointer select-none;
-    background: var(--brand-card);
-    border: 1px solid var(--brand-line);
-    color: var(--brand-soft);
-    box-shadow: 0 1px 3px rgba(74,25,40,0.05), inset 0 1px 0 rgba(255,255,255,0.85);
-    letter-spacing: -0.01em;
-    transition: transform 0.16s var(--ease-out),
-                box-shadow 0.16s var(--ease-out),
-                border-color 0.16s, color 0.16s;
+    @apply border border-line-strong bg-white/[0.05] text-ink hover:bg-white/[0.1] active:bg-white/[0.14];
   }
-  .btn-secondary:hover:not(:disabled) {
-    border-color: rgba(107,24,48,0.18);
-    color: var(--brand-ink);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(74,25,40,0.09), inset 0 1px 0 rgba(255,255,255,0.9);
-  }
-  .btn-secondary:active:not(:disabled) { transform: translateY(0); }
-  .btn-secondary:disabled { @apply opacity-40 cursor-not-allowed; }
-
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 px-3 h-8 rounded-[8px]
-           text-xs font-semibold cursor-pointer select-none border-none;
-    color: var(--brand-soft);
-    background: transparent;
-    letter-spacing: -0.005em;
-    transition: background 0.14s var(--ease-out), color 0.14s;
+    @apply text-soft hover:bg-white/[0.07] hover:text-ink active:bg-white/[0.11];
   }
-  .btn-ghost:hover:not(:disabled) {
-    background: rgba(107,24,48,0.07);
-    color: var(--brand-ink);
-  }
-  .btn-ghost:active:not(:disabled) {
-    background: rgba(107,24,48,0.11);
-  }
-  .btn-ghost:disabled { @apply opacity-40 cursor-not-allowed; }
-
-  /* ── Icon button ────────────────────────────────────────────── */
-  .btn-icon {
-    @apply inline-flex items-center justify-center rounded-[8px] flex-shrink-0
-           cursor-pointer border-none select-none;
-    width: 30px; height: 30px;
-    background: rgba(107,24,48,0.06);
-    border: 1px solid rgba(107,24,48,0.09);
-    color: var(--brand-soft);
-    transition: background 0.14s var(--ease-out),
-                border-color 0.14s, color 0.14s, transform 0.14s var(--ease-out);
-  }
-  .btn-icon:hover:not(:disabled) {
-    background: rgba(107,24,48,0.10);
-    border-color: rgba(107,24,48,0.15);
-    color: var(--brand-ink);
-    transform: translateY(-1px);
-  }
-  .btn-icon:active:not(:disabled) { transform: translateY(0); }
-  .btn-icon:disabled { @apply opacity-40 cursor-not-allowed; }
-
-  /* ── Chip ───────────────────────────────────────────────────── */
-  .chip {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[6px] text-[11px] font-semibold;
-    background: rgba(107,24,48,0.07);
-    color: var(--brand-accent);
-    border: 1px solid rgba(107,24,48,0.09);
-    letter-spacing: -0.003em;
+  .btn-danger {
+    @apply border border-danger/40 bg-danger/[0.06] text-danger hover:bg-danger/[0.14] active:bg-danger/20;
   }
 
-  /* ── Input ──────────────────────────────────────────────────── */
-  .input {
-    @apply block w-full rounded-[10px] text-sm;
-    min-height: 40px;
-    padding: 0 14px;
-    border: 1px solid var(--brand-line);
-    background: rgba(255, 252, 251, 0.98);
-    color: var(--brand-ink);
-    box-shadow: inset 0 1px 2px rgba(74,25,40,0.04);
-    letter-spacing: -0.01em;
-    outline: none;
-    transition: border-color 0.16s, box-shadow 0.16s;
-  }
-  .input::placeholder { color: var(--brand-mute); }
-  .input:focus {
-    border-color: rgba(107,24,48,0.38);
-    box-shadow: var(--brand-ring), inset 0 1px 2px rgba(74,25,40,0.04);
-  }
-  textarea.input {
-    min-height: 112px;
-    padding: 12px 14px;
-    line-height: 1.65;
-    resize: vertical;
+  .pill {
+    @apply inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[11.5px] font-semibold leading-none;
   }
 
-  /* Tag/chip input: an .input surface that wraps search-term chips plus a
-     borderless text field (Archive search blocks). */
-  .input-tags {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    height: auto;
-    padding: 5px 12px 5px 36px;
-    cursor: text;
-  }
-  .input-tags:focus-within {
-    border-color: rgba(107,24,48,0.38);
-    box-shadow: var(--brand-ring), inset 0 1px 2px rgba(74,25,40,0.04);
-  }
-  .input-tags__field {
-    flex: 1 1 140px;
-    min-width: 140px;
-    height: 28px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--brand-ink);
-    font: inherit;
-    outline: none;
-  }
-  .input-tags__field::placeholder { color: var(--brand-mute); }
-  .input-tags__chip {
-    @apply inline-flex items-center gap-1 h-[26px] pl-2.5 pr-1 rounded-[7px] text-[11px] font-semibold;
-    background: rgba(107,24,48,0.09);
-    color: var(--brand-accent);
-    border: 1px solid rgba(107,24,48,0.12);
-    letter-spacing: -0.003em;
-    max-width: 100%;
-  }
-  .input-tags__chip-remove {
-    @apply inline-flex items-center justify-center w-[18px] h-[18px] rounded-[5px] border-none cursor-pointer;
-    background: transparent;
-    color: inherit;
-    opacity: 0.7;
-    transition: background 0.14s, opacity 0.14s;
-  }
-  .input-tags__chip-remove:hover {
-    background: rgba(107,24,48,0.14);
-    opacity: 1;
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-mute;
   }
 
-  /* ── Select ─────────────────────────────────────────────────── */
-  select.input {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236a5560' opacity='.5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 13px center;
-    padding-right: 32px;
-    cursor: pointer;
-  }
-
-  /* ── Feed card — clean, no side-stripe ──────────────────────── */
-  .feed-card {
-    @apply relative rounded-[13px];
-    border: 1px solid rgba(107,24,48,0.07);
-    background: var(--brand-card);
-    padding: 13px 15px;
-    box-shadow: var(--shadow-xs);
-    transition: transform 0.22s var(--ease-out),
-                box-shadow 0.22s var(--ease-out),
-                border-color 0.22s;
-  }
-  .feed-card:hover {
-    transform: translateY(-1px);
-    border-color: rgba(107,24,48,0.13);
-    box-shadow: var(--shadow-md);
-  }
-  .feed-card:active {
-    transform: translateY(0);
-  }
-
-  /* Unread-count chip — theme-aware blues (dark mode needs a lighter fg). */
-  .unread-chip {
-    background: rgba(59, 130, 246, 0.10);
-    color: #1d4ed8;
-    border: 1px solid rgba(59, 130, 246, 0.16);
-  }
-  [data-theme="dark"] .unread-chip {
-    background: rgba(96, 165, 250, 0.14);
-    color: #93c5fd;
-    border-color: rgba(96, 165, 250, 0.28);
-  }
-
-  /* Row actions reveal on hover/keyboard focus so list content leads.
-     Opacity-only (elements stay in the layout and remain clickable/focusable);
-     touch devices without hover keep them always visible. */
-  .row-actions {
-    opacity: 0;
-    transition: opacity 0.15s var(--ease-out);
-  }
-  .feed-card:hover .row-actions,
-  .feed-card:focus-within .row-actions {
-    opacity: 1;
-  }
-  @media (hover: none) {
-    .row-actions {
-      opacity: 1;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .row-actions {
-      transition: none;
-    }
-  }
-
-  /* ── Surface item ───────────────────────────────────────────── */
-  .surface-item {
-    @apply rounded-[11px] px-3.5 py-2.5;
-    border: 1px solid rgba(107,24,48,0.07);
-    background: linear-gradient(180deg,
-      rgba(255,253,252,0.96) 0%,
-      rgba(252,246,243,0.80) 100%
-    );
-    box-shadow: 0 1px 2px rgba(74,25,40,0.04), inset 0 1px 0 rgba(255,255,255,0.75);
-    transition: background 0.16s var(--ease-out), border-color 0.16s, box-shadow 0.16s;
-  }
-  .surface-item:hover {
-    background: linear-gradient(180deg,
-      #fff 0%,
-      rgba(253,247,244,0.96) 100%
-    );
-    border-color: rgba(107,24,48,0.12);
-    box-shadow: 0 2px 8px rgba(74,25,40,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
-  }
-
-  /* ── Count badge ────────────────────────────────────────────── */
-  .count-badge {
-    @apply inline-flex items-center justify-center px-1.5 min-w-[20px] h-5
-           rounded-[5px] text-[11px] font-bold tabular-nums;
-    background: rgba(107,24,48,0.08);
-    color: var(--brand-accent);
-    border: 1px solid rgba(107,24,48,0.09);
-    letter-spacing: -0.01em;
-  }
-
-  /* ── Section label ──────────────────────────────────────────── */
-  .section-label {
-    @apply inline-flex items-center gap-1.5 h-[22px] px-2.5 rounded-[7px]
-           text-[10px] font-bold uppercase;
-    background: rgba(107,24,48,0.07);
-    color: var(--brand-accent);
-    border: 1px solid rgba(107,24,48,0.08);
-    letter-spacing: 0.07em;
-  }
-
-  /* ── Panel header ───────────────────────────────────────────── */
-  .panel-header {
-    @apply flex items-start justify-between flex-wrap gap-2 mb-4 pb-3 sm:gap-3 sm:mb-5 sm:pb-4;
-    border-bottom: 1px solid rgba(107,24,48,0.07);
-  }
-
-  /* ── Empty state ────────────────────────────────────────────── */
-  .empty-state {
-    @apply rounded-[16px] text-center py-12 px-8 text-sm;
-    border: 1px dashed rgba(107,24,48,0.12);
-    background: linear-gradient(
-      160deg,
-      rgba(255,252,251,0.60) 0%,
-      rgba(252,246,243,0.25) 100%
-    );
-    color: var(--brand-mute);
-  }
-
-  /* ── Tag pill ───────────────────────────────────────────────── */
-  .tag {
-    @apply inline-flex items-center gap-1 h-[19px] px-2 rounded-[5px] text-[10px] font-semibold;
-    background: rgba(107,24,48,0.06);
-    color: var(--brand-soft);
-    border: 1px solid rgba(107,24,48,0.08);
-  }
-
-  /* ── Divider ────────────────────────────────────────────────── */
-  .divider {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(107,24,48,0.07) 20%,
-      rgba(107,24,48,0.07) 80%,
-      transparent
-    );
-    margin: 0;
-  }
-
-  /* ── Status dot ─────────────────────────────────────────────── */
-  .status-dot {
-    @apply w-2 h-2 rounded-full flex-shrink-0 inline-block;
-  }
-  .status-dot-online  {
-    background: #22c55e;
-    box-shadow: 0 0 0 2.5px rgba(34,197,94,0.18);
-  }
-  .status-dot-offline {
-    background: rgba(107,24,48,0.18);
-  }
-
-  /* ── Notification dot ───────────────────────────────────────── */
-  .notif-dot {
-    @apply absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-2;
-    background: #6b1830;
-    border-color: var(--brand-bg);
-  }
-
-  /* ── Mobile safe-area (iOS notch / home bar) ────────────────── */
-  .safe-pb {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .safe-pt {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-  .safe-px {
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
+  .field {
+    @apply w-full rounded-btn border border-line-strong bg-white/[0.04] px-3 py-2 text-ink placeholder:text-mute focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/25;
   }
 }
 
-/* ── Prevent iOS auto-zoom on form fields (inputs must be >=16px) ── */
-@media (max-width: 640px) {
-  input, select, textarea { font-size: 16px !important; }
+/* Comfortable targets on touch screens, and no zoom-on-focus on iOS. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+  .field {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  /* Small controls (filter chips, tabs, disclosure arrows) keep their look but get a full-size hit area. */
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise-in {
+  animation: rise-in 220ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

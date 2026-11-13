@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { useState, type FormEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getApiBaseUrl, getErrorMessage, postJson } from '../api/client'
@@ -44,68 +45,69 @@ export function SignIn({ apiError, status }: Props) {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center p-5">
-      <section className="card w-full max-w-md p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">Scriba Executive Desk</h1>
-        <p className="text-sm opacity-80">
+    <main className="grid min-h-full place-items-center p-5">
+      <section className="card w-full max-w-md space-y-4 p-6">
+        <div>
+          <p className="text-[12px] font-semibold text-accent">Scriba</p>
+          <h1 className="text-[22px] font-bold leading-7 text-ink">Scriba Executive Desk</h1>
+        </div>
+        <p className="text-[13.5px] text-soft">
           Sign in with your existing Scriba account. Your Google and Microsoft
           connections are the ones already authorized in Scriba.
         </p>
 
         {apiError ? (
-          <p role="alert" className="text-sm">
+          <p role="alert" className="rounded-btn border border-danger/30 bg-danger/[0.08] px-3.5 py-2.5 text-[13px] text-danger">
             The Scriba API at {getApiBaseUrl()} could not be reached: {getErrorMessage(apiError)}
           </p>
         ) : null}
 
         <div className="grid gap-2">
           <a
-            className="btn-primary text-center"
+            className={clsx('btn btn-primary', google.state === 'unavailable' && 'pointer-events-none opacity-45')}
             href={googleLoginUrl()}
             aria-disabled={google.state === 'unavailable'}
           >
-            <i className="fab fa-google mr-2" aria-hidden="true" />
             Continue with Google
           </a>
           <a
-            className="btn-secondary text-center"
+            className={clsx('btn btn-secondary', microsoft.state === 'unavailable' && 'pointer-events-none opacity-45')}
             href={microsoftLoginUrl()}
             aria-disabled={microsoft.state === 'unavailable'}
           >
-            <i className="fab fa-microsoft mr-2" aria-hidden="true" />
             Continue with Microsoft
           </a>
         </div>
         {google.state === 'unavailable' || microsoft.state === 'unavailable' ? (
-          <p className="text-xs opacity-70">
+          <p className="text-[12px] text-mute">
             {google.state === 'unavailable' ? 'Google sign-in is not configured on this server. ' : ''}
             {microsoft.state === 'unavailable' ? 'Microsoft sign-in is not configured on this server.' : ''}
           </p>
         ) : null}
 
-        <form className="grid gap-2 border-t pt-4" onSubmit={submit}>
-          <label className="text-sm" htmlFor="desk-email">Email</label>
+        <form className="grid gap-2 border-t border-line pt-4" onSubmit={submit}>
+          <label className="text-[13px] text-soft" htmlFor="desk-email">Email</label>
           <input
             id="desk-email"
-            className="input"
+            className="field"
             type="email"
             autoComplete="username"
             value={email}
             onChange={event => setEmail(event.target.value)}
             required
           />
-          <label className="text-sm" htmlFor="desk-password">Password</label>
+          <label className="text-[13px] text-soft" htmlFor="desk-password">Password</label>
           <input
             id="desk-password"
-            className="input"
+            className="field"
             type="password"
             autoComplete="current-password"
             value={password}
             onChange={event => setPassword(event.target.value)}
             required
           />
-          {error ? <p role="alert" className="text-sm">{error}</p> : null}
-          <button className="btn-secondary" type="submit" disabled={busy}>
+          {error ? <p role="alert" className="text-[13px] text-danger">{error}</p> : null}
+          <button className="btn btn-secondary" type="submit" disabled={busy}>
             {busy ? 'Signing in…' : 'Sign in with email'}
           </button>
         </form>

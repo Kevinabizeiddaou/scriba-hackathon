@@ -1,6 +1,8 @@
 /** Aggregates case results into a report summary and day snapshots. */
 import {
+  DESK_AREAS,
   REPORT_FORMAT,
+  type DeskArea,
   type EvaluationReport,
   type EvaluationResult,
   type EvaluationSnapshot,
@@ -54,6 +56,31 @@ export function summarize(results: EvaluationResult[]): EvaluationSummary {
     totalCostUsd: withCost.length > 0 ? totalCost : null,
     costPerRunUsd: withCost.length > 0 ? totalCost / withCost.length : null,
   };
+}
+
+export interface AreaSummary {
+  area: DeskArea;
+  total: number;
+  executed: number;
+  passedUnassisted: number;
+  failed: number;
+  errored: number;
+}
+
+/** The same counts as the summary, per area of the secretary's work. Derived from the results; not stored in the report. */
+export function summarizeByArea(results: EvaluationResult[]): AreaSummary[] {
+  return DESK_AREAS.map((area) => {
+    const mine = results.filter((r) => r.area === area);
+    const executed = mine.filter((r) => r.verdict !== 'skipped');
+    return {
+      area,
+      total: mine.length,
+      executed: executed.length,
+      passedUnassisted: executed.filter((r) => r.verdict === 'pass' && !r.human.rescued).length,
+      failed: executed.filter((r) => r.verdict === 'fail').length,
+      errored: executed.filter((r) => r.verdict === 'error').length,
+    };
+  }).filter((row) => row.total > 0);
 }
 
 export const SNAPSHOT_DAYS: { day: SnapshotDay; label: string; date: string }[] = [

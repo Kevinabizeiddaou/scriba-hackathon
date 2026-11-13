@@ -13,7 +13,7 @@ import { HttpExecutiveDesk, type HttpOptions } from './httpAdapter';
 import { MockExecutiveDesk } from './mock/mockAdapter';
 import { ReferenceServer, type ReferenceServerOptions } from './reference/referenceServer';
 import { CONTRACT_HEADER, IDEMPOTENCY_HEADER, type AgentRun } from './types';
-import { EVALUATION_CASES, SYNTHETIC_CASE_SET, getCase } from '../evaluation/fixtures';
+import { DESK_CASE_SET, DESK_SUITE, EVALUATION_CASES, getCase } from '../evaluation/fixtures';
 import { runCase, runEvaluation } from '../evaluation/runner';
 
 const PRINCIPAL = 'Layla Mansour';
@@ -474,18 +474,21 @@ describe('browser access', () => {
 });
 
 describe('evaluation runner over HTTP', () => {
-  it('runs all twenty cases through the HTTP adapter and labels the result as simulated', async () => {
+  it('runs the twenty desk-suite cases through the HTTP adapter and labels the result as simulated', async () => {
     const { api, server: s } = await start({ mock: { stepDelayMs: 0, seed: false } });
-    const report = await runEvaluation(api, EVALUATION_CASES, { pollIntervalMs: 2, caseSet: SYNTHETIC_CASE_SET });
+    const report = await runEvaluation(api, DESK_SUITE, { pollIntervalMs: 2, caseSet: DESK_CASE_SET });
 
     const notPassing = report.results.filter((r) => r.verdict !== 'pass').map((r) => `${r.caseId}: ${r.verdict} ${r.checks.filter((c) => !c.passed).map((c) => `${c.id} (${c.actual})`).join('; ')} ${r.errors.map((e) => e.message).join('; ')}`);
     expect(notPassing).toEqual([]);
     expect(report.results).toHaveLength(20);
     expect(report.target).toEqual({ name: 'executive-desk-reference-server', dataSource: 'simulated', baseUrl: s.baseUrl, contractVersion: '1.1.0', sandbox: true });
-    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.1.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
+    expect(report).toMatchObject({ format: 'executive-desk.evaluation-report/1', contractVersion: '1.1.0', caseSet: { id: 'desk-v1', provenance: 'synthetic', caseCount: 20 } });
     expect(calls(s, 'POST', /^\/evaluation\/runs$/)).toHaveLength(20);
     // The case travels in the request body exactly as the fixture defines it.
-    expect(calls(s, 'POST', /^\/evaluation\/runs$/)[0].body).toEqual({ caseId: 'EVAL-001', input: getCase('EVAL-001').input, context: getCase('EVAL-001').context, mode: 'sandbox' });
+    expect(calls(s, 'POST', /^\/evaluation\/runs$/)[0].body).toEqual({ caseId: DESK_SUITE[0].id, input: DESK_SUITE[0].input, context: DESK_SUITE[0].context, mode: 'sandbox' });
+    // Tasks and follow-ups in the starting state travel with the case too.
+    const withTasks = calls(s, 'POST', /^\/evaluation\/runs$/).find((c) => (c.body as { caseId: string }).caseId === 'EVAL-028')!;
+    expect((withTasks.body as { context: { tasks: unknown[] } }).context.tasks).toHaveLength(2);
   }, 30_000);
 
   it('gets the same verdicts when the network is unreliable', async () => {

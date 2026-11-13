@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MockExecutiveDesk } from '../src/api/mock/mockAdapter';
-import { EVALUATION_CASES, getCase } from '../src/evaluation/fixtures';
+import { SUITES, getCase } from '../src/evaluation/fixtures';
 import { renderCasesMarkdown } from '../src/evaluation/fixtures/markdown';
 import { runCase } from '../src/evaluation/runner';
 
@@ -95,6 +95,7 @@ async function examples(): Promise<string> {
   ].join('\n');
 }
 
-writeFileSync(resolve(docs, 'TEST_CASES.md'), renderCasesMarkdown(EVALUATION_CASES));
+writeFileSync(resolve(docs, 'TEST_CASES.md'), renderCasesMarkdown(SUITES.desk.cases, 'desk'));
+writeFileSync(resolve(docs, 'TEST_CASES_SCHEDULING.md'), renderCasesMarkdown(SUITES.scheduling.cases, 'scheduling'));
 writeFileSync(resolve(docs, 'API_EXAMPLES.md'), await examples());
 console.log('Wrote docs/TEST_CASES.md and docs/API_EXAMPLES.md');

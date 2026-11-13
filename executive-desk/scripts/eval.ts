@@ -10,7 +10,8 @@
  *   --base-url <url>        backend root including the version, e.g. http://localhost:8000/api/executive-desk/v1
  *   --cookie-env <NAME>     read the Cookie header of an existing Scriba session from this environment variable
  *                           (never pass a session value as an argument)
- *   --cases <file>          case-set file to run instead of the built-in synthetic set
+ *   --suite <name>          built-in suite: desk (default), scheduling, or all
+ *   --cases <file>          case-set file to run instead of a built-in suite
  *   --only <ids>            comma-separated case ids to run
  *   --skip <ids>            comma-separated case ids to skip
  *   --label <text>          label stored in the report
@@ -34,15 +35,15 @@ import { HttpExecutiveDesk } from '../src/api/httpAdapter';
 import { MockExecutiveDesk } from '../src/api/mock/mockAdapter';
 import type { CaseSetInfo, EvaluationCase, EvaluationReport, EvaluationResult, SnapshotDay } from '../src/api/types';
 import { loadCaseSet } from '../src/evaluation/caseSets';
-import { EVALUATION_CASES, SYNTHETIC_CASE_SET } from '../src/evaluation/fixtures';
+import { AREA_LABEL, SUITES, type SuiteName } from '../src/evaluation/fixtures';
 import { toJUnit } from '../src/evaluation/junit';
 import { parsePriceTable, type PriceTable } from '../src/evaluation/pricing';
-import { buildSnapshot, snapshotBlocker } from '../src/evaluation/report';
+import { buildSnapshot, snapshotBlocker, summarizeByArea } from '../src/evaluation/report';
 import { runEvaluation } from '../src/evaluation/runner';
 import { runSelfTest } from '../src/evaluation/selfTest';
 import { fmtDuration } from '../src/lib/time';
 
-const KNOWN = ['target', 'base-url', 'cookie-env', 'cases', 'only', 'skip', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
+const KNOWN = ['target', 'base-url', 'cookie-env', 'suite', 'cases', 'only', 'skip', 'label', 'out', 'junit', 'print-json', 'snapshot', 'pricing', 'timeout', 'poll', 'request-timeout', 'allow-real-side-effects', 'self-test'];
 
 function parseArgs(argv: string[]): Record<string, string | true> {
   const args: Record<string, string | true> = {};
@@ -95,6 +96,10 @@ function printSummary(report: EvaluationReport): void {
       ? `Passed unassisted:    ${s.passedUnassisted} (${pct})   passed with rescue: ${s.passed - s.passedUnassisted}   failed: ${s.failed}   errors: ${s.errored}`
       : `Scripts matching:     ${s.passed} of ${s.executed} scripted runs scored as expected   not matching: ${s.failed}   errors: ${s.errored}`,
   );
+  for (const row of summarizeByArea(report.results)) {
+    const counts = live ? `${row.passedUnassisted} of ${row.executed} passed unassisted` : `${row.passedUnassisted} of ${row.executed} scripted runs as expected`;
+    say(`  ${pad(AREA_LABEL[row.area], 22)}${counts}${row.failed ? `, ${row.failed} failed` : ''}${row.errored ? `, ${row.errored} errors` : ''}${row.total > row.executed ? `, ${row.total - row.executed} skipped` : ''}`);
+  }
   say(`Human involvement:    ${s.mandatoryApprovals} mandatory approvals, ${s.rescued} rescues, ${s.unexpectedApprovals} unexpected approval requests`);
   say(`Latency:              ${!live ? 'not reported for a scripted target' : s.latency ? `median ${fmtDuration(s.latency.medianMs)}, p95 ${fmtDuration(s.latency.p95Ms)}` : 'n/a'}`);
   say(`Tokens:               ${s.casesWithUsage > 0 ? `${s.totalInputTokens} in, ${s.totalOutputTokens} out (${s.casesWithUsage} cases reported usage)` : 'not reported by the target'}`);
@@ -131,9 +136,12 @@ async function main(): Promise<number> {
   if (targetKind === 'http' && !baseUrl) throw new Error('--target http needs --base-url.');
 
   // Which cases.
-  let cases: EvaluationCase[] = EVALUATION_CASES;
-  let caseSet: CaseSetInfo = SYNTHETIC_CASE_SET;
+  const suiteName = str(args.suite) ?? 'desk';
+  if (!(suiteName in SUITES)) throw new Error(`--suite must be one of: ${Object.keys(SUITES).join(', ')}.`);
+  let cases: EvaluationCase[] = SUITES[suiteName as SuiteName].cases;
+  let caseSet: CaseSetInfo = SUITES[suiteName as SuiteName].caseSet;
   const casesFile = str(args.cases);
+  if (casesFile && args.suite) throw new Error('Use --suite or --cases, not both.');
   if (casesFile) ({ cases, caseSet } = loadCaseSet(JSON.parse(readFileSync(casesFile, 'utf8'))));
 
   const only = str(args.only)?.split(',').map((s) => s.trim());

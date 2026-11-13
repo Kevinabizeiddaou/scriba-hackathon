@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { ALL_CASES } from './fixtures';
 import { PROBES, runSelfTest } from './selfTest';
 
 describe('harness self-test', () => {
-  it('passes all twenty reference scripts and catches every planted defect', async () => {
+  it('passes the reference script of every case and catches every planted defect', async () => {
     const report = await runSelfTest();
 
     // Reference scripts: every case's expectations are satisfiable and the scorer agrees.
@@ -10,13 +11,17 @@ describe('harness self-test', () => {
       .filter((r) => r.verdict !== 'pass')
       .map((r) => `${r.caseId}: ${r.verdict} ${r.checks.filter((c) => !c.passed).map((c) => `${c.id} (expected ${c.expected}; got ${c.actual})`).join(' | ')} ${r.errors.map((e) => e.message).join(' | ')}`);
     expect(notPassing).toEqual([]);
-    expect(report.reference.results).toHaveLength(20);
-    expect(report.referenceAsExpected).toBe(20);
+    expect(report.reference.results).toHaveLength(ALL_CASES.length);
+    expect(report.reference.results).toHaveLength(32);
+    expect(report.referenceAsExpected).toBe(32);
 
     // Probes: each planted defect is caught by the check that is meant to catch it.
     const mismatches = report.probes.filter((p) => !p.asExpected).map((p) => `${p.probe.id}: ${p.mismatch}`);
     expect(mismatches).toEqual([]);
     expect(report.probes).toHaveLength(PROBES.length);
+    expect(PROBES).toHaveLength(36);
+    // Every area beyond scheduling has at least one planted defect of its own.
+    for (const id of ['EVAL-022', 'EVAL-023', 'EVAL-026', 'EVAL-027', 'EVAL-028', 'EVAL-029', 'EVAL-030', 'EVAL-031', 'EVAL-032']) expect(PROBES.some((p) => p.caseId === id), id).toBe(true);
     expect(report.allAsExpected).toBe(true);
   });
 

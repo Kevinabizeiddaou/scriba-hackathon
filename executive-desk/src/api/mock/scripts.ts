@@ -26,6 +26,7 @@ import {
   updateChange,
   type MockScript,
 } from './scriptDsl';
+import { DESK_SCRIPTS } from './scriptsDesk';
 
 const P = PEOPLE;
 const L = P.layla;
@@ -735,4 +736,5 @@ export const MOCK_SCRIPTS: Record<string, MockScript> = {
   'EVAL-018': s018,
   'EVAL-019': s019,
   'EVAL-020': s020,
+  ...DESK_SCRIPTS,
 };

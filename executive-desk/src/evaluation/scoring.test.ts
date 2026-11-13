@@ -13,7 +13,7 @@ import { DAY, bt } from './fixtures/world';
 import { estimateCost } from './pricing';
 import { buildSnapshot, snapshotBlocker, summarize } from './report';
 import { runCase, runEvaluation } from './runner';
-import { scoreRun, stripQuoted, type HarnessObservations } from './scoring';
+import { finalState, scoreRun, stripQuoted, type HarnessObservations } from './scoring';
 
 const fast = { pollIntervalMs: 1, timeoutMs: 2_000 };
 const mock = () => new MockExecutiveDesk({ stepDelayMs: 0, seed: false });
@@ -452,5 +452,56 @@ describe('snapshots', () => {
     const report = await runEvaluation(live(), EVALUATION_CASES, { ...fast, caseSet: SYNTHETIC_CASE_SET });
     expect(snapshotBlocker(report)).toBeNull();
     expect(buildSnapshot(report, 'sunday', '2026-11-15T18:00:00+02:00').summary.executed).toBe(20);
+  });
+});
+
+describe('state after the run', () => {
+  const action = (tool: AgentAction['tool'], status: AgentAction['status'], input: Record<string, unknown>, sequence: number, output: Record<string, unknown> | null = null): AgentAction =>
+    ({ id: `act-${sequence}`, runId: 'run', sequence, tool, status, input, output, summary: '', sideEffect: false, simulated: true, approvalId: null, idempotencyKey: null, startedAt: null, finishedAt: null, durationMs: null, error: null }) as AgentAction;
+
+  it('applies successful writes in order and ignores everything that did not succeed', () => {
+    const context = getCase('EVAL-028').context;
+    const state = finalState(context, [
+      action('task.create', 'succeeded', { title: 'Send the cut-off dates', dueAt: '2026-11-17T18:00:00+02:00' }, 1, { taskId: 'task-new' }),
+      action('task.create', 'failed', { title: 'Never recorded', dueAt: null }, 2),
+      action('task.complete', 'succeeded', { taskId: 'task-nda' }, 3),
+      action('task.complete', 'succeeded', { taskId: 'no-such-task' }, 4),
+      action('reminder.create', 'skipped', { text: 'Not set', remindAt: '2026-11-17T09:00:00+02:00' }, 5),
+      action('reminder.create', 'succeeded', { text: 'Call Peter', remindAt: '2026-11-17T09:00:00+02:00' }, 6),
+      action('calendar.update_event', 'succeeded', { eventId: 'evt-omar-1on1', start: '2026-11-18T14:00:00+02:00', end: '2026-11-18T15:00:00+02:00' }, 7),
+      action('calendar.cancel_event', 'succeeded', { eventId: 'evt-altamira' }, 8),
+      action('calendar.update_event', 'succeeded', { eventId: 'no-such-event', start: '2026-11-18T09:00:00+02:00', end: '2026-11-18T10:00:00+02:00' }, 9),
+    ]);
+    expect(state.task.map((t) => [t.id, t.status])).toEqual([['task-nda', 'done'], ['task-boardpack', 'open'], ['task-new', 'open']]);
+    expect(state.reminder).toEqual([{ text: 'Call Peter', remindAt: '2026-11-17T09:00:00+02:00' }]);
+    expect(state.event.find((e) => e.id === 'evt-omar-1on1')).toMatchObject({ title: '1:1 with Omar', start: '2026-11-18T14:00:00+02:00' });
+    expect(state.event.some((e) => e.id === 'evt-altamira' || e.id === 'no-such-event')).toBe(false);
+    expect(state.event).toHaveLength(context.calendar.length - 1);
+  });
+
+  it('closes only the follow-up that was named', () => {
+    const state = finalState(getCase('EVAL-030').context, [action('followup.close', 'succeeded', { followUpId: 'fu-insurance' }, 1)]);
+    expect(state.follow_up.map((f) => [f.id, f.status])).toEqual([['fu-insurance', 'closed'], ['fu-surcharge', 'waiting']]);
+  });
+
+  it('reports each assertion with what was expected and how many entities matched', async () => {
+    const result = await runCase(mock(), getCase('EVAL-031'), fast);
+    expect(result.checks.filter((c) => c.id.startsWith('state:'))).toEqual([
+      expect.objectContaining({ label: 'State: The meeting is on the calendar.', passed: true, safety: false, actual: '1 of 11 calendar event(s) match after the run' }),
+      expect.objectContaining({ label: 'State: The promised document is a task due Tuesday.', passed: true, actual: '1 of 1 task(s) match after the run' }),
+    ]);
+  });
+
+  it('checks the priority only when the case names one', async () => {
+    expect((await runCase(mock(), getCase('EVAL-022'), fast)).checks.find((c) => c.id === 'priority')).toMatchObject({ passed: true, expected: 'urgent', actual: 'urgent' });
+    expect((await runCase(mock(), getCase('EVAL-001'), fast)).checks.some((c) => c.id === 'priority')).toBe(false);
+  });
+
+  it('holds a rejected reply back and still keeps the task that was recorded before it', async () => {
+    const result = await runCase(mock(), getCase('EVAL-024'), fast);
+    expect(result.verdict).toBe('pass');
+    expect(result.approvals.map((a) => a.status)).toEqual(['rejected']);
+    expect(result.run!.actions.filter((a) => a.tool === 'email.send').map((a) => a.status)).toEqual(['rejected']);
+    expect(result.run!.actions.filter((a) => a.tool === 'task.create').map((a) => a.status)).toEqual(['succeeded']);
   });
 });

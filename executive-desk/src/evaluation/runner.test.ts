@@ -64,7 +64,7 @@ describe('runCase', () => {
     const base = getCase('EVAL-001');
     const rejecting: EvaluationCase = {
       ...base,
-      expected: { ...base.expected, harnessDecision: 'reject', outcomes: ['declined'], toolCalls: [], order: [], outboundEmail: null },
+      expected: { ...base.expected, harnessDecision: 'reject', outcomes: ['declined'], toolCalls: [], order: [], outboundEmail: null, state: [] },
     };
     const result = await runCase(mock(), rejecting, fast);
     expect(result.approvals[0].status).toBe('rejected');

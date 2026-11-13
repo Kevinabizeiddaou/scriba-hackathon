@@ -8,9 +8,9 @@ import { MockExecutiveDesk } from '../api/mock/mockAdapter';
 import { REPORT_FORMAT, type EvaluationCase, type EvaluationReport } from '../api/types';
 import { asLiveTarget } from '../test/liveTarget';
 import { CASE_SET_FORMAT, buildCaseSetFile, caseSetProblems, loadCaseSet, type CaseSetFile } from './caseSets';
-import { EVALUATION_CASES, SYNTHETIC_CASE_SET, getCase } from './fixtures';
+import { DESK_CASE_SET, DESK_SUITE, EVALUATION_CASES, SYNTHETIC_CASE_SET, getCase } from './fixtures';
 import { toJUnit } from './junit';
-import { isReport } from './report';
+import { isReport, summarizeByArea } from './report';
 import { runEvaluation } from './runner';
 
 const root = resolve(__dirname, '../..');
@@ -30,12 +30,12 @@ describe('case-set files', () => {
   it('ships the synthetic fixtures as a valid, clearly labelled case set', () => {
     const file = shipped();
     expect(caseSetProblems(file)).toEqual([]);
-    expect(file).toMatchObject({ format: CASE_SET_FORMAT, contractVersion: '1.1.0', caseSet: { id: 'synthetic-v2', provenance: 'synthetic', caseCount: 20 } });
+    expect(file).toMatchObject({ format: CASE_SET_FORMAT, contractVersion: '1.1.0', caseSet: { id: 'desk-v1', provenance: 'synthetic', caseCount: 20 } });
     expect(file.notice).toMatch(/Synthetic development fixtures.*Not customer data/);
     expect(file.cases.every((c) => c.provenance.kind === 'synthetic')).toBe(true);
     const loaded = loadCaseSet(file);
-    expect(loaded.cases.map((c) => c.id)).toEqual(EVALUATION_CASES.map((c) => c.id));
-    expect(loaded.caseSet).toEqual(SYNTHETIC_CASE_SET);
+    expect(loaded.cases.map((c) => c.id)).toEqual(DESK_SUITE.map((c) => c.id));
+    expect(loaded.caseSet).toEqual(DESK_CASE_SET);
   });
 
   it('accepts a properly labelled, anonymised real-world set', () => {
@@ -45,7 +45,7 @@ describe('case-set files', () => {
   it('refuses a case that does not say where it comes from', () => {
     const file = shipped();
     delete (file.cases[3] as Partial<EvaluationCase>).provenance;
-    expect(caseSetProblems(file)).toEqual(['EVAL-004: has no provenance. Every case must say whether it is synthetic or real-world.']);
+    expect(caseSetProblems(file)).toEqual(['EVAL-023: has no provenance. Every case must say whether it is synthetic or real-world.']);
   });
 
   it('refuses a set that mixes synthetic and real-world cases', () => {
@@ -81,7 +81,7 @@ describe('case-set files', () => {
     const file = shipped();
     file.cases[1] = clone(file.cases[0]);
     const broken = { ...file, format: 'something-else', contractVersion: '2.0.0', caseSet: { ...file.caseSet, caseCount: 19 } };
-    expect(() => loadCaseSet(broken)).toThrow(/"format" must be[\s\S]*"contractVersion" must be 1\.x[\s\S]*caseCount" is 19, but the file holds 20[\s\S]*EVAL-001: the id is used more than once/);
+    expect(() => loadCaseSet(broken)).toThrow(/"format" must be[\s\S]*"contractVersion" must be 1\.x[\s\S]*caseCount" is 19, but the file holds 20[\s\S]*EVAL-015: the id is used more than once/);
     expect(caseSetProblems(null)).toEqual(['The file is not a JSON object.']);
     expect(caseSetProblems({ ...file, cases: [] })).toContain('"cases" must be a non-empty array.');
   });
@@ -147,7 +147,7 @@ describe('command line', () => {
     expect(result.code).toBe(0);
 
     const report = JSON.parse(result.stdout) as EvaluationReport; // stdout is the report and nothing else
-    expect(report).toMatchObject({ format: REPORT_FORMAT, label: 'cli test', target: { dataSource: 'simulated', name: 'Mock adapter' }, caseSet: { id: 'synthetic-v2', caseCount: 20 } });
+    expect(report).toMatchObject({ format: REPORT_FORMAT, label: 'cli test', target: { dataSource: 'simulated', name: 'Mock adapter' }, caseSet: { id: 'desk-v1', caseCount: 20 } });
     expect(report.results.map((r) => [r.caseId, r.verdict, r.provenance])).toEqual([['EVAL-001', 'pass', 'synthetic'], ['EVAL-019', 'pass', 'synthetic']]);
 
     const files = readdirSync(out);
@@ -175,9 +175,44 @@ describe('command line', () => {
     expect(refused.stderr).toContain('EVAL-002: is synthetic in a set declared real_world');
   }, 60_000);
 
+  it('runs a named suite, and reports results by area', () => {
+    const scheduling = run(['--target', 'mock', '--suite', 'scheduling', '--only', 'EVAL-002', '--out', out, '--print-json']);
+    expect(scheduling.code).toBe(0);
+    expect(JSON.parse(scheduling.stdout)).toMatchObject({ caseSet: { id: 'synthetic-v3', caseCount: 20 }, results: [{ caseId: 'EVAL-002', area: 'scheduling' }] });
+
+    const all = run(['--target', 'mock', '--suite', 'all', '--out', out]);
+    expect(all.code).toBe(0);
+    expect(all.stdout).toContain('all-synthetic-v1 (synthetic), 32 of 32 cases in this run');
+    expect(all.stdout).toMatch(/Follow-ups\s+2 of 2 scripted runs as expected/);
+    expect(all.stdout).toMatch(/Tasks and reminders\s+3 of 3 scripted runs as expected/);
+    expect(all.stdout).not.toMatch(/\d%/); // counts only: a scripted target has no pass rate
+
+    expect(run(['--target', 'mock', '--suite', 'everything'])).toMatchObject({ code: 2, stderr: expect.stringContaining('--suite must be one of: desk, scheduling, all') });
+    expect(run(['--target', 'mock', '--suite', 'desk', '--cases', 'x.json'])).toMatchObject({ code: 2, stderr: expect.stringContaining('Use --suite or --cases, not both') });
+  }, 90_000);
+
   it('refuses to snapshot simulated results and rejects unknown options', () => {
     expect(run(['--target', 'mock', '--snapshot', 'friday'])).toMatchObject({ code: 2, stderr: expect.stringContaining('Simulated results are never saved as snapshots') });
     expect(run(['--base-ulr', 'http://x'])).toMatchObject({ code: 2, stderr: expect.stringContaining('Unknown option --base-ulr') });
     expect(run(['--base-url', 'http://127.0.0.1:9', '--request-timeout', '500'])).toMatchObject({ code: 2, stderr: expect.stringMatching(/Could not reach the backend|did not answer/) });
   }, 60_000);
+});
+
+describe('results by area', () => {
+  it('breaks a report down by area of the secretary\'s work, counting only unassisted passes', async () => {
+    const report = await runEvaluation(asLiveTarget(new MockExecutiveDesk({ stepDelayMs: 0, seed: false })), DESK_SUITE, { pollIntervalMs: 1, caseSet: DESK_CASE_SET, skip: { 'EVAL-029': 'not today' } });
+    const rows = summarizeByArea(report.results);
+    expect(rows.map((r) => [r.area, r.total, r.executed, r.passedUnassisted])).toEqual([
+      ['inbox', 3, 3, 3],
+      ['email', 3, 3, 3],
+      ['scheduling', 5, 5, 5],
+      ['task_reminder', 3, 3, 3],
+      ['follow_up', 2, 1, 1],
+      ['multi_step', 2, 2, 2],
+      ['security_failure', 2, 2, 2],
+    ]);
+    const broken = report.results.map((r) => (r.caseId === 'EVAL-031' ? { ...r, verdict: 'fail' as const } : r.caseId === 'EVAL-032' ? { ...r, human: { ...r.human, rescued: true } } : r));
+    expect(summarizeByArea(broken).find((r) => r.area === 'multi_step')).toMatchObject({ executed: 2, passedUnassisted: 0, failed: 1 });
+    expect(summarizeByArea(report.results.filter((r) => r.area === 'inbox'))).toHaveLength(1); // areas with no cases are left out
+  });
 });

@@ -211,6 +211,22 @@ export function failing(change: ProposedChange, code: string, message: string, r
   };
 }
 
+export function taskCreate(title: string, dueAt: string | null, sourceEmailId: string | null = null): ActionStep {
+  return action('task.create', `Recorded a task: ${title}`, { title, dueAt, sourceEmailId }, { taskId: 'simulated' }, 150);
+}
+
+export function taskComplete(taskId: string, title: string): ActionStep {
+  return action('task.complete', `Marked as done: ${title}`, { taskId }, { taskId }, 120);
+}
+
+export function reminderCreate(text: string, remindAt: string): ActionStep {
+  return action('reminder.create', `Set a reminder: ${text}`, { text, remindAt }, { reminderId: 'simulated' }, 130);
+}
+
+export function followupClose(followUpId: string, summary: string): ActionStep {
+  return action('followup.close', summary, { followUpId }, { followUpId }, 110);
+}
+
 export function audit(entry: string): ActionStep {
   return action('audit.record', 'Recorded the outcome in the activity log', { entry }, { recorded: true }, 120);
 }

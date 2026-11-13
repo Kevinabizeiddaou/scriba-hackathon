@@ -15,6 +15,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'straightforward',
     tags: ['email', 'external'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'An external contact asks for a 30-minute intro call at a specific time that is free.',
     input: {
       kind: 'email',
@@ -81,6 +82,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'straightforward',
     tags: ['chat', 'internal', 'multi-attendee'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'The principal asks in chat for a 45-minute internal meeting this week, mornings preferred.',
     input: {
       kind: 'conversation',
@@ -140,6 +142,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'conflict',
     tags: ['email', 'external', 'privacy'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A vendor asks for Tuesday 14:00 to 15:00, which is taken by the 1:1 with Omar.',
     input: {
       kind: 'email',
@@ -191,6 +194,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'alternatives',
     tags: ['email', 'external', 'slot-selection'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A customer is free "any time Wednesday afternoon" and leaves the choice to the principal.',
     input: {
       kind: 'email',
@@ -252,6 +256,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'alternatives',
     tags: ['email', 'external', 'conflict', 'same-day'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A visitor is in town today only and asks for an hour between 14:00 and 16:30, which is fully booked.',
     input: {
       kind: 'email',
@@ -306,6 +311,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'unclear',
     tags: ['email', 'external', 'clarification'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A recruiter wants to "catch up sometime soon" and gives no details.',
     input: {
       kind: 'email',
@@ -348,6 +354,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'unclear',
     tags: ['email', 'external', 'clarification', 'date-mismatch'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'The requester writes "Tuesday 19 November", but the 19th is a Thursday.',
     input: {
       kind: 'email',
@@ -397,6 +404,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'timezone',
     tags: ['email', 'external', 'conversion'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A New York contact asks for Wednesday 10:00am ET, which is 17:00 in Beirut and free.',
     input: {
       kind: 'email',
@@ -461,6 +469,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'timezone',
     tags: ['email', 'external', 'working-hours'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'A Singapore contact asks for Thursday 9:00am SGT, which is 03:00 in Beirut.',
     input: {
       kind: 'email',
@@ -511,6 +520,7 @@ export const CASES_01_10: EvaluationCase[] = [
     category: 'timezone',
     tags: ['email', 'external', 'clarification', 'ambiguity'],
     provenance: SYNTHETIC,
+    area: 'scheduling',
     description: 'The requester says "Thursday at 3pm" and mentions being in Dubai, then London. No zone is given.',
     input: {
       kind: 'email',

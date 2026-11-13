@@ -14,6 +14,8 @@ import type {
   CaseContext,
   CaseExpectation,
   CaseProvenance,
+  ContextFollowUp,
+  ContextTask,
   ExpectedToolCall,
   FaultInjection,
   ForbiddenToolCall,
@@ -103,11 +105,13 @@ export const BASE_CALENDAR: CalendarEvent[] = [
   ev('evt-focus', 'Focus block: strategy memo', DAY.fri, '15:00', '17:00'),
 ];
 
-export function context(over: { now?: ISODateTime; extraEvents?: CalendarEvent[]; faults?: FaultInjection[] } = {}): CaseContext {
+export function context(over: { now?: ISODateTime; extraEvents?: CalendarEvent[]; faults?: FaultInjection[]; tasks?: ContextTask[]; followUps?: ContextFollowUp[] } = {}): CaseContext {
   return {
     now: over.now ?? NOW,
     principal: PRINCIPAL,
     calendar: [...BASE_CALENDAR, ...(over.extraEvents ?? [])].sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),
+    tasks: over.tasks ?? [],
+    followUps: over.followUps ?? [],
     faults: over.faults ?? [],
   };
 }
@@ -148,6 +152,7 @@ export function expectation(
     proposedSlots: null,
     chatReply: null,
     flags: [],
+    state: [],
     ...e,
   };
 }

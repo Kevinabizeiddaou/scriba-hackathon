@@ -68,6 +68,9 @@ const OUTCOME_TO_REQUEST_STATUS: Record<RunOutcome, RequestStatus> = {
   cancelled_meeting: 'completed',
   no_action: 'completed',
   alternatives_proposed: 'awaiting_reply',
+  replied: 'completed',
+  task_recorded: 'completed',
+  follow_up_sent: 'awaiting_reply',
   clarification_requested: 'awaiting_reply',
   escalated: 'escalated',
   declined: 'declined',
@@ -214,6 +217,19 @@ export class MockExecutiveDesk implements ExecutiveDeskApi {
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Mock only: plays an arbitrary script, for workspace features that have no backend contract
+   * yet (a reply draft or a follow-up reminder going to the Approval Center). `subjectId` is
+   * stored as the run's requestId so the approval can link back to where it came from.
+   */
+  async runScript(script: MockScript, subjectId: string | null = null): Promise<AgentRun> {
+    await this.ready;
+    const run = this.newRun('incoming_email', subjectId, null, script);
+    this.emit();
+    this.schedule(run.id);
+    return clone(run);
   }
 
   /** Resolves when no scripted run is mid-step. For tests. */

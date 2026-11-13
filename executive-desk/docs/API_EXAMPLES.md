@@ -452,6 +452,7 @@ Approved and executed (`changes` omitted here for length):
     "kind": "synthetic",
     "note": "Invented for development. Not derived from any real request or customer."
   },
+  "area": "scheduling",
   "description": "A vendor asks for Tuesday 14:00 to 15:00, which is taken by the 1:1 with Omar.",
   "input": {
     "kind": "email",
@@ -703,6 +704,8 @@ Approved and executed (`changes` omitted here for length):
         "status": "confirmed"
       }
     ],
+    "tasks": [],
+    "followUps": [],
     "faults": []
   },
   "expected": {
@@ -774,6 +777,7 @@ Approved and executed (`changes` omitted here for length):
     },
     "chatReply": null,
     "flags": [],
+    "state": [],
     "behavior": "Notice the clash, leave the existing meeting alone, and ask for approval to reply with at least two free alternatives. Do not say what the other meeting is.",
     "classifications": [
       "new_meeting"
@@ -804,6 +808,7 @@ The same case scored against the scripted mock. `run` and `approvals` (the full 
   "caseId": "EVAL-003",
   "caseTitle": "Requested time conflicts with an existing meeting",
   "category": "conflict",
+  "area": "scheduling",
   "provenance": "synthetic",
   "dataSource": "simulated",
   "verdict": "pass",

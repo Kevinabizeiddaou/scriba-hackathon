@@ -121,6 +121,10 @@ export const TOOL_NAMES = [
   'calendar.create_event',
   'calendar.update_event',
   'calendar.cancel_event',
+  'task.create',
+  'task.complete',
+  'reminder.create',
+  'followup.close',
   'approval.request',
   'audit.record',
 ] as const;
@@ -139,11 +143,34 @@ export function isSideEffectTool(tool: string): tool is SideEffectTool {
   return (SIDE_EFFECT_TOOLS as readonly string[]).includes(tool);
 }
 
+/**
+ * Tools that write only to the secretary's own records: tasks, reminders, follow-up tracking.
+ * Nothing leaves the organisation and no calendar changes, so they need no approval. In sandbox
+ * mode they must still be simulated.
+ */
+export const INTERNAL_WRITE_TOOLS = ['task.create', 'task.complete', 'reminder.create', 'followup.close'] as const;
+export type InternalWriteTool = (typeof INTERNAL_WRITE_TOOLS)[number];
+
+export function isInternalWriteTool(tool: string): tool is InternalWriteTool {
+  return (INTERNAL_WRITE_TOOLS as readonly string[]).includes(tool);
+}
+
 // ---------------------------------------------------------------------------
 // SecretaryRequest
 // ---------------------------------------------------------------------------
 
-export const REQUEST_CLASSIFICATIONS = ['new_meeting', 'reschedule', 'cancellation', 'availability_query', 'unclear', 'not_meeting_related'] as const;
+export const REQUEST_CLASSIFICATIONS = [
+  'new_meeting',
+  'reschedule',
+  'cancellation',
+  'availability_query',
+  'reply_needed',
+  'action_required',
+  'follow_up',
+  'fyi',
+  'unclear',
+  'not_meeting_related',
+] as const;
 export type RequestClassification = (typeof REQUEST_CLASSIFICATIONS)[number];
 
 export const REQUEST_PRIORITIES = ['urgent', 'high', 'normal', 'low'] as const;
@@ -217,7 +244,19 @@ export type RunStatus = (typeof RUN_STATUSES)[number];
 
 export const TERMINAL_RUN_STATUSES: readonly RunStatus[] = ['completed', 'failed', 'cancelled'];
 
-export const RUN_OUTCOMES = ['scheduled', 'rescheduled', 'cancelled_meeting', 'alternatives_proposed', 'clarification_requested', 'no_action', 'escalated', 'declined'] as const;
+export const RUN_OUTCOMES = [
+  'scheduled',
+  'rescheduled',
+  'cancelled_meeting',
+  'alternatives_proposed',
+  'clarification_requested',
+  'replied',
+  'task_recorded',
+  'follow_up_sent',
+  'no_action',
+  'escalated',
+  'declined',
+] as const;
 export type RunOutcome = (typeof RUN_OUTCOMES)[number];
 
 export interface RunError {
@@ -445,7 +484,12 @@ export type CaseCategory =
   | 'cancellation'
   | 'duplicate'
   | 'api_failure'
-  | 'prompt_injection';
+  | 'prompt_injection'
+  | 'triage'
+  | 'correspondence'
+  | 'tasks'
+  | 'follow_up'
+  | 'workflow';
 
 export interface SampleEmail {
   id: string;
@@ -480,6 +524,23 @@ export interface FaultInjection {
   error: { code: string; httpStatus: number; message: string };
 }
 
+export interface ContextTask {
+  id: string;
+  title: string;
+  dueAt: ISODateTime | null;
+  status: 'open' | 'done';
+}
+
+export interface ContextFollowUp {
+  id: string;
+  subject: string;
+  waitingOn: Participant;
+  threadId: string;
+  sentAt: ISODateTime;
+  expectedBy: ISODateTime;
+  status: 'waiting' | 'closed';
+}
+
 export interface CaseContext {
   /** The moment the request arrives. The sandbox clock is set to this. */
   now: ISODateTime;
@@ -489,6 +550,10 @@ export interface CaseContext {
   };
   /** The principal's calendar when the request arrives. */
   calendar: CalendarEvent[];
+  /** Open and finished tasks at that moment. Empty for cases that do not involve tasks. */
+  tasks: ContextTask[];
+  /** Replies the principal is waiting for at that moment. */
+  followUps: ContextFollowUp[];
   /** Tool failures the sandbox must simulate. Empty for most cases. */
   faults: FaultInjection[];
 }
@@ -579,7 +644,25 @@ export interface CaseExpectation {
   chatReply: TextExpectation | null;
   /** Flags the triage must raise. */
   flags: RequestFlag[];
+  /**
+   * What must be true of the calendar, tasks, reminders and follow-ups once the run is over.
+   * Checked against the starting state with the run's successful writes applied in order.
+   */
+  state: StateAssertion[];
 }
+
+/** One statement about the state after the run. */
+export interface StateAssertion {
+  entity: 'event' | 'task' | 'reminder' | 'follow_up';
+  must: 'exist' | 'not_exist';
+  /** Matched against the entity's fields: events have id, title, start, end, attendees; tasks id, title, dueAt, status; reminders text, remindAt; follow-ups id, status. */
+  where: Record<string, ArgMatcher>;
+  why: string;
+}
+
+/** The part of the secretary's job a case exercises. The main suite has a fixed number of cases per area. */
+export const DESK_AREAS = ['inbox', 'email', 'scheduling', 'task_reminder', 'follow_up', 'multi_step', 'security_failure'] as const;
+export type DeskArea = (typeof DESK_AREAS)[number];
 
 /**
  * synthetic:  invented for development. Every person, company and calendar entry is made up.
@@ -594,6 +677,7 @@ export interface EvaluationCase {
   id: string;
   title: string;
   category: CaseCategory;
+  area: DeskArea;
   tags: string[];
   /** Where the case comes from. Synthetic fixtures and real-world cases are never mixed in one set. */
   provenance: CaseProvenance;
@@ -644,6 +728,7 @@ export interface EvaluationResult {
   caseId: string;
   caseTitle: string;
   category: CaseCategory;
+  area: DeskArea;
   /** Whether the case is a synthetic fixture or derived from a real request. */
   provenance: CaseProvenance['kind'];
   /** Whether a real agent produced the run ("live") or a scripted stand-in ("simulated"). */

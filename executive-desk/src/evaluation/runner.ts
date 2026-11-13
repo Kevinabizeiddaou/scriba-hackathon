@@ -96,6 +96,7 @@ function emptyResult(testCase: EvaluationCase, dataSource: DataSource): Evaluati
     caseId: testCase.id,
     caseTitle: testCase.title,
     category: testCase.category,
+    area: testCase.area,
     provenance: testCase.provenance.kind,
     dataSource,
     verdict: 'skipped',

@@ -1,13 +1,17 @@
 import clsx from 'clsx';
 import {
   AlertTriangle,
+  BellPlus,
   CalendarClock,
   CalendarPlus,
   CalendarSearch,
   CalendarX,
   Check,
   Clock,
+  ListChecks,
+  ListPlus,
   Loader2,
+  MailCheck,
   MailOpen,
   MinusCircle,
   NotebookPen,
@@ -29,6 +33,10 @@ const TOOL_ICON: Record<ToolName, LucideIcon> = {
   'calendar.create_event': CalendarPlus,
   'calendar.update_event': CalendarClock,
   'calendar.cancel_event': CalendarX,
+  'task.create': ListPlus,
+  'task.complete': ListChecks,
+  'reminder.create': BellPlus,
+  'followup.close': MailCheck,
   'approval.request': ShieldQuestion,
   'audit.record': NotebookPen,
 };

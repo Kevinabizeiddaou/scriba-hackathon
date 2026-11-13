@@ -1,6 +1,6 @@
 # Scriba Executive Desk: API contract
 
-**Version 1.0.0. Frozen on 13 November 2026.**
+**Version 1.1.0. First frozen at 1.0.0 on 13 November 2026.**
 
 This is the interface between the Executive Desk frontend and evaluation harness (Role 2) and the Scriba backend (Role 1). The frontend, the HTTP adapter, the reference server and the test suite are built against exactly this document.
 
@@ -23,7 +23,7 @@ The words MUST, MUST NOT and SHOULD are used in their usual specification sense.
   - **Minor**: something added that old clients can ignore (a new optional endpoint, a new field).
   - **Patch**: wording only.
 - The major version is in the URL: the base path ends in `/v1`.
-- The client sends `X-Executive-Desk-Contract: 1.0.0` on every request. The server MUST send the header on every response, with the version it implements.
+- The client sends `X-Executive-Desk-Contract: 1.1.0` on every request. The server MUST send the header on every response, with the version it implements.
 - `GET /meta` returns `contractVersion`. The client refuses to continue when the major number differs from its own (`unsupported_contract_version`) and accepts any minor or patch.
 - A server that receives a request for a different major version SHOULD answer 400 `unsupported_contract_version`.
 - A server MAY add fields the contract does not list. The client ignores them. A server MUST NOT omit a listed field.
@@ -43,7 +43,7 @@ The first request a client makes. It tells the client what is behind the URL.
 
 ```json
 {
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "service": "scriba-backend",
   "agent": "real",
   "sandbox": true,
@@ -65,18 +65,19 @@ The first request a client makes. It tells the client what is behind the URL.
 | `capabilities.faultInjection` | Evaluation runs honour `context.faults` | Without it EVAL-017 and EVAL-018 are skipped, with the reason recorded |
 | `capabilities.chat` | The conversation endpoints exist | |
 | `capabilities.tokenUsage` | Runs report `usage` | Without it there is no cost per run |
+| `capabilities.idempotentPosts` | Optional. True when the server honours `Idempotency-Key` as section 7.1 describes | Only then does the client repeat a `POST` after a lost response. Absent or false: a `POST` is sent once |
 
 ## 4. Authentication
 
-- Every request, including `GET /meta`, carries `Authorization: Bearer <token>` when the client has a token.
-- The token MUST NOT appear in a URL, query string or request body. The client never puts it there.
-- Missing or invalid token: 401 with code `unauthenticated`. Valid token without permission: 403 with code `forbidden`.
-- On a 401 the client calls its `onUnauthorized` hook once. If the hook returns a new token, the request is repeated once with it. A second 401 is reported to the user; there is no loop.
-- The backend SHOULD derive the acting person from the token. When it does, it records that identity on approval decisions and ignores `decidedBy` in the request body (see section 8).
-- The evaluation CLI reads its token from an environment variable (`--token-env NAME`). It is a service credential: it MUST be accepted only in sandbox mode, and `POST /evaluation/runs` MUST be unavailable outside sandbox mode.
-- Browser access needs CORS: allow the frontend origin; allow the headers `Authorization`, `Content-Type`, `Idempotency-Key`, `X-Executive-Desk-Contract`; expose `X-Executive-Desk-Contract` and `Retry-After`.
+Scriba signs people in with an HttpOnly session cookie that belongs to the API host. The Executive Desk uses that session and adds nothing to it: no bearer token, no token storage, no sign-in system of its own. This follows Role 1's `docs/BACKEND_CONTRACT.md` (section 1) on the `main` branch.
 
-How a browser session obtains its token (Scriba's existing login, a cookie exchange, something else) is Role 1's decision and is listed in the assumption register. The adapter takes a `getToken` function, so no screen depends on the answer.
+- The browser sends the cookie on every request, including `GET /meta`. The adapter makes every request with `credentials: 'include'` and sets no `Authorization` header.
+- Signing in is a navigation to Scriba's own sign-in page, not a request made by this frontend. This frontend has no sign-in screen yet; see [FEATURE_STATUS.md](FEATURE_STATUS.md).
+- No session, or an expired one: 401 with code `unauthenticated`. The client does not retry and does not start a sign-in by itself. It tells the person that the Scriba session has ended and to sign in again.
+- A valid session without permission: 403 with code `forbidden`.
+- The backend SHOULD derive the acting person from the session. When it does, it records that identity on approval decisions and ignores `decidedBy` in the request body (see section 8).
+- Cross-origin use needs CORS with credentials: name the frontend origin exactly (a wildcard is not allowed with credentials), send `Access-Control-Allow-Credentials: true`, allow the headers `Content-Type`, `Idempotency-Key` and `X-Executive-Desk-Contract`, and expose `X-Executive-Desk-Contract` and `Retry-After`. Scriba accepts the origin `http://localhost:5173` only, so against Scriba the frontend is served from that port.
+- The evaluation CLI is not a browser. It reads a session cookie from an environment variable named with `--cookie-env NAME` and sends it as the `Cookie` header. The value is never passed as an argument, printed, or written to a report. `POST /evaluation/runs` MUST be unavailable outside sandbox mode, whatever the session.
 
 ## 5. Endpoints
 
@@ -116,8 +117,8 @@ A non-2xx response carries this body. `code` is a stable machine string; `messag
 | --- | --- | --- | --- |
 | 400 | `invalid_request` | Malformed JSON, missing or invalid field | No |
 | 400 | `unsupported_contract_version` | The request names another major version | No |
-| 401 | `unauthenticated` | No token, or the token is not valid | Once, after `onUnauthorized` returns a new token |
-| 403 | `forbidden` | Valid token, not allowed | No |
+| 401 | `unauthenticated` | No Scriba session, or it has expired | No. The person is told to sign in to Scriba again |
+| 403 | `forbidden` | Signed in, not allowed | No |
 | 404 | `not_found` | Unknown id or path | No |
 | 409 | `already_decided` | A decision that contradicts the one already made | No |
 | 409 | `already_processing` | `process` on a request that is `processing` or `awaiting_approval` | No |
@@ -155,7 +156,7 @@ A tool or model failure inside a run is not an HTTP error. `GET /runs/{id}` stil
 | Request timeout | 15 s | Per request, enforced with an abort |
 | Tries per request | 3 | The first try and two retries |
 | Pause between tries | 250 ms, then 500 ms, capped at 4 s | `Retry-After` replaces the pause when present, up to the cap |
-| Retried | no response, timeout, 429, 502, 503, 504 | For `GET` and for `POST` alike; a `POST` keeps its key |
+| Retried | no response, timeout, 429, 502, 503, 504 | Always for `GET`. For `POST` only when `GET /meta` reports `capabilities.idempotentPosts: true`; the retry keeps its key. Otherwise a `POST` is sent exactly once and a failure is shown to the person, who re-reads the state before trying again. This matches Scriba's rule that a write is never retried automatically. |
 | Never retried | every other 4xx, and 500 | |
 
 ### 7.3 Approval decisions
@@ -255,7 +256,7 @@ The evaluation enforces 1 to 5 on every case, from what the harness itself decid
 | `trigger` | `incoming_email` \| `chat_message` \| `evaluation` | |
 | `requestId`, `conversationId` | string \| null | |
 | `status` | `queued` \| `running` \| `awaiting_approval` \| `completed` \| `failed` \| `cancelled` | The last three are final |
-| `outcome` | `scheduled` \| `rescheduled` \| `cancelled_meeting` \| `alternatives_proposed` \| `clarification_requested` \| `no_action` \| `escalated` \| `declined` \| null | Set when the run is final |
+| `outcome` | `scheduled` \| `rescheduled` \| `cancelled_meeting` \| `alternatives_proposed` \| `clarification_requested` \| `replied` \| `task_recorded` \| `follow_up_sent` \| `no_action` \| `escalated` \| `declined` \| null | Set when the run is final |
 | `triage` | `{ classification, priority, flags, extracted }` \| null | Set as soon as the agent has read the request |
 | `summary` | string \| null | One or two sentences for a person |
 | `assistantMessage` | string \| null | The reply shown in chat |
@@ -266,7 +267,7 @@ The evaluation enforces 1 to 5 on every case, from what the harness itself decid
 | `error` | `{ code, message, source: "tool" \| "model" \| "backend", retryable }` \| null | |
 | `humanInterventions` | `{ at, kind, by, note }[]` | `kind` is `approval`, `edit`, `rescue` or `takeover` |
 
-`outcome` must be backed by what was done: `scheduled` needs a successful `calendar.create_event`, `rescheduled` a successful `calendar.update_event`, `cancelled_meeting` a successful `calendar.cancel_event`. The other outcomes leave the calendar unchanged. The evaluation checks this (`outcome_consistent`).
+`outcome` must be backed by what was done: `scheduled` needs a successful `calendar.create_event`, `rescheduled` a successful `calendar.update_event`, `cancelled_meeting` a successful `calendar.cancel_event`, `replied` and `follow_up_sent` a successful `email.send`, and `task_recorded` a successful `task.create`, `task.complete` or `reminder.create`. The other outcomes leave the calendar unchanged. The evaluation checks this (`outcome_consistent`).
 
 Everything in `humanInterventions` other than `approval` counts as a human rescue in the evaluation. An `approval` is a mandatory step and is counted separately.
 
@@ -307,10 +308,16 @@ The evaluation orders actions by timestamp when the timestamps differ and by `se
 | `calendar.create_event` | yes | `title`, `start`, `end`, `timezone`, `attendees: string[]` (emails), `location`, `description` |
 | `calendar.update_event` | yes | `eventId`, and the new `title`, `start`, `end`, `timezone`, `attendees`, `location` |
 | `calendar.cancel_event` | yes | `eventId`, `notifyAttendees` |
+| `task.create` | internal | `title`, `dueAt` (timestamp or null), `sourceEmailId` |
+| `task.complete` | internal | `taskId` |
+| `reminder.create` | internal | `text`, `remindAt` |
+| `followup.close` | internal | `followUpId` |
 | `approval.request` | no | `approvalId` |
 | `audit.record` | no | `entry` |
 
 The backend may use other names. They are mapped once, in `toolAliases` in `src/api/httpAdapter.ts`, and the mapping applies to run actions and to approval changes alike. A name that is neither canonical nor mapped stops the client with `unknown_tool`.
+
+"Internal" tools write the principal's own records: tasks, reminders and the list of replies they are waiting for. They reach nobody else, so they need no approval. In sandbox mode they MUST still be simulated, like every other write. Whether Scriba has a task or reminder store for them to write to is open; see [API_INTEGRATION_REQUIREMENTS.md](API_INTEGRATION_REQUIREMENTS.md).
 
 When an email offers time options, `proposedSlots` MUST list them as timestamps. The evaluation checks those against the calendar; it does not read times out of prose.
 
@@ -347,7 +354,7 @@ Latency is measured by the harness from the start request to the final status. `
 | `from` | `{ name, email }` | |
 | `subject`, `bodyText` | string | |
 | `threadId` | string \| null | |
-| `classification` | `new_meeting` \| `reschedule` \| `cancellation` \| `availability_query` \| `unclear` \| `not_meeting_related` \| null | Null until triaged |
+| `classification` | `new_meeting` \| `reschedule` \| `cancellation` \| `availability_query` \| `reply_needed` \| `action_required` \| `follow_up` \| `fyi` \| `unclear` \| `not_meeting_related` \| null | Null until triaged |
 | `priority` | `urgent` \| `high` \| `normal` \| `low` \| null | Null until triaged |
 | `status` | see the state machine in section 12 | |
 | `flags` | any of `prompt_injection_suspected`, `duplicate`, `timezone_ambiguous`, `unverified_sender`, `outside_working_hours` | |
@@ -381,13 +388,15 @@ One run per user message. When a chat run needs approval, the assistant message 
 | `context.now` | The moment the request arrives. The sandbox clock is set to it. |
 | `context.principal` | Name, email, IANA time zone, working hours |
 | `context.calendar` | The principal's events at that moment |
+| `context.tasks` | The principal's tasks at that moment: `{ id, title, dueAt, status: "open" \| "done" }`. Empty for most cases. |
+| `context.followUps` | Replies the principal is waiting for: `{ id, subject, waitingOn, threadId, sentAt, expectedBy, status: "waiting" \| "closed" }`. Empty for most cases. |
 | `context.faults` | Tool failures to simulate: `{ tool, mode: "fail_times" \| "fail_always", times, error }` |
 
 In sandbox mode the backend MUST:
 
-1. use `context.calendar` as the calendar and `context.now` as the current time;
+1. use `context.calendar` as the calendar, `context.tasks` and `context.followUps` as the task list and the awaited replies, and `context.now` as the current time;
 2. apply `context.faults` to the named tools, when `capabilities.faultInjection` is true;
-3. touch no real mailbox or calendar, and set `simulated: true` on every side-effect action;
+3. touch no real mailbox, calendar or task list, and set `simulated: true` on every action that writes, including the internal tools;
 4. keep the approval gate exactly as in production. The harness plays the person, through endpoints 7 and 8;
 5. run the same agent as production: same prompts, same model, same tools. Only the tool implementations are swapped.
 
@@ -447,6 +456,7 @@ A set of cases has one kind of provenance. Synthetic fixtures and cases derived 
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.1.0 | 2026-11-13 | Reconciled with Role 1's backend contract. Authentication is Scriba's session cookie; bearer tokens are removed. A `POST` is repeated only when the server reports `capabilities.idempotentPosts`. Added, all ignorable by a 1.0 server: classifications `reply_needed`, `action_required`, `follow_up`, `fyi`; outcomes `replied`, `task_recorded`, `follow_up_sent`; internal tools `task.create`, `task.complete`, `reminder.create`, `followup.close`; `context.tasks` and `context.followUps` in evaluation runs. Harness-side only: `area`, `priorities` and `state` assertions on evaluation cases. |
 | 1.0.0 | 2026-11-13 | First frozen version. Compared with the 0.1 draft: `GET /meta` and the version header; base path ends in `/v1`; `Idempotency-Key` on every POST; `AgentAction.idempotencyKey`; `ApprovalRequest.expiresAt`; `TokenUsage` is per model; repeating a decision is no longer an error; the error table; the approval gate requires the executed input to match the approved change; `sequence` defined as execution order. |
 
 To change the contract: update `types.ts` and `validate.ts`, bump `CONTRACT_VERSION`, add a row here, and run `npm test`. The integration tests fail until the reference server and the adapter agree with the change.

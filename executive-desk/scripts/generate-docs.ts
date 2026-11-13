@@ -9,6 +9,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MockExecutiveDesk } from '../src/api/mock/mockAdapter';
 import { SUITES, getCase } from '../src/evaluation/fixtures';
+import { renderFeatureStatus } from '../src/lib/featureStatus';
 import { renderCasesMarkdown } from '../src/evaluation/fixtures/markdown';
 import { runCase } from '../src/evaluation/runner';
 
@@ -97,5 +98,6 @@ async function examples(): Promise<string> {
 
 writeFileSync(resolve(docs, 'TEST_CASES.md'), renderCasesMarkdown(SUITES.desk.cases, 'desk'));
 writeFileSync(resolve(docs, 'TEST_CASES_SCHEDULING.md'), renderCasesMarkdown(SUITES.scheduling.cases, 'scheduling'));
+writeFileSync(resolve(docs, 'FEATURE_STATUS.md'), renderFeatureStatus());
 writeFileSync(resolve(docs, 'API_EXAMPLES.md'), await examples());
 console.log('Wrote docs/TEST_CASES.md and docs/API_EXAMPLES.md');

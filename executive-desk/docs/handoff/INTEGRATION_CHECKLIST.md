@@ -4,7 +4,7 @@ Tick each line when it is true. Commands are run from `executive-desk/`; `$URL` 
 
 ## Before integration (Role 2, done)
 
-- [x] Contract frozen at 1.0.0 ([API_CONTRACT.md](../API_CONTRACT.md))
+- [x] Contract frozen at 1.0.0, now 1.1.0 after reconciling with Role 1's backend contract ([API_CONTRACT.md](../API_CONTRACT.md))
 - [x] HTTP adapter implements it: handshake, auth, idempotency keys, timeout, retries, response validation
 - [x] Adapter and runner tested over real HTTP against a controllable server
 - [x] Evaluation cases run against the mock and over HTTP with the same result
@@ -19,7 +19,7 @@ Tick each line when it is true. Commands are run from `executive-desk/`; `$URL` 
 - [ ] Every "Open" assumption is answered: confirmed, or changed with a contract version bump
 - [ ] The table "Fields Role 1 must confirm" is filled in
 - [ ] Real tool names handed over for `toolAliases`, or confirmed canonical
-- [ ] Token handling for the browser agreed (assumption A7)
+- [x] Browser authentication settled: Scriba's session cookie, no token (assumption A7, closed)
 - [ ] It is agreed where this folder lives in the shared repository and when the branch is merged
 
 ## Handshake
@@ -28,7 +28,7 @@ Tick each line when it is true. Commands are run from `executive-desk/`; `$URL` 
 - [ ] `agent` is `real`, and that is true
 - [ ] `sandbox` is `true` on the instance used for evaluation
 - [ ] `npm run eval -- --base-url $URL --only EVAL-001` prints `Connected to ...: contract 1.x`
-- [ ] A request without a token gets 401 `unauthenticated` (if auth is on)
+- [ ] A request without a Scriba session gets 401 `unauthenticated`
 
 ## First case
 
@@ -51,7 +51,7 @@ Tick each line when it is true. Commands are run from `executive-desk/`; `$URL` 
 
 ## Full run
 
-- [ ] All twenty cases executed, or the skipped ones have an agreed reason
+- [ ] All twenty cases of the desk suite executed, or the skipped ones have an agreed reason
 - [ ] The report file opens and `target.dataSource` is `live`
 - [ ] Token usage is present on finished runs, or `capabilities.tokenUsage` is `false`
 - [ ] Cost per run appears, or the reason it does not is known (no usage, or no price for the model)
@@ -71,5 +71,5 @@ Tick each line when it is true. Commands are run from `executive-desk/`; `$URL` 
 
 - [ ] It comes from a report whose `target.dataSource` is `live`
 - [ ] The report covers the whole case set
-- [ ] The case set is named (`synthetic-v2`), and the number is described as a result on synthetic cases
+- [ ] The case set is named (`desk-v1`), and the number is described as a result on synthetic cases
 - [ ] Rescues and mandatory approvals are reported separately

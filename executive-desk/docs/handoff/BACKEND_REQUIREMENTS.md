@@ -13,10 +13,10 @@ Build order that gets the evaluation running soonest: group A, then B, then C. G
 | A3 | `agent` is `"real"` only when a model-driven agent produces the runs. | 3 | Decides whether results are labelled live. Cannot be verified from outside. |
 | A4 | `sandbox` is `true` only when no real mailbox or calendar can be reached. | 3 | runner refuses `sandbox: false` (`not_sandbox`) |
 | A5 | Send `X-Executive-Desk-Contract` on every response. | 1 | integration test against the reference server; not enforced on the real backend |
-| A6 | Accept `Authorization: Bearer <token>`. 401 `unauthenticated` without a valid token, 403 `forbidden` without permission. | 4 | adapter maps both; UI shows the message |
-| A7 | For browser use, CORS: allow the frontend origin and the headers `Authorization`, `Content-Type`, `Idempotency-Key`, `X-Executive-Desk-Contract`. | 4 | browser console |
+| A6 | Authenticate with Scriba's existing session cookie. No bearer token. 401 `unauthenticated` without a valid session, 403 `forbidden` without permission. | 4 | adapter maps both; on 401 the UI says the Scriba session has ended; never retried |
+| A7 | For browser use, CORS with credentials: name the frontend origin exactly, send `Access-Control-Allow-Credentials: true`, and allow the headers `Content-Type`, `Idempotency-Key`, `X-Executive-Desk-Contract`. Scriba accepts `http://localhost:5173`. | 4 | integration test against the reference server; browser console on the real backend |
 | A8 | Errors use `{ "error": { "code", "message" } }` with the codes in the contract table. | 6 | adapter |
-| A9 | Honour `Idempotency-Key` on every POST: same key and same request returns the stored response without acting again; same key and a different request returns 422. Keep keys 24 hours. | 7.1 | A retried POST otherwise acts twice. The reference server shows the behaviour; `httpAdapter.integration.test.ts` tests it. |
+| A9 | Honour `Idempotency-Key` on every POST: same key and same request returns the stored response without acting again; same key and a different request returns 422. Keep keys 24 hours. Say so with `capabilities.idempotentPosts: true` in `/meta`. | 7.1 | Until the backend says so, the client sends each POST exactly once and never repeats it. The reference server shows the behaviour; `httpAdapter.integration.test.ts` tests it. |
 | A10 | Return 429, 502, 503 or 504 for temporary conditions (with `Retry-After` on 429), not 500. | 6, 7.2 | The adapter retries the first four and not 500 |
 | A11 | Timestamps are RFC 3339 with an offset, everywhere. | 2 | adapter (`contract_violation`), runner (`timestamps_valid`) |
 | A12 | Nullable fields are present as `null`, never omitted. | 2 | adapter (`contract_violation`) |

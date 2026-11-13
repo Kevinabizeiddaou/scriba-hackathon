@@ -1,6 +1,6 @@
 # Assumption register
 
-Everything the frontend, the contract or the scorer takes for granted about the backend. None of it has been confirmed against Scriba's code: this workspace was built without reading the backend, and Role 1's audit has not been shared here.
+Everything the frontend, the contract or the scorer takes for granted about the backend. Rows marked **Closed by Role 1's contract** were settled by `docs/BACKEND_CONTRACT.md` on `main`; the rest are still unconfirmed. The screen-by-screen comparison with what Scriba has today is in [API_INTEGRATION_REQUIREMENTS.md](../API_INTEGRATION_REQUIREMENTS.md).
 
 Status values: **Open** (needs Role 1's answer), **Decided here** (Role 2 picked a rule so work could proceed; Role 1 may object), **Closed** (no longer an assumption).
 
@@ -13,12 +13,12 @@ Role 1: for each open row, reply "confirmed" or say what is different. The last 
 | A1 | Every email send and every calendar create, update or cancel needs a human approval. There is no auto-send tier. | **Open.** Built into the contract (8.4) and into every case's expected approvals. | Mark the auto-approved tools per case in `expected.approvals`, and relax the gate for them in `scoring.ts`. |
 | A2 | One approval can cover several changes, executed in order. If a later one fails, the approval's execution is `failed`. | **Open.** Now specified in contract 8.1 and 8.3. | If the backend issues one approval per change, nothing breaks: the scorer accepts either. |
 | A3 | Runs are asynchronous and polled with `GET /runs/{id}`. | **Decided here.** Contract 5: a POST must return promptly. | If the backend can only run synchronously, the per-case timeout must cover the whole run and approvals cannot be exercised. This would be a real blocker. |
-| A4 | The backend's tool calls map one-to-one onto the ten canonical tools. | **Open.** | Give Role 2 the real names for `toolAliases`. If one backend tool does two things (send and create in one call), the gate cannot be checked per effect. |
+| A4 | The backend's tool calls map one-to-one onto the canonical tools (fourteen since contract 1.1.0, four of them internal writes for tasks, reminders and follow-ups). | **Open.** Whether Scriba has a task or reminder store at all is open too. | Give Role 2 the real names for `toolAliases`. If one backend tool does two things (send and create in one call), the gate cannot be checked per effect. |
 | A5 | A sandbox mode exists: injected calendar, clock and faults, no real Gmail or Calendar, `simulated: true`. | **Open.** The largest piece of backend work this contract asks for. | Without it the cases cannot be run safely. `capabilities.faultInjection: false` is acceptable to start with. |
 | A6 | Token usage is available per run. | **Changed.** Now per model within a run (`usage.models[]`), so an agent using two models is priced correctly. | If only a total is available, send one entry. If nothing is available, set `capabilities.tokenUsage: false`. |
-| A7 | Auth is a bearer token. | **Open.** Contract 4 fixes the header and the 401 behaviour. | A cookie session needs `credentials: 'include'` in the adapter and no token code. One place to change. |
+| A7 | Auth is a bearer token. | **Closed by Role 1's contract: it was wrong.** Scriba uses an HttpOnly session cookie and has no bearer token. Contract 1.1.0, section 4: the adapter sends `credentials: 'include'`, and all token code is gone. | Nothing further. |
 | A8 | All timestamps carry an offset; the principal's IANA zone is known. | **Decided here.** The zone now comes from `GET /meta`. | Not negotiable: an offset-less time cannot be scored. |
-| A9 | The classification, outcome and flag vocabularies can be produced or mapped. | **Open.** Six classifications, eight outcomes, five flags. | Map in `HttpExecutiveDesk.run()`. A value outside the lists is rejected as `contract_violation`. |
+| A9 | The classification, outcome and flag vocabularies can be produced or mapped. | **Open.** Ten classifications, eleven outcomes, five flags since contract 1.1.0. | Map in `HttpExecutiveDesk.run()`. A value outside the lists is rejected as `contract_violation`. |
 | A10 | Triage yields the `ExtractedMeetingDetails` shape with windows as timestamps. | **Open.** Only display depends on it; no check reads it. | Inbox detail view. |
 | A11 | `email.send.proposedSlots` lists offered times as timestamps. | **Open.** EVAL-003, 005 and 009 require at least two. | Those three cases fail `proposed_slots`. |
 | A12 | Chat: one run per user message, reply in `assistantMessage` and in the message list. | **Open.** | `ChatPage`. |
@@ -86,4 +86,4 @@ For each field: can the backend produce it, with exactly these values?
 3. Which model or models, and does the backend know their prices?
 4. How should a request the agent declines to handle be shown: `escalated`, as assumed, or something else?
 5. Is there an existing audit log that `audit.record` should map to?
-6. How does a browser session get its token?
+6. Answered by Role 1's contract: there is no token; the browser carries Scriba's session cookie.

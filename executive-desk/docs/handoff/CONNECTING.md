@@ -7,7 +7,7 @@ You do not need to change frontend code to connect. The two places where backend
 | What | Where |
 | --- | --- |
 | Backend tool names that differ from the canonical ones | `DEFAULT_TOOL_ALIASES` in `src/api/httpAdapter.ts` |
-| How the browser gets its token | `getToken` in `src/api/index.ts` |
+| Nothing for authentication | The browser carries Scriba's session cookie. There is no token and no code to change. |
 
 ## 0. Before you start
 
@@ -52,15 +52,15 @@ npm run eval -- --base-url http://localhost:8000/api/executive-desk/v1 --only EV
 The first line it prints is the handshake result:
 
 ```
-Connected to <service>: contract 1.0.0, agent real, sandbox true.
+Connected to <service>: contract 1.1.0, agent real, sandbox true.
 ```
 
 If it prints an error instead, the message names the problem: unreachable, wrong contract version, or the exact field of `/meta` that does not match.
 
-With authentication, put the token in an environment variable and name the variable. Never pass the token itself as an argument.
+The command line is not a browser, so it has no session. Put the value of a Scriba session cookie in an environment variable and name the variable. Never pass the cookie itself as an argument. It is sent as the `Cookie` header and is never printed or written to a report.
 
 ```bash
-DESK_TOKEN=... npm run eval -- --base-url http://localhost:8000/api/executive-desk/v1 --token-env DESK_TOKEN --only EVAL-001
+DESK_COOKIE=... npm run eval -- --base-url http://localhost:8000/api/executive-desk/v1 --cookie-env DESK_COOKIE --only EVAL-001
 ```
 
 ## 2. Run one case
@@ -99,7 +99,7 @@ export const DEFAULT_TOOL_ALIASES: Record<string, ToolName> = {
 
 The mapping applies to run actions and to approval changes. Re-run step 2.
 
-## 4. Run all twenty
+## 4. Run all twenty of the desk suite
 
 ```bash
 npm run eval -- --base-url http://localhost:8000/api/executive-desk/v1 --label "Friday first full run"
@@ -153,19 +153,17 @@ On Windows PowerShell:
 $env:VITE_API_MODE='http'; $env:VITE_API_BASE_URL='http://localhost:8000/api/executive-desk/v1'; npm run dev
 ```
 
-Open http://localhost:5183.
+Open http://localhost:5183. Against Scriba itself, add `-- --port 5173` to the command and open http://localhost:5173 instead: Scriba refuses every other origin.
+
+Sign in to Scriba in the same browser first. The Desk has no sign-in screen of its own and uses Scriba's session cookie.
 
 - The sidebar shows "Live backend" and the service name when `/meta` says `agent: "real"`, and "Mock data" otherwise.
-- For local testing with a token, run this in the browser console and reload. The key is `executive-desk.token`; do not commit a token anywhere.
-
-  ```js
-  sessionStorage.setItem('executive-desk.token', '<token>')
-  ```
-
+- If every screen says the Scriba session has ended, sign in to Scriba again in this browser and reload. Nothing is stored by the Desk.
+- The inbox, calendar, tasks and activity screens show "Waiting for the backend contract" in this mode. They have no agreed endpoints yet; see [FEATURE_STATUS.md](../FEATURE_STATUS.md).
 - If a screen shows a red error box, the text is the adapter's error message. `contract_violation` messages list the fields to fix.
-- The browser must be allowed by CORS (requirement A7). The dev origin is `http://localhost:5183`.
+- The browser must be allowed by CORS with credentials (requirement A7). The dev origin is `http://localhost:5183`, or `http://localhost:5173` against Scriba.
 
-The Evaluation Dashboard's "Run evaluation" button runs the same twenty cases from the browser and stores the report in that browser. "Import results" loads a report file written by the command line.
+The Evaluation Dashboard's "Run evaluation" button runs the twenty cases of the desk suite from the browser and stores the report in that browser. "Import results" loads a report file written by the command line.
 
 ## 8. When something disagrees with the contract
 

@@ -76,7 +76,7 @@ export function ApprovalsPage({ approvalId }: { approvalId: string | null }) {
               aria-controls="approvals-panel"
               onClick={() => openTab(id)}
               className={clsx(
-                'inline-flex h-8 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150',
+                'tap inline-flex h-8 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150',
                 tab === id ? 'bg-brand-500/50 text-ink' : 'text-soft hover:text-ink',
               )}
             >

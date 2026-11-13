@@ -219,7 +219,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
                     type="button"
                     disabled={sending || busy}
                     onClick={() => void send(prompt)}
-                    className="max-w-[280px] shrink-0 cursor-pointer truncate rounded-full border border-line-strong bg-white/[0.04] px-3 py-1.5 text-[12.5px] text-soft transition-colors duration-150 hover:bg-white/[0.09] hover:text-ink disabled:cursor-not-allowed disabled:opacity-45"
+                    className="tap max-w-[280px] shrink-0 cursor-pointer truncate rounded-full border border-line-strong bg-white/[0.04] px-3 py-1.5 text-[12.5px] text-soft transition-colors duration-150 hover:bg-white/[0.09] hover:text-ink disabled:cursor-not-allowed disabled:opacity-45"
                     title={prompt}
                   >
                     {prompt}

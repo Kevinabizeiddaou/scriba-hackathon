@@ -221,7 +221,7 @@ export function CaseResult({ result, timeZone }: { result: EvaluationResult; tim
 
       {result.checks.length > 0 && (
         <Block title="Expected versus actual">
-          <div className="overflow-x-auto rounded-lg border border-line">
+          <div className="relative overflow-x-auto rounded-lg border border-line">
             <table className="w-full min-w-[640px] text-left text-[12.5px]">
               <thead className="bg-white/[0.03] text-mute">
                 <tr>

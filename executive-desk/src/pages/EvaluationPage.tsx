@@ -116,7 +116,7 @@ function SelfTestPanel({ report }: { report: SelfTestReport }) {
       </dl>
       <details className="mt-3">
         <summary className="cursor-pointer select-none text-[13px] font-medium text-accent hover:underline">Show the planted defects</summary>
-        <div className="mt-2 overflow-x-auto rounded-lg border border-line">
+        <div className="relative mt-2 overflow-x-auto rounded-lg border border-line">
           <table className="w-full min-w-[620px] text-left text-[12.5px]">
             <thead className="bg-white/[0.03] text-mute">
               <tr>
@@ -313,7 +313,7 @@ export function EvaluationPage() {
                     }}
                     title={`${c.id}: ${c.title} (${text})`}
                     aria-label={`${c.id}, ${c.title}: ${text}`}
-                    className={clsx('flex h-10 w-full cursor-pointer flex-col items-center justify-center rounded-lg border text-[10.5px] font-bold leading-none tabular-nums transition-colors duration-150 hover:border-accent/60', CELL[verdict])}
+                    className={clsx('tap flex h-10 w-full cursor-pointer flex-col items-center justify-center rounded-lg border text-[10.5px] font-bold leading-none tabular-nums transition-colors duration-150 hover:border-accent/60', CELL[verdict])}
                   >
                     <span>{c.id.slice(-2)}</span>
                     <span aria-hidden className="mt-0.5 h-2.5 text-[9.5px]">
@@ -396,7 +396,7 @@ export function EvaluationPage() {
               </select>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-[13px]">
               <thead className="text-[12px] text-mute">
                 <tr className="border-b border-line">
@@ -445,7 +445,7 @@ export function EvaluationPage() {
                         <td className="px-3 py-2.5 text-right tabular-nums text-soft">{executed && !tableSimulated ? fmtDuration(result.timing.wallClockMs) : NO_DATA}</td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-soft">{executed && result.estimatedCostUsd !== null ? usd(result.estimatedCostUsd) : NO_DATA}</td>
                         <td className="px-3 py-2.5 text-right">
-                          <button type="button" onClick={() => setOpenCase(open ? null : c.id)} aria-label={`${open ? 'Hide' : 'Show'} details for ${c.id}`} className="cursor-pointer rounded-md p-1 text-mute hover:bg-white/[0.08] hover:text-ink">
+                          <button type="button" onClick={() => setOpenCase(open ? null : c.id)} aria-label={`${open ? 'Hide' : 'Show'} details for ${c.id}`} className="tap inline-flex cursor-pointer items-center justify-center rounded-md p-1 text-mute hover:bg-white/[0.08] hover:text-ink">
                             <ChevronDown aria-hidden className={clsx('h-4 w-4 transition-transform duration-150', open && 'rotate-180')} />
                           </button>
                         </td>

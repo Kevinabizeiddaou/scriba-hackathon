@@ -255,7 +255,7 @@ export function InboxPage({ requestId }: { requestId: string | null }) {
                   aria-pressed={on}
                   onClick={() => setFilter(f.id)}
                   className={clsx(
-                    'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150',
+                    'tap inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150',
                     on ? 'bg-brand-500/40 text-ink' : 'text-soft hover:bg-white/[0.06] hover:text-ink',
                   )}
                 >

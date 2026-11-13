@@ -124,7 +124,7 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <button type="button" onClick={() => setNoteOpen((open) => !open)} aria-expanded={noteOpen} className="inline-flex cursor-pointer items-center gap-1 rounded-md py-1 text-[12.5px] font-medium text-soft hover:text-ink">
+            <button type="button" onClick={() => setNoteOpen((open) => !open)} aria-expanded={noteOpen} className="tap inline-flex cursor-pointer items-center gap-1 rounded-md py-1 text-[12.5px] font-medium text-soft hover:text-ink">
               <ChevronDown aria-hidden className={clsx('h-3.5 w-3.5 transition-transform duration-150', noteOpen && 'rotate-180')} />
               {noteOpen ? 'Hide note' : 'Add a note'}
             </button>

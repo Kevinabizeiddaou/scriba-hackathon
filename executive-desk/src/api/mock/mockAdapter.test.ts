@@ -1,7 +1,12 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../client';
 import { isSideEffectTool } from '../types';
+import { EVALUATION_CASES } from '../../evaluation/fixtures';
+import { runEvaluation } from '../../evaluation/runner';
 import { MockExecutiveDesk } from './mockAdapter';
+import { MOCK_SCRIPTS } from './scripts';
 
 const PRINCIPAL = 'Layla Mansour';
 
@@ -22,6 +27,58 @@ describe('MockExecutiveDesk', () => {
     await desk.whenIdle();
 
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('contains no network code at all: no fetch, sockets, HTTP modules or dynamic imports in its source', () => {
+    const dir = resolve(__dirname);
+    const sources = readdirSync(dir).filter((name) => name.endsWith('.ts') && !name.includes('.test.'));
+    expect(sources.sort()).toEqual(['chatIntents.ts', 'mockAdapter.ts', 'scriptDsl.ts', 'scripts.ts']);
+    const banned = /\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|node:(http|https|net|tls|dgram|child_process)|\baxios\b|\bimport\s*\(|httpAdapter|referenceServer|process\.env|localStorage|document\.cookie/;
+    for (const name of sources) {
+      const code = readFileSync(resolve(dir, name), 'utf8')
+        .split('\n')
+        .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line)) // comments may mention the words
+        .join('\n');
+      expect(code.match(banned)?.[0] ?? null, `${name} must not reference network or credential APIs`).toBeNull();
+    }
+  });
+
+  it('touches no network API while every evaluation case, approval, rejection and chat flow runs', async () => {
+    const forbidden = (name: string) =>
+      vi.fn(() => {
+        throw new Error(`${name} must not be used by the mock`);
+      });
+    const spies = { fetch: forbidden('fetch'), XMLHttpRequest: forbidden('XMLHttpRequest'), WebSocket: forbidden('WebSocket'), EventSource: forbidden('EventSource') };
+    for (const [name, spy] of Object.entries(spies)) vi.stubGlobal(name, spy);
+    const beacon = forbidden('sendBeacon');
+    vi.stubGlobal('navigator', { ...globalThis.navigator, sendBeacon: beacon });
+
+    const report = await runEvaluation(new MockExecutiveDesk({ stepDelayMs: 0, seed: false }), EVALUATION_CASES, { pollIntervalMs: 1 });
+    expect(report.results.every((r) => r.verdict === 'pass')).toBe(true);
+
+    const desk = new MockExecutiveDesk({ stepDelayMs: 0 });
+    for (const request of await desk.listRequests({ status: ['received'] })) await desk.processRequest(request.id);
+    await desk.whenIdle();
+    const pending = await desk.listApprovals({ status: ['pending'] });
+    expect(pending.length).toBeGreaterThan(3);
+    for (const [index, approval] of pending.entries()) {
+      await desk.decideApproval(approval.id, { decision: index % 2 === 0 ? 'approve' : 'reject', decidedBy: PRINCIPAL });
+    }
+    await desk.whenIdle();
+    const conversation = await desk.createConversation();
+    for (const prompt of desk.info.suggestedPrompts) {
+      await desk.sendMessage(conversation.id, prompt);
+      await desk.whenIdle();
+    }
+
+    for (const spy of [...Object.values(spies), beacon]) expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('ships only scripts whose side effects are marked simulated', () => {
+    const steps = Object.values(MOCK_SCRIPTS).flatMap((script) => script.steps);
+    const sideEffects = steps.filter((step) => step.type === 'action' && isSideEffectTool(step.tool));
+    expect(sideEffects.length).toBeGreaterThan(20);
+    for (const step of sideEffects) expect(step.type === 'action' && step.simulated).toBe(true);
   });
 
   it('marks every side-effect action as simulated', async () => {

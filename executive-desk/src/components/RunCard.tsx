@@ -21,7 +21,7 @@ export function RunCard({ run, timeZone, defaultOpen = true, className }: { run:
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl px-3.5 py-2.5 text-left hover:bg-white/[0.03]"
+        className="tap flex w-full cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl px-3.5 py-2.5 text-left hover:bg-white/[0.03]"
       >
         <Pill tone={status.tone} spin={active}>
           {status.label}

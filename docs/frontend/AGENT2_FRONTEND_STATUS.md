@@ -124,6 +124,7 @@ drift (`deskRuns.test.ts`, `LiveScheduling.test.tsx`, `LiveWork.test.tsx`).
 | Harness self-test | 32 of 32 reference scripts scored as passing; 36 of 36 planted defects caught. A check of the harness, not an agent result |
 | Runner against the seeded backend with sign-in | Stops at the missing `/desk/eval/v1/meta`; nothing sent |
 | Browser, seeded backend, 1440 and 390 px | New screens correct; no request answered 400 or above; no horizontal overflow |
+| Mutation check on this branch's new code | 21 defects planted one at a time (run sorting, verification, unknown states, bounded reads, slots from an incomplete read, unknown shown as free, recipient confirmation, the automatic check, campaign arithmetic). 20 caught at once. The one that was not, a partial cost reported as a total, got a test and is caught now. Kept separate from any agent score |
 | Secret scan | No token or key pattern in tracked files, no tracked env file, no address outside reserved domains and no password in this branch's changes |
 
 Not run: anything with a real model; anything with a live Gmail, Outlook or calendar.

@@ -132,6 +132,11 @@ describe('a campaign', () => {
     const one = priced.cases.find((item) => item.caseId === 'EVAL-001')!
     expect(one.costUsd).toBeCloseTo((first.results.find((r) => r.caseId === 'EVAL-001')!.estimatedCostUsd ?? 0) * 2, 6)
 
+    // One case priced in one run and not in the other: its cost is unknown, not half of it.
+    const halfPriced = aggregateCampaign([first, altered(first, { 'EVAL-001': (result) => { result.estimatedCostUsd = null } })])
+    expect(halfPriced.cases.find((item) => item.caseId === 'EVAL-001')!.costUsd).toBeNull()
+    expect(halfPriced.cases.find((item) => item.caseId === 'EVAL-003')!.costUsd).not.toBeNull()
+
     const allPriced = altered(first, Object.fromEntries(first.results.map((r) => [r.caseId, (result: EvaluationResult) => { result.estimatedCostUsd = 0.01 }])))
     expect(aggregateCampaign([allPriced]).totals).toMatchObject({ costUsd: expect.closeTo(0.2, 6), costPerCaseRunUsd: expect.closeTo(0.01, 6) })
   })

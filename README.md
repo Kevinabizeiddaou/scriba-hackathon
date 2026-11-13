@@ -1,75 +1,125 @@
 # Scriba Executive Desk
 
-An AI executive secretary for meeting coordination across Gmail, Google
-Calendar, Outlook Mail and Outlook Calendar. It is a focused product built on
-Scriba: the Scriba backend is the runtime, and this repository holds the Desk's
-own frontend, its API contract and its tests.
+An AI executive secretary that handles incoming meeting requests and
+coordinates an executive's schedule across Gmail, Outlook Mail, Google
+Calendar and Outlook Calendar.
 
-Slack, Teams, Google Drive, OneDrive, Jira and desktop automation are out of
-scope and never appear in the Desk.
+It is built on [Scriba](https://scribaassist.com), an existing assistant
+product, by progressively transferring and adapting Scriba's working code
+rather than rebuilding it. This is a private simulation of the AlphaHack 2026
+challenge.
 
-## Status: Stage 1
+## The job
 
-A working shell that signs in through Scriba, shows the four connections
-(Google and Microsoft, mail and calendar), lists mail per provider, lists
-calendar events from both calendars, and reports API health. It reads only;
-no mail is sent and no event is written yet.
+Someone who manages an executive's calendar spends hours each week on the
+same loop: read a meeting request, check the calendars, propose or confirm a
+time, book it, reply. The Desk automates that loop and asks for approval
+before anything leaves the building.
 
-- Architecture decision and migration map: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Backend API contract (for the frontend and evaluation harness): [docs/BACKEND_CONTRACT.md](docs/BACKEND_CONTRACT.md)
+**Trigger:** a new email in the executive's Gmail or Outlook mailbox asking
+to set up, move or cancel a meeting.
 
-## How it runs
+**Planned workflow:**
 
-The Desk has no backend of its own in Stage 1. It calls an existing Scriba API
-with the user's Scriba session cookie. OAuth sign-in and callbacks stay on the
-Scriba API host; the Desk never handles a code, a token or a client secret.
+1. Read the message and its thread.
+2. Extract the request: intent, attendees, dates, duration.
+3. Check availability in the connected Google and Outlook calendars.
+4. Detect conflicts.
+5. Choose the requested time or propose alternatives.
+6. Ask the executive to approve the reply and the calendar change.
+7. Create, update or cancel the event.
+8. Reply in the original thread from the mailbox that received it.
+9. Log the run and open a follow-up when an answer is awaited.
 
-| Backend | How | Needs |
-| --- | --- | --- |
-| Local Scriba backend | Start Scriba from its own checkout (`uvicorn app.main:app --port 8000`) with its own `.env`. The Desk on `http://localhost:5173` finds it automatically. | A Scriba checkout at `3ae3a2aa` or newer |
-| Seeded Scriba backend (no providers, no database) | `python e2e/seeded_server.py --port 8788` in the Scriba checkout, then `VITE_API_BASE_URL=http://localhost:8788` | Same checkout |
-| Existing Scriba API host | `VITE_API_BASE_URL=<api host>`; sign in to Scriba first | A browser that allows the API host's cookie on `localhost` |
+The full index card is in [docs/INDEX_CARD.md](docs/INDEX_CARD.md).
 
-The dev server must run on port 5173. Scriba trusts `http://localhost:5173`
-for credentialed requests and refuses other ports.
+## What is reused from Scriba
+
+Scriba's backend is the Desk's backend. The Desk does not have its own
+authentication, database or provider registrations.
+
+| Reused as it runs today | Used by the Desk in Phase 1 |
+| --- | --- |
+| Sign-in and sessions | Yes |
+| Google and Microsoft account connections | Yes (status and connect links) |
+| Gmail and Outlook Mail reading | Yes |
+| Google Calendar and Outlook Calendar reading | Yes |
+| Mail sending and threaded replies | Not yet |
+| Calendar create, update, cancel | Not yet |
+| Chat agent with approval cards | Not yet |
+| Automations triggered by incoming mail | Not yet |
+
+Frontend pieces transferred from Scriba (`Gmail/frontend` at `3ae3a2aa`),
+each marked with its source: the API client, API base-URL resolution, the
+provider-status hook, the design tokens and component styles, and the
+Tailwind and TypeScript configuration.
+
+Not part of the Desk: Slack, Teams, Google Drive, OneDrive, Jira and desktop
+automation.
+
+## Present limitations
+
+- **Phase 1 is a read-only shell.** It signs in, shows which of the four
+  accounts are connected, lists mail per provider, lists calendar events and
+  reports API health. It does not run the secretary workflow.
+- No end-to-end agent run has happened. See [docs/BASELINE.md](docs/BASELINE.md).
+- Live Google and Microsoft data have not been tested from the Desk; tests
+  ran against Scriba's seeded test backend.
+- Availability across both calendars, conflict detection, follow-ups and a
+  meeting-booking automation do not exist yet in Scriba and are later-phase
+  work.
+- The Desk runs locally on `http://localhost:5173`. Hosting it needs
+  configuration decisions listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Phases
+
+Work proceeds one submission checkpoint at a time; a phase starts only when
+authorized.
+
+1. **Shell and index card** (done)
+2. Backend safety and a read-only availability service
+3. Secretary workflow with approvals
+4. Triggers, follow-ups and execution history
+5. Evaluation: 20 scheduling cases, reliability, cost per run
+6. Final interface and demo
+
+## Run it
+
+The Desk needs a running Scriba backend. It never stores a credential; the
+session is a cookie owned by the Scriba API.
 
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:5173
-npm test             # unit tests
-npm run build        # typecheck + production build
+npm run dev          # http://localhost:5173 (this port is required)
 ```
+
+By default the Desk on `localhost:5173` talks to a Scriba backend on
+`localhost:8000`. Set `VITE_API_BASE_URL` to use another Scriba API.
 
 ## Tests
 
 ```bash
-# Unit tests
-cd frontend && npm test
-
-# API smoke: anonymous checks are read-only and safe against any Scriba API
-node scripts/smoke.mjs --base http://localhost:8788
-
-# Adds signed-in checks (signs in and out; reads only)
-SMOKE_EMAIL=... SMOKE_PASSWORD=... node scripts/smoke.mjs --base http://localhost:8788
-
-# Refuses secrets, token stores and database dumps in files Git would commit
-node scripts/check-no-secrets.mjs
+cd frontend && npm test && npm run build     # unit tests, typecheck, build
+node scripts/smoke.mjs --base <scriba api>   # read-only API smoke
+node scripts/check-no-secrets.mjs            # run before every commit
 ```
 
-## Rules
+Signed-in smoke checks run when `SMOKE_EMAIL` and `SMOKE_PASSWORD` are set in
+the environment. The smoke test only reads; the one thing it changes is its
+own session.
 
-- No `.env`, token, credential or production data in this repository. The
-  secret check above runs before every commit.
-- Scriba's repository and its production deployment are not modified from
-  here. Backend changes go through Scriba's own review, or through the overlay
-  described in the architecture note, and are never deployed without explicit
-  authorization.
-- Files copied from Scriba keep a header naming their source path and commit.
+## Repository rules
 
-## Ownership
+- This repository is public. No `.env`, token, credential, customer data or
+  private configuration is committed.
+- Scriba's repository and its production service are not modified from here.
+  Nothing is deployed without explicit authorization.
+- Collaborators work on separate branches of this repository.
 
 | Path | Owner |
 | --- | --- |
-| `frontend/src/api/`, `frontend/src/lib/apiBase.ts`, `frontend/src/lib/connections.ts`, `scripts/`, `docs/` | Backend/contract role |
-| The rest of `frontend/` and the evaluation harness | Frontend role (the Stage 1 shell under `frontend/src/shell/` is a starting point to replace or extend) |
+| `frontend/src/api/`, `frontend/src/lib/apiBase.ts`, `frontend/src/lib/connections.ts`, `scripts/`, `docs/`, later `backend/` | Backend and contract |
+| Visual pages, chat UI, evaluation dashboard, scenario fixtures | Frontend and evaluation (the shell under `frontend/src/shell/` is a starting point) |
+
+More: [architecture](docs/ARCHITECTURE.md) · [backend contract](docs/BACKEND_CONTRACT.md) · [baseline](docs/BASELINE.md)

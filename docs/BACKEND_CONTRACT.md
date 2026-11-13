@@ -139,6 +139,16 @@ calendar has been read through these routes yet.**
 | `GET /desk/inbox/item?provider=&id=&mailbox=&days=` | One message: triage, the messages of its thread found in the recent inbox, the mailbox a reply must come from, and for a meeting request the next working days across both calendars | `DeskInboxItem` |
 | `GET /desk/availability?start=&end=&duration_minutes=&buffer_minutes=&timezone=&max_slots=` | Busy time from every connected Google and Outlook calendar, existing cross-calendar conflicts, and free slots inside working hours | `DeskAvailability` |
 | `POST /desk/slots/check` `{start, end, timezone?, buffer_minutes?}` | One proposed time against both calendars | `DeskSlotCheck` |
+| `GET /desk/briefing` | What arrived and needs the executive, today's meetings, open and due tasks, reminders. Built from Scriba records with no model call; a section that fails is named in `unavailable` | `DeskBriefing` |
+
+`/desk/inbox/item` also returns `draftRequest` when the message needs a
+reply: the exact body for Scriba's existing `POST /drafts/create`. For a
+meeting request its `user_context` lists only times verified free on every
+connected calendar, and tells the draft writer not to confirm a time when the
+calendars could not be read or are full. Posting it writes a draft in Scriba
+for review and sends nothing. **That call has not been verified from this
+repository:** it needs a real mailbox and a model, which the seeded backend
+does not have.
 
 Triage `category` is one of `meeting_request`, `needs_reply`, `action_item`,
 `informational`, `automated`, with `outcome` `schedule`, `reply`, `task` or

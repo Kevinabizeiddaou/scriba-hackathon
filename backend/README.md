@@ -19,6 +19,7 @@ It is read-only. Nothing here sends mail or writes to a calendar.
 | `desk_overlay/availability.py` | Multi-calendar availability: merge, buffers, working hours, conflicts (pure) |
 | `desk_overlay/triage.py` | Secretary triage on top of Scriba's classifier (pure) |
 | `desk_overlay/capabilities.py` | The four Desk capabilities from Scriba's provider status (pure) |
+| `desk_overlay/briefing.py` | The executive briefing from Scriba records (pure) |
 | `desk_overlay/scriba_transferred/` | Scriba's slot search and time rules, transferred unchanged |
 | `dev/seeded_desk_server.py` | Scriba's seeded test backend with the overlay mounted |
 | `tests/` | Unit and route tests (no Scriba needed) and `tests/integration/` (real Scriba app) |

@@ -165,7 +165,78 @@ export interface DeskInboxItem {
     reason: IncompleteReason | null
     slots: Slot[]
   }
+  /** Present when the message needs a reply. */
+  draftRequest: DraftRequest | null
 }
+
+/**
+ * A ready-made request for Scriba's EXISTING `POST /drafts/create`, which
+ * writes a reply draft for review (stored in Scriba; nothing is sent).
+ * For a meeting request, `user_context` lists only times verified free.
+ */
+export interface DraftRequest {
+  method: 'POST'
+  path: '/drafts/create'
+  body: {
+    provider: MailProvider
+    email_id: string
+    thread_id: string | null
+    provider_account_id: string | null
+    user_context: string
+  }
+}
+
+export interface BriefingMailLine {
+  id: string
+  provider: MailProvider
+  provider_account_id: string | null
+  from_addr: string
+  subject: string
+  timestamp: string
+  category: TriageCategory
+  outcome: Triage['outcome']
+  priority: string
+}
+
+export interface DeskBriefing {
+  account: string
+  generated_at: string
+  /** One sentence built from the counts. No model call. */
+  headline: string
+  counts: {
+    meeting_requests: number
+    needs_reply: number
+    action_items: number
+    meetings_today: number
+    open_tasks: number
+    tasks_due_today: number
+    reminders: number
+  }
+  /** Mail that needs a reply or an action: highest priority first, then newest. */
+  needs_attention: BriefingMailLine[]
+  meetings_today: Array<{
+    event_id?: string | null
+    title?: string
+    start_time?: string
+    end_time?: string
+    provider?: string
+    calendar_provider?: string | null
+    provider_account_id?: string | null
+    attendee_emails?: string[]
+    meeting_link?: string | null
+  }>
+  tasks_due_today: Array<{ id: number; title: string; due_at: string | null; effective_priority?: string }>
+  open_tasks: Array<{ id: number; title: string; due_at: string | null; effective_priority?: string }>
+  reminders: Array<Record<string, unknown>>
+  timezone: string | null
+  /** False when a connected mailbox could not be read: mail counts are a floor. */
+  inbox_complete: boolean
+  sources: MailSource[]
+  /** Sections that could not be loaded: any of agenda, tasks, reminders. */
+  unavailable: string[]
+}
+
+export const fetchDeskBriefing = () => getJson<DeskBriefing>('/desk/briefing', { timeout: 90_000 })
 
 export const fetchDeskHealth = () => getJson<DeskHealth>('/desk/health')
 

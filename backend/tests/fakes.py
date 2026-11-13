@@ -69,6 +69,8 @@ class FakeGateway:
                       "default_meeting_duration_minutes": 30, **(prefs or {})},
             "google_busy": {}, "outlook_busy": [], "google_error": {}, "outlook_error": None,
             "emails": {"gmail": [], "outlook": []}, "mail_error": {},
+            "agenda": {"timezone": "UTC", "days": [{"date": "2026-11-16", "entries": []}]},
+            "tasks": [], "reminders": [], "section_error": set(),
         }
 
     def world(self, address: str) -> Dict[str, Any]:
@@ -114,6 +116,21 @@ class FakeGateway:
         if reasons:
             return {"classification": "requires_reply", "priority": "high", "reasons": reasons}
         return {"classification": "informational", "priority": "low", "reasons": ["no_question_or_request"]}
+
+    def _section(self, user: DeskUser, name: str) -> Any:
+        world = self.users[user.email]
+        if name in world["section_error"]:
+            raise RuntimeError(f"{name} unavailable")
+        return world[name]
+
+    def agenda_today(self, request: Any, user: DeskUser) -> Dict[str, Any]:
+        return self._section(user, "agenda")
+
+    def open_tasks(self, request: Any, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
+        return self._section(user, "tasks")[:limit]
+
+    def upcoming_reminders(self, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
+        return self._section(user, "reminders")[:limit]
 
     def google_busy(self, user: DeskUser, account: str, start: dt.datetime, end: dt.datetime,
                     timezone: str) -> List[Busy]:

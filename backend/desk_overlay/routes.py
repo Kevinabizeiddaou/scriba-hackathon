@@ -34,6 +34,7 @@ from .availability import (
     slot_conflicts,
     suggest_slots,
 )
+from .briefing import build_briefing
 from .capabilities import (
     MAIL_PROVIDERS,
     capabilities_from,
@@ -45,7 +46,7 @@ from .gateway import CalendarReadError
 from .triage import summarize, triage
 
 MAX_RANGE_DAYS = 31
-DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check"]
+DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing"]
 
 
 class SlotCheckBody(BaseModel):
@@ -57,6 +58,33 @@ class SlotCheckBody(BaseModel):
 
 def _bad_request(exc: Exception) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
+
+
+def _draft_context(triage_record: Dict[str, Any], calendar: Optional[Dict[str, Any]]) -> str:
+    """Instructions for Scriba's draft writer, stating only what was verified."""
+    if triage_record.get("category") != "meeting_request":
+        return "Draft a concise, professional reply for the executive to review."
+    intent = triage_record.get("meeting_intent") or "new"
+    if not calendar or not calendar.get("complete"):
+        return (
+            f"This is a meeting request ({intent}). The executive's calendars could not be "
+            "fully checked, so do not confirm or propose any specific time. Acknowledge the "
+            "request and say a time will be confirmed shortly."
+        )
+    slots = calendar.get("slots") or []
+    if not slots:
+        return (
+            f"This is a meeting request ({intent}). The executive has no free time in the "
+            "next working days. Do not confirm any time. Apologise and ask for options "
+            "further out."
+        )
+    listed = "; ".join(f"{slot['start']} to {slot['end']}" for slot in slots[:3])
+    return (
+        f"This is a meeting request ({intent}). Times verified free on every connected "
+        f"calendar ({calendar.get('timezone')}): {listed}. If the sender asked for a time "
+        "that is not in this list, do not confirm it; offer these times instead. Never "
+        "state that a meeting has been booked."
+    )
 
 
 def build_router(gateway: Any, *, now: Any = None) -> APIRouter:
@@ -256,6 +284,7 @@ def build_router(gateway: Any, *, now: Any = None) -> APIRouter:
             # The mailbox any reply must be sent from.
             "replyFrom": {"provider": provider, "providerAccountId": item.get("provider_account_id")},
             "calendar": None,
+            "draftRequest": None,
         }
         if item["triage"]["category"] == "meeting_request":
             try:
@@ -281,7 +310,52 @@ def build_router(gateway: Any, *, now: Any = None) -> APIRouter:
             except InvalidAvailabilityRequest as exc:
                 result["calendar"] = {"complete": False, "reason": "invalid_preferences",
                                       "detail": str(exc), "calendars": [], "slots": []}
+        if item["triage"]["needs_reply"]:
+            # The body for Scriba's EXISTING POST /drafts/create, which writes a
+            # reply draft for review (stored in Scriba; nothing is sent). For a
+            # meeting request the draft is told which times are really free.
+            result["draftRequest"] = {
+                "method": "POST",
+                "path": "/drafts/create",
+                "body": {
+                    "provider": provider,
+                    "email_id": item.get("id"),
+                    "thread_id": thread_id,
+                    "provider_account_id": item.get("provider_account_id"),
+                    "user_context": _draft_context(item["triage"], result["calendar"]),
+                },
+            }
         return result
+
+    @router.get("/briefing")
+    def desk_briefing(request: Request, limit: int = Query(default=50, ge=1, le=100)) -> Dict[str, Any]:
+        """What arrived, what needs the executive, and what is on today."""
+        user = gateway.current_user(request)
+        sources, rows = read_mail(request, user, list(MAIL_PROVIDERS), limit, None)
+        items = [triaged(row) for row in rows]
+        sections: Dict[str, Any] = {"agenda": {}, "tasks": [], "reminders": []}
+        unavailable: List[str] = []
+        for name, load in (
+            ("agenda", lambda: gateway.agenda_today(request, user)),
+            ("tasks", lambda: gateway.open_tasks(request, user, 100)),
+            ("reminders", lambda: gateway.upcoming_reminders(user, 20)),
+        ):
+            try:
+                sections[name] = load()
+            except HTTPException:
+                raise
+            except Exception:  # one missing section must not hide the others
+                unavailable.append(name)
+        briefing = build_briefing(
+            inbox_items=items,
+            inbox_counts=summarize([row["triage"] for row in items]),
+            inbox_complete=all(source["ok"] or source["state"] != "connected" for source in sources),
+            agenda=sections["agenda"] or {},
+            tasks=sections["tasks"] or [],
+            reminders=sections["reminders"] or [],
+        )
+        return {"account": user.email, "generated_at": clock().isoformat(), **briefing,
+                "sources": sources, "unavailable": unavailable}
 
     @router.get("/availability")
     def desk_availability(

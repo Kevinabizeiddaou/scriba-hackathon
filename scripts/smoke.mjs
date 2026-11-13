@@ -222,6 +222,14 @@ if (email && password) {
         (json.reason ? ` (${json.reason})` : '') + `, ${json.slots.length} slot(s)`
     })
 
+    await check('desk: GET /desk/briefing is built from Scriba records', async () => {
+      const { response, json } = await call('/desk/briefing')
+      expect(response.status === 200, `status ${response.status}`)
+      expect(typeof json?.headline === 'string' && json?.counts, 'unexpected shape')
+      expect(Array.isArray(json.unavailable), 'no unavailable list')
+      return json.headline + (json.unavailable.length ? ` unavailable: ${json.unavailable}` : '')
+    })
+
     await check('desk: a slot check from another site is blocked', async () => {
       const { response, json } = await call('/desk/slots/check', {
         method: 'POST',

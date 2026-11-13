@@ -113,6 +113,27 @@ class ScribaGateway:
 
         return get_user_preferences(user.email) or {}
 
+    # ── briefing inputs ─────────────────────────────────────────────────────
+    def agenda_today(self, request: Any, user: DeskUser) -> Dict[str, Any]:
+        """The payload behind ``GET /agenda/today`` (Scriba's synced calendar)."""
+        return request.app.state.calendar_read_runtime.agenda_today(
+            account_email=user.email, provider=None) or {}
+
+    def open_tasks(self, request: Any, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
+        """The payload behind ``GET /tasks``, open tasks first."""
+        payload = _as_dict(request.app.state.tasks_runtime.list_tasks(
+            account=None, provider=None, limit=limit, order="actionable"))
+        return [task for task in (payload.get("tasks") or []) if isinstance(task, dict)]
+
+    def upcoming_reminders(self, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
+        """The payload behind ``GET /reminders/upcoming``."""
+        from apps.api import reminders as reminders_api
+
+        records = reminders_api.UpcomingReminders(reminders_api.reminder_repository()).execute(
+            user.id, limit=limit, provider=None)
+        payload = _as_dict(reminders_api.upcoming_reminders_response(user.email, records))
+        return [item for item in (payload.get("reminders") or []) if isinstance(item, dict)]
+
     # ── calendars ───────────────────────────────────────────────────────────
     def google_busy(self, user: DeskUser, account: str, start: dt.datetime,
                     end: dt.datetime, timezone: str) -> List[Busy]:
@@ -188,6 +209,22 @@ class ScribaGateway:
                 busy.append(Busy(event_start, event_end, "outlook", account,
                                  title=(event.get("subject") or None)))
         return busy
+
+
+def _as_dict(value: Any) -> Dict[str, Any]:
+    """Scriba runtimes return either a dict or a JSON response object."""
+    if isinstance(value, dict):
+        return value
+    body = getattr(value, "body", None)
+    if body:
+        import json
+
+        try:
+            parsed = json.loads(body)
+        except ValueError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
 
 
 def _google_error_code(exc: Exception) -> str:

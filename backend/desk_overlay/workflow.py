@@ -129,7 +129,7 @@ class DeskWorkflow:
                     return self.view(ctx, user, existing["id"], duplicate=True)
                 # The ledger says a run exists and Scriba has none (it was
                 # deleted). Take the message again rather than lose it.
-                self.claims.release(user.id, claim_key(key), claim.token)
+                self.claims.reopen(user.id, claim_key(key), claim.token)
                 claim = self._claim(user, key)
             if not claim.claimed:
                 raise IntakeBusy("This message is being taken in by another worker.")
@@ -657,6 +657,8 @@ class DeskWorkflow:
         purposes = self._purposes(user, run, events)
         known = {f["id"]: f for f in lifecycle.follow_ups(events)}
         now = self.service.now(user)
+        executed_at = {(e.get("data") or {}).get("toolCallId"): e.get("at") for e in events
+                       if e.get("kind") == "execution" and (e.get("data") or {}).get("status") == "executed"}
 
         for card in cards:
             purpose = purposes.get(card.get("id"))
@@ -667,8 +669,11 @@ class DeskWorkflow:
                 opened = {"id": follow_id, "state": "waiting", "toolCallId": card.get("id"),
                           "threadId": data.get("thread_id") or meta.get("thread_id"),
                           "waitingOn": sender_address(str(data.get("to") or meta.get("from_addr") or "")),
-                          "subject": meta.get("subject"), "sentAt": now.isoformat(),
-                          "dueAt": (now + dt.timedelta(days=FOLLOW_UP_DAYS)).isoformat()}
+                          "subject": meta.get("subject"),
+                          # When the send executed, where that was recorded.
+                          "sentAt": executed_at.get(card.get("id")) or now.isoformat(),
+                          "dueAt": ((_moment(executed_at.get(card.get("id"))) or now)
+                                    + dt.timedelta(days=FOLLOW_UP_DAYS)).isoformat()}
                 self._record(user, run, "followup", opened)
                 known[follow_id] = opened
 
@@ -676,23 +681,26 @@ class DeskWorkflow:
         if not waiting:
             return
         try:
-            _, rows = self.service.read_mail(ctx, user, [meta["provider"]], 100, None)
+            sources, rows = self.service.read_mail(ctx, user, [meta["provider"]], 100, None)
         except Exception:
+            return
+        if not all(source.get("ok") for source in sources):
             return      # unknown is not "no reply": leave the follow-up as it is
         for follow in waiting:
-            sent_at = str(follow.get("sentAt") or "")
+            sent_at = _moment(follow.get("sentAt"))
             answer = next((row for row in rows
                            if str(row.get("threadId") or "") == str(follow.get("threadId") or "")
                            and sender_address(str(row.get("from_addr") or "")) == follow.get("waitingOn")
                            and str(row.get("id")) != str(meta.get("email_id"))
-                           and str(row.get("timestamp") or "") > sent_at), None)
+                           and sent_at is not None and (_moment(row.get("timestamp")) or sent_at) > sent_at),
+                          None)
             if answer is not None:
                 self._record(user, run, "followup", {
                     "id": follow["id"], "state": "satisfied", "satisfiedBy": answer.get("id"),
                     "satisfiedAt": answer.get("timestamp")})
                 continue
-            due = str(follow.get("dueAt") or "")
-            if follow.get("state") == "waiting" and due and now.isoformat() > due:
+            due = _moment(follow.get("dueAt"))
+            if follow.get("state") == "waiting" and due is not None and now > due:
                 self._record(user, run, "followup", {"id": follow["id"], "state": "overdue"})
                 item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
                         "subject": meta.get("subject"), "threadId": follow.get("threadId"),
@@ -828,6 +836,16 @@ class DeskWorkflow:
             stage = self.view(ctx, user, run["id"], detail=False)["lifecycle"]["stage"]
             totals[stage] = totals.get(stage, 0) + 1
         return totals
+
+
+def _moment(value: Any) -> Optional[dt.datetime]:
+    """An aware datetime from a stored timestamp (ISO text, or epoch milliseconds)."""
+    from .sandbox import parse_time
+
+    text = str(value or "").strip()
+    if text.isdigit():
+        return dt.datetime.fromtimestamp(int(text) / 1000, tz=dt.timezone.utc)
+    return parse_time(text)
 
 
 def _same_title(left: Any, right: Any) -> bool:

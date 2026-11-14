@@ -21,7 +21,9 @@ _MONTHS = ("january", "february", "march", "april", "may", "june", "july", "augu
 _ISO_DATE = re.compile(r"\b(20\d{2})-(\d{2})-(\d{2})\b")
 _DAY_MONTH = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(_MONTHS) + r")\b", re.I)
 _MONTH_DAY = re.compile(r"\b(" + "|".join(_MONTHS) + r")\s+(\d{1,2})(?:st|nd|rd|th)?\b", re.I)
-_BY_WEEKDAY = re.compile(r"\b(?:by|before|on|due|until)\s+(?:this\s+|next\s+)?(" + "|".join(_WEEKDAYS) + r")\b", re.I)
+_BY_WEEKDAY = re.compile(
+    r"\b(?:by|before|on|due|until|deadline(?:\s+is)?|no later than)\s+(?:on\s+)?(?:this\s+|next\s+)?("
+    + "|".join(_WEEKDAYS) + r")\b", re.I)
 _CLOCK = re.compile(r"\b(?:at|by)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", re.I)
 
 # Text that addresses the assistant rather than the executive. Mail is data:

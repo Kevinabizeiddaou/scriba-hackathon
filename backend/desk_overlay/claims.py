@@ -83,6 +83,13 @@ class MemoryClaims:
             if row and row["status"] == "pending":
                 row["status"] = "failed"
 
+    def reopen(self, user_id: int, key: str, token: Any) -> None:
+        """A settled claim whose run no longer exists: let it be taken again."""
+        with self._lock:
+            row = self._rows.get((int(user_id), key))
+            if row:
+                row["status"] = "failed"
+
     def count(self) -> Optional[int]:
         return len(self._rows)
 
@@ -146,6 +153,11 @@ class SqliteClaims:
                          "WHERE user_id = ? AND key = ? AND status = 'pending'",
                          (self._clock().isoformat(), int(user_id), key))
 
+    def reopen(self, user_id: int, key: str, token: Any) -> None:
+        with self._open() as conn:
+            conn.execute("UPDATE desk_claims SET status = 'failed', run_id = NULL, updated_at = ? "
+                         "WHERE user_id = ? AND key = ?", (self._clock().isoformat(), int(user_id), key))
+
     def count(self) -> Optional[int]:
         with self._open() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM desk_claims").fetchone()[0])
@@ -184,6 +196,8 @@ class ScribaReceiptClaims:
     def release(self, user_id: int, key: str, token: Any) -> None:
         if token is not None:
             self.gateway.finish_receipt(token, "failed")
+
+    reopen = release
 
     def count(self) -> Optional[int]:
         return None     # the ledger is shared with Scriba's automations; not counted here

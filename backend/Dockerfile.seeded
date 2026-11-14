@@ -1,0 +1,27 @@
+# Scriba's seeded test backend with the Desk overlay mounted (backend/dev/seeded_desk_server.py).
+#
+# Scriba's real FastAPI app with every storage boundary in memory: no database, no provider
+# network, no model. Seeded users are listed at the top of Scriba's e2e/seeded_server.py.
+#
+# Scriba's code is NOT copied into the image. The image only holds Scriba's Python
+# dependencies (from the `scriba` build context, Scriba's Gmail/ directory); docker-compose
+# mounts the checkout at /scriba and this repository's backend/ at /desk at run time.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    SCRIBA_BACKEND_PATH=/scriba
+
+# Every pinned requirement ships a prebuilt wheel for CPython 3.12 on linux/amd64, so no
+# compiler is installed (--only-binary makes a missing wheel fail loudly instead of compiling).
+COPY --from=scriba requirements.txt /tmp/scriba-requirements.txt
+RUN pip install --only-binary=:all: -r /tmp/scriba-requirements.txt
+
+# The checkout is mounted read-only; Scriba's file storage defaults to ./data inside it.
+ENV STORAGE_DIR=/tmp/scriba-data
+
+WORKDIR /scriba
+EXPOSE 8000
+CMD ["python", "/desk/dev/seeded_desk_server.py", "--host", "0.0.0.0", "--port", "8000"]

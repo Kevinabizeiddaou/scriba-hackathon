@@ -2,7 +2,6 @@
 #
 # Targets:
 #   dev   Vite dev server with hot reload (source bind-mounted by docker-compose).
-#   test  Unit tests + typecheck (`docker build --target test frontend`).
 #   prod  Static build served by nginx.
 #
 # Node 22 on Debian (glibc): Vite 8 / Rolldown ship native bindings, and the lockfile
@@ -31,10 +30,6 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_DESK_MODE=$VITE_DESK_MODE
 COPY . .
 RUN npm run build
-
-# --- test ----------------------------------------------------------------------------
-FROM build AS test
-RUN npm test
 
 # --- prod ----------------------------------------------------------------------------
 FROM nginx:1.27-alpine AS prod

@@ -138,6 +138,37 @@ inbox, triage and briefing need the backend to run with the Desk overlay
 `npm run dev:demo` runs the same screens on an in-memory mock with fictional
 people and no backend. It is labelled as mock data on every screen.
 
+### In Docker
+
+Only Docker is needed; no local Node or Python. From the repository root:
+
+```bash
+docker compose up --build api                         # Scriba's seeded test backend + Desk overlay, http://localhost:8000
+docker compose up --build desk                        # live workspace, hot reload, http://localhost:5173
+docker compose --profile demo up --build desk-demo    # mock data, no backend,      http://localhost:5174
+docker compose --profile prod up --build desk-prod    # production build on nginx,  http://localhost:5173
+docker compose --profile test run --rm --build frontend-tests   # typecheck + unit tests
+docker compose --profile test run --rm --build backend-tests    # overlay unit and route tests
+```
+
+- `desk` and `desk-prod` publish host port 5173 (Scriba only trusts that
+  origin), so stop a local `npm run dev` first.
+- The browser, not the container, calls the Scriba API, so the default is
+  still `http://localhost:8000`. Set `VITE_API_BASE_URL` in your shell (or a
+  local `.env` next to `docker-compose.yml`) to use another API; for
+  `desk-prod` it is baked in at build time, so rebuild after changing it.
+- The container keeps its own Linux `node_modules`. After a dependency change,
+  run `docker compose up --build -V desk` to refresh it.
+- `api` runs Scriba's seeded test backend (real app, in-memory data, no
+  database, providers or model) with the Desk overlay, on port 8000 where the
+  Desk looks by default. It needs a Scriba checkout outside this repository:
+  `git clone https://github.com/ScribaAssist/Scriba ../scriba`, or set
+  `SCRIBA_PATH` to an existing checkout's `Gmail/` directory. The checkout and
+  `backend/` are mounted read-only; restart `api` after editing the overlay.
+  Seeded users are listed at the top of Scriba's `e2e/seeded_server.py`.
+- Without `api`, the Desk shows "The Scriba API at http://localhost:8000 could
+  not be reached: Network Error" and sign-in fails.
+
 ## Tests
 
 ```bash

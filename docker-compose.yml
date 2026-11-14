@@ -1,6 +1,7 @@
 # Scriba Executive Desk in Docker.
 #
-#   docker compose up desk                          live workspace, hot reload    http://localhost:5173
+#   docker compose up api desk                      seeded Scriba API + live workspace, hot reload
+#                                                   http://localhost:5173 (API on :8000)
 #   docker compose --profile demo up desk-demo      mock data, no backend needed  http://localhost:5174
 #   docker compose --profile prod up --build desk-prod   production build (nginx) http://localhost:5173
 #   docker compose --profile test run --rm frontend-tests
@@ -11,6 +12,20 @@
 # must be served on host port 5173: Scriba only trusts credentialed requests from that origin.
 
 services:
+  # Scriba's seeded test backend (in-memory, no database, no providers, no model) with the
+  # Desk overlay. Needs a Scriba checkout outside this repo: SCRIBA_PATH is its Gmail/ directory.
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.seeded
+      additional_contexts:
+        scriba: ${SCRIBA_PATH:-../scriba/Gmail}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${SCRIBA_PATH:-../scriba/Gmail}:/scriba:ro
+      - ./backend:/desk:ro
+
   desk:
     build:
       context: ./frontend
@@ -50,11 +65,21 @@ services:
     ports:
       - "5173:80"
 
+  # The frontend tests also read ../backend and ../docs, so those are mounted beside /app.
   frontend-tests:
     profiles: ["test"]
     build:
       context: ./frontend
-      target: test
+      target: dev
+    command: ["sh", "-c", "npm run typecheck && npm test"]
+    environment:
+      # Some UI tests assert local clock times written for UTC+2 (the team's zone).
+      TZ: ${TZ:-Asia/Beirut}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./backend:/backend:ro
+      - ./docs:/docs:ro
 
   backend-tests:
     profiles: ["test"]

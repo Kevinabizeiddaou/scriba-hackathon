@@ -228,6 +228,11 @@ def test_what_counts_as_putting_an_answer_off():
     assert not requests.is_holding_reply("Yes, that suits us. We will see you there.")
     assert not requests.is_holding_reply("Thursday is better for me, I will be travelling on Wednesday.")
     assert requests.is_holding_reply("I'll come back to you once legal has looked.")
+    # Found by Agent 4's simulation: an answer that lists what is still outstanding is an answer.
+    assert not requests.is_holding_reply("The only items still outstanding are the two bank confirmations "
+                                         "and the lease schedule. Everything else has been received.")
+    assert requests.is_holding_reply("We are still waiting for the bank.")
+    assert requests.is_holding_reply("Still chasing the surveyor on this one.")
     assert requests.is_holding_reply("We should have an answer for you shortly.")
 
 
@@ -442,3 +447,19 @@ def test_a_new_meeting_a_model_read_is_not_turned_into_a_move_by_a_wording_rule(
     moved = other.intake("n2").json()
     assert [a["tool_name"] for a in moved["actions"]] == ["update_calendar_event"]
     assert moved["actions"][0]["input"]["event_id"] == "evt-old" and len(other.world().events) == 1
+
+
+# ── two tests the mutation check showed were missing ────────────────────────
+
+def test_saying_fyi_does_not_cover_an_instruction_in_the_same_message():
+    assert not requests.no_work_established(
+        "Audit", "FYI the audit starts Monday. Please send the auditors the fixed-asset register.")
+    assert not requests.no_work_established("Audit", "No action needed on the quay. Kindly cancel the Tuesday briefing.")
+    assert requests.no_work_established("Audit", "FYI the audit starts Monday.")
+
+
+def test_a_line_after_the_sign_off_is_not_the_message():
+    body = ("Could we meet Tuesday at 10:00 for 30 minutes?\n\nKind regards,\nImogen Tavares\n"
+            "Please ring the duty desk for anything urgent while I am travelling.")
+    assert [u["kind"] for u in requests.units("Berth", body)] == ["scheduling"]
+    assert requests.sentences(body) == ["Could we meet Tuesday at 10:00 for 30 minutes?"]

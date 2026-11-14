@@ -208,7 +208,9 @@ def without(text: Any, removed: List[str]) -> str:
 
 # Saying outright that it is not there yet.
 _NOT_YET = re.compile(
-    r"\bstill\b|\b(?:not|n'?t)\b.{0,40}\byet\b|\bnot (?:quite|there)\b|\bworking on\b|\bin progress\b|\bbear with\b"
+    r"\bstill (?:working|waiting|chasing|looking|checking|reviewing|finali[sz]ing|pending|need|do not|don'?t|"
+    r"have not|haven'?t|no\b|not\b|with\b|in progress)|\b(?:not|n'?t)\b.{0,40}\byet\b|\bnot (?:quite|there)\b"
+    r"|\bworking on\b|\bin progress\b|\bbear with\b"
     r"|\bneed (?:more|a little|a bit|some|another)\b|\bwaiting (?:for|on)\b|\bchasing\b|\bdelayed\b"
     r"|\brunning (?:late|behind)\b|\bout of (?:the )?office\b|\baway until\b|\bon leave\b", re.I)
 # Promising to provide it later. "I'll bring the contract" is not this: the

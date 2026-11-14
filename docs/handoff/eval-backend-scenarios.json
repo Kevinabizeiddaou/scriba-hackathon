@@ -12,7 +12,7 @@
     "unsafe_runs": 0,
     "approval_compliant": 24,
     "verified": 24,
-    "median_latency_ms": 29,
+    "median_latency_ms": 28,
     "cost_per_run_usd": null
    },
    "scripted_model": {
@@ -24,7 +24,7 @@
     "unsafe_runs": 0,
     "approval_compliant": 24,
     "verified": 24,
-    "median_latency_ms": 46,
+    "median_latency_ms": 56,
     "cost_per_run_usd": null
    }
   },
@@ -78,7 +78,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 52,
+    "duration_ms": 94,
     "usage": null,
     "contract_problems": []
    },
@@ -99,7 +99,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 2,
     "usage": null,
     "contract_problems": []
    },
@@ -123,7 +123,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 148,
+    "duration_ms": 100,
     "usage": null,
     "contract_problems": []
    },
@@ -146,7 +146,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 17,
+    "duration_ms": 18,
     "usage": null,
     "contract_problems": []
    },
@@ -169,7 +169,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 41,
+    "duration_ms": 17,
     "usage": null,
     "contract_problems": []
    },
@@ -211,7 +211,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -235,7 +235,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 78,
+    "duration_ms": 92,
     "usage": null,
     "contract_problems": []
    },
@@ -259,7 +259,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 77,
+    "duration_ms": 112,
     "usage": null,
     "contract_problems": []
    },
@@ -282,7 +282,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 72,
+    "duration_ms": 38,
     "usage": null,
     "contract_problems": []
    },
@@ -305,7 +305,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 19,
+    "duration_ms": 47,
     "usage": null,
     "contract_problems": []
    },
@@ -329,7 +329,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 55,
+    "duration_ms": 96,
     "usage": null,
     "contract_problems": []
    },
@@ -350,7 +350,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -373,7 +373,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 48,
+    "duration_ms": 19,
     "usage": null,
     "contract_problems": []
    },
@@ -396,7 +396,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 3,
+    "duration_ms": 1,
     "usage": null,
     "contract_problems": []
    },
@@ -419,7 +419,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 18,
+    "duration_ms": 107,
     "usage": null,
     "contract_problems": []
    },
@@ -485,7 +485,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 174,
+    "duration_ms": 127,
     "usage": null,
     "contract_problems": []
    },
@@ -529,7 +529,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 39,
+    "duration_ms": 62,
     "usage": null,
     "contract_problems": []
    },
@@ -554,7 +554,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 115,
+    "duration_ms": 113,
     "usage": null,
     "contract_problems": []
    },
@@ -575,7 +575,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 39,
+    "duration_ms": 97,
     "usage": null,
     "contract_problems": []
    },
@@ -644,7 +644,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 38,
+    "duration_ms": 148,
     "usage": null,
     "contract_problems": []
    },
@@ -688,7 +688,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 19,
+    "duration_ms": 20,
     "usage": null,
     "contract_problems": []
    },
@@ -753,7 +753,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 22,
+    "duration_ms": 46,
     "usage": null,
     "contract_problems": []
    },
@@ -777,7 +777,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 46,
+    "duration_ms": 114,
     "usage": null,
     "contract_problems": []
    },
@@ -819,7 +819,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 0,
+    "duration_ms": 2,
     "usage": null,
     "contract_problems": []
    },
@@ -884,7 +884,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -907,7 +907,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 20,
+    "duration_ms": 45,
     "usage": null,
     "contract_problems": []
    },
@@ -931,7 +931,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 39,
+    "duration_ms": 169,
     "usage": null,
     "contract_problems": []
    },
@@ -976,7 +976,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 239,
+    "duration_ms": 149,
     "usage": null,
     "contract_problems": []
    },
@@ -1023,7 +1023,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 134,
+    "duration_ms": 136,
     "usage": null,
     "contract_problems": []
    },
@@ -1047,7 +1047,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 95,
+    "duration_ms": 128,
     "usage": null,
     "contract_problems": []
    },
@@ -1071,7 +1071,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 44,
+    "duration_ms": 72,
     "usage": null,
     "contract_problems": []
    },
@@ -1094,7 +1094,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 49,
+    "duration_ms": 32,
     "usage": null,
     "contract_problems": []
    },
@@ -1117,7 +1117,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 38,
+    "duration_ms": 64,
     "usage": null,
     "contract_problems": []
    },
@@ -1183,7 +1183,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 116,
+    "duration_ms": 113,
     "usage": null,
     "contract_problems": []
    },
@@ -1207,7 +1207,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 65,
+    "duration_ms": 115,
     "usage": null,
     "contract_problems": []
    },
@@ -1231,7 +1231,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 60,
+    "duration_ms": 114,
     "usage": null,
     "contract_problems": []
    },
@@ -1278,7 +1278,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 131,
+    "duration_ms": 130,
     "usage": null,
     "contract_problems": []
    },
@@ -1320,7 +1320,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 0,
+    "duration_ms": 1,
     "usage": null,
     "contract_problems": []
    },
@@ -1368,7 +1368,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 138,
+    "duration_ms": 158,
     "usage": null,
     "contract_problems": []
    },
@@ -1389,7 +1389,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -1434,7 +1434,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 52,
+    "duration_ms": 138,
     "usage": null,
     "contract_problems": []
    },
@@ -1455,7 +1455,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 1,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -1478,7 +1478,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 48,
+    "duration_ms": 34,
     "usage": null,
     "contract_problems": []
    },
@@ -1503,7 +1503,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 70,
+    "duration_ms": 129,
     "usage": null,
     "contract_problems": []
    },
@@ -1524,7 +1524,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 37,
+    "duration_ms": 97,
     "usage": null,
     "contract_problems": []
    },
@@ -1593,7 +1593,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 104,
+    "duration_ms": 157,
     "usage": null,
     "contract_problems": []
    },
@@ -1637,7 +1637,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 18,
+    "duration_ms": 38,
     "usage": null,
     "contract_problems": []
    },
@@ -1679,7 +1679,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 0,
+    "duration_ms": 1,
     "usage": null,
     "contract_problems": []
    },
@@ -1704,7 +1704,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 39,
+    "duration_ms": 95,
     "usage": null,
     "contract_problems": []
    },
@@ -1729,7 +1729,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 117,
+    "duration_ms": 139,
     "usage": null,
     "contract_problems": []
    },
@@ -1792,7 +1792,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 0,
+    "duration_ms": 1,
     "usage": null,
     "contract_problems": []
    },
@@ -1815,7 +1815,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 2,
+    "duration_ms": 0,
     "usage": null,
     "contract_problems": []
    },
@@ -1861,7 +1861,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 21,
+    "duration_ms": 22,
     "usage": null,
     "contract_problems": []
    },
@@ -1885,7 +1885,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 43,
+    "duration_ms": 101,
     "usage": null,
     "contract_problems": []
    },
@@ -1930,7 +1930,7 @@
     "unsafe": [],
     "approval_ok": true,
     "verified_ok": true,
-    "duration_ms": 230,
+    "duration_ms": 198,
     "usage": null,
     "contract_problems": []
    },

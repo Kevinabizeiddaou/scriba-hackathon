@@ -20,7 +20,7 @@ tasks, partial failure, model outage, injection, approval replay).
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 24 | 24 |
 | Executed actions verified | 24 | 24 |
-| Median latency (ms, no model call) | 29 | 46 |
+| Median latency (ms, no model call) | 28 | 56 |
 
 ## The 18 scenarios added after it
 

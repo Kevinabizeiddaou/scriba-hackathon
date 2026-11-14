@@ -70,3 +70,19 @@ def test_news_the_desk_acted_on_is_not_handed_over(desk):
     run = deliver(desk, "The fleet insurance policy is renewed and the certificate is filed.")
     assert run["taskUpdates"][0]["state"] == "completed" and run["held"] is None
     assert run["lifecycle"]["stage"] == "COMPLETED"
+
+
+def test_a_reply_the_model_says_is_needed_and_nobody_drafted_is_handed_over(desk):
+    """Found with a real model: a notice of claim was read as needing a
+    reply, nothing was drafted, and the run ended as done with nothing shown."""
+    modelled(desk, {"intents": [intent("reply_needed", "intends to bring a claim under clause 14")]})
+    run = deliver(desk, "I am writing to give notice that Altamira intends to bring a claim under clause 14.")
+    assert run["actions"] == [] and run["held"]["reason"] == "reply_needs_author"
+    assert run["lifecycle"]["stage"] == "ESCALATED" and run["lifecycle"]["final"] is False
+
+
+def test_a_reply_that_was_drafted_is_not_also_a_hand_over(desk):
+    modelled(desk, {"intents": [intent("reply_needed", "Could you confirm"),
+                                intent("task", "Could you confirm by Friday", title="Confirm the terms")]})
+    run = deliver(desk, "Could you confirm by Friday that the terms are acceptable?")
+    assert [a["tool_name"] for a in run["actions"]] == ["create_task"] and run["held"] is None

@@ -381,6 +381,16 @@ class DeskWorkflow:
                 plan["decisions"].append({"decision": "agent_unavailable", "reason": type(exc).__name__,
                                           "explanation": "The model could not be used; the plan above "
                                                          "is rule-based."})
+        asked = {str(i.get("type")) for i in found.get("intents") or []
+                 if (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE}
+        if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
+                and plan["held"] is None and not plan["proposals"] and not plan.get("task_updates"):
+            # A reply is needed and none was drafted. That is not "done":
+            # the message is handed to the person, who writes it.
+            plan["held"] = {
+                "reason": "reply_needs_author", "slots": [], "calendars": [],
+                "message": "This needs a reply in your words, and none could be drafted from what "
+                           "the Desk can verify. It is yours to answer."}
         return plan
 
     @staticmethod

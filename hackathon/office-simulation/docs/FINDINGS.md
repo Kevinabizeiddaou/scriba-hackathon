@@ -1,8 +1,41 @@
 # What the simulation found
 
-Observed on the Desk engine at backend revision `0282558`
-(`agent1/autonomous-engine`, overlay 0.3.0), **rules only, in the sandbox**.
-Every item names the evidence that shows it. Nothing here was fixed in the
+First observed on the Desk engine at backend revision `0282558`
+(`agent1/autonomous-engine`, overlay 0.3.0), then re-run on the integrated
+backend `f06a258` (`agent1/engine-reconciliation`, overlay 0.3.1) and on
+`e080c82` (the newest `agent1/autonomous-engine`, not yet in the integrated
+branch). **Rules only, in the sandbox**, on all three.
+
+The evidence folders now hold the `f06a258` runs. The runs on `0282558`
+that first showed defects 1 to 3 are summarised in
+`evidence/history/0282558/RESULTS.md`. Every item names the evidence that
+shows it.
+
+## Status by backend revision
+
+Same eight days, same seed. One run per revision.
+
+| # | Defect | `0282558` | `f06a258` (integrated) | `e080c82` |
+| --- | --- | --- | --- | --- |
+| 1 | Edit at approval not carried into the confirmation; false "not verified" | present | **fixed**: booked, verified and confirmed at the edited time | present |
+| 2 | Repeated cancellation aimed at another meeting | present | **fixed**: held as `event_not_found` | fixed |
+| 3 | "Move tomorrow's negotiation to 15:00" read as a new meeting | present | **fixed**: the original event is moved | present |
+| 4 | Offered times start at the second of writing | present | present | present |
+| 5 | Reminder for an overdue follow-up has no recipient | present | present | present |
+| 6 | Awaited reply only recognised when the message opens a run | present | present | present |
+| 7 | Replies awaited from before the Desk never become overdue | present | present | the check passes |
+| 8 | Briefing does not report done, awaited or overdue work | present | present | present |
+| 9 | **New.** A request for a new call that mentions an existing meeting ("a short call today at 12:00, right after the quarterly review") is proposed as a move of that meeting | not present | **present** (`evidence/busy/report.md`, "Follow-up after the review") | not present |
+| 10 | **New.** A correction that withdraws an earlier message and then asks plainly ("please disregard my last message ... could we meet on Wednesday at 14:00") is held as `conflicting_instructions` | not present | **present**, safe (`evidence/surprise/report.md`, "Re: Wednesday") | not present |
+| 11 | **New.** A request re-sent after an outage is held as `already_in_progress` instead of being booked | not present | not present | **present**, safe |
+
+Items 9 and 10 come from the fixes for 3 and for a retraction case found by
+the quality lab: the reader now errs toward "this is about an existing
+meeting" and "this message contradicts itself". Both were stopped or handed
+over; neither took effect.
+
+Totals per revision are in `evidence/RESULTS.md`, "By backend revision".
+Nothing was fixed in the backend or the frontend from this workstream. Nothing here was fixed in the
 backend or the frontend: those belong to their owners. The requests that
 follow from these findings are in [INTEGRATION_REQUESTS.md](INTEGRATION_REQUESTS.md).
 
@@ -46,8 +79,9 @@ the run went to `ESCALATED (verification_failed)`.
 - With an executive who reads: she stopped the confirmation; the request
   ended "partly done" with no confirmation sent.
 - With an executive who does not: the client was told the wrong time.
-- Evidence: `evidence/human_in_loop/report.md`, message "Cold-chain lanes:
-  intro call"; `evidence/human_in_loop-trusting/report.md`.
+- Evidence: `evidence/history/0282558/RESULTS.md`, human_in_loop, "Cold-chain
+  lanes: intro call". On `f06a258` the same message is done correctly
+  (`evidence/human_in_loop/report.md`).
 
 ### 2. A repeated cancellation is aimed at a different meeting
 
@@ -55,8 +89,9 @@ After "1:1 Priya Nair" was cancelled, the same message arrived again. The
 Desk proposed cancelling **the Leadership stand-up**: the only meeting the
 sender was still on, and one that had already taken place that morning.
 
-- Evidence: `evidence/busy/report.md`, second "Today's 1:1". Stopped by the
-  executive; executed in `evidence/busy-trusting/`.
+- Evidence: `evidence/history/0282558/RESULTS.md`, busy, "Today's 1:1".
+  Stopped by the executive; executed when she approved unread. On `f06a258`
+  the second message is held (`evidence/busy/report.md`).
 
 ### 3. A request to move a meeting can be read as a new meeting
 
@@ -64,8 +99,9 @@ sender was still on, and one that had already taken place that morning.
 proposal to create a second event rather than move the existing one. The
 phrase "move tomorrow's" is not one the reader recognises as a change.
 
-- Evidence: `evidence/busy/report.md`, "Tomorrow's negotiation";
-  `evidence/busy-trusting/report.md` shows the second event created.
+- Evidence: `evidence/history/0282558/RESULTS.md`, busy, "Tomorrow's
+  negotiation" (a second event was created when she approved unread). On
+  `f06a258` the original event is moved (`evidence/busy/report.md`).
 
 ### 4. Offered times start at the very second the reply is written
 
@@ -148,7 +184,14 @@ frontend shows them as "All day".
 ## The frontend against this backend
 
 Seen while capturing `evidence/demo/screenshots/` with the frontend at
-`origin/agent2/frontend-excellence` (`d60b892`), unmodified. It runs against
+`origin/agent2/frontend-excellence` (`d60b892`), and again while recording
+`evidence/demo/recording/` with `298b7d6` on backend `f06a258`, unmodified
+both times. On `298b7d6` the plan is shown on the run page and the stages
+are in words. Still seen there: the run page prints "stage AWAITING_REPLY"
+as the server state where the server sends `WAITING_FOR_RESPONSE`; times
+follow the browser's zone, not the executive's; the stage labels overlap at
+1280 px; Overview and Inbox carry no sandbox marker of their own and
+executed cards say "Email: sent" without one. It runs against
 the engine with no console or network errors, approvals are enabled in
 sandbox mode ("Approve in sandbox"), and the run detail shows the plan, the
 evidence and the read-back verification. What does not line up:

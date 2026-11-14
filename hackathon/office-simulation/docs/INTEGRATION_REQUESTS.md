@@ -7,7 +7,9 @@ backend or the frontend was edited from this workstream.
 
 ## What the simulator depends on today
 
-It runs against `agent1/autonomous-engine` at `0282558` and uses, unchanged:
+It was built against `agent1/autonomous-engine` at `0282558` and runs unchanged on
+`agent1/engine-reconciliation` at `f06a258` (overlay 0.3.1, where it reads
+`action.effectiveInput`) and on `agent1/autonomous-engine` at `e080c82`. It uses:
 
 - Scriba: `POST /auth/signin`, `GET /chat/tool-calls/{id}`,
   `POST /chat/tool-calls/{id}/approve | cancel | retry`
@@ -51,6 +53,13 @@ clock, so a simulated day has to clear it after a mailbox outage
 with the card's real `updated_at`, which mixes the two clocks.
 
 ### B. Defects to fix (in the order of FINDINGS.md)
+
+Status on `f06a258`: items 1, 2 and 3 are fixed. Two cases appeared with
+those fixes and are worth a test each: a new call "right after the
+quarterly review" is proposed as a move of the review; and "please disregard
+my last message ... could we meet on Wednesday at 14:00" is held as
+contradictory. When the two backend branches are combined, `e080c82` still
+has items 1 and 3 (FINDINGS.md, "Status by backend revision").
 
 1. Carry an approve-time edit into the card's effective input, so that the
    confirmation states the edited time and verification compares against it.
@@ -129,5 +138,6 @@ To run it: `VITE_API_BASE_URL=http://localhost:8914 npx vite --port 5183
 - Tasks and reminders: approval required, or automatic? The product asks;
   the evaluation contract does not. The simulation ran with approvals
   required.
-- No demonstration video has been recorded. The storyboard and the
-  screenshots are ready; see [DEMO_STORYBOARD.md](DEMO_STORYBOARD.md).
+- A silent, captioned recording of the workflow in the Desk frontend exists
+  (`evidence/demo/recording/desk-demo.webm`). No narrated video has been
+  recorded; see [DEMO_STORYBOARD.md](DEMO_STORYBOARD.md).

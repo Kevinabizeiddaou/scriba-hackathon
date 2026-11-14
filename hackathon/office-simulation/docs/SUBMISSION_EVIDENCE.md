@@ -8,7 +8,10 @@ How to read this pack:
 
 - **Verified** means observed in a run whose evidence is in this folder.
   All of it is in a sandbox, on a fictional office, with the Desk running on
-  rules. **No model, no live mailbox and no live calendar was used.**
+  rules. **No model, no live mailbox and no live calendar was used** in the
+  simulator's runs. The backend is `agent1/engine-reconciliation` at
+  `f06a258` (overlay 0.3.1); the same days on two other revisions are in
+  RESULTS.md, one row per commit, never added together.
 - **Planned** means not demonstrated. It is marked every time.
 - The organizers' published requirements were not available in this
   repository when this was written. The headings follow the index card
@@ -131,7 +134,7 @@ the product every task and reminder. The approval is per action, through
 Scriba's existing approve route, and the Desk's execution gate enforces it
 in the server.
 
-**Verified:** over the eight days there were 73 approvals of correct
+**Verified:** over the eight days there were 72 approvals of correct
 proposals, 3 rejections and 2 edits the executive made for her own reasons,
 and 0 actions executed without a recorded approval.
 
@@ -143,8 +146,8 @@ run and an action in that day's `report.md`.
 | | Confirmed |
 | --- | --- |
 | Requests completed correctly | 42 of 77 |
-| Requests correctly handed to the executive | 8 |
-| Calendar changes (created, moved, cancelled) | 31 |
+| Requests correctly handed to the executive | 9 |
+| Calendar changes (created, moved, cancelled) | 30 |
 | Email replies (confirmations and offers of times) | 38 |
 | Tasks | 7 |
 | Follow-ups satisfied | 8 |
@@ -182,20 +185,20 @@ proposal against the ground truth before deciding.
 
 | Kind of intervention | Count | Counts against the agent |
 | --- | --- | --- |
-| Approval of a correct proposal | 73 | No |
+| Approval of a correct proposal | 72 | No |
 | Rejection for her own reasons | 3 | No |
 | Edit for her own reasons | 2 | No |
-| Wrong proposal stopped (manual rescue) | 14 | Yes |
+| Wrong proposal stopped (manual rescue) | 12 | Yes |
 | Proposal corrected at approval | 1 | Yes |
 | Incomplete proposal completed by hand | 1 | Yes |
 | Retry after a provider failure | 6 | Counted separately |
 | Requests left for a human to do | 19 of 77 | Yes |
 
-**Handled with approvals only: 53 of 77 actionable requests (69%).**
+**Handled with approvals only: 54 of 77 actionable requests (70%).**
 
-The same eight days with an executive who approves everything unread: 15
+The same eight days with an executive who approves everything unread: 13
 requests ended with something wrong in the world, against 0 when she reads.
-The approval step is doing real work at this stage, and the 14 stopped
+The approval step is doing real work at this stage, and the 12 stopped
 proposals are the measure of it.
 
 ## 11. Latency and cost
@@ -204,9 +207,13 @@ proposals are the measure of it.
   total (backend start-up excluded), in a sandbox with no model call and no
   provider network; a pass of the intake worker took about 15 ms. This is
   not a latency figure for a live deployment, and none is claimed.
-- **Model usage and cost: not measurable.** No model call was recorded in
-  any run. The Desk reports per-run usage as null, which means unknown, not
-  zero.
+- **Model usage and cost: not measurable in the simulator's runs.** No
+  model call was recorded in any of them. The Desk reports per-run usage as
+  null, which means unknown, not zero.
+- **Real-model sandbox performance** was measured by the backend owner, not
+  by this simulator, on other cases: `docs/handoff/EVAL_CONFIGURED_MODEL.md`
+  on the backend branch. It is a separate measurement and is not combined
+  with the figures here.
 - **Human time:** the reports contain an estimate of assistant minutes for
   the confirmed work. It is an assumption written by the simulator's author
   and is labelled as one; it is not a measurement and must not be presented
@@ -220,12 +227,13 @@ proposals are the measure of it.
   acted on. All four compound messages needed a person.
 - **Sandbox only.** No live Google or Microsoft account was read or written.
   External writes are disabled in the Desk by construction.
-- **Eight defects** found by the simulation are listed in
-  [FINDINGS.md](FINDINGS.md), among them: an edit at approval is not carried
-  into the confirmation; a repeated cancellation is aimed at another
-  meeting; offered times can start at the second of writing; the reminder
-  for an overdue follow-up has no recipient; the briefing does not report
-  what was done or what is overdue.
+- **Defects** found by the simulation are listed in
+  [FINDINGS.md](FINDINGS.md) with their status per backend revision. On
+  `f06a258` three of the first eight are fixed (the edit at approval, the
+  repeated cancellation, the reschedule read as a new meeting) and two new
+  ones appeared from those fixes. Still open: offered times can start at the
+  second of writing; the reminder for an overdue follow-up has no recipient;
+  the briefing does not report what was done or what is overdue.
 - **Follow-up and reporting are the weakest steps** of the ten.
 - **Author bias.** The scenarios and the ground truth were written by one
   person who had read the Desk's rules. The independent adversarial
@@ -247,4 +255,6 @@ meeting is moved, not duplicated. An urgent decision becomes a task due
 today. At the end of the day, 7 of 11 requests needed nothing from the
 executive but approvals; two wrong proposals were stopped; one awaited reply
 was missed. Storyboard and narration: [DEMO_STORYBOARD.md](DEMO_STORYBOARD.md).
-No video has been recorded.
+A silent, captioned recording of the first part of this story in the Desk
+frontend exists: `../evidence/demo/recording/desk-demo.webm` (1:59). No
+narrated video has been recorded.

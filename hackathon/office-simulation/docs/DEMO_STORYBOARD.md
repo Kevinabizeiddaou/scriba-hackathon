@@ -1,6 +1,18 @@
 # Two-minute demonstration: storyboard, narration, shot list
 
-**No video has been recorded.** This is the plan for one, built on what the
+**A silent recording exists; a narrated one does not.**
+`evidence/demo/recording/desk-demo.webm` (1:59, one continuous take) shows
+shots 2 to 5 below in the unmodified Desk frontend (`298b7d6`) on the
+integrated backend (`f06a258`, overlay 0.3.1): a message arrives, the Desk's
+own worker picks it up 12 seconds later with nobody asking, the plan, two
+real clicks on "Approve in sandbox", the read-back verification, the run
+completed; then a second request for a busy time, answered with an offer of
+free times. Every frame carries the SIMULATED bar and a caption saying what
+is happening. `desk-demo.json` beside it lists each step with its offset,
+the run and action ids, what the server answered, and every request the
+script made. Nothing has been narrated or edited.
+
+What follows is the plan for the narrated two minutes, built on what the
 software does today. Every shot is reproducible with
 `python -m officesim demo` (terminal) and
 `python -m officesim demo --browser --frontend http://localhost:5183`
@@ -28,11 +40,11 @@ The job stays the same in every shot: Executive Inbox-to-Action Management.
 | 00:30 to 00:55 | 3. Understanding and planning | Run detail for Mei's request: the stages; the reads (thread, three calendars); the plan with two steps, the second depending on the first; the fact "free on every connected calendar"; the assumption "the only attendee is the sender" | "For each one it reads the thread and all three calendars, and writes a plan. Book the call on Wednesday at two, then confirm to the sender, and only after the booking exists. It states what it verified, and what it assumed." |
 | 00:55 to 01:15 | 4. Two providers, and the approval | Approval center: the booking, and Greta's request for a time that is taken, answered with a reply offering free times. Then the multi-provider day's report rows: a Gmail request not booked because the Outlook board meeting is at that time; an Outlook request booked on the Outlook calendar | "A second client wants a time that is already taken. The Desk does not book it. It proposes a reply with times that are free on Google and on Outlook. Nothing goes out until the executive approves, action by action. On the multi-provider day, a Gmail request was not booked because the conflict was on the Outlook calendar, and requests that reached Outlook were booked on Outlook." |
 | 01:15 to 01:40 | 5. Execution, verification, follow-up | Click "Approve in sandbox". The run detail: executed, "Verified: the sandbox world was read back", the confirmation proposed next. Terminal: the client picks one of the offered times; a new run books it; the follow-up closes. Then the unreliable day: a timed-out send settled by a read-back, not sent twice | "She approves. The event is created in the sandbox, and the Desk reads it back before calling it done. Then it proposes the confirmation. Twenty minutes later the client picks one of the offered times: the Desk books it and closes the follow-up. When a provider times out, it reads the state back instead of sending twice." |
-| 01:40 to 02:00 | 6. The measured day, and the difference | The results table. Then two lines from the findings | "Across eight simulated days and seventy-seven requests that needed work, fifty-three were handled with nothing from the executive but an approval, and no wrong action reached the world. Fourteen wrong proposals were stopped at the approval step, and nineteen requests were left for a person. That is rules only, in a sandbox, with no model yet. A chatbot answers when asked. This starts on its own, keeps the state of the work, asks before it acts, and checks what it did." |
+| 01:40 to 02:00 | 6. The measured day, and the difference | The results table. Then two lines from the findings | "Across eight simulated days and seventy-seven requests that needed work, fifty-four were handled with nothing from the executive but an approval, and no wrong action reached the world. Twelve wrong proposals were stopped at the approval step, and nineteen requests were left for a person. That is rules only, in a sandbox, with no model yet. A chatbot answers when asked. This starts on its own, keeps the state of the work, asks before it acts, and checks what it did." |
 
 Read the numbers in shot 6 from `evidence/RESULTS.md` before recording. At
-the time of writing they are: 77 actionable requests; 53 handled with
-approvals only; 0 incorrect; 14 wrong proposals stopped; 19 left for a human.
+the time of writing they are: 77 actionable requests; 54 handled with
+approvals only; 0 incorrect; 12 wrong proposals stopped; 19 left for a human.
 
 ## Shot list
 
@@ -42,7 +54,7 @@ approvals only; 0 incorrect; 14 wrong proposals stopped; 19 left for a human.
 | 2 | Terminal, then frontend inbox | `python -m officesim demo --step`: stop after the first step. Still: `evidence/demo/screenshots/01-morning-proposals-inbox.png` |
 | 3 | Frontend run detail | Still: `01-morning-proposals-run-11.png` (plan and reads, before approval) |
 | 4 | Frontend approval center; a report | Stills: `01-morning-proposals-approvals.png`, `03-conflict-offer-proposed-approvals.png`. Report: `evidence/multi_provider/report.md`, rows "Holiday shipping plan" and "Budget committee prep" |
-| 5 | Frontend run detail; terminal | Live: `python -m officesim serve`, inject Mei's message, `tick`, then click Approve in the frontend. Stills: `02-morning-executed-run-11.png`, `04-client-picked-a-slot-booked-run-86.png`. Terminal: the `unreliable` day, step 9 |
+| 5 | Frontend run detail; terminal | Recorded: `evidence/demo/recording/desk-demo.webm`, 0:48 to 1:17 and 1:21 to 1:54. Live: `python -m officesim serve`, inject Mei's message, `tick`, then click Approve in the frontend. Stills: `02-morning-executed-run-11.png`, `04-client-picked-a-slot-booked-run-86.png`. Terminal: the `unreliable` day, step 9 |
 | 6 | The results table | `evidence/RESULTS.md`, first table; `docs/FINDINGS.md`, "What held up" |
 
 For a live recording of shots 2 to 5 in the frontend:
@@ -73,8 +85,10 @@ Then approve in the browser.
   simulator's report.
 - **Any claim about a model, a live mailbox or time saved.** None of the
   three has been measured.
-- **The edit-at-approval path.** It is a known defect (FINDINGS.md, item 1).
-  If asked, show it: the Desk catches its own mismatch and escalates.
+- **A request that mentions an existing meeting** ("a short call right
+  after the quarterly review"). On `f06a258` the Desk proposes moving the
+  review instead of booking the call (FINDINGS.md). The executive stops it,
+  but it is not a scene for a demonstration.
 
 ## A shorter, spoken-only version (about 45 seconds)
 
@@ -84,6 +98,6 @@ reports back. Scriba Executive Desk does that loop. Mail arrives and it
 starts on its own. It reads the thread and every calendar, plans the steps,
 and puts each action in front of the executive. Nothing is sent or changed
 without her approval, and it reads the result back before it says done. In a
-simulated office, over eight days and seventy-seven requests, fifty-three
+simulated office, over eight days and seventy-seven requests, fifty-four
 needed nothing from her but an approval, and no wrong action got through.
 That is on rules alone, in a sandbox. The model and the live mailbox are next."

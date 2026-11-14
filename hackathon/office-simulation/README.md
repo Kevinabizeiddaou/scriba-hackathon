@@ -25,8 +25,9 @@ The simulator is **not a second agent**. It plays two roles the Desk does not:
   passes;
 - **the executive**: she approves, rejects or edits what the Desk proposes.
 
-The work in between is done by the Desk's own code on
-`agent1/autonomous-engine`: the background intake worker, triage, the typed
+The work in between is done by the Desk's own code (the evidence here was
+produced on `agent1/engine-reconciliation` at `f06a258`; it also runs on
+`agent1/autonomous-engine`): the background intake worker, triage, the typed
 plan, Scriba's approval cards and approve route, the execution gate, the
 sandbox world and verification. The simulator then reads the sandbox world's
 state and judges, message by message, whether the right thing happened.
@@ -56,7 +57,7 @@ engine, and a Python that has Scriba's dependencies. Put the three paths in
 ```json
 {
   "SCRIBA_BACKEND_PATH": "<Scriba checkout>/Gmail",
-  "DESK_BACKEND_PATH": "<checkout of agent1/autonomous-engine>/backend",
+  "DESK_BACKEND_PATH": "<checkout of the engine branch>/backend",
   "SCRIBA_PYTHON": "<python with Scriba's dependencies>"
 }
 ```
@@ -170,6 +171,7 @@ at 15:00, and a client can only accept a time the Desk really offered.
 - [docs/FINDINGS.md](docs/FINDINGS.md): defects and gaps the simulation found
 - [docs/INTEGRATION_REQUESTS.md](docs/INTEGRATION_REQUESTS.md): what is needed from the backend and frontend owners
 - [docs/DEMO_STORYBOARD.md](docs/DEMO_STORYBOARD.md): the two-minute demonstration
+- [docs/CHECKPOINT.md](docs/CHECKPOINT.md): the checkpoint package, with links to every workstream
 - [docs/SUBMISSION_EVIDENCE.md](docs/SUBMISSION_EVIDENCE.md): the evidence pack
 - [docs/DIFFERENTIATION.md](docs/DIFFERENTIATION.md): why this is more than a chatbot, claim by claim
 

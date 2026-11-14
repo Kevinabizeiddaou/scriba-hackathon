@@ -53,6 +53,9 @@ class HybridGateway(ScribaGateway):
     def list_emails(self, request, user, **kwargs):
         return self.data.list_emails(request, self._world_user(user), **kwargs)
 
+    def list_sent(self, request, user, provider, mailbox=None):
+        return self.data.list_sent(request, self._world_user(user), provider, mailbox)
+
     def google_busy(self, user, account, start, end, timezone):
         return self.data.google_busy(self._world_user(user), account, start, end, timezone)
 
@@ -89,9 +92,11 @@ def desk_world(*, scope: bool = False):
         def list_conversations(self, user_id, *, limit=50):
             return [dict(r) for r in self.conversations.values() if r["user_id"] == int(user_id)][:limit]
 
-        def create_message(self, *, conversation_id, user_id, role, content, **_):
+        def create_message(self, *, conversation_id, user_id, role, content, metadata=None, **_):
+            # Scriba's repository stores a message's metadata; so does this stand-in.
             row = {"id": len(self.messages) + 1, "conversation_id": conversation_id,
-                   "user_id": int(user_id), "role": role, "content": content}
+                   "user_id": int(user_id), "role": role, "content": content,
+                   "metadata": dict(metadata or {})}
             self.messages.append(row)
             return dict(row)
 
@@ -256,7 +261,11 @@ def meeting_world(**busy):
         data["meeting_plan"] = PLAN
         data.update(busy)
         service = world["chat_service"]
+        # The event card names the Google account that received the request.
+        # Scriba checks that account's Calendar scope against its token store,
+        # which this hermetic world does not have: the answer is scripted.
         with patch.object(service, "_safe_provider_status", lambda account_email: CONNECTED), \
+                patch.object(service, "_google_calendar_account_state", lambda *a, **k: "ok"), \
                 patch.object(service, "execute_action", world["calendar_write"]):
             yield world
 
@@ -278,10 +287,12 @@ def test_meeting_request_event_is_created_before_any_reply_is_proposed():
 
         approved = world["client"].post(event["approve"]["path"], json={}, headers=ORIGIN)
         assert approved.status_code == 200, approved.text
-        assert approved.json()["tool_call"]["status"] == "executed"
+        assert approved.json()["tool_call"]["status"] == "executed", approved.json()["tool_call"]
         assert len(world["calendar_write"].calls) == 1
         sent = world["calendar_write"].calls[0]["kwargs"]["action"]
-        assert sent["action_type"] == "create_calendar_event"
+        assert sent["action_type"] == "create_calendar_event" and sent["provider"] == "google_calendar"
+        # The organizer is the mailbox the request arrived in, named explicitly.
+        assert sent["payload"]["provider_account_id"] == "alice@gmail.example"
 
         after = post(world, f"/runs/{run['runId']}/advance").json()
         reply = next(a for a in after["actions"] if a["tool_name"] == "send_email")
@@ -311,8 +322,11 @@ def test_a_conflict_at_intake_proposes_no_event_at_all():
                      "outlook", "alice@contoso.example", "Board call")]
     with meeting_world(outlook_busy=conflict) as world:
         run = post(world, "/intake", json={"provider": "gmail", "id": "m1"}).json()
-        assert run["actions"] == [] and run["held"]["reason"] == "calendar_conflict"
-        assert world["store"].rows == {} and world["calendar_write"].calls == []
+        assert run["held"]["reason"] == "calendar_conflict"
+        # No event card. What is proposed instead is a reply offering free times.
+        assert [a["tool_name"] for a in run["actions"]] == ["send_email"], run["actions"]
+        assert run["actions"][0]["purpose"] == "offer_times"
+        assert world["calendar_write"].calls == []
 
 
 def test_an_unreadable_calendar_at_intake_proposes_no_event():

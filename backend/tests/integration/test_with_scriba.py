@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from desk_overlay import install
+from desk_overlay.install import uninstall
 from desk_overlay.gateway import CalendarReadError, DeskUser, ScribaGateway
 from desk_overlay.triage import triage
 
@@ -26,8 +27,11 @@ def desk():
     from contract_harness import auth_app, login_as
 
     with auth_app() as (client, users):
-        install(client.app)
-        yield client, users, login_as
+        install(client.app, env={"DESK_CLAIMS": "memory"})
+        try:
+            yield client, users, login_as
+        finally:
+            uninstall(client.app)       # Scriba's app object is shared by every test
 
 
 # ── transferred code stays identical to Scriba's ───────────────────────────

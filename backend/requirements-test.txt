@@ -1,6 +1,0 @@
-# What the overlay's standalone tests need. In production the overlay uses Scriba's own
-# Python environment and adds no dependency of its own.
-fastapi>=0.115
-pydantic>=2.8
-httpx>=0.27
-pytest>=8.3

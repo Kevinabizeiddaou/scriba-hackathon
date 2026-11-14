@@ -56,6 +56,13 @@ class DeskService:
         self.gateway = gateway
         self.clock = clock or (lambda: dt.datetime.now(dt.timezone.utc))
 
+    def now(self, user: Any = None) -> dt.datetime:
+        """The current time for this user: a sandbox world's clock when one is
+        in force for them, otherwise the process clock."""
+        clock_for = getattr(self.gateway, "clock_for", None)
+        world_now = clock_for(user) if callable(clock_for) and user is not None else None
+        return world_now or self.clock()
+
     # ── shared pieces ───────────────────────────────────────────────────────
     def working_context(self, user: Any, timezone: Optional[str], buffer_minutes: Optional[int],
                         duration_minutes: Optional[int]) -> Tuple[str, WorkingHours, int, int]:
@@ -138,7 +145,7 @@ class DeskService:
         verdict = self.gateway.classify(
             from_addr=str(item.get("from_addr") or ""),
             subject=str(item.get("subject") or ""),
-            body=str(item.get("snippet") or ""),
+            body=str(item.get("body") or item.get("snippet") or ""),
         )
         return {**item, "triage": triage(item, verdict)}
 
@@ -217,7 +224,7 @@ class DeskService:
             [(item.start, item.end) for item in busy],
             range_start=range_start, range_end=range_end, timezone=zone_name,
             duration_minutes=duration, buffer_minutes=buffer_value, hours=hours,
-            max_slots=max_slots, not_before=self.clock(),
+            max_slots=max_slots, not_before=self.now(user),
         ) if complete else []
         return {
             "timezone": zone_name,
@@ -248,7 +255,11 @@ class DeskService:
 
     def slot_check(self, ctx: Any, user: Any, *, start: str, end: str,
                    timezone: Optional[str] = None,
-                   buffer_minutes: Optional[int] = None) -> Dict[str, Any]:
+                   buffer_minutes: Optional[int] = None,
+                   ignore: Optional[List[Tuple[dt.datetime, dt.datetime]]] = None) -> Dict[str, Any]:
+        """``ignore`` names busy intervals to leave out: the meeting being
+        moved must not count as a conflict with its own new time. An interval
+        is left out only when its start and end match exactly."""
         zone_name, hours, buffer_value, _ = self.working_context(user, timezone, buffer_minutes, None)
         zone = resolve_zone(zone_name)
         slot_start, slot_end = self.parse_range(start, end, zone_name)
@@ -256,6 +267,10 @@ class DeskService:
         pad = dt.timedelta(minutes=buffer_value)
         calendars, busy = self.read_calendars(ctx, user, slot_start - pad, slot_end + pad, zone_name)
         complete, reason = self.completeness(calendars)
+        if ignore:
+            skipped = {(a.astimezone(dt.timezone.utc), b.astimezone(dt.timezone.utc)) for a, b in ignore}
+            busy = [item for item in busy if (item.start.astimezone(dt.timezone.utc),
+                                              item.end.astimezone(dt.timezone.utc)) not in skipped]
         conflicts = slot_conflicts(busy, slot_start, slot_end, buffer_value)
 
         local_start, local_end = slot_start.astimezone(zone), slot_end.astimezone(zone)
@@ -307,7 +322,7 @@ class DeskService:
             try:
                 zone_name, hours, buffer_minutes, duration = self.working_context(user, None, None, None)
                 zone = resolve_zone(zone_name)
-                start = self.clock().astimezone(zone)
+                start = self.now(user).astimezone(zone)
                 end = start + dt.timedelta(days=days)
                 calendars, busy = self.read_calendars(ctx, user, start, end, zone_name)
                 complete, reason = self.completeness(calendars)
@@ -369,7 +384,7 @@ class DeskService:
             tasks=sections["tasks"] or [],
             reminders=sections["reminders"] or [],
         )
-        return {"account": user.email, "generated_at": self.clock().isoformat(), **briefing,
+        return {"account": user.email, "generated_at": self.now(user).isoformat(), **briefing,
                 "sources": sources, "unavailable": unavailable}
 
 

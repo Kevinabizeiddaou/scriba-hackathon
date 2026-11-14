@@ -1,0 +1,5 @@
+# Context for backend/Dockerfile.railway, which is built from the repository root.
+# The image takes only the overlay package from this repository.
+*
+!backend/desk_overlay/
+**/__pycache__

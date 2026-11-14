@@ -11,6 +11,6 @@ Run it with Scriba's own environment:
     APP_MODULE=desk_overlay.asgi:app   (see backend/README.md)
 """
 
-__version__ = "0.2.0"
+__version__ = "0.4.0"
 
 from .install import install  # noqa: E402,F401

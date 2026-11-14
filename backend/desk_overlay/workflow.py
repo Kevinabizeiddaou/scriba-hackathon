@@ -918,10 +918,14 @@ class DeskWorkflow:
         subject, text = str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")
         # (An instruction that is taken back is stopped earlier, in ``_plan``,
         # before any reader is asked.)
-        if intent == "new" and reading.refers_to_existing(subject, text) and self._sender_has_meeting(user, item):
+        if intent == "new" and not pre_read and reading.refers_to_existing(subject, text) \
+                and self._sender_has_meeting(user, item):
             # New or change is decided from the calendar, not from the verb:
             # the message speaks of an existing meeting and the sender is on
             # one. Booking a second event beside it would be the wrong action.
+            # (Not when a model has read the message and reported a new
+            # meeting: this wording test then moved a meeting nobody asked to
+            # move. A model that reads a change says so, and that is honoured.)
             intent = "reschedule"
             plan["decisions"].append({"decision": "read_as_change", "reason": "refers_to_existing_meeting",
                                       "explanation": "The message refers to a meeting the sender is "

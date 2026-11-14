@@ -411,3 +411,34 @@ def test_a_weekday_that_contradicts_its_date_is_not_booked_whoever_read_the_time
     fine.world().deliver(message_id="d3", from_addr=SOFIA, subject="Berth", thread_id="T-d3",
                          body="Could we meet on Thursday 19 November at 11:00 for 30 minutes?")
     assert [a["tool_name"] for a in fine.intake("d3").json()["actions"]] == ["create_calendar_event"]
+
+
+def test_a_new_meeting_a_model_read_is_not_turned_into_a_move_by_a_wording_rule(desk):
+    """Found with a real model on the reworded suite: the sender was already on
+    a meeting, the message mentioned it, the model read a NEW meeting, and the
+    Desk proposed moving the existing one. The approval stopped it."""
+    desk.world().add_event(provider="google", event_id="evt-old", title="Towage review",
+                           start="2026-11-18T09:00:00+00:00", end="2026-11-18T10:00:00+00:00",
+                           attendees=["sofia@client.example"])
+    body = "After our towage review, could we also meet on Tuesday at 10:00 for 30 minutes about the berth plan?"
+    modelled(desk, {"intents": [intent("new_meeting", "could we also meet on Tuesday at 10:00 for 30 minutes",
+                                       requested_start="2026-11-17T10:00:00+00:00",
+                                       requested_end="2026-11-17T10:30:00+00:00")]})
+    desk.world().deliver(message_id="n1", from_addr=SOFIA, subject="Berth plan", thread_id="T-n1", body=body)
+    run = desk.intake("n1").json()
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"]
+    assert not [a for a in run["actions"] if a["tool_name"] == "update_calendar_event"]
+
+    # A model that reads a change is still honoured: the existing meeting is the one moved.
+    other = Desk()
+    other.world().add_event(provider="google", event_id="evt-old", title="Towage review",
+                            start="2026-11-18T09:00:00+00:00", end="2026-11-18T10:00:00+00:00",
+                            attendees=["sofia@client.example"])
+    modelled(other, {"intents": [intent("reschedule", "push our towage review to Tuesday at 10:00",
+                                        requested_start="2026-11-17T10:00:00+00:00",
+                                        target_event_hint="towage review")]})
+    other.world().deliver(message_id="n2", from_addr=SOFIA, subject="Towage review", thread_id="T-n2",
+                          body="Can we push our towage review to Tuesday at 10:00?")
+    moved = other.intake("n2").json()
+    assert [a["tool_name"] for a in moved["actions"]] == ["update_calendar_event"]
+    assert moved["actions"][0]["input"]["event_id"] == "evt-old" and len(other.world().events) == 1

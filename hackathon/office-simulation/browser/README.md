@@ -88,3 +88,26 @@ They read Scriba's own seeded test stores, not the simulated office: Tasks
 and Calendar show nothing of the simulation, and Activity lists Scriba's own
 seeded cards, whose text was not written for this simulation and is not
 limited to reserved example addresses.
+
+## Recording a video
+
+```
+node browser/record.mjs --frontend http://localhost:5183 --api http://localhost:8924 \
+     --out evidence/demo/recording --name desk-demo [--frontend-rev <sha>] [--no-second-part]
+```
+
+One continuous video (`<name>.webm`, VP9, 1152x720) of the Desk handling two
+messages, plus `<name>.json` and `<name>-still-NN-*.png`. The sandbox must be
+freshly started with `--worker thread`: the Desk's own background worker opens
+the runs, and the message ids are used once per sandbox.
+
+- The script itself, outside the page, makes `POST /sim/clock` once and
+  `POST /sim/deliver` once per message (listed under `scriptRequests`).
+- The page may make the sign-in POST and `POST /chat/tool-calls/<id>/approve`
+  for the action being approved at that moment (listed under `pageWrites`).
+  Any other write from the page is aborted (`blockedWrites`).
+- Every frame carries the yellow bar: the SIMULATED line and a caption for the
+  step. A step that does not happen is captioned as such and gives exit code 1.
+- The browser is put on the sandbox world's clock and time zone.
+- Video needs Playwright's ffmpeg helper: `npx playwright install ffmpeg`.
+  It cannot write MP4; use a full ffmpeg for that.

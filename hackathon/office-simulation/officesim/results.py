@@ -90,6 +90,30 @@ def build(evidence: Path) -> str:
         "(or declining) what the Desk proposed. An approval is not counted against the agent; a rejected "
         "wrong proposal, a correction and a completion by hand are.")
     add("")
+    others = sorted([*(evidence / "history").glob("*/all-profiles.json"),
+                     *(evidence / "compare").glob("*/all-profiles.json")])
+    if others:
+        add("## By backend revision")
+        add("")
+        add("The same eight days, the same seed, the same executive, on other revisions of the Desk "
+            "backend. Each row is one run of the simulator on that commit; rows are not added together.")
+        add("")
+        add("| Backend revision | Overlay | Model | Execution | Approvals only | Done correctly | "
+            "Left for a human | Wrong proposals stopped | Incorrect | Invariant violations |")
+        add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+
+        def row(label: str, data: Dict[str, Any]) -> None:
+            k = data["combined"]
+            e = next(iter(data["perProfile"].values()))["engine"]
+            add(f"| `{e['deskBackend']}` {label} | {e['overlay']} | "
+                f"{'configured' if e['modelConfigured'] else 'none (rules only)'} | {e['executionMode']} | "
+                f"{k['handledWithApprovalsOnly']} of {k['actionable']} | {k['completedCorrectly']} | "
+                f"{k['leftForHuman']} | {k['manualRescues']} | {k['incorrect']} | {k['invariantViolations']} |")
+
+        row("(this document)", _load(evidence / "all-profiles.json"))
+        for path in others:
+            row(f"({path.parent.parent.name})", _load(path))
+        add("")
     add("## By day")
     add("")
     add("| Day | Messages | Actionable | Done correctly | Correctly handed over | Declined | Corrected | "

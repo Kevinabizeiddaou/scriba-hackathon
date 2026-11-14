@@ -235,8 +235,15 @@ def done(action: Mapping[str, Any]) -> bool:
 
 def effective(action: Mapping[str, Any]) -> Dict[str, Any]:
     """What the action does once approved: the proposal, with whatever the
-    executive changed in the approve request. (Scriba keeps such a change
-    beside the card's input, in ``output.approved_overrides``.)"""
+    executive changed in the approve request.
+
+    From overlay 0.3.1 the Desk states this itself (``action.effectiveInput``).
+    Earlier engines kept the edit only beside the card's input, in
+    ``output.approved_overrides``; for those it is worked out here. Either
+    way this is only what the Desk SAYS it did: the verdict is read from the
+    world."""
+    if isinstance(action.get("effectiveInput"), dict) and action["effectiveInput"]:
+        return dict(action["effectiveInput"])
     data = dict(action.get("input") or {})
     approved = (action.get("output") or {}).get("approved_overrides")
     if isinstance(approved, dict):

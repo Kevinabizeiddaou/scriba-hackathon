@@ -63,7 +63,8 @@ def test_storyboard_and_differentiation_quote_the_measured_numbers():
     assert line in text("DEMO_STORYBOARD.md")
     assert f"{c['handledWithApprovalsOnly']} of {c['actionable']} requests that needed work" in text("DIFFERENTIATION.md")
     assert f"({c['followUpsSatisfied']} satisfied)" in text("DIFFERENTIATION.md")
-    assert "No video has been recorded" in text("DEMO_STORYBOARD.md")
+    assert "a narrated one does not" in text("DEMO_STORYBOARD.md")
+    assert (EVIDENCE / "demo" / "recording" / "desk-demo.webm").is_file()
 
 
 def test_every_run_in_the_evidence_was_started_by_the_worker_and_is_simulated():

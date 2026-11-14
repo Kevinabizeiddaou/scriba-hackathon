@@ -231,7 +231,8 @@ class Executive:
         missing = list((action.get("output") or {}).get("missing_fields") or [])
         if action["tool_name"] != "send_email" or missing != ["to"] or not request.get("senderEmail"):
             return None
-        filled = {**action, "input": {**(action.get("input") or {}), "to": request["senderEmail"]}}
+        filled = {**action, "effectiveInput": None,
+                  "input": {**oracle.effective(action), "to": request["senderEmail"]}}
         verdict = (review(filled, request["resolved"], request=request, run=run, state=state,
                           spec=spec, clock=clock) if self.mode == "attentive" else {"ok": True, "why": ""})
         if not verdict["ok"]:

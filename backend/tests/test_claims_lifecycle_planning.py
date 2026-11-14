@@ -273,3 +273,47 @@ def test_every_condition_is_needed_before_writes_are_enabled(monkeypatch):
 def test_sandbox_execution_is_reported_apart_from_external_writes():
     block = readiness.readiness({}, guards_installed=True, scriba_commit=None, sandbox_worlds=2)
     assert block["sandboxExecution"]["available"] is True and block["externalWrites"]["enabled"] is False
+
+
+# ── a time written out in full, read without a model ────────────────────────
+
+@pytest.mark.parametrize("text,start,minutes", [
+    ("Could we meet Tuesday at 10:00 for 30 minutes?", "2026-11-17T10:00:00+00:00", 30),
+    ("Are you free tomorrow at 3pm for an hour?", "2026-11-17T15:00:00+00:00", 60),
+    ("Let's meet on 19 November at 14:30.", "2026-11-19T14:30:00+00:00", None),
+    ("Can we move it to Thursday at 2 pm?", "2026-11-19T14:00:00+00:00", None),
+    ("Monday 09:15 works for the review.", "2026-11-23T09:15:00+00:00", None),     # said on a Monday
+    ("How about 2026-11-20 at 11:00 for half an hour", "2026-11-20T11:00:00+00:00", 30),
+])
+def test_one_written_day_and_one_written_time_are_read(text, start, minutes):
+    found = planning.explicit_request(text, NOW)
+    assert found["requested_start"] == start and found.get("duration_minutes") == minutes
+    assert found["source"] == "rules"
+
+
+@pytest.mark.parametrize("text", [
+    "Could we meet next week sometime?",                       # no day, no time
+    "Could we meet Tuesday?",                                  # no time
+    "Let's talk at 10:00.",                                    # no day
+    "Could we meet Tuesday at 3?",                             # 3 in the morning or the afternoon?
+    "Tuesday at 10:00 or Wednesday at 10:00, whichever suits.",  # a choice, not a request
+    "Tuesday at 10:00 or at 15:00?",
+    "Could we meet Tuesday at 10:00 EST?",                     # somebody else's hour
+    "Tuesday at 10:00 my time would be ideal.",
+    "We met on 3 November at 10:00 last year.",                # resolves to a future date: see below
+    "",
+])
+def test_anything_less_exact_is_left_unread(text):
+    found = planning.explicit_request(text, NOW)
+    if text.startswith("We met"):
+        # A date with no year is read as the next such date. The reader cannot
+        # tell a recollection from a request; the booking gate and the
+        # approval card are what stand behind it.
+        assert found["requested_start"] == "2027-11-03T10:00:00+00:00"
+    else:
+        assert found is None
+
+
+def test_a_time_already_past_is_not_read_as_a_request():
+    late = NOW.replace(hour=20)
+    assert planning.explicit_request("Could we meet on 2026-11-16 at 10:00?", late) is None

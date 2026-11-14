@@ -312,6 +312,8 @@ class ScribaGateway:
         guessing a time."""
         from app import llm_client
 
+        if not self.model_configured():
+            return None         # no model call is attempted: nothing leaves the process
         try:
             plan = llm_client.extract_email_plan(
                 subject=str(item.get("subject") or ""), from_addr=str(item.get("from_addr") or ""),
@@ -326,7 +328,21 @@ class ScribaGateway:
         return plan
 
     def model_configured(self) -> bool:
-        """Whether Scriba's model gateway has a usable configuration."""
+        """Whether the Desk may call Scriba's model gateway.
+
+        ``DESK_MODEL=off`` switches the model off for the Desk whatever Scriba
+        is configured with; the seeded dev backend sets it, because Scriba's
+        test harness installs a placeholder key that would otherwise make
+        every extraction an outbound request that can only fail. A placeholder
+        key is never treated as a configuration.
+        """
+        import os
+
+        if os.environ.get("DESK_MODEL", "auto").strip().lower() in ("off", "0", "false"):
+            return False
+        placeholder = os.environ.get("OPENAI_API_KEY", "").strip() in _PLACEHOLDER_KEYS
+        if placeholder and not os.environ.get("OPENAI_BASE_URL", "").strip():
+            return False
         try:
             from app import llm_client
 
@@ -457,6 +473,9 @@ class ScribaGateway:
                                  title=(event.get("subject") or None)))
         return busy
 
+
+# Keys Scriba's own test harness installs. They are not credentials.
+_PLACEHOLDER_KEYS = frozenset({"test-key", "test", "dummy", "sk-test"})
 
 _usage_sink: contextvars.ContextVar[Optional[List[Dict[str, Any]]]] = contextvars.ContextVar(
     "desk_usage_sink", default=None)

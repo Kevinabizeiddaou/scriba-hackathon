@@ -114,6 +114,10 @@ def sandbox_desk(*, env=None):
 
     store, registry = Store(), WorldRegistry()
     routed = RoutedGateway(ScribaGateway(), registry)
+    # A model is "configured" in these tests and its answer is scripted below
+    # (``extract``). The hermetic environment itself has only a placeholder key.
+    routed.inner.model_configured = lambda: model["on"]
+    model = {"on": True}
     engine = Bomb()
     providers = {name: Bomb() for name in ("calendar_service", "gmail_service", "send_message_once",
                                            "get_access_token", "graph_get", "send_email")}
@@ -170,7 +174,7 @@ def sandbox_desk(*, env=None):
 
         desk = {"client": client, "store": store, "registry": registry, "gate": gate, "prefix": prefix,
                 "engine": engine, "providers": providers, "plan": plan, "sign_in": sign_in,
-                "workflow": workflow, "routed": routed, "users": users, "audit": audit,
+                "workflow": workflow, "routed": routed, "users": users, "audit": audit, "model": model,
                 "world": lambda address=ALICE: registry.default_for(address)}
         yield desk
         # Whatever the test did, no real provider path may have been reached.
@@ -657,3 +661,27 @@ def test_the_worker_reads_status_without_a_session_and_only_for_its_user():
         assert desk["world"](BOB).mail == {"gmail": [], "outlook": []}
         runs = desk["store"].conversations
         assert [row["user_id"] for row in runs.values()] == [1]
+
+
+def test_with_the_model_switched_off_no_model_call_is_attempted():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        desk["model"]["on"] = False
+        run = meeting(desk)                    # the body names one day and one time in full
+        assert desk["plan"]["calls"] == 0      # Scriba's extraction was never called
+        [event] = run["actions"]
+        assert event["tool_name"] == "create_calendar_event" and event["input"]["start"] == THU10[0]
+        reads = {i["data"]["tool"]: i["data"] for i in run["timeline"] if i["kind"] == "read"}
+        assert reads["model.extract_request"]["error"] == "model_not_configured"
+        assert reads["rules.extract_time"]["ok"] is True
+
+
+def test_a_placeholder_key_is_never_treated_as_a_model(monkeypatch):
+    gateway = ScribaGateway()
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("DESK_MODEL", raising=False)
+    assert gateway.model_configured() is False
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-looks-real-but-is-not")
+    monkeypatch.setenv("DESK_MODEL", "off")
+    assert gateway.model_configured() is False
+    assert gateway.extract_meeting(None, {"subject": "x", "body": "y"}, "UTC") is None

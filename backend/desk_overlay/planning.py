@@ -102,6 +102,87 @@ def deadline_from(text: str, now: dt.datetime) -> Optional[dt.datetime]:
     return dt.datetime.combine(day, dt.time(hour, minute), tzinfo=now.tzinfo)
 
 
+_HHMM = re.compile(r"\b([01]?\d|2[0-3])[:.]([0-5]\d)\s*(am|pm)?\b", re.I)
+_H_AMPM = re.compile(r"\b(1[0-2]|0?[1-9])\s*(am|pm)\b", re.I)
+_DURATION = re.compile(r"\bfor\s+(?:(\d{1,3})\s*(?:min|mins|minutes)|(an?|one|two|1|2)\s+hours?|half an hour)\b", re.I)
+_ANY_WEEKDAY = re.compile(r"\b(?:(this|next)\s+)?(" + "|".join(_WEEKDAYS) + r")\b", re.I)
+# A zone named in the text, or "my time": the hour then is not the reader's
+# hour, and the Desk does not convert on a guess.
+_OTHER_ZONE = re.compile(r"\b(?:[ECMP][SD]T|GMT|UTC|CET|CEST|EET|EEST|BST|IST|my time|your time|"
+                         r"local time|o'clock (?:in|at) )\b", re.I)
+
+
+def explicit_request(text: str, now: dt.datetime) -> Optional[Dict[str, Any]]:
+    """A time that is written out in full: exactly one day and exactly one
+    clock time, read in the zone of ``now``. For use when no model is
+    configured. None unless the text is unambiguous:
+
+    - the day is a weekday name, "tomorrow", or a date;
+    - the time is ``HH:MM`` or an hour with am/pm ("3pm"); a bare "at 3" is
+      not enough;
+    - two different days or two different times mean a choice is being
+      offered, which this does not make;
+    - a time zone named in the text means the hour is someone else's.
+    """
+    lowered = " ".join(str(text or "").lower().split())
+    if not lowered or _OTHER_ZONE.search(text or ""):
+        return None
+    days = set()
+    for match in _ISO_DATE.finditer(lowered):
+        try:
+            days.add(dt.date(int(match.group(1)), int(match.group(2)), int(match.group(3))))
+        except ValueError:
+            return None
+    for pattern, order in ((_DAY_MONTH, (1, 2)), (_MONTH_DAY, (2, 1))):
+        for match in pattern.finditer(lowered):
+            month = _MONTHS.index(match.group(order[1]).lower()) + 1
+            for year in (now.year, now.year + 1):
+                try:
+                    candidate = dt.date(year, month, int(match.group(order[0])))
+                except ValueError:
+                    continue
+                if candidate >= now.date():
+                    days.add(candidate)
+                    break
+    if re.search(r"\btomorrow\b", lowered):
+        days.add(now.date() + dt.timedelta(days=1))
+    if not days:      # a weekday name counts only when no date was written
+        for match in _ANY_WEEKDAY.finditer(lowered):
+            ahead = (_WEEKDAYS.index(match.group(2).lower()) - now.weekday()) % 7
+            # A bare weekday means the next one to come; today's name means a week on.
+            ahead = ahead or 7
+            if match.group(1) == "next" and ahead < 7 and now.weekday() < _WEEKDAYS.index(match.group(2).lower()):
+                ahead += 7
+            days.add(now.date() + dt.timedelta(days=ahead))
+    times = set()
+    for match in _HHMM.finditer(lowered):
+        hour, minute, half = int(match.group(1)), int(match.group(2)), (match.group(3) or "").lower()
+        if half and hour <= 12:
+            hour = hour % 12 + (12 if half == "pm" else 0)
+        times.add((hour, minute))
+    spans = [m.span() for m in _HHMM.finditer(lowered)]
+    for match in _H_AMPM.finditer(lowered):
+        if any(start <= match.start() < end for start, end in spans):
+            continue
+        times.add((int(match.group(1)) % 12 + (12 if match.group(2).lower() == "pm" else 0), 0))
+    if len(days) != 1 or len(times) != 1:
+        return None
+    hour, minute = next(iter(times))
+    start = dt.datetime.combine(next(iter(days)), dt.time(hour, minute), tzinfo=now.tzinfo)
+    if start <= now:
+        return None
+    found: Dict[str, Any] = {"requested_start": start.isoformat(), "source": "rules"}
+    duration = _DURATION.search(lowered)
+    if duration:
+        if duration.group(1):
+            found["duration_minutes"] = int(duration.group(1))
+        elif duration.group(2):
+            found["duration_minutes"] = 120 if duration.group(2) in ("two", "2") else 60
+        else:
+            found["duration_minutes"] = 30
+    return found
+
+
 def _words(text: str) -> set:
     stop = {"re", "fwd", "fw", "the", "a", "an", "our", "of", "for", "to", "and", "on", "at", "with",
             "meeting", "call", "reschedule", "rescheduling", "cancel", "cancellation", "move", "moving",

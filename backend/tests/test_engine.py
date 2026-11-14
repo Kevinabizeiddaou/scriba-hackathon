@@ -680,3 +680,45 @@ def test_worker_status_shows_a_user_only_their_own_row():
     theirs = desk.get("/worker", user=OTHER).json()
     assert theirs["worker"]["you"]["opened"] == 0 and theirs["runs"] == {}
     assert EXEC not in str(theirs)
+
+
+# ── with no model configured, only a fully written time is read ─────────────
+
+def test_without_a_model_a_fully_written_time_is_booked_by_rule(desk):
+    desk.gateway.model_available = False
+    meeting_mail(desk)                                         # "Could we meet Tuesday at 10:00 for 30 minutes?"
+    run = desk.intake("m1").json()
+    [event] = run["actions"]
+    assert event["tool_name"] == "create_calendar_event"
+    assert event["input"]["start"] == TUE10[0] and event["input"]["end"] == TUE10[1]
+    reads = {i["data"]["tool"]: i["data"] for i in run["timeline"] if i["kind"] == "read"}
+    assert reads["model.extract_request"] == {"tool": "model.extract_request", "ok": False,
+                                              "error": "model_not_configured"}
+    assert reads["rules.extract_time"] == {"tool": "rules.extract_time", "ok": True, "error": None}
+    planning_stage = next(i["data"] for i in run["timeline"] if i["data"].get("stage") == "PLANNING")
+    assert planning_stage["planner"] == "rules"
+
+
+def test_without_a_model_a_vague_time_is_never_guessed(desk):
+    desk.gateway.model_available = False
+    meeting_mail(desk, body="Could we meet sometime next week, maybe Tuesday afternoon?")
+    run = desk.intake("m1").json()
+    assert run["held"]["reason"] == "time_not_understood"
+    assert "create_calendar_event" not in [a["tool_name"] for a in run["actions"]]
+
+
+def test_a_model_that_answers_nothing_is_not_second_guessed_by_the_rules(desk):
+    meeting_mail(desk)                                         # a model exists and gave no plan
+    run = desk.intake("m1").json()
+    assert run["held"]["reason"] == "time_not_understood"
+    assert "rules.extract_time" not in [i["data"].get("tool") for i in run["timeline"]]
+
+
+def test_without_a_model_a_reschedule_to_a_written_time_moves_the_original(desk):
+    desk.gateway.model_available = False
+    event = review(desk)
+    move_mail(desk, body="Could we reschedule our budget review to Thursday at 14:00?")
+    run = desk.intake("r1").json()
+    [card] = run["actions"]
+    assert card["tool_name"] == "update_calendar_event" and card["input"]["event_id"] == event["id"]
+    assert card["input"]["start"] == "2026-11-19T14:00:00+00:00"

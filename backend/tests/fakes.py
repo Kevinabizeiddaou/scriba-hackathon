@@ -46,6 +46,8 @@ class FakeGateway:
         self.events: Dict[int, List[Dict[str, Any]]] = {}
         self.receipts: Dict[tuple, Dict[str, Any]] = {}
         self.production = False
+        # A model exists by default; what it answers is ``meeting_plan``.
+        self.model_available = True
         self.model_calls: List[Dict[str, Any]] = []
 
     def add_user(self, user_id: int, address: str, *, google: Optional[List[str]] = None,
@@ -100,7 +102,7 @@ class FakeGateway:
         return self.production
 
     def model_configured(self) -> bool:
-        return False
+        return self.model_available
 
     def session_email(self, request: Any) -> Optional[str]:
         from desk_overlay.gateway import acting_user

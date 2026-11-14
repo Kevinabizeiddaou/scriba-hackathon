@@ -363,9 +363,25 @@ class DeskWorkflow:
             plan["usage"].extend(calls)
         else:
             extracted = self.gateway.extract_meeting(user, item, zone_name)
-        action = str((extracted or {}).get("calendar_action") or "").lower()
+        configured = getattr(self.gateway, "model_configured", None)
+        has_model = bool(configured()) if callable(configured) else True
         plan["reads"].append({"tool": "model.extract_request", "ok": bool(extracted),
-                              "error": None if extracted else "no_usable_answer"})
+                              "error": None if extracted else
+                              ("no_usable_answer" if has_model else "model_not_configured")})
+        if not extracted and not has_model:
+            # No model in this process. A time that is written out in full is
+            # read by rule; anything less exact is left unread, never guessed.
+            written = planning.explicit_request(
+                " ".join(str(part or "") for part in (item.get("body") or item.get("snippet"),)),
+                self.service.now(user).astimezone(resolve_zone(zone_name)))
+            plan["reads"].append({"tool": "rules.extract_time", "ok": bool(written),
+                                  "error": None if written else "no_single_written_time"})
+            if written:
+                extracted = {**written, "calendar_action": "create" if intent == "new" else intent}
+                plan["planner"] = "rules"
+        elif extracted:
+            plan["planner"] = "rules+model"
+        action = str((extracted or {}).get("calendar_action") or "").lower()
         # The rule-based intent is the floor. The model may recognise a change
         # the rules missed; it may not turn a change request into a new booking.
         if intent == "new" and action in ("reschedule", "cancel"):

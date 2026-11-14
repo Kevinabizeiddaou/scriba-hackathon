@@ -88,7 +88,7 @@ function LiveSourceNote() {
               : 'Checking the Desk overlay…'}
       </p>
       <p className="mt-1 text-soft">
-        {session.policy.externalWritesEnabled ? 'Approvals you give are carried out for real.' : 'Sending and calendar changes are switched off. Tasks and reminders can be approved.'}
+        {session.policy.externalWritesEnabled ? 'Approvals you give are carried out for real.' : session.policy.executionMode === 'sandbox' ? 'Sandbox: approved mail and calendar actions run against a stand-in. Nothing real is sent or changed.' : 'Sending and calendar changes are switched off. Tasks and reminders can be approved.'}
       </p>
     </div>
   );

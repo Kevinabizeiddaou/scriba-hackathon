@@ -12,7 +12,7 @@ import { ArrowRight, CircleAlert, ClipboardList, Inbox, MailPlus, PlugZap, Refre
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getErrorMessage } from '../api/client'
-import { startDeskIntake, sweepDeskInbox, type DeskInbox, type DeskSweep, type TriagedEmail } from '../api/desk'
+import { fetchDeskWorker, startDeskIntake, sweepDeskInbox, type DeskInbox, type DeskSweep, type TriagedEmail } from '../api/desk'
 import { Button, EmptyState, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui'
 import { SourceBadge } from '../components/workspace'
 import { getApi } from '../harness'
@@ -37,6 +37,8 @@ import {
   type RunQueue,
 } from './deskRuns'
 import { LiveRunDetail } from './LiveRunDetail'
+import { AgentActivity, RunProgress, RunStatus, SandboxTag } from './RunParts'
+import { progressOf, stageInfo, stageOfRun } from './runLifecycle'
 import { parseSender, toMailProvider } from './mappers'
 import { useRequiredLiveSession } from './session'
 
@@ -45,6 +47,19 @@ export function useRunQueue(enabled = true) {
 }
 
 /** Runs that need the user: an approval, an input, a failure to look at, or an unrecognised state. */
+export const WORKER_KEY = ['desk', 'worker'] as const
+
+/**
+ * The background intake worker's status (overlay 0.3). Asked only of a backend that says it
+ * reports one; on any other backend nothing is requested and the screens say intake is manual.
+ */
+export function useDeskWorker() {
+  const session = useRequiredLiveSession()
+  const supported = session.overlay === 'ok' && (session.health?.capabilities ?? []).includes('worker_status')
+  const query = useQuery({ queryKey: WORKER_KEY, queryFn: fetchDeskWorker, enabled: supported, refetchInterval: 30_000 })
+  return { supported, query }
+}
+
 export function runsNeedingUser(queue: RunQueue | undefined): number | null {
   if (!queue) return null
   return queue.entries.filter(entry => entry.run && ['decision', 'input', 'problem', 'unknown'].includes(groupOf(entry.run))).length
@@ -61,6 +76,11 @@ interface SweepRecord {
   automatic: boolean
 }
 
+function RunStatusText({ stage }: { stage: string | null }) {
+  const info = stageInfo(stage)
+  return <span className="font-semibold text-soft">{info ? info.label : 'not reported'}</span>
+}
+
 function RunRow({ entry }: { entry: RunEntry }) {
   const tz = getApi().info.principal.timezone
   const { row, run } = entry
@@ -69,6 +89,9 @@ function RunRow({ entry }: { entry: RunEntry }) {
   const when = run?.createdAt ?? row.createdAt
   const group = run ? groupOf(run) : null
   const next = run ? nextStepOf(run) : null
+  // The stage comes from the run when it was read, otherwise from the list row (overlay 0.3).
+  const stage = run ? stageOfRun(run) : row.stage
+  const progress = run ? progressOf(run) : null
 
   return (
     <li>
@@ -87,12 +110,21 @@ function RunRow({ entry }: { entry: RunEntry }) {
               {when && isInstant(when) && <span className="tabular-nums text-mute">picked up {fmtDayTime(when, tz)}</span>}
             </p>
           </div>
+          {(run?.simulated ?? row.simulated) && <SandboxTag />}
           {group ? (
             <Pill tone={QUEUE_GROUPS[group].tone} spin={group === 'in_progress'}>{QUEUE_GROUPS[group].label}</Pill>
+          ) : stage ? (
+            <RunStatus stage={stage} />
           ) : (
             <Pill tone="neutral" icon={null}>{entry.error ? 'Could not be read' : 'Not read'}</Pill>
           )}
         </div>
+        {progress && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <RunProgress steps={progress} timeZone={tz} compact />
+            <span className="text-xs text-mute">Stage: <RunStatusText stage={stage} /></span>
+          </div>
+        )}
         {run && next ? (
           <div className="mt-2.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5 border-t border-line pt-2.5 text-[12.5px]">
             <p className="min-w-0 flex-1 text-soft">
@@ -199,6 +231,14 @@ function WorkQueue() {
   const overlayMissing = session.overlay === 'missing'
   const queue = useRunQueue(session.overlay === 'ok')
   const inbox = useQuery<DeskInbox>({ queryKey: ['desk', 'inbox'], queryFn: () => session.workspace.inbox(), enabled: !overlayMissing })
+  const worker = useDeskWorker()
+  const workerRunning = worker.query.data?.worker.running === true
+  const lastTick = worker.query.data?.worker.lastTickAt ?? null
+  // When the worker reports a new pass, read the runs again: it may have opened some.
+  useEffect(() => {
+    if (lastTick) void queryClient.invalidateQueries({ queryKey: RUNS_KEY })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastTick])
   const [filter, setFilter] = useState<QueueGroup | 'all'>('all')
   const [record, setRecord] = useState<SweepRecord | null>(null)
   const [auto, setAuto] = useState(false)
@@ -283,11 +323,21 @@ function WorkQueue() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <h2 className="text-[14.5px] font-semibold text-ink">Intake</h2>
-              <p className="mt-1 text-[12.5px] leading-[19px] text-soft">
-                The secretary picks up new mail when you ask it to. This backend has no background worker: nothing is picked up while the Desk is closed.
-              </p>
+              {worker.supported ? (
+                <div className="mt-2">
+                  {worker.query.isPending ? (
+                    <p role="status" className="text-[12.5px] text-mute">Asking the backend whether background intake is running…</p>
+                  ) : (
+                    <AgentActivity worker={worker.query.data?.worker ?? null} timeZone={getApi().info.principal.timezone} unavailable={worker.query.isError ? `${getErrorMessage(worker.query.error)}. New mail is still picked up when you check for new work.` : null} />
+                  )}
+                </div>
+              ) : (
+                <p className="mt-1 text-[12.5px] leading-[19px] text-soft">
+                  The secretary picks up new mail when you ask it to. This backend has no background worker: nothing is picked up while the Desk is closed.
+                </p>
+              )}
             </div>
-            <label className="tap flex cursor-pointer items-center gap-2 text-[12.5px] font-medium text-soft">
+            <label className={clsx('tap flex cursor-pointer items-center gap-2 text-[12.5px] font-medium text-soft', workerRunning && 'hidden')}>
               <input type="checkbox" checked={auto} onChange={event => { failures.current = 0; setAuto(event.target.checked) }} className="h-4 w-4 cursor-pointer accent-[var(--accent)]" />
               Check every 5 minutes while this tab is open
             </label>

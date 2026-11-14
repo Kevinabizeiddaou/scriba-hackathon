@@ -39,15 +39,20 @@ export function toolEffect(toolName: string): ToolEffect {
   return 'unknown'
 }
 
-export type DeskHealthWithPolicy = DeskHealth & {
-  /** Proposed. Set by the backend only when its send and calendar safety fixes are verified. */
-  externalWrites?: { enabled?: boolean; revision?: string | null }
-  /** Present on a backend with the Desk chat scope: "enforced" or "off". */
-  chatScope?: string
-}
+/** GET /desk/health. Overlay 0.3 declares the readiness fields itself; older backends omit them. */
+export type DeskHealthWithPolicy = DeskHealth
 
 export interface WritePolicy {
   externalWritesEnabled: boolean
+  /**
+   * What approving a mail or calendar action does for this user, as the backend reports it
+   * (overlay 0.3). `sandbox`: it is applied to an isolated stand-in and nothing real is reached.
+   * Null on a backend that does not say.
+   */
+  executionMode: 'sandbox' | 'external' | 'held' | null
+  /** Why external writes are off, in the backend's words, with each readiness check. */
+  externalWritesMessage: string | null
+  readinessChecks: { id: string; ok: boolean; detail: string }[]
   /** True when the backend narrows the chat agent to Desk tools and gates bookings on availability. */
   chatScopeEnforced: boolean
 }
@@ -55,6 +60,9 @@ export interface WritePolicy {
 export function writePolicyFrom(health: DeskHealthWithPolicy | null | undefined): WritePolicy {
   return {
     externalWritesEnabled: health?.externalWrites?.enabled === true,
+    executionMode: health?.executionMode === 'sandbox' || health?.executionMode === 'external' || health?.executionMode === 'held' ? health.executionMode : null,
+    externalWritesMessage: health?.externalWrites?.message ?? null,
+    readinessChecks: Array.isArray(health?.externalWrites?.checks) ? health!.externalWrites!.checks! : [],
     chatScopeEnforced: health?.chatScope === 'enforced',
   }
 }
@@ -74,6 +82,10 @@ export function approvalGate(toolName: string, policy: WritePolicy): ApprovalGat
   if (effect === 'unknown') {
     return { allowed: false, reason: 'The Desk does not recognise this action, so it will not approve it. It can be cancelled here.' }
   }
+  // In a sandbox the server applies the action to an isolated stand-in for the mailbox and the
+  // calendar. Nothing real is reached, the result is marked simulated everywhere, and the server
+  // enforces it, not this check. A real send still needs externalWrites.enabled.
+  if (policy.executionMode === 'sandbox' && !policy.externalWritesEnabled) return { allowed: true, reason: null }
   if (!policy.externalWritesEnabled) {
     return {
       allowed: false,

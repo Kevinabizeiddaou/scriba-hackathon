@@ -7,7 +7,7 @@ import { Button, Pill } from '../components/ui'
 import { getApi } from '../harness'
 import { hrefFor } from '../lib/router'
 import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
-import { AVAILABILITY_OVERRIDE_FLAG, describeAction, heldByAvailability, providerLabel, type ActionDescription, type ActionKind } from './describeAction'
+import { AVAILABILITY_OVERRIDE_FLAG, asRecord, describeAction, heldByAvailability, providerLabel, type ActionDescription, type ActionKind } from './describeAction'
 import { approveChatToolCall, cancelChatToolCall, retryChatToolCall, type ChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
 import { CONFIRMED_RECIPIENTS_FLAG, explainHold, unverifiedRecipients } from './deskHolds'
@@ -122,7 +122,9 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
   const incomplete = status === 'needs_info' && !heldForAvailability && !heldForRecipients
   const canApprove = gate.allowed && !incomplete && (!heldForAvailability || override) && (!heldForRecipients || recipientsConfirmed)
   const completeInChat = incomplete && (hold === null || hold.resolution === 'complete_in_chat')
-  const unknownOutcome = description.outcome.some(row => row.state === 'unknown')
+  const unknownOutcome = description.outcome.some(row => row.state === 'unknown') || asRecord(toolCall.output).outcome_unknown === true
+  /** A mail or calendar action that this backend would run against a sandbox world, not a provider. */
+  const sandboxed = effect === 'external_write' && session.policy.executionMode === 'sandbox' && !session.policy.externalWritesEnabled
 
   if (effect === 'read') {
     return (
@@ -329,9 +331,12 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
               Cancel action
             </Button>
             <Button variant="primary" icon={Check} onClick={() => approve.mutate()} busy={approve.isPending} disabled={busy || !canApprove} title={gate.reason ?? undefined}>
-              {effect === 'external_write' ? 'Approve and run' : 'Approve'}
+              {effect === 'external_write' ? (sandboxed ? 'Approve in sandbox' : 'Approve and run') : 'Approve'}
             </Button>
             {!gate.allowed && <p className="basis-full text-[12px] text-warn" data-testid="gate-reason">{gate.reason}</p>}
+            {gate.allowed && sandboxed && (
+              <p className="basis-full text-[12px] text-warn" data-testid="sandbox-note">Sandbox: approving applies this to an isolated stand-in for your mailbox and calendar. Nothing real is sent or changed, and the result is not a real success.</p>
+            )}
           </>
         )}
 

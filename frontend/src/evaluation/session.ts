@@ -10,6 +10,7 @@ import { useSyncExternalStore } from 'react';
 import type { EvaluationTarget } from '../harness/client';
 import type { EvaluationReport, EvaluationSnapshot, SnapshotDay } from '../harness/types';
 import { DESK_CASE_SET, DESK_SUITE } from './fixtures';
+import { provenanceOf } from './provenance';
 import { buildSnapshot, isReport, isSnapshot } from './report';
 import { runEvaluation } from './runner';
 import { runSelfTest, type SelfTestReport } from './selfTest';
@@ -17,6 +18,11 @@ import { loadLastLiveReport, loadSnapshots, saveLastLiveReport, saveSnapshot } f
 
 export interface EvaluationSessionState {
   liveReport: EvaluationReport | null;
+  /**
+   * A report from a backend that ran its real workflow with no model (provenance "scripted").
+   * Kept apart from `liveReport`: it never feeds the headline numbers or a snapshot.
+   */
+  scriptedReport: EvaluationReport | null;
   selfTest: SelfTestReport | null;
   snapshots: Partial<Record<SnapshotDay, EvaluationSnapshot>>;
   progress: { done: number; total: number; current: string | null } | null;
@@ -30,7 +36,7 @@ const listeners = new Set<() => void>();
 
 function current(): EvaluationSessionState {
   if (!state) {
-    state = { liveReport: loadLastLiveReport(), selfTest: null, snapshots: loadSnapshots(), progress: null, error: null, notice: null };
+    state = { liveReport: loadLastLiveReport(), scriptedReport: null, selfTest: null, snapshots: loadSnapshots(), progress: null, error: null, notice: null };
   }
   return state;
 }
@@ -102,7 +108,13 @@ export const evaluationSession = {
         saveSnapshot(parsed);
         set({ snapshots: loadSnapshots(), notice: `Imported the ${parsed.day} snapshot.` });
       } else if (isReport(parsed)) {
-        if (parsed.target.dataSource !== 'live') throw new Error('That file is a simulated report. Only reports from a live backend are shown as results.');
+        const origin = provenanceOf(parsed);
+        if (origin === 'scripted') {
+          // A backend's rules-only run is worth reading, in its own panel. It is not an agent result.
+          set({ scriptedReport: parsed, notice: `Imported "${parsed.label}" as a scripted-model run. It is shown on its own and is not counted as an agent result.` });
+          return;
+        }
+        if (origin !== 'real') throw new Error('That file is a simulated report from the scripted mock. Only reports from a backend are shown as results.');
         saveLastLiveReport(parsed);
         set({ liveReport: parsed, notice: `Imported "${parsed.label}".` });
       } else {

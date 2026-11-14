@@ -192,7 +192,7 @@ describe('write policy', () => {
     expect(writePolicyFrom(undefined).externalWritesEnabled).toBe(false)
     // A truthy-looking value is not enough: it must be exactly true.
     expect(writePolicyFrom({ externalWrites: { enabled: 'yes' } } as never).externalWritesEnabled).toBe(false)
-    expect(on).toEqual({ externalWritesEnabled: true, chatScopeEnforced: true })
+    expect(on).toMatchObject({ externalWritesEnabled: true, chatScopeEnforced: true, executionMode: null })
   })
 
   it('blocks approval of mail and calendar actions while external writes are off, and says why', () => {

@@ -43,7 +43,8 @@ vi.mock('./live/scribaApi', async original => ({
 }))
 
 import App from './App'
-import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRuns } from './api/desk'
+import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns } from './api/desk'
+import { deskRun, executedAction } from './test/deskFixtures'
 import { fetchCalendarEvents, fetchProviderStatus, logout } from './api/scriba'
 import { approveChatToolCall, cancelChatToolCall, fetchChatConversations, fetchChatMessages, fetchDrafts, fetchReminders, fetchTasks, retryChatToolCall } from './live/scribaApi'
 
@@ -252,6 +253,19 @@ describe('live overview', () => {
     // A proposal that is still waiting and an action that failed are not finished work.
     expect(handled).not.toHaveTextContent('Re: Board pack')
     expect(handled).not.toHaveTextContent('File expenses')
+  })
+
+  it('lists a finished run once, not once for the run and again for its own action', async () => {
+    const done = { ...CALLS.task, status: 'executed' as const }
+    setBackend([done])
+    vi.mocked(fetchDeskRuns).mockResolvedValue({ account: 'exec@example.test', runs: [{ runId: 9, provider: 'gmail', email_id: 'm-9', subject: 'Board pack by Thursday', from_addr: 'dana@example.test', category: 'action_item', created_at: '2026-11-14T08:00:00+00:00' }] })
+    vi.mocked(fetchDeskRun).mockResolvedValue(deskRun({ runId: 9, state: 'completed', lifecycle: { stage: 'COMPLETED', reason: null, final: true, outcomeUnknown: false, compensation: null }, actions: [executedAction({ toolCallId: done.id })] }))
+    renderApp()
+    const handled = await screen.findByRole('region', { name: 'Handled by the secretary' })
+    await waitFor(() => expect(within(handled).getAllByRole('listitem')).toHaveLength(1))
+    expect(within(within(handled).getByRole('listitem')).getByRole('link')).toHaveAttribute('href', '#/work/9')
+    expect(handled).toHaveTextContent('Board pack by Thursday')
+    expect(handled).not.toHaveTextContent('Send the board pack')
   })
 
   it('says nothing has been finished when the server reports no completed action', async () => {

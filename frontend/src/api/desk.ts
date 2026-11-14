@@ -18,11 +18,40 @@ export interface DeskHealth {
   version: string
   scribaCommit: string | null
   capabilities: string[]
-  /** Always false: the overlay does not send mail or write calendars. */
-  writes: false
+  /**
+   * False on every backend today: nothing is written to a real provider. From overlay 0.3 it
+   * equals `externalWrites.enabled`.
+   */
+  writes: boolean
   /** 'enforced' when Scriba's chat agent is limited to the Desk's tools in this backend. */
   chatScope?: 'enforced' | 'off'
   chatTools?: { read: string[]; approval: string[] }
+
+  // ── overlay 0.3 and later. Absent on an older backend, which means "off". ─
+  /**
+   * Whether approving a mail or calendar action reaches a real provider. Enforced in the server:
+   * with `enabled` false an approve comes back `needs_info` with `external_writes_disabled`.
+   */
+  externalWrites?: {
+    enabled: boolean
+    /** The guarded path to a provider exists in this process. */
+    capable?: boolean
+    /** The project lead's switch. Not sufficient on its own. */
+    authorized?: boolean
+    /** The Scriba revision the safety fixes were verified in, when enabled. */
+    revision?: string | null
+    /** The first check that fails, and why, when disabled. */
+    reason?: string | null
+    message?: string | null
+    checks?: Array<{ id: string; ok: boolean; detail: string }>
+  }
+  /** Approved actions can run against an isolated provider world. Simulated; never a real success. */
+  sandboxExecution?: { available: boolean; worlds: number; note: string }
+  /** What approving a mail or calendar action does for THIS user. */
+  executionMode?: 'sandbox' | 'external' | 'held'
+  sandbox?: { id: string; label: string } | null
+  worker?: Pick<DeskWorkerStatus, 'enabled' | 'running' | 'reason' | 'intervalSeconds' | 'lastTickAt'>
+  model?: { configured: boolean }
 }
 
 export interface DeskCapability {
@@ -297,10 +326,59 @@ export type RunState =
   | 'cancelled'
   | 'no_action_proposed'
 
+/** Why the Desk proposed an action (overlay 0.3). */
+export type DeskActionPurpose =
+  | 'book'
+  | 'reschedule'
+  | 'cancel'
+  | 'confirm'
+  | 'offer_times'
+  | 'clarify'
+  | 'nudge'
+  | 'record_task'
+
+/** One recorded fact about an action, with the time it was recorded. `simulated` is true in a sandbox. */
+export interface DeskActionDecision {
+  decision: 'approve' | 'reject'
+  by: string
+  at: string
+  /** `held`: the approve was refused by the execution gate (see `code`). */
+  result?: 'held'
+  code?: string
+  edited?: string[]
+  simulated?: boolean
+}
+
+export interface DeskActionExecution {
+  /** `unknown`: the provider did not confirm; the action may or may not have happened. */
+  status: 'executed' | 'partially_executed' | 'failed' | 'unknown' | 'held'
+  at: string
+  error?: string | null
+  durationMs?: number
+  simulated?: boolean
+}
+
+export interface DeskActionVerification {
+  verified: boolean
+  /** `sandbox_readback`: the isolated world was read back. `scriba_action_record`: Scriba's own record. */
+  method: 'sandbox_readback' | 'scriba_action_record' | 'user_confirmed' | null
+  reason: string | null
+  at: string
+  /** True when a retry found the effect already there and did not repeat it. */
+  reconciled?: boolean
+}
+
 export interface DeskAction {
   /** Scriba chat tool-call id. Approve, cancel and retry go through Scriba's chat routes. */
   toolCallId: number
-  tool_name: 'create_task' | 'create_calendar_event' | 'send_email' | string
+  tool_name:
+    | 'create_task'
+    | 'create_reminder'
+    | 'create_calendar_event'
+    | 'update_calendar_event'
+    | 'cancel_calendar_event'
+    | 'send_email'
+    | string
   /** Scriba's tool-call status (see BACKEND_CONTRACT section 3). */
   status: string
   requiresApproval: true
@@ -310,13 +388,56 @@ export interface DeskAction {
   /** Present on calendar-event cards when the Desk chat scope is enforced. */
   availability: Partial<DeskSlotCheck> | null
   assistantActionId: number | null
-  /** True only when the card executed AND Scriba recorded the action. Never inferred. */
+  /**
+   * True only on evidence: a read-back of the provider state where one exists (a sandbox),
+   * otherwise Scriba's record of the executed action. Never inferred from the status, and
+   * false for a partly executed action.
+   */
   verified: boolean
   /** Present while the card can be approved. POST it with `{}` (or payload_overrides). */
   approve: { method: 'POST'; path: string } | null
+
+  // ── overlay 0.3 and later. Absent on an older backend. ──────────────────
+  purpose?: DeskActionPurpose | null
+  /** One sentence: why this was proposed. */
+  reason?: string | null
+  /** For a reply that offers times: the times, each verified free on every calendar. */
+  proposedSlots?: Slot[] | null
+  /** The card's whole output, so no second request per action is needed. */
+  output?: Record<string, unknown>
+  /** `output.error_code` for a held or failed card. */
+  errorCode?: string | null
+  /** One identity per real-world effect. A retry of the card reuses it. */
+  idempotencyKey?: string
+  verification?: DeskActionVerification | null
+  /** The provider did not confirm: it may or may not have happened. Check before retrying. */
+  outcomeUnknown?: boolean
+  /** True when the action ran, or would run, against an isolated provider world. */
+  simulated?: boolean
+  proposedAt?: string | null
+  decisions?: DeskActionDecision[]
+  execution?: DeskActionExecution | null
 }
 
+/** Reasons overlay 0.3 adds. `change_request` is no longer sent: a change is resolved or held for one of these. */
+export type DeskHeldReasonV3 =
+  | 'event_not_found'
+  | 'event_ambiguous'
+  | 'not_organizer'
+  | 'calendar_lookup_failed'
+  | 'already_scheduled'
+  | 'task_exists'
+  | 'untrusted_instructions'
+
+/** Every reason a run can be held for, on overlay 0.3. */
+export type DeskHeldReason = DeskRunHeld['reason'] | DeskHeldReasonV3
+
 export interface DeskRunHeld {
+  /**
+   * The reasons of overlay 0.2. Overlay 0.3 ALSO sends the `DeskHeldReasonV3` values here; the
+   * declared type is kept narrow until the screens have a label for each (see
+   * docs/handoff/AGENT1_BACKEND_STATUS.md). Treat an unknown reason as held, never as done.
+   */
   reason:
     | 'calendar_conflict'
     | 'availability_unknown'
@@ -329,6 +450,78 @@ export interface DeskRunHeld {
   calendars: CalendarRead[]
   requested?: Slot
   conflicts?: BusyInterval[]
+  /** The existing meeting a change request is about, when one was found. */
+  target?: { id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' }
+  /** For `event_ambiguous`: the meetings that match. */
+  candidates?: Array<{ id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' }>
+}
+
+/** Where a run stands (overlay 0.3). Derived from the cards and the recorded evidence. */
+export type DeskLifecycleStage =
+  | 'RECEIVED'
+  | 'CLASSIFIED'
+  | 'CONTEXT_GATHERING'
+  | 'PLANNING'
+  | 'AWAITING_APPROVAL'
+  | 'EXECUTING'
+  | 'VERIFYING'
+  | 'COMPLETED'
+  | 'AWAITING_REPLY'
+  | 'NEEDS_CLARIFICATION'
+  | 'ESCALATED'
+  | 'PARTIALLY_COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
+export interface DeskLifecycle {
+  stage: DeskLifecycleStage
+  reason: string | null
+  final: boolean
+  outcomeUnknown: boolean
+  /** Set for PARTIALLY_COMPLETED. The Desk never undoes an executed action by itself. */
+  compensation: { policy: 'escalate'; message: string } | null
+}
+
+export type DeskEvidenceKind =
+  | 'stage'
+  | 'decision'
+  | 'read'
+  | 'proposal'
+  | 'approval'
+  | 'execution'
+  | 'verification'
+  | 'human'
+  | 'followup'
+  | 'usage'
+  | 'error'
+
+/** One recorded event of a run. `summary` never contains message text. */
+export interface DeskTimelineItem {
+  at: string
+  kind: DeskEvidenceKind
+  summary: string
+  data: Record<string, unknown>
+}
+
+export interface DeskFollowUp {
+  id: string
+  state: 'waiting' | 'overdue' | 'satisfied' | 'closed'
+  threadId?: string | null
+  waitingOn?: string | null
+  subject?: string | null
+  sentAt?: string
+  dueAt?: string
+  satisfiedBy?: string
+  updatedAt?: string
+  runId?: number
+}
+
+/** Model usage of a run, from Scriba's own telemetry and price table. Null: no model call was recorded. */
+export interface DeskRunUsage {
+  models: Array<{ model: string; calls: number; inputTokens: number | null; outputTokens: number | null; cachedInputTokens: number | null }>
+  /** Null when any call has no known price. Null is not zero. */
+  estimatedCostUsd: number | null
+  priceSource: string | null
 }
 
 export interface DeskRun {
@@ -353,6 +546,41 @@ export interface DeskRun {
   actions: DeskAction[]
   /** 'advance': call advanceDeskRun. 'draft_reply': post draftRequest to Scriba. */
   next: Array<'advance' | 'draft_reply'>
+
+  // ── overlay 0.3 and later. Absent on an older backend. ──────────────────
+  lifecycle?: DeskLifecycle
+  /** What started the run. `worker`: the background intake worker, with no client open. */
+  trigger?: 'manual' | 'sweep' | 'worker' | 'evaluation'
+  /** True when the run lives in an isolated provider world: nothing real is read or written. */
+  simulated?: boolean
+  flags?: Array<'prompt_injection_suspected' | 'duplicate'>
+  updatedAt?: string
+  /** Number of actions by Scriba status. */
+  actionCounts?: Record<string, number>
+  followUps?: DeskFollowUp[]
+  timeline?: DeskTimelineItem[]
+  usage?: DeskRunUsage | null
+}
+
+/** A row of GET /desk/runs. From overlay 0.3 a row says where the run stands. */
+export interface DeskRunRow {
+  runId: number
+  provider: MailProvider
+  email_id: string
+  subject: string
+  from_addr: string
+  category: TriageCategory
+  created_at: string
+  // ── overlay 0.3 and later ───────────────────────────────────────────────
+  state?: RunState
+  lifecycle?: DeskLifecycleStage
+  next?: Array<'advance' | 'draft_reply'>
+  trigger?: DeskRun['trigger']
+  simulated?: boolean
+  held?: { reason: DeskHeldReason } | null
+  actionCounts?: Record<string, number>
+  updatedAt?: string
+  followUps?: Array<{ id: string; state: DeskFollowUp['state'] }>
 }
 
 export const startDeskIntake = (body: { provider: MailProvider; id: string; mailbox?: string }) =>
@@ -387,14 +615,91 @@ export const sweepDeskInbox = (
   body: { provider?: 'all' | MailProvider; limit?: number; max_new?: number; mailbox?: string } = {},
 ) => postJson<DeskSweep>('/desk/intake/sweep', body, { timeout: 300_000 })
 
-export const fetchDeskRuns = () =>
-  getJson<{ account: string; runs: Array<{ runId: number; subject: string; category: TriageCategory; created_at: string }> }>(
-    '/desk/runs',
-  )
+/** The user's runs, newest first. `limit` 1 to 200, default 50. */
+export const fetchDeskRuns = (limit?: number) =>
+  getJson<{ account: string; runs: DeskRunRow[] }>('/desk/runs', { params: { limit }, timeout: 90_000 })
 
 export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
 
 export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+// ── Worker, follow-ups and the sandbox (overlay 0.3) ────────────────────────
+
+/** The background intake worker. With it running, mail becomes runs with no client open. */
+export interface DeskWorkerStatus {
+  enabled: boolean
+  running: boolean
+  /** Why it is not running: `not_requested`, `refused_production`, `no_users`, `stopped`, `not_installed`. */
+  reason: string | null
+  intervalSeconds?: number
+  limits?: { maxNewPerTick: number; maxPerHour: number; maxPending: number }
+  /** `durable` is false when claims live in this process only (the seeded backend). */
+  claims: { store: 'memory' | 'sqlite' | 'scriba_receipts' | string; durable: boolean }
+  users?: number
+  ticks?: number
+  skippedTicks?: number
+  lastTickAt?: string | null
+  lastTickMs?: number | null
+  opened?: number
+  existing?: number
+  failed?: number
+  deferred?: number
+  advanced?: number
+  lastError?: string | null
+  /** The caller's own row. Another user's is never included. */
+  you?: {
+    served: boolean
+    lastStatus: 'ok' | 'backpressure' | 'rate_limited' | 'mailbox_unreadable' | 'backing_off' | 'failed' | 'sweep_in_progress' | null
+    lastAt: string | null
+    opened: number
+    mailboxUnreadable: boolean
+    consecutiveFailures: number
+  }
+}
+
+export const fetchDeskWorker = () =>
+  getJson<{ account: string; worker: DeskWorkerStatus; runs: Partial<Record<DeskLifecycleStage, number>> }>(
+    '/desk/worker',
+    { timeout: 90_000 },
+  )
+
+/** Replies awaited on mail the Desk sent. Reads mail; sends nothing. */
+export const fetchDeskFollowUps = (options?: { refresh?: boolean; limit?: number }) =>
+  getJson<{ account: string; followUps: DeskFollowUp[]; counts: Record<DeskFollowUp['state'], number> }>(
+    '/desk/follow-ups',
+    { params: { refresh: options?.refresh, limit: options?.limit }, timeout: 90_000 },
+  )
+
+export const closeDeskFollowUp = (runId: number, followUpId: string) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/follow-ups/${encodeURIComponent(followUpId)}/close`)
+
+/** The caller's isolated provider world. 404 when this backend has none for them. */
+export interface DeskSandbox {
+  id: string
+  label: string
+  now: string
+  fixedClock: boolean
+  accounts: { gmail: string[]; outlook: string | null }
+  counts: { inbox: number; sent: number; events: number; tasks: number; reminders: number }
+  /** Everything executed against the world, in order. Every entry is simulated. */
+  operations: Array<{ seq: number; at: string; op: string; status: 'executed' | 'failed' | 'unknown'; object_id: string | null; error: string | null; simulated: true }>
+  /** Real provider clients reached from the sandbox. Must be empty. */
+  isolationViolations: string[]
+}
+
+export const fetchDeskSandbox = () => getJson<{ account: string; world: DeskSandbox }>('/desk/sandbox')
+
+/** Put a synthetic message in the caller's own sandbox mailbox. The worker, or a sweep, takes it in. */
+export const deliverToDeskSandbox = (body: {
+  provider?: MailProvider
+  from_addr: string
+  subject: string
+  body: string
+  thread_id?: string
+}) => postJson<{ delivered: { id: string; threadId: string; provider: MailProvider; timestamp: string; provider_account_id: string } }>(
+  '/desk/sandbox/deliver',
+  body,
+)
 
 /** "Book anyway" for a calendar card held by the booking gate. */
 export const DESK_AVAILABILITY_OVERRIDE = { payload_overrides: { desk_availability_override: true } } as const
@@ -414,6 +719,24 @@ export type DeskHoldCode =
   | 'calendar_conflict'
   | 'availability_unknown'
   | 'desk_check_failed'
+
+/**
+ * Hold codes overlay 0.3 adds (BACKEND_CONTRACT section 7). Kept apart from `DeskHoldCode` so
+ * that code written against 0.2 still compiles; a card can carry any of `DeskAnyHoldCode`.
+ */
+export type DeskGateHoldCode =
+  | 'reply_target_missing'
+  /** Mail and calendar writes are switched off on this backend. Nothing was executed. */
+  | 'external_writes_disabled'
+  /** The provider did not confirm. The action may or may not have happened. */
+  | 'outcome_unknown'
+  /** The card was prepared in a sandbox that no longer exists. */
+  | 'sandbox_world_gone'
+
+export type DeskAnyHoldCode = DeskHoldCode | DeskGateHoldCode
+
+/** Approve body for a card whose outcome is unknown, on a real provider, after the user checked. */
+export const DESK_RETRY_AFTER_UNKNOWN = { payload_overrides: { desk_retry_after_unknown_confirmed: true } } as const
 
 /** Approve body that accepts recipients the user confirmed or typed on the card. */
 export const confirmDeskRecipients = (addresses: string[], extra: Record<string, unknown> = {}) => ({

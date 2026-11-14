@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, Inbox, ListTodo,
 import { useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { backendUrl, getErrorMessage } from '../api/client'
-import { fetchDeskBriefing, type DeskInbox, type MailSource, type TriageCategory } from '../api/desk'
+import { fetchDeskBriefing, fetchDeskFollowUps, type DeskInbox, type MailSource, type TriageCategory } from '../api/desk'
 import { Button, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui'
 import { Section, SourceBadge } from '../components/workspace'
 import { getApi } from '../harness'
@@ -13,8 +13,10 @@ import { hrefFor, type Page } from '../lib/router'
 import { fmtDayTime, fmtTime, isInstant } from '../lib/time'
 import { describeAction } from './describeAction'
 import { useWorkQueue, QueueCoverage } from './LiveWorkPages'
-import { QUEUE_GROUPS, groupOf, nextStepOf } from './deskRuns'
-import { useRunQueue } from './LiveWorkQueuePage'
+import { QUEUE_GROUPS, QUEUE_ORDER, groupOf, nextStepOf, type QueueGroup } from './deskRuns'
+import { FOLLOW_UPS_KEY, openFollowUps, tracksFollowUps } from './LiveFollowUps'
+import { useDeskWorker, useRunQueue } from './LiveWorkQueuePage'
+import { AgentActivity, FollowUpItem } from './RunParts'
 import { emailKey, parseSender, toAccounts, toMailProvider, toPriority } from './mappers'
 import { useRequiredLiveSession } from './session'
 import { WORK_STAGES, isWorkItem, needsIntervention, needsUser, stageOf } from './workQueue'
@@ -109,6 +111,12 @@ export function LiveOverviewPage() {
   const connections = useQuery({ queryKey: ['desk', 'connections'], queryFn: () => session.workspace.connections() })
   const queue = useWorkQueue()
   const runs = useRunQueue(session.overlay === 'ok')
+  const worker = useDeskWorker()
+  const followUpsTracked = tracksFollowUps(session)
+  const followUps = useQuery({ queryKey: FOLLOW_UPS_KEY, queryFn: () => fetchDeskFollowUps({ refresh: true }), enabled: followUpsTracked })
+  // How many picked-up requests sit in each list of the work queue. Only runs that were read count.
+  const byGroup = new Map<QueueGroup, number>()
+  for (const entry of runs.data?.entries ?? []) if (entry.run) byGroup.set(groupOf(entry.run), (byGroup.get(groupOf(entry.run)) ?? 0) + 1)
   const runsForUser = (runs.data?.entries ?? []).filter(entry => entry.run && ['decision', 'input', 'problem', 'unknown'].includes(groupOf(entry.run)))
 
   useEffect(() => {
@@ -130,9 +138,13 @@ export function LiveOverviewPage() {
   const problems = work.filter(needsIntervention)
   const executing = work.filter(card => stageOf(card.toolCall.status) === 'executing')
   const completed = work.filter(card => stageOf(card.toolCall.status) === 'completed')
+  const finishedRuns = (runs.data?.entries ?? []).filter(entry => entry.run && ['done', 'no_action'].includes(groupOf(entry.run)))
+  const finishedRunActions = new Set(finishedRuns.flatMap(entry => entry.run!.actions.map(action => action.toolCallId)))
   // Finished work, only as the server reports it: actions that ran, and picked-up requests the run closed.
   const handled: { key: string; kind: 'completed' | 'closed'; title: string; detail: string; href: string }[] = [
-    ...completed.map(card => {
+    // A run's actions are chat tool calls (the ids match), so an action whose run is listed below is
+    // not listed a second time on its own.
+    ...completed.filter(card => !finishedRunActions.has(card.toolCall.id)).map(card => {
       const description = describeAction(card.toolCall)
       return { key: `action-${card.toolCall.id}`, kind: 'completed' as const, title: description.headline || description.title, detail: `${description.title}: completed`, href: link('activity') }
     }),
@@ -190,6 +202,22 @@ export function LiveOverviewPage() {
           <div className="min-w-0 space-y-5">
             {session.overlay === 'ok' && (
               <Section title="Requests the secretary picked up" action={<a href={link('work')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Work queue <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+                {worker.supported && worker.query.data && (
+                  <div className="mb-3 border-b border-line pb-3">
+                    <AgentActivity worker={worker.query.data.worker} timeZone={tz} />
+                  </div>
+                )}
+                {runs.data && byGroup.size > 0 && (
+                  <ul aria-label="Picked-up requests by where they stand" className="mb-3 flex flex-wrap gap-1.5">
+                    {QUEUE_ORDER.filter(group => byGroup.has(group)).map(group => (
+                      <li key={group}>
+                        <Pill tone={QUEUE_GROUPS[group].tone} icon={null}>
+                          <span className="tabular-nums">{byGroup.get(group)}</span> {QUEUE_GROUPS[group].label.toLowerCase()}
+                        </Pill>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {runs.isPending && <SkeletonRows rows={2} />}
                 {runs.isError && <ErrorNote error={new Error(`The work queue could not be loaded: ${getErrorMessage(runs.error)}`)} onRetry={() => void runs.refetch()} />}
                 {runs.data && runsForUser.length === 0 && (
@@ -338,11 +366,28 @@ export function LiveOverviewPage() {
               {handled.length > 5 && <p className="mt-2 text-[12px] text-mute">And {handled.length - 5} more in the activity record.</p>}
             </Section>
 
-            <Section title="Follow-ups">
-              <p className="text-[13px] text-soft">
-                Scriba does not yet track sent mail that is waiting for a reply, so the Desk cannot tell you who owes you an answer. Nothing is shown here rather than something invented.
-              </p>
-            </Section>
+            {followUpsTracked ? (
+              <Section title="Replies awaited" action={<a href={link('tasks', 'followups')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Follow-ups <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+                {followUps.isPending && <SkeletonRows rows={2} />}
+                {followUps.isError && <ErrorNote error={new Error(`The follow-ups could not be read: ${getErrorMessage(followUps.error)}`)} onRetry={() => void followUps.refetch()} />}
+                {followUps.data && openFollowUps(followUps.data.followUps) === 0 && (
+                  <p className="text-[13px] text-soft">No reply is being waited for. A follow-up opens when a reply the secretary sent expects an answer.</p>
+                )}
+                {followUps.data && openFollowUps(followUps.data.followUps) > 0 && (
+                  <ul className="space-y-2">
+                    {followUps.data.followUps.filter(followUp => followUp.state === 'overdue' || followUp.state === 'waiting').sort((a, b) => Number(b.state === 'overdue') - Number(a.state === 'overdue')).slice(0, 3).map(followUp => (
+                      <FollowUpItem key={`${followUp.runId}-${followUp.id}`} followUp={followUp} timeZone={tz} />
+                    ))}
+                  </ul>
+                )}
+              </Section>
+            ) : (
+              <Section title="Follow-ups">
+                <p className="text-[13px] text-soft">
+                  Scriba does not yet track sent mail that is waiting for a reply, so the Desk cannot tell you who owes you an answer. Nothing is shown here rather than something invented.
+                </p>
+              </Section>
+            )}
 
             {connections.isPending && <SkeletonRows rows={2} />}
             {connections.isError && <ErrorNote error={new Error(`Connections could not be loaded: ${getErrorMessage(connections.error)}`)} onRetry={() => void connections.refetch()} />}

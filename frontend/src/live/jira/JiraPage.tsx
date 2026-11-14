@@ -110,7 +110,7 @@ function Setup({ status }: { status: JiraStatus }) {
       )}
       {setup && setup.scopesToAdd.length > 0 && (
         <details className="text-[12.5px] text-soft">
-          <summary className="tap cursor-pointer font-medium text-accent">Scopes to add for boards and sprints ({setup.scopesToAdd.length})</summary>
+          <summary className="tap cursor-pointer font-medium text-accent">Scopes to add ({setup.scopesToAdd.length})</summary>
           <p className="mt-1.5 break-words">{setup.scopesToAdd.join(' ')}</p>
         </details>
       )}

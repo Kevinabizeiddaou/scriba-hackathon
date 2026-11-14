@@ -545,6 +545,13 @@ def test_the_feature_map_is_consistent_with_the_actions_and_the_scopes():
     by_id = {row["id"]: row for row in rows}
     assert by_id["my_open"]["granted"] and not by_id["boards"]["granted"]
     assert "read:board-scope:jira-software" in by_id["boards"]["missingScopes"]
+    for feature_id in ("projects", "project_detail", "components"):
+        assert by_id[feature_id]["needs"] == "projects_read" and not by_id[feature_id]["granted"]
+        assert by_id[feature_id]["missingScopes"] == ["read:project:jira"]
+    assert all(row["write"] is False for row in rows if row["needs"] == "projects_read")
+    with_projects = {row["id"]: row for row in features.catalogue(
+        ["read:jira-work", "read:project:jira"])}
+    assert with_projects["projects"]["granted"] and with_projects["project_detail"]["granted"]
     for row in rows:
         if (row["route"] or "").startswith("action "):
             assert row["route"].split()[1] in actions.ACTION_BY_NAME, row["id"]
@@ -552,6 +559,18 @@ def test_the_feature_map_is_consistent_with_the_actions_and_the_scopes():
             assert row["note"]
     assert all(row["granted"] for row in features.catalogue([], simulated=True))
     assert len(policy.recommended_scopes(servicedesk=True, admin=True, webhooks=True)) < 50
+
+
+def test_the_project_read_scope_is_recommended_read_only_and_reported():
+    scopes = policy.recommended_scopes(software=False)
+    assert "read:project:jira" in scopes and len(scopes) == len(set(scopes))
+    assert "read:project:jira" in policy.recommended_scopes()
+    group = policy.GROUP_BY_ID["projects_read"]
+    assert not group.write and not group.optional and group.product == "jira"
+    report = {row["id"]: row for row in policy.scope_report(["read:jira-work"])}
+    assert not report["projects_read"]["granted"] and report["projects_read"]["missing"] == ["read:project:jira"]
+    assert policy.allows("read:jira-work read:project:jira", "projects_read")
+    assert not any(action.needs == "projects_read" for action in actions.ACTIONS)
 
 
 # ── routes ─────────────────────────────────────────────────────────────────
@@ -709,6 +728,24 @@ def test_a_connection_without_the_software_scopes_says_which_to_add():
     assert call(client, "GET", "/desk/jira/issues", params={"view": "my_sprint"}).status_code == 403
     briefing = call(client, "GET", "/desk/jira/briefing").json()
     assert briefing["counts"]["overdue"] == 2 and briefing["sprints"] == [] and briefing["approvals"] is None
+
+
+def test_project_reads_need_the_project_scope():
+    gateway, client, _ = app_for(ON)
+    gateway.connect(scopes=["read:jira-work", "read:jira-user", "write:jira-work", "offline_access"])
+    for path in ("/desk/jira/projects", "/desk/jira/projects/DESK"):
+        refused = call(client, "GET", path)
+        assert refused.status_code == 403 and refused.json()["errorCode"] == "scope_missing", path
+        assert "read:project:jira" in refused.json()["detail"]
+    assert call(client, "GET", "/desk/jira/issues", params={"view": "my_open"}).status_code == 200
+    coverage = {row["id"]: row for row in call(client, "GET", "/desk/jira/features").json()["features"]}
+    assert coverage["projects"]["missingScopes"] == ["read:project:jira"]
+
+    gateway.connect(scopes=["read:jira-work", "read:jira-user", "offline_access", "read:project:jira"])
+    assert [p["key"] for p in call(client, "GET", "/desk/jira/projects").json()["projects"]] == ["DESK", "OPS", "HELP"]
+    assert call(client, "GET", "/desk/jira/projects/DESK").json()["project"]["key"] == "DESK"
+    status = call(client, "GET", "/desk/jira/status").json()
+    assert {row["id"]: row for row in status["scopes"]}["projects_read"]["granted"]
 
 
 def test_the_briefing_survives_a_part_that_fails():

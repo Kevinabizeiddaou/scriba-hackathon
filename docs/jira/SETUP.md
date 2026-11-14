@@ -45,17 +45,22 @@ reconnects once: Atlassian asks for consent again.
 
 ## 3. Scopes
 
-Scriba's default is the first four. Boards and sprints need the granular Jira Software
+Scriba's default is `read:jira-work read:jira-user write:jira-work offline_access`.
+Project reads (`GET /desk/jira/projects` and `/desk/jira/projects/{key}`, which also feed
+the project picker when creating an issue) depend on `read:project:jira`: without it they
+answer 403 `scope_missing` and the Coverage tab names the scope. It is read-only.
+Boards and sprints need the granular Jira Software
 scopes: Jira Software has no classic ones, so the two kinds are mixed (Atlassian asks for
 fewer than 50 in total; this is 14).
 
 | For | Scopes |
 | --- | --- |
-| Issues, projects, filters, comments (read) | `read:jira-work` |
+| Issues, filters, comments (read) | `read:jira-work` |
+| Projects: the list, one project, its issue types and components (read) | `read:project:jira` |
 | People to assign and mention | `read:jira-user` |
 | Create and change issues, comment, log time | `write:jira-work` |
 | Stay connected | `offline_access` |
-| Boards, backlogs, sprints, epics (read) | `read:board-scope:jira-software` `read:sprint:jira-software` `read:epic:jira-software` `read:issue-details:jira` `read:jql:jira` `read:project:jira` |
+| Boards, backlogs, sprints, epics (read) | `read:board-scope:jira-software` `read:sprint:jira-software` `read:epic:jira-software` `read:issue-details:jira` `read:jql:jira` (and `read:project:jira` above) |
 | A board's columns | `read:board-scope.admin:jira-software` |
 | Plan sprints | `write:sprint:jira-software` `write:board-scope:jira-software` `write:issue:jira-software` |
 | Optional: create and release versions | `manage:jira-project` |
@@ -64,7 +69,7 @@ fewer than 50 in total; this is 14).
 The value for `JIRA_SCOPES` without the optional rows:
 
 ```
-read:jira-work read:jira-user write:jira-work offline_access read:board-scope:jira-software read:sprint:jira-software read:epic:jira-software read:issue-details:jira read:jql:jira read:project:jira read:board-scope.admin:jira-software write:sprint:jira-software write:board-scope:jira-software write:issue:jira-software
+read:jira-work read:project:jira read:jira-user write:jira-work offline_access read:board-scope:jira-software read:sprint:jira-software read:epic:jira-software read:issue-details:jira read:jql:jira read:board-scope.admin:jira-software write:sprint:jira-software write:board-scope:jira-software write:issue:jira-software
 ```
 
 A connection made with fewer scopes still works: the Coverage tab and

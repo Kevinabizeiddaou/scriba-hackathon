@@ -56,14 +56,15 @@ Desk's client a 401 means the Scriba session is gone.
 
 ## Coverage
 
-57 features are catalogued in `features.py` and served at `/desk/jira/features`; the
-Coverage tab shows them. 35 are ready (route and screen or action), 4 are served without a
+59 features are catalogued in `features.py` and served at `/desk/jira/features`; the
+Coverage tab shows them. 37 are ready (route and screen or action), 4 are served without a
 screen, 13 are planned with the Jira endpoint they need, 5 are left out with the reason.
 
 | Area | Ready | Planned or left out |
 | --- | --- | --- |
 | Connection | Sign-in, status, disconnect (Scriba's) | Choosing between several sites; API tokens (left out) |
 | My work | Assigned, due, overdue, reported, watching, mentions, briefing | Recently viewed and starred; the notification bell (no API) |
+| Projects | Project list and detail (issue types, components); need `read:project:jira` | |
 | Search | Filters, JQL, saved filters | Saving a filter; dashboard contents (Jira returns settings, not data) |
 | Issue | Read, comments, history, hierarchy and links; create, edit, move, assign, comment, log time, link, watch | Edit or delete a comment, attach a file, flag, vote, bulk change; delete (left out) |
 | Boards and sprints | Boards, columns, backlog, sprints, sprint health; move, rank, create, start, complete | Burndown, velocity, cumulative flow (no API: computed from history) |
@@ -101,7 +102,7 @@ yet. To check on the first real connection:
 - Whether the deprecated Agile listings are already removed (the fallback covers both cases).
 - What completing a sprint through the API does with unfinished issues.
 - `backend/tests/integration` has no Jira test: the overlay's Jira code is covered by
-  `backend/tests/test_jira.py` (59 tests, no Scriba needed) and the frontend by
+  `backend/tests/test_jira.py` (61 tests, no Scriba needed) and the frontend by
   `frontend/src/live/jira/JiraPage.test.tsx`.
 
 ## Known limits of the skeleton

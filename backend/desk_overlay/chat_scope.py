@@ -219,7 +219,7 @@ def run_desk_tool(service: DeskService, ctx: Any, user: DeskUser, name: str,
                                   timezone=(data.get("timezone") or None))
     if name == "find_free_slots":
         zone_name, _, _, _ = service.working_context(user, data.get("timezone") or None, None, None)
-        now = service.clock()
+        now = service.now(user)
         start = str(data.get("start") or "").strip() or now.isoformat()
         end = str(data.get("end") or "").strip()
         if not end:
@@ -252,18 +252,35 @@ def run_desk_tool(service: DeskService, ctx: Any, user: DeskUser, name: str,
 # ── the availability gate ───────────────────────────────────────────────────
 
 def availability_gate(service: DeskService, ctx: Any, user: DeskUser, validation: Any,
-                      *, user_confirmed: bool, make: Any) -> Any:
+                      *, user_confirmed: bool, make: Any, moving: bool = False) -> Any:
     """Hold a proposed calendar event unless every connected calendar says it is free.
 
     ``validation`` is Scriba's own result for the card (already
     ``awaiting_approval``). ``make(status, input, output, error)`` builds a
     result of the same type. ``user_confirmed`` is True only when the user,
     not the model, asked to book despite the finding.
+
+    ``moving`` is for a change to an EXISTING event: the time checked is the
+    new one Scriba computed from the live event (``planned_change``), and the
+    event's own current interval does not count against it.
     """
     data = dict(validation.input or {})
     start = str(data.get("start") or data.get("start_time") or "").strip()
     end = str(data.get("end") or data.get("end_time") or "").strip()
     output = dict(validation.output or {})
+    ignore = None
+    if moving:
+        planned = data.get("planned_change") if isinstance(data.get("planned_change"), dict) else {}
+        if "start" not in planned:
+            return validation          # the time is not changing: nothing to check
+        start, end = str(planned.get("start") or ""), str(planned.get("end") or "")
+        before = ((output.get("operation") or {}).get("before") or {})
+        try:
+            zone = resolve_zone(str(data.get("timezone") or "UTC"))
+            ignore = [(parse_instant(str(before.get("start")), zone),
+                       parse_instant(str(before.get("end")), zone))]
+        except InvalidAvailabilityRequest:
+            ignore = None
     try:
         if not start:
             raise InvalidAvailabilityRequest("The event has no start time.")
@@ -274,7 +291,7 @@ def availability_gate(service: DeskService, ctx: Any, user: DeskUser, validation
             start_dt = parse_instant(start, resolve_zone(zone_name))
             end = (start_dt + dt.timedelta(minutes=duration)).isoformat()
         check = service.slot_check(ctx, user, start=start, end=end,
-                                   timezone=(data.get("timezone") or None))
+                                   timezone=(data.get("timezone") or None), ignore=ignore)
     except Exception:
         # Whatever went wrong, the calendars were not verified: fail closed.
         logger.exception("desk availability gate failed")
@@ -427,11 +444,12 @@ def enable(app: Any, gateway: Any, *, clock: Any = None) -> None:
         if problem is not None:
             return problem
         checked = make(result.status, data, output, result.error)
-        if name != "create_calendar_event":
+        if name not in ("create_calendar_event", "update_calendar_event"):
             return checked
         if user_confirmed:
             checked.input[OVERRIDE_FLAG] = True
-        return availability_gate(service, ctx, user, checked, user_confirmed=user_confirmed, make=make)
+        return availability_gate(service, ctx, user, checked, user_confirmed=user_confirmed, make=make,
+                                 moving=name == "update_calendar_event")
 
     # Scriba keeps a card's validation output only when it holds the card
     # back, so a booking the user confirmed despite a conflict is recorded

@@ -10,6 +10,9 @@
  * credentials it signs in and signs out. It never sends mail, never writes a
  * calendar event, and never prints a cookie or a credential. Credentials come
  * from the environment so they are never in shell history or in this repo.
+ * (With --desk it opens Desk runs, which propose and execute nothing. With
+ * --desk-demo, against a backend started with --demo, it also approves one
+ * task inside the caller's isolated sandbox world.)
  *
  * No dependencies: Node 22's built-in fetch.
  */
@@ -23,9 +26,12 @@ const base = (flag('base') || process.env.SMOKE_BASE_URL || 'http://localhost:80
 // The browser origin the Desk is served from. Scriba trusts this one by default.
 const origin = flag('origin') || process.env.SMOKE_ORIGIN || 'http://localhost:5173'
 // --desk: the backend has the Desk overlay mounted; also check /desk/*.
-const withDesk = args.includes('--desk') || args.includes('--desk-chat')
+const withDesk = args.includes('--desk') || args.includes('--desk-chat') || args.includes('--desk-demo')
 // --desk-chat: also run chat turns through Scriba's chat with the Desk scope.
 const withDeskChat = args.includes('--desk-chat')
+// --desk-demo: the backend was started with --demo. Also deliver a synthetic
+// message to the caller's sandbox mailbox and follow it to a verified result.
+const withDeskDemo = args.includes('--desk-demo')
 const email = process.env.SMOKE_EMAIL || ''
 const password = process.env.SMOKE_PASSWORD || ''
 
@@ -269,6 +275,89 @@ if (email && password) {
       return `examined ${sweep.examined}, opened ${sweep.opened.length}, existing ${sweep.existing}, ` +
         `skipped ${sweep.skipped}, deferred ${sweep.deferred.length}, failed ${sweep.failed.length}`
     })
+
+    await check('desk: external writes are reported off, with the reason and every check', async () => {
+      const { json } = await call('/desk/health')
+      const writes = json?.externalWrites
+      expect(writes && writes.enabled === false, 'externalWrites.enabled must be false')
+      expect(typeof writes.reason === 'string' && Array.isArray(writes.checks) && writes.checks.length >= 4,
+        'the reason and the checks are missing')
+      expect(['sandbox', 'held'].includes(json.executionMode), `executionMode was ${json.executionMode}`)
+      expect(json.worker && typeof json.worker.running === 'boolean', 'no worker block')
+      return `reason ${writes.reason}; execution ${json.executionMode}; worker running=${json.worker.running}`
+    })
+
+    await check('desk: GET /desk/runs says where each run stands', async () => {
+      const { response, json } = await call('/desk/runs?limit=20')
+      expect(response.status === 200 && Array.isArray(json?.runs), `status ${response.status}`)
+      for (const row of json.runs) {
+        expect(typeof row.state === 'string' && typeof row.lifecycle === 'string', `run ${row.runId} has no state`)
+        expect(Array.isArray(row.next) && row.actionCounts && typeof row.actionCounts === 'object',
+          `run ${row.runId} has no next or actionCounts`)
+      }
+      if (json.runs.length) {
+        const detail = (await call(`/desk/runs/${json.runs[0].runId}`)).json
+        expect(Array.isArray(detail.timeline) && detail.timeline.length >= 4, 'a run has no recorded stages')
+        expect(detail.lifecycle?.stage === json.runs[0].lifecycle, 'the list and the detail disagree')
+      }
+      return `${json.runs.length} run(s): ${[...new Set(json.runs.map(row => row.lifecycle))].join(', ') || 'none'}`
+    })
+
+    await check('desk: GET /desk/worker reports the worker and the claim store', async () => {
+      const { response, json } = await call('/desk/worker')
+      expect(response.status === 200, `status ${response.status}`)
+      expect(typeof json?.worker?.running === 'boolean' && typeof json?.worker?.claims?.durable === 'boolean',
+        'unexpected worker body')
+      return `running=${json.worker.running} claims=${json.worker.claims.store} durable=${json.worker.claims.durable}`
+    })
+
+    await check('desk: GET /desk/follow-ups lists awaited replies and sends nothing', async () => {
+      const { response, json } = await call('/desk/follow-ups')
+      expect(response.status === 200 && Array.isArray(json?.followUps), `status ${response.status}`)
+      return `waiting ${json.counts.waiting}, overdue ${json.counts.overdue}, satisfied ${json.counts.satisfied}`
+    })
+
+    await check('desk: the evaluation routes, when present, are a sandbox', async () => {
+      const { response, json } = await call('/desk/eval/v1/meta')
+      if (response.status === 404) return 'not enabled on this backend'
+      expect(response.status === 200 && json?.sandbox === true, 'evaluation routes must report sandbox: true')
+      expect(json.desk?.isolation?.violations === 0, 'the sandbox reports isolation violations')
+      return `agent=${json.agent} planner=${json.desk?.planner}`
+    })
+
+    if (withDeskDemo) {
+      // Only on a backend started with --demo. Everything below happens in the
+      // caller's isolated provider world: no mailbox or calendar exists behind it.
+      await check('demo: synthetic mail becomes a run with no intake call, and executes in the sandbox', async () => {
+        const before = (await call('/desk/sandbox')).json?.world
+        expect(before, 'this backend has no sandbox world for this user (start it with --demo)')
+        const subject = `Smoke task ${Date.now()}`
+        const delivered = await call('/desk/sandbox/deliver', {
+          method: 'POST',
+          body: { from_addr: 'Smoke Sender <smoke.sender@lumen.example>', subject,
+                  body: 'Please note the deadline for this is Friday.' },
+        })
+        expect(delivered.response.status === 200, `deliver status ${delivered.response.status}`)
+        let row = null
+        for (let attempt = 0; attempt < 40 && !row; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          row = (await call('/desk/runs?limit=100')).json.runs.find(candidate => candidate.subject === subject)
+        }
+        expect(row, 'the worker did not take the message in within 80 seconds')
+        expect(row.trigger === 'worker' && row.simulated === true, `trigger ${row.trigger}, simulated ${row.simulated}`)
+        const run = (await call(`/desk/runs/${row.runId}`)).json
+        const action = run.actions.find(candidate => candidate.status === 'awaiting_approval')
+        expect(action?.tool_name === 'create_task', 'no task was proposed')
+        const approved = await call(action.approve.path, { method: 'POST', body: {} })
+        expect(approved.json?.tool_call?.status === 'executed', `approve gave ${approved.json?.tool_call?.status}`)
+        const after = (await call(`/desk/runs/${row.runId}`)).json
+        expect(after.lifecycle.stage === 'COMPLETED' && after.actions[0].verified === true, 'the run did not complete verified')
+        const world = (await call('/desk/sandbox')).json.world
+        expect(world.counts.tasks === before.counts.tasks + 1, 'the task is not in the sandbox')
+        expect(world.isolationViolations.length === 0, 'the sandbox reached a real provider client')
+        return `run ${row.runId}: worker -> approved -> ${after.lifecycle.stage}, verified by ${after.actions[0].verification.method}`
+      })
+    }
 
     if (withDeskChat) {
       // Each chat turn below reaches Scriba's planner, so on a backend with a

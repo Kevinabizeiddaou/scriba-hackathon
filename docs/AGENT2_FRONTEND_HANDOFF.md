@@ -12,7 +12,7 @@ was used. Everything seen in a browser ran against an isolated sandbox world.
 | --- | --- |
 | Branch | `agent2/frontend-excellence` |
 | Started from | `b1c8543` |
-| Pull request | Opened as "Frontend Excellence — Executive Secretary Experience", base `main`. Its number is in the pull request list; it is not merged |
+| Pull request | https://github.com/Kevinabizeiddaou/scriba-hackathon/pull/7 "Frontend Excellence — Executive Secretary Experience", base `main`. Open, not merged |
 | Backend it was built against | `agent1/autonomous-engine` at `e86f449` (Desk overlay 0.3.0), read-only, run locally with `python backend/dev/seeded_desk_server.py --demo` |
 
 Two things happened outside this work that a reader should know:

@@ -630,6 +630,15 @@ export type DeskEvidenceKind =
   | 'usage'
   | 'error'
 
+/**
+ * Kinds added after `DeskEvidenceKind` was first used to key a `Record` in the frontend. Kept
+ * apart so that code keeps compiling; `timeline[].kind` can be any `DeskAnyEvidenceKind`.
+ * `task`: a change to one of the person's existing tasks (`DeskTaskUpdate`).
+ */
+export type DeskRevisedEvidenceKind = 'task'
+
+export type DeskAnyEvidenceKind = DeskEvidenceKind | DeskRevisedEvidenceKind
+
 /** One recorded event of a run. `summary` never contains message text. */
 export interface DeskTimelineItem {
   at: string
@@ -653,6 +662,31 @@ export interface DeskFollowUp {
   toolCallId?: number
   /** True for an awaited reply Scriba tracked before the Desk (not opened by a Desk run). */
   external?: boolean
+}
+
+/**
+ * A change the run suggests to one of the person's EXISTING tasks (overlay 0.3.1): a message
+ * reported work as finished and exactly one open task is about it. Only the person's own records
+ * are written. `suggested` waits for the person (`applyDeskTaskUpdate` or `dismissDeskTaskUpdate`)
+ * unless the Desk is set to keep own records without asking.
+ */
+export interface DeskTaskUpdate {
+  op: 'complete'
+  taskId: string
+  title?: string | null
+  /** The words of the message that matched the task. */
+  matched?: unknown
+  source?: 'rules' | 'model'
+  /**
+   * `completed`: marked done AND read back as no longer open. `unverified`: the change was sent
+   * and the tasks could not be read back, so it is not known to be done. `failed`: it is still open.
+   */
+  state: 'suggested' | 'completed' | 'unverified' | 'failed' | 'dismissed'
+  /** True only when the tasks were read back. Null: they could not be read. */
+  verified?: boolean | null
+  by?: string
+  error?: string | null
+  updatedAt?: string
 }
 
 // ── the plan of a run (BACKEND_CONTRACT section 6, "The plan") ─────────────
@@ -761,8 +795,11 @@ export interface DeskRun {
   held: DeskRunHeld | null
   draftRequest: DraftRequest | null
   actions: DeskAction[]
-  /** 'advance': call advanceDeskRun. 'draft_reply': post draftRequest to Scriba. */
-  next: Array<'advance' | 'draft_reply'>
+  /**
+   * 'advance': call advanceDeskRun. 'draft_reply': post draftRequest to Scriba.
+   * 'complete_task' (0.3.1): a `taskUpdates` entry is `suggested`; call applyDeskTaskUpdate or dismissDeskTaskUpdate.
+   */
+  next: Array<'advance' | 'draft_reply' | 'complete_task'>
 
   // ── overlay 0.3 and later. Absent on an older backend. ──────────────────
   lifecycle?: DeskLifecycle
@@ -773,6 +810,8 @@ export interface DeskRun {
   flags?: DeskRunFlag[]
   /** Written once when the run is opened. Null for a run opened before plans existed. */
   plan?: DeskPlan | null
+  /** Changes this run suggests to existing tasks, each in its latest state (0.3.1). */
+  taskUpdates?: DeskTaskUpdate[]
   updatedAt?: string
   /** Number of actions by Scriba status. */
   actionCounts?: Record<string, number>
@@ -793,7 +832,7 @@ export interface DeskRunRow {
   // ── overlay 0.3 and later ───────────────────────────────────────────────
   state?: RunState
   lifecycle?: DeskLifecycleStage | DeskRunStage
-  next?: Array<'advance' | 'draft_reply'>
+  next?: DeskRun['next']
   trigger?: DeskRun['trigger']
   simulated?: boolean
   held?: { reason: DeskAnyHeldReason } | null
@@ -841,6 +880,14 @@ export const fetchDeskRuns = (limit?: number) =>
 export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
 
 export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+/** Mark done the existing task this run matched. Writes only the person's own records. Safe to repeat. */
+export const applyDeskTaskUpdate = (runId: number, taskId: string) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/task-updates/${encodeURIComponent(taskId)}/apply`)
+
+/** Decline the suggestion. The task is left as it is. */
+export const dismissDeskTaskUpdate = (runId: number, taskId: string) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/task-updates/${encodeURIComponent(taskId)}/dismiss`)
 
 // ── Worker, follow-ups and the sandbox (overlay 0.3) ────────────────────────
 

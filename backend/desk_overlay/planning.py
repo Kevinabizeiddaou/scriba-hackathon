@@ -27,6 +27,8 @@ _BY_WEEKDAY = re.compile(
 _CLOCK = re.compile(r"\b(?:at|by)\s+(?:\w+\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", re.I)
 _CLOCK_24 = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
 _NOON = re.compile(r"\b(noon|midday)\b", re.I)
+_EVENING = re.compile(r"\b(evening|tonight|end of (?:the )?day|eod|close of business|cob)\b", re.I)
+_MORNING = re.compile(r"\b(?:first thing|morning)\b", re.I)
 
 # Text that addresses the assistant rather than the executive. Mail is data:
 # finding this never makes the Desk do what it says. It makes the Desk stop.
@@ -115,6 +117,10 @@ def deadline_from(text: str, now: dt.datetime) -> Optional[dt.datetime]:
         hour, minute = int(clock_24.group(1)), int(clock_24.group(2))
     elif _NOON.search(lowered):
         hour, minute = 12, 0
+    elif _MORNING.search(lowered):
+        hour, minute = 9, 0
+    elif re.search(r"\b(evening|tonight)\b", lowered):
+        hour, minute = 18, 0
     return dt.datetime.combine(day, dt.time(hour, minute), tzinfo=now.tzinfo)
 
 
@@ -268,3 +274,59 @@ def cancellation_reply(*, title: str) -> str:
 def nudge_reply(*, subject: str) -> str:
     return (f"I am following up on my earlier message about \"{subject}\". "
             "Could you let me know when you have a moment?")
+
+
+# ── work reported as finished ───────────────────────────────────────────────
+
+_DONE_WORDS = re.compile(
+    r"\b(done|completed?|finished|finali[sz]ed|signed|countersigned|filed|submitted|delivered|paid|settled|"
+    r"resolved|closed|approved|received|taken care of|sorted|"
+    r"no (?:further )?action (?:is )?(?:needed|required))\b", re.I)
+# A message that still asks for something, or says it is not there yet, does
+# not report finished work, whatever else it says.
+_NOT_DONE = re.compile(
+    r"\b(not yet|still|pending|awaiting|waiting|will be|to be|delayed|please|could you|can you|"
+    r"need(?:s)? (?:you|your))\b|n't\b|\?", re.I)
+_TASK_STOP = frozenset("""
+    the a an and or of to for with on in at by from your our my their his her its this that these those
+    get send make do have has had be is are was were will can could would should please new all any off
+    task tasks follow up re fwd about into out per via not yet
+""".split())
+
+
+def _stem(word: str) -> str:
+    for ending in ("ing", "ed", "es", "s"):
+        if len(word) > len(ending) + 3 and word.endswith(ending):
+            return word[: -len(ending)]
+    return word
+
+
+def _tokens(text: Any) -> set:
+    return {_stem(word) for word in re.findall(r"[a-z0-9]+", str(text or "").lower())
+            if len(word) >= 2 and word not in _TASK_STOP and not word.isdigit()}
+
+
+def work_reported_done(text: str) -> bool:
+    """The text says something is finished and asks for nothing."""
+    without_closing = re.sub(r"no (?:further )?action (?:is )?(?:needed|required)", "noaction", str(text or ""), flags=re.I)
+    return bool(_DONE_WORDS.search(str(text or ""))) and not _NOT_DONE.search(without_closing)
+
+
+def match_open_task(text: str, tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Which open task a message is about. ``one`` only when exactly one task
+    has most of its title's words in the message and no other task comes
+    close; otherwise ``none`` or ``several``. Nothing is guessed."""
+    said = _tokens(text)
+    scored = []
+    for task in tasks:
+        title = _tokens(task.get("title"))
+        shared = title & said
+        if len(title) >= 2 and len(shared) >= 2 and len(shared) / len(title) >= 0.6:
+            scored.append((len(shared) / len(title), len(shared), task, sorted(shared)))
+    if not scored:
+        return {"status": "none", "task": None, "candidates": []}
+    scored.sort(key=lambda entry: (entry[0], entry[1]), reverse=True)
+    best = scored[0]
+    if len(scored) > 1 and scored[1][0] >= best[0] - 0.15:
+        return {"status": "several", "task": None, "candidates": [entry[2] for entry in scored[:5]]}
+    return {"status": "one", "task": best[2], "matched": best[3], "candidates": [best[2]]}

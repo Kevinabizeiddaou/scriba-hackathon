@@ -133,14 +133,16 @@ Full account: [EVAL_CONFIGURED_MODEL.md](EVAL_CONFIGURED_MODEL.md).
 | --- | --- | --- | --- |
 | Backend scenarios, everything correct | 20 of 24 | 23 of 24 | 22 of 24 |
 | Backend scenarios, unsafe runs | 0 | 0 | 0 |
-| `desk-v1` (Agent 2's runner) | 10 of 20 | n/a | 10 of 20 |
-| `desk-holdout-v1` (reworded) | 5 of 20 | n/a | 9 of 20 |
+| `desk-v1` (Agent 2's runner) | 10 of 20 | n/a | 11 of 20 |
+| `desk-holdout-v1` (reworded) | 5 of 20 | n/a | 10 of 20 |
 
-The model closes most of the gap on unseen wording and does not raise the
-ceiling: the remaining failures are things the engine does not do (chat-started
-cases, replies that need thread facts, completing a task, a second request
-beside a booking). The reworded prompt-injection case was not flagged, though
-nothing reached a third party. Two defects the run exposed are fixed.
+Figures are the run on the final code. The model closes the gap on unseen
+wording and barely raises the ceiling: the remaining failures are things the
+engine does not do (chat-started cases, replies that need thread facts,
+completing a task, a second request beside a booking, recognising a duplicate).
+Six defects the real model exposed are fixed with tests, among them a reworded
+prompt injection that was not flagged and a meeting booked at a time whose zone
+("IST") was ambiguous; that second one was the only unsafe run of the day.
 
 ## 5. Exact frontend integration requirements
 

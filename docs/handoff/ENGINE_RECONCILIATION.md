@@ -16,7 +16,7 @@ What the frontend should do with it: [AGENT2_INTEGRATION_HANDOFF.md](AGENT2_INTE
 
 | | |
 | --- | --- |
-| Base | `agent1/autonomous-engine` at `33137c8` (which contains `main` at `2d70a29`) |
+| Base | `agent1/autonomous-engine` at `33137c8` (which contains `main` at `2d70a29`). That branch moved to `74fb145` while this was written; **it is merged in** (one conflict, in `execution.py`: both sides had fixed E2 the same way, and its helper `_settled` was kept) |
 | Not included | Pull request 7 (`agent2/frontend-excellence`, `298b7d6`). It was not merged, rebased or edited. Its tests were run against this branch's typed client (section 6) |
 | Read, not merged | `agent3/autonomy-quality` (`82d2b5a`) and `agent4/office-simulation` (`e65a63e`): their findings are the source of most of section 3 |
 | Changed | `backend/desk_overlay/` (execution, lifecycle, plans, planning, reading, triage, workflow), `backend/eval/scenarios.py`, backend tests, `frontend/src/api/desk.ts` (types only, additive), the contract, this folder |
@@ -93,6 +93,20 @@ held approval (L D1).
 `ACTION_STATES`), sent as `action.lifecycle`. `executed` without evidence is
 `EXECUTED_UNVERIFIED`; only `VERIFIED` and `REJECTED` are final.
 
+### Found in the merge
+
+`74fb145` added "a message that reports finished work completes the open task
+it is about" (`taskUpdates`, two routes, a `task` event). It had no contract
+entry and no typed client: the new typed-client test failed on it. Both are
+written now (contract, "Changes to an existing task"). One rule was changed:
+a completion whose read-back could not be made was reported `completed`; it
+is now `unverified`, and the run rests in `VERIFYING`
+(`test_a_completion_that_cannot_be_read_back_is_not_called_done`).
+
+The measurements in section 5 and the mutation run in section 7 were made
+before the merge. After it, the scenario report was regenerated with the same
+numbers (34 and 37 of 38, 0 unsafe); the mutation check was not run again.
+
 ## 4. Not fixed, and why
 
 These are real and are left open, in the labs' own order.
@@ -153,8 +167,8 @@ Windows 11, Python 3.13, Node 22. Scriba read-only at the commit the base used.
 
 | What | Result |
 | --- | --- |
-| Backend unit tests | 440 passed (base: 403) |
-| Backend integration tests, on Scriba's real application in a sandbox world | 233 passed, 38 skipped (the configured-model parameters, which need a network this suite forbids) (base: 189 passed, 24 skipped) |
+| Backend unit tests | 473 passed after the merge of `74fb145` (440 before it; base `33137c8`: 403) |
+| Backend integration tests, on Scriba's real application in a sandbox world | 235 passed after the merge (233 before it), 38 skipped (the configured-model parameters, which need a network this suite forbids) (base: 189 passed, 24 skipped) |
 | Mutation check on this branch's changes | 23 planted defects, 23 caught (22 at first; one test added) |
 | Mutation check on the safety guards (`backend/dev/mutation_check.py`) | 45 planted defects, 45 caught (section 7) |
 | This branch's backend over HTTP (`seeded_desk_server.py --demo`) | Started; `health.version` 0.3.1; six runs read with `lifecycle`, `final`, `retry`, `edited`; one cancellation approved through Scriba's route: `VERIFIED`, and its confirmation `PROPOSED` without a call to `advance` |

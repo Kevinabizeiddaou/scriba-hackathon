@@ -70,6 +70,8 @@ def test_every_field_the_backend_sends_is_declared_in_the_typed_client():
             problems += [f"DeskPlanStep.{k}" for k in undeclared(step, "DeskPlanStep")]
         for intent in run["plan"]["intents"]:
             problems += [f"DeskPlanIntent.{k}" for k in undeclared(intent, "DeskPlanIntent")]
+        for update in run.get("taskUpdates") or []:
+            problems += [f"DeskTaskUpdate.{k}" for k in undeclared(update, "DeskTaskUpdate")]
         for follow in run["followUps"]:
             problems += [f"DeskFollowUp.{k}" for k in undeclared(follow, "DeskFollowUp")]
         for item in run["timeline"]:
@@ -98,12 +100,26 @@ def test_the_records_under_test_really_cover_the_states():
     assert any(len(run["plan"]["steps"]) == 2 for run in runs)
 
 
+def test_the_task_update_record_is_declared_too():
+    """The fields come from the unit-level desk (the sandbox one above stages no open task)."""
+    sent = {"op", "taskId", "title", "matched", "source", "state", "verified", "by", "error", "updatedAt"}
+    assert sent <= fields("DeskTaskUpdate"), sent - fields("DeskTaskUpdate")
+    source = (Path(__file__).resolve().parents[2] / "desk_overlay" / "workflow.py").read_text(encoding="utf-8")
+    states = set(re.findall(r'"state": "(\w+)"', source[source.index("def _apply_task_updates"):source.index("def apply_task_update")]))
+    states |= {"completed", "failed", "unverified", "dismissed"}
+    declared = set(re.findall(r"'(\w+)'", re.search(r"state: ('suggested'.*)", CLIENT).group(1)))
+    assert states <= declared, states - declared
+    assert "'complete_task'" in CLIENT and "task-updates/" in CLIENT
+
+
 def test_the_named_states_are_the_same_on_both_sides():
     assert members("DeskActionLifecycle") == set(lifecycle.ACTION_STATES)
     assert members("DeskRunStage") == set(lifecycle.STAGES)
     runs, rows = views()
     kinds = {item["kind"] for run in runs for item in run["timeline"]}
-    assert kinds <= members("DeskEvidenceKind"), kinds - members("DeskEvidenceKind")
+    declared_kinds = members("DeskEvidenceKind") | members("DeskRevisedEvidenceKind")
+    assert kinds <= declared_kinds, kinds - declared_kinds
+    assert set(lifecycle.KINDS) <= declared_kinds, set(lifecycle.KINDS) - declared_kinds
     assert {run["lifecycle"]["stage"] for run in runs} <= members("DeskRunStage")
     assert {row["lifecycle"] for row in rows} <= members("DeskRunStage")
     modes = {"rerun", "readback_first", "confirm_first"}

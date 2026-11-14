@@ -31,7 +31,7 @@ import datetime as dt
 import hashlib
 import re
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
@@ -224,6 +224,7 @@ class DeskWorkflow:
             self._record(user, run, "decision", decision)
         for proposal in plan["proposals"]:
             self._propose(user, run, proposal)
+        self._apply_task_updates(ctx, user, run, plan)
         return run
 
     def _propose(self, user: Any, run: Dict[str, Any], proposal: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -285,19 +286,18 @@ class DeskWorkflow:
         if planning.injection_suspected(item.get("subject"), text):
             # Mail is data. Text that addresses the assistant is not obeyed,
             # and nothing is proposed on the strength of a message carrying it.
-            plan["flags"].append("prompt_injection_suspected")
-            plan["held"] = {
-                "reason": "untrusted_instructions", "slots": [], "calendars": [],
-                "message": "This message contains text written as instructions to an assistant. "
-                           "Nothing is proposed automatically. Read it yourself before acting."}
-            plan["decisions"].append({"decision": "escalate", "reason": "untrusted_instructions",
-                                      "explanation": "The message tries to instruct the assistant, "
-                                                     "so it was handed to you."})
-            return plan
+            return self._hand_over_untrusted(plan, source="rules")
 
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
         plan["understanding"] = found
+        if found.get("instructs_assistant"):
+            # The rules did not recognise the wording; the model quoted text
+            # in the message that addresses an assistant. A model can only
+            # make the Desk stricter this way: nothing is proposed, and
+            # whatever else it read in this message is not acted on.
+            return self._hand_over_untrusted(plan, source="model", evidence=found["instructs_assistant"])
+        self._note_finished_work(ctx, user, item, plan, found)
         if found["source"] == "model" and triage["category"] != "automated":
             self._plan_from_intents(ctx, user, item, calendar, plan, found)
         elif triage["category"] == "action_item":
@@ -321,6 +321,47 @@ class DeskWorkflow:
                                                          "is rule-based."})
         return plan
 
+    @staticmethod
+    def _hand_over_untrusted(plan: Dict[str, Any], *, source: str,
+                             evidence: Optional[List[str]] = None) -> Dict[str, Any]:
+        plan["flags"].append("prompt_injection_suspected")
+        plan["held"] = {
+            "reason": "untrusted_instructions", "slots": [], "calendars": [],
+            "message": "This message contains text written as instructions to an assistant. "
+                       "Nothing is proposed automatically. Read it yourself before acting."}
+        decision = {"decision": "escalate", "reason": "untrusted_instructions", "source": source,
+                    "explanation": "The message tries to instruct the assistant, so it was handed to you."}
+        if evidence:
+            decision["evidence"] = list(evidence)
+        plan["decisions"].append(decision)
+        return plan
+
+    def thread_context(self, user: Any, item: Mapping[str, Any],
+                       detail: Mapping[str, Any]) -> List[Dict[str, Any]]:
+        """The conversation so far, oldest first: what arrived AND what the
+        executive wrote. Read from the mailbox, never recalled. ``own`` marks
+        the executive's messages; everything else is untrusted text."""
+        thread_id = str(item.get("threadId") or item.get("thread_id") or "")
+        rows: List[Dict[str, Any]] = [
+            {"id": m.get("id"), "from_addr": m.get("from_addr"), "timestamp": m.get("timestamp"),
+             "subject": m.get("subject"), "body": m.get("body") or m.get("snippet"), "own": False}
+            for m in (detail.get("thread") or {}).get("messages") or []]
+        if thread_id:
+            try:
+                sent = self.gateway.list_sent(None, user, str(item.get("provider") or "gmail"),
+                                              item.get("provider_account_id")) or []
+            except Exception:
+                sent = []           # unknown is not "nothing was sent": the thread is just shorter
+            for row in sent:
+                if str(row.get("thread_id") or row.get("threadId") or "") == thread_id:
+                    rows.append({"id": row.get("id"), "from_addr": user.email,
+                                 "timestamp": row.get("sent_at") or row.get("timestamp"),
+                                 "subject": row.get("subject"),
+                                 "body": row.get("text") or row.get("body") or row.get("snippet"),
+                                 "own": True})
+        rows.sort(key=lambda row: (_moment(row.get("timestamp")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc)))
+        return rows
+
     def _understand(self, user: Any, item: Dict[str, Any], detail: Dict[str, Any],
                     plan: Dict[str, Any]) -> Dict[str, Any]:
         """The message's intents: from a model when one is configured and
@@ -337,14 +378,15 @@ class DeskWorkflow:
         now = self.service.now(user).astimezone(resolve_zone(zone_name))
         with self.gateway.model_usage() as calls:
             found = understanding.from_model(
-                self.gateway, item=item, thread=(detail.get("thread") or {}).get("messages") or [],
+                self.gateway, item=item, thread=self.thread_context(user, item, detail),
                 now=now, timezone=zone_name)
         plan["usage"].extend(calls)
         plan["reads"].append({"tool": "model.understand", "ok": bool(found and found["intents"]),
                               "error": None if found and found["intents"] else "no_supported_intent",
                               "dropped": len((found or {}).get("dropped") or [])})
         if not found or not found["intents"]:
-            return {**rules, "dropped": (found or {}).get("dropped") or []}
+            return {**rules, "dropped": (found or {}).get("dropped") or [],
+                    "instructs_assistant": (found or {}).get("instructs_assistant") or []}
         plan["planner"] = "model+rules"
         return found
 
@@ -385,7 +427,8 @@ class DeskWorkflow:
                 self._plan_meeting(ctx, user, item, calendar, plan, intent=wanted,
                                    extracted=understanding.extracted_from(intent))
             elif kind == "task":
-                self._plan_task(ctx, user, item, plan, title=details.get("title"), due_at=details.get("due_at"))
+                self._plan_task(ctx, user, item, plan, title=details.get("title"), due_at=details.get("due_at"),
+                                evidence=intent.get("evidence"), alone=len(sure) == 1)
             elif kind == "reminder":
                 when = _moment(details.get("remind_at"))
                 if details.get("title") and when is not None and when > self.service.now(user):
@@ -406,6 +449,106 @@ class DeskWorkflow:
             else:
                 plan["decisions"].append({"decision": "none", "reason": kind,
                                           "explanation": "No action is needed for this part."})
+        if triage.get("category") == "action_item" and not any(
+                p.get("tool_name") in ("create_task", "create_reminder") for p in plan["proposals"]) \
+                and (plan.get("held") or {}).get("reason") != "task_exists":
+            # The rules' reading is the floor here too: a message they read as
+            # something to do is recorded as a task even when the model saw
+            # only a reply in it. A decision someone is waiting for is work.
+            self._plan_task(ctx, user, item, plan)
+
+    def _note_finished_work(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                            found: Mapping[str, Any]) -> None:
+        """A message may report that something the executive was tracking is
+        finished. The Desk says WHICH open task only when exactly one matches
+        the message's own words; it never picks between two."""
+        text = f"{item.get('subject') or ''}\n{item.get('body') or item.get('snippet') or ''}"
+        said_by_model = [i for i in found.get("intents") or [] if i.get("type") == "work_done"
+                         and (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE]
+        category = (item.get("triage") or {}).get("category")
+        by_rule = category not in ("meeting_request", "automated") and planning.work_reported_done(text)
+        if not said_by_model and not by_rule:
+            return
+        try:
+            open_tasks = self.gateway.open_tasks(ctx, user, 100)
+            plan["reads"].append({"tool": "task.list", "ok": True, "count": len(open_tasks)})
+        except Exception:
+            plan["reads"].append({"tool": "task.list", "ok": False, "error": "unavailable"})
+            return
+        # Matched against the MESSAGE only. A model's own words about which
+        # task it is are not evidence: they could name a task the message
+        # never mentions.
+        match = planning.match_open_task(text, open_tasks)
+        if match["status"] == "several":
+            plan["decisions"].append({
+                "decision": "none", "reason": "task_match_ambiguous",
+                "explanation": "This reports finished work, and more than one open task could be "
+                               "the one it means. None was marked done."})
+            return
+        if match["status"] != "one":
+            return
+        task = match["task"]
+        plan.setdefault("task_updates", []).append({
+            "op": "complete", "taskId": str(task.get("id")), "title": task.get("title"),
+            "matched": match.get("matched"), "source": "model" if said_by_model else "rules"})
+        plan.setdefault("facts", []).append(
+            f"You have one open task this is about: \"{task.get('title')}\".")
+        plan["decisions"].append({
+            "decision": "complete_task", "reason": "work_reported_done",
+            "explanation": f"The message reports \"{task.get('title')}\" as finished."})
+
+    def _apply_task_updates(self, ctx: Any, user: Any, run: Dict[str, Any], plan: Mapping[str, Any]) -> None:
+        policy = getattr(self.gateway, "auto_internal_writes", None)
+        automatic = bool(callable(policy) and policy(user))
+        for update in plan.get("task_updates") or []:
+            self._record(user, run, "task", {**update, "state": "suggested"})
+            if automatic:
+                # The person's own records, and this Desk is set to keep them
+                # without asking: the same fixed rule as for a new task.
+                self._complete_task(ctx, user, run, str(update["taskId"]), by="policy")
+
+    def _complete_task(self, ctx: Any, user: Any, run: Dict[str, Any], task_id: str, *, by: str) -> None:
+        known = {u["taskId"]: u for u in lifecycle.task_updates(self.gateway.run_events(user, run))}
+        update = known.get(task_id)
+        if update is None:
+            raise NotFound("This run suggests no change to that task.")
+        if update.get("state") == "completed":
+            return                                      # repeating it changes nothing
+        try:
+            self.gateway.complete_task(ctx, user, task_id)
+        except Exception as exc:
+            self._record(user, run, "task", {"taskId": task_id, "title": update.get("title"), "op": "complete",
+                                             "state": "failed", "error": type(exc).__name__, "by": by})
+            return
+        # Verified by reading the tasks back: it is no longer among the open ones.
+        try:
+            still_open = any(str(t.get("id")) == task_id for t in self.gateway.open_tasks(ctx, user, 200))
+            verified: Optional[bool] = not still_open
+        except Exception:
+            verified = None
+        self._record(user, run, "task", {
+            "taskId": task_id, "title": update.get("title"), "op": "complete",
+            # Done only on evidence. When the tasks could not be read back the
+            # call returned and nothing shows the result: that is not "completed".
+            "state": "completed" if verified is True else ("failed" if verified is False else "unverified"),
+            "verified": verified, "by": by,
+            "error": None if verified is True else ("task_still_open" if verified is False else "task_not_read_back")})
+
+    def apply_task_update(self, ctx: Any, user: Any, run_id: int, task_id: str,
+                          *, dismiss: bool = False) -> Dict[str, Any]:
+        """The person confirms (or dismisses) marking one of their tasks done."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            known = {u["taskId"]: u for u in lifecycle.task_updates(self.gateway.run_events(user, run))}
+            if str(task_id) not in known:
+                raise NotFound("This run suggests no change to that task.")
+            if dismiss:
+                if known[str(task_id)].get("state") == "suggested":
+                    self._record(user, run, "task", {"taskId": str(task_id), "op": "complete",
+                                                     "state": "dismissed", "by": user.email})
+            else:
+                self._complete_task(ctx, user, run, str(task_id), by=user.email)
+        return self.view(ctx, user, run_id)
 
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         """This message may be the answer someone was being waited on for."""
@@ -428,7 +571,8 @@ class DeskWorkflow:
                                        "follow-up was closed."})
 
     def _plan_task(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
-                   title: Optional[str] = None, due_at: Optional[str] = None) -> None:
+                   title: Optional[str] = None, due_at: Optional[str] = None,
+                   evidence: Optional[List[str]] = None, alone: bool = True) -> None:
         title = str(title or item.get("subject") or "Follow up on email").strip()[:160]
         try:
             open_tasks = self.gateway.open_tasks(ctx, user, 100)
@@ -453,8 +597,16 @@ class DeskWorkflow:
         due = None
         try:
             zone_name, _, _, _ = self.service.working_context(user, None, None, None)
-            due = planning.deadline_from(f"{item.get('subject')}\n{item.get('body') or item.get('snippet') or ''}",
-                                         self.service.now(user).astimezone(resolve_zone(zone_name)))
+            local_now = self.service.now(user).astimezone(resolve_zone(zone_name))
+            whole = f"{item.get('subject')}\n{item.get('body') or item.get('snippet') or ''}"
+            if evidence:
+                # One request among several: its deadline is in its own
+                # sentence. Another request's date (the meeting's) is not it.
+                due = planning.deadline_from(" ".join(str(quote) for quote in evidence), local_now)
+                if due is None and alone:
+                    due = planning.deadline_from(whole, local_now)
+            else:
+                due = planning.deadline_from(whole, local_now)
         except InvalidAvailabilityRequest:
             due = None
         if due_at and _moment(due_at) is not None:
@@ -549,21 +701,28 @@ class DeskWorkflow:
         usage_scope = getattr(self.gateway, "model_usage", None)
         configured = getattr(self.gateway, "model_configured", None)
         has_model = bool(configured()) if callable(configured) else True
+        model_failed = False
         if pre_read:
             pass                    # the model's understanding already read the request
         elif callable(usage_scope):
             with usage_scope() as calls:
                 extracted = self.gateway.extract_meeting(user, item, zone_name)
             plan["usage"].extend(calls)
+            # A call that did not complete (the provider is unreachable) is
+            # not an answer. "The model read no time" and "the model could
+            # not be asked" are different things.
+            model_failed = not extracted and any(call.get("success") is False for call in calls)
         else:
             extracted = self.gateway.extract_meeting(user, item, zone_name)
         if not pre_read:
             plan["reads"].append({"tool": "model.extract_request", "ok": bool(extracted),
                                   "error": None if extracted else
-                                  ("no_usable_answer" if has_model else "model_not_configured")})
-        if not extracted and not has_model:
-            # No model in this process. A time that is written out in full is
-            # read by rule; anything less exact is left unread, never guessed.
+                                  ("model_call_failed" if model_failed else
+                                   "no_usable_answer" if has_model else "model_not_configured")})
+        if not extracted and (not has_model or model_failed):
+            # No model in this process, or it could not be reached. A time
+            # that is written out in full is read by rule; anything less
+            # exact is left unread, never guessed.
             written = reading.explicit_request(
                 str(item.get("body") or item.get("snippet") or ""),
                 self.service.now(user).astimezone(resolve_zone(zone_name)),
@@ -593,6 +752,19 @@ class DeskWorkflow:
             plan.setdefault("assumptions", []).append(
                 f"The length was not stated; your default of {duration} minutes is used.")
         action = str((extracted or {}).get("calendar_action") or "").lower()
+        if extracted and "cancel" not in (intent, action) and reading.stated_zone(
+                str(item.get("body") or item.get("snippet") or ""))[1]:
+            # The message names a zone that means more than one place ("IST",
+            # "my time"). A model may still hand back a time with an offset:
+            # that offset is its guess, and a guessed hour is not booked. The
+            # rules refuse the same text; so does this.
+            extracted = {key: value for key, value in extracted.items()
+                         if key not in ("requested_start", "requested_end", "requester_timezone")}
+            plan.setdefault("missing", []).append("time zone")
+            plan["decisions"].append({
+                "decision": "hold", "reason": "timezone_ambiguous",
+                "explanation": "The message names a time zone that can mean more than one place, "
+                               "so the time it gives was not used."})
         # The rule-based intent is the floor. The model may recognise a change
         # the rules missed; it may not turn a change request into a new booking.
         if intent == "new" and action in ("reschedule", "cancel"):
@@ -1154,6 +1326,9 @@ class DeskWorkflow:
             next_steps.append("draft_reply")      # POST the draft_request to Scriba
         stage = lifecycle.derive(meta, actions, events, pending_next="advance" in next_steps)
         follow = lifecycle.follow_ups(events)
+        task_updates = lifecycle.task_updates(events)
+        if any(update.get("state") == "suggested" for update in task_updates):
+            next_steps.append("complete_task")    # POST /desk/runs/{id}/task-updates/{taskId}/apply
         counts: Dict[str, int] = {}
         for status in statuses:
             counts[status] = counts.get(status, 0) + 1
@@ -1177,6 +1352,7 @@ class DeskWorkflow:
             "actionCounts": counts,
             "next": next_steps,
             "followUps": follow,
+            "taskUpdates": task_updates,
         }
         if detail:
             view["plan"] = {**plan, "steps": steps} if plan is not None else None

@@ -514,7 +514,18 @@ the message; a time must carry an offset; below 0.6 confidence nothing is
 proposed (`held.reason: "intent_unclear"`, with `held.missing[]`). A message
 classed as automated is not upgraded, a change request is never turned into
 a new booking, and a message that addresses the assistant is not sent to a
-model. Its tests script the model. One real model has been run through it in
+model. The call also reports `instructs_assistant`: exact quotes of text
+written to an assistant, or asking to skip approval or to send the
+executive's data somewhere. One such quote that is in the message stops the
+run exactly as the rules' own check does (`flags:
+["prompt_injection_suspected"]`, `held.reason: "untrusted_instructions"`,
+the decision carries `source: "model"` and `evidence[]`); a claim that is
+not a quote changes nothing. A time in a zone that means more than one place
+("IST", "CST", "my time") is never used, whoever read it: the decision
+`timezone_ambiguous` is recorded, `plan.missing` gains `time zone` and the
+sender is asked. When a model call fails, a plainly written time is read by
+the rules (`model.extract_request` records `model_call_failed`).
+Its tests script the model. One real model has been run through it in
 the sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 
 ### The model step (off by default)
@@ -541,6 +552,26 @@ sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 | Durable claims on Scriba's receipt ledger | The adapter is tested against a stand-in with the ledger's outcomes. **Not run against a Postgres database** |
 | Extracting a time with a model; a model-written reply | Scripted in tests. **Never run against a real model** |
 | Anything on a live mailbox or calendar | Not tested |
+
+### Changes to an existing task (0.3.1)
+
+When a message reports work as finished and exactly one of the person's open
+tasks is about it, the run carries `taskUpdates: [{op: "complete", taskId,
+title, matched, source, state, verified, by, error, updatedAt}]` and, while
+one is `suggested`, `next` contains `complete_task`. More than one matching
+task: nothing is suggested (`decision` `task_match_ambiguous`).
+
+| Route | Effect |
+| --- | --- |
+| `POST /desk/runs/{id}/task-updates/{taskId}/apply` | Marks that task done in the person's own records, then reads the open tasks back. Safe to repeat. Returns the run |
+| `POST /desk/runs/{id}/task-updates/{taskId}/dismiss` | Declines the suggestion. Returns the run |
+
+`state`: `suggested`, `completed` (marked done **and** read back as no longer
+open), `unverified` (the change was sent and the tasks could not be read
+back: not known to be done; the run rests in `VERIFYING` with `reason:
+"task_not_verified"`), `failed` (it is still open), `dismissed`. A Desk set
+to keep own records without asking applies a suggestion at once. Each change
+is a `task` event in `timeline`.
 
 ### One representation, checked
 
@@ -580,6 +611,7 @@ Scriba the Desk runs on. A held card has `status: "needs_info"`,
 | `desk_check_failed` | A Desk check itself failed. The card is held, never passed | Retry later |
 | `external_writes_disabled` | The execution gate (section 8): mail and calendar writes are off on this backend. Nothing was claimed or executed | Nothing to offer. The card can be approved once writes are enabled |
 | `proposal_changed` | The stored action is no longer what was proposed and no edit by the person is recorded (section 8, "An approval is bound") | Nothing to offer. Open the run; do not approve as is |
+| `approval_held` (evaluation routes only, HTTP 409) | A guard held the card when the harness approved it; the message names the hold code | Nothing ran |
 | `outcome_unknown` | A provider did not confirm the action. It may or may not have happened (`output.outcome_unknown: true`, card `status: "failed"`) | See "Unknown outcomes" in section 8 |
 | `sandbox_world_gone` | The card was prepared in a sandbox that no longer exists | Nothing to offer |
 

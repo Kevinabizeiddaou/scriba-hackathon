@@ -104,9 +104,31 @@ These were left because they break one frontend or the other today.
 2. Remove `DeskLifecycleStage`'s three first-draft names, and type
    `DeskLifecycle.stage` as `DeskRunStage`.
 3. Fold `DeskRevisedCardCode` into `DeskAnyHoldCode`.
+4. Fold `DeskRevisedEvidenceKind` (`task`) into `DeskEvidenceKind`, and give
+   `task` a label in your `EVIDENCE_KIND` (today it falls back to the raw word).
 
 The test `backend/tests/integration/test_typed_client_with_scriba.py` will
 tell you if any of them drops something the backend sends.
+
+## 4a. Merged in from the engine branch: changes to an existing task
+
+`agent1/autonomous-engine` moved to `74fb145` while this was written and was
+merged in. It adds one thing a screen will meet, which had no contract entry
+and no typed client until this branch:
+
+- `DeskRun.taskUpdates: DeskTaskUpdate[]`: a message reported work as
+  finished and exactly one open task is about it. `state` is `suggested`,
+  `completed`, `unverified`, `failed` or `dismissed`.
+- While one is `suggested`, `next` contains `complete_task` and the run is
+  `ESCALATED` with `reason: "task_completion_suggested"`. It has **no action
+  card**: the control is `applyDeskTaskUpdate(runId, taskId)` or
+  `dismissDeskTaskUpdate(runId, taskId)`, both in `desk.ts` now. Only the
+  person's own records are written.
+- Your run page shows nothing for such a run today except "Escalated to you".
+  It needs one block: the task's title, why it matched, and the two buttons.
+- `completed` means marked done and read back. `unverified` (changed on this
+  branch) means the change was sent and could not be read back: do not show
+  it as done.
 
 ## 5. How to run this backend
 

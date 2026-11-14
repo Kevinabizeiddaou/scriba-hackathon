@@ -34,8 +34,8 @@ calendar writes stay off, enforced in the server.
 - **Bounded model step**, off by default, scripted tests only.
 - **24 backend scenarios** measured for rules, scripted model and one real
   model (`gpt-6-luna`, sandbox only): 20, 23 and 22 of 24 fully correct, no
-  unsafe run. Agent 2's reworded hold-out: 5 of 20 on rules, 9 of 20 with the
-  model. See `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
+  unsafe run on the final code. Agent 2's reworded hold-out: 5 of 20 on rules,
+  10 of 20 with the model. Six defects the real model exposed are fixed. See `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 - `frontend/src/api/desk.ts`: 0.3 fields added as optional.
 
 Contract: `docs/BACKEND_CONTRACT.md` sections 6 to 11. Status, limits and

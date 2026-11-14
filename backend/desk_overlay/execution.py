@@ -464,7 +464,7 @@ class ExecutionGate:
         from .workflow import effective_input
 
         repo = chat_service.repo
-        now, settled, landed = self.clock(), 0, 0
+        now, settled = self.clock(), 0
         try:
             world = self.world_for_run(user, run)
         except LookupError:
@@ -478,7 +478,6 @@ class ExecutionGate:
                 continue
             tool, data = str(card.get("tool_name") or ""), effective_input(card)
             found = _find_effect(world, tool, data) if world is not None else None
-            landed += int(bool(found))
             if found:
                 repo.update_tool_call(card["id"], user_id=user.id, status="executed", error=None,
                                       output_payload_patch={"reconciled": True, "recovered": True,
@@ -487,6 +486,7 @@ class ExecutionGate:
                 self._record(user, run, "verification", {
                     "toolCallId": card["id"], "tool": tool, "verified": True, "method": "sandbox_readback",
                     "reconciled": True, "recovered": True, "objectId": found}, world)
+                self._settled(user, run, world)
             elif world is not None:
                 repo.update_tool_call(card["id"], user_id=user.id, status="failed", error="interrupted",
                                       output_payload_patch={"error_code": "interrupted", "recovered": True,
@@ -504,20 +504,7 @@ class ExecutionGate:
                 self._record(user, run, "execution", {"toolCallId": card["id"], "tool": tool,
                                                       "status": "unknown", "recovered": True}, world)
             settled += 1
-        if landed:
-            self._follow_on(user, run, world)
         return settled
-
-    def _follow_on(self, user: DeskUser, run: Optional[Dict[str, Any]], world: Optional[SandboxWorld]) -> None:
-        """An action took effect: propose what may only follow it. A failure
-        here never changes what is known about the action itself."""
-        if run is None or not callable(self.on_settled):
-            return
-        try:
-            with self.registry.using(world):
-                self.on_settled(user, run)
-        except Exception:
-            logger.exception("desk follow-on step could not be proposed")
 
     # ── an approval is bound to the action that was proposed ────────────────
     def _bindings(self, user: DeskUser, run: Optional[Dict[str, Any]], card_id: Any) -> List[str]:
@@ -588,8 +575,19 @@ class ExecutionGate:
                 "code": (card.get("output") or {}).get("error_code") or card.get("error")}, world)
         if status in ("executed", "partially_executed"):
             self._verify(ctx, tool, card, result)
-            self._follow_on(user, run, world)
+            self._settled(user, run, world)
         return result
+
+    def _settled(self, user: DeskUser, run: Optional[Dict[str, Any]], world: Any) -> None:
+        """An action has taken effect, however that was learned (it ran, or a
+        read-back found it): whatever may only follow it can now be proposed."""
+        if run is None or not callable(self.on_settled):
+            return
+        try:
+            with self.registry.using(world):
+                self.on_settled(user, run)
+        except Exception:
+            logger.exception("desk follow-on step could not be proposed")
 
     def _object_id(self, tool: str, card: Mapping[str, Any], result: Mapping[str, Any]) -> Optional[str]:
         sandbox = ((result.get("assistant_action") or {}) if isinstance(result, Mapping) else {}).get("sandbox")
@@ -652,7 +650,7 @@ class ExecutionGate:
                 "method": "sandbox_readback", "reconciled": True, "objectId": found}, world)
             # The action is settled: what may only follow it is proposed now,
             # exactly as after an ordinary execution.
-            self._follow_on(user, run, world)
+            self._settled(user, run, world)
             return {"tool_call": repo.serialize_tool_call(updated or row), "reconciled": True}
         if world is None and overrides.get(RETRY_CONFIRM_FLAG) is not True:
             return hold(ctx, row.get("id"), UNKNOWN_CODE,

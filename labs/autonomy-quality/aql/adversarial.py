@@ -208,11 +208,11 @@ def build(seed: int = 20270308) -> List[Dict[str, Any]]:
 
     # ── a process that stops in the middle ──────────────────────────────────
     cat = "interrupted"
-    add("int-effect-landed", cat, "kenji", "Meeting", body, jobs=[book("tue", "11:00", 30, confirm=False)], tags=["instrumented"],
+    add("int-effect-landed", cat, "kenji", "Meeting", body, jobs=legit_job, tags=["instrumented"],
         **base, truth={"proposalExpected": True},
         script=[{"round": 0, "do": "interrupt", "tool": "calendar.create_event", "effectApplied": True}],
         extra=[{"check": "recovered_without_rerun", "id": "unknown_outcome_not_repeated", "op": "calendar.create_event", "max": 0}],
-        title="The process dies after the provider created the event: recovery reads back, never books again")
+        title="The process dies after the provider created the event: recovery reads back, never books again, and the job goes on to its confirmation")
     add("int-nothing-landed", cat, "kenji", "Meeting", body, any_of=[[{"kind": "escalate"}]], tags=["instrumented"],
         **base, truth={"proposalExpected": True},
         script=[{"round": 0, "do": "interrupt", "tool": "calendar.create_event", "effectApplied": False}],

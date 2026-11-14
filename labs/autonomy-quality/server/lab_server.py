@@ -307,6 +307,10 @@ def main() -> None:
     parser.add_argument("--backend", required=True, help="the backend/ directory of a scriba-hackathon checkout")
     parser.add_argument("--port", default="8811")
     parser.add_argument("--demo", action="store_true", help="also start the backend's own demo worlds and worker")
+    parser.add_argument("--model-key-file", help="a git-ignored file holding OPENAI_API_KEY=... (and optionally "
+                                                 "OPENAI_BASE_URL=...), as backend/.env.model.local. Switches the real "
+                                                 "model on for this sandbox backend. The key is never printed or stored")
+    parser.add_argument("--agent-step", action="store_true", help="with a model: also switch on the bounded model step")
     args = parser.parse_args()
 
     backend = Path(args.backend).resolve()
@@ -317,6 +321,24 @@ def main() -> None:
     if not scriba:
         sys.exit("Set SCRIBA_BACKEND_PATH to the Gmail/ directory of a read-only Scriba checkout.")
     # A lab backend never calls a model unless the operator explicitly asks.
+    if args.model_key_file:
+        values = {}
+        for line in Path(args.model_key_file).read_text(encoding="utf-8-sig").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                name, value = line.split("=", 1)
+                values[name.strip()] = value.strip().strip("\"'")
+        if values.get("OPENAI_API_KEY", "") in ("", "PASTE_KEY_HERE", "test-key", "test", "dummy", "sk-test"):
+            sys.exit("--model-key-file holds no real key.")
+        for name in ("OPENAI_API_KEY", "OPENAI_BASE_URL"):
+            if values.get(name):
+                os.environ[name] = values[name]
+        os.environ["DESK_MODEL"] = "on"
+        os.environ["DESK_UNDERSTANDING"] = "model"
+        if args.agent_step:
+            os.environ["DESK_AGENT"] = "on"
+        print("[lab] a real model is ON for this sandbox backend: synthetic case mail will be sent to the model "
+              "provider. No mailbox or calendar can be reached.", flush=True)
     os.environ.setdefault("DESK_MODEL", "off")
 
     info = {

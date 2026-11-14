@@ -76,6 +76,10 @@ def run_campaign(backend: DeskBackend, *, seed: int, families: List[str], repeat
         rounds.append(results)
 
     first = rounds[0]
+    # The model's name, from what the runs themselves report they used.
+    used = sorted({str(m.get("model")) for r in first for m in ((r.get("usage") or {}).get("models") or []) if m.get("model")})
+    if used:
+        trace_key["model"] = ", ".join(used)
     indexed = {r["id"]: r for r in first}
     relations = [metamorphic.evaluate(rel, indexed) for rel in items["relations"]
                  if rel["base"]["id"] in indexed and all(c["id"] in indexed for c in rel["followUps"])]

@@ -662,8 +662,13 @@ class Run:
                 return
             if attempt == 1:
                 evidence.setdefault("recovered", []).append(f"download_tried_again:{problem}")
-                if problem == "answered_from_another_page" and self._at_sign_in():
+                gate = (self.s.site.get("signIn") or {}).get("path")
+                if problem == "answered_from_another_page" and gate and urlsplit(str(got.get("url"))).path == gate:
+                    # The site forgot the sign-in. Sign in again, come back to this page, then ask once more.
+                    here = self.page.url
+                    self._goto(self.s.origin + gate, evidence)
                     self._sign_in(evidence)
+                    self._goto(here, evidence)
         evidence["verification"] = {"verified": False, "reason": problem}
         raise _Stop("FAILED", "download_not_verified",
                     f"The file could not be verified ({problem.replace('_', ' ')}). Nothing was kept.")

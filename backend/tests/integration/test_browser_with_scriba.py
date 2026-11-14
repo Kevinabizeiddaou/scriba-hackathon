@@ -363,3 +363,68 @@ def test_a_task_cannot_name_another_site_or_an_unknown_step():
     assert browser.binding({"origin": "https://a.example"}, browser.validate(UPDATE)[0]) \
         != browser.binding({"origin": "https://b.example"}, browser.validate(UPDATE)[0])
     assert browser.binding({"origin": "https://a.example"}, browser.validate(FETCH)[0]) is None
+
+# ── gaps a defect check showed ───────────────────────────────────────────────
+def test_what_a_page_itself_reaches_for_on_another_site_never_leaves_the_machine(on, portal):
+    portal.set(lure=portal.lure_origin)            # the report page now also loads an image and a script call from there
+    done = browser.run_task(on, FETCH)
+    assert done["state"] == "VERIFIED" and done["blockedOrigins"] == [portal.lure_origin]
+    assert portal.lure_hits == []
+
+
+def test_a_file_that_is_not_the_one_the_page_describes_is_not_kept(on, portal):
+    portal.files["q3-2026"], real = portal.files["q1-2026"], portal.files["q3-2026"]
+    portal.sha256 = lambda report_id: __import__("hashlib").sha256(real).hexdigest()       # the page still states the real one
+    done = browser.run_task(on, FETCH)
+    assert done["state"] == "FAILED" and done["downloads"] == []
+    assert done["steps"][-1]["verification"] == {"verified": False, "reason": "checksum_differs"}
+
+
+def test_a_session_that_ended_is_noticed_at_the_download_and_signed_in_again(on, portal):
+    def record(step):
+        if step.get("op") == "read":
+            portal.sessions.clear()                # the site forgets the sign-in just before the download
+
+    done = browser.run_task(on, FETCH, record=record)
+    assert done["state"] == "VERIFIED" and done["downloads"][0]["sha256"] == portal.sha256("q3-2026")
+    assert done["steps"][-1]["recovered"] == ["download_tried_again:answered_from_another_page", "signed_in"]
+    assert len(portal.requests_for("/login", "POST")) == 2
+
+
+def test_two_controls_with_one_name_are_not_chosen_between(on, portal):
+    done = browser.run_task(on, {"ops": [{"op": "open", "path": "/invoices"}, {"op": "follow", "name": "Page"}]})
+    assert done["state"] == "FAILED" and done["error"] == "ambiguous_target"
+    assert not any("page=" in entry["path"] for entry in portal.log)       # nothing was pressed
+
+
+def test_another_site_is_not_opened_because_some_site_is_authorised(sessions, portal, monkeypatch):
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        desk_with_portal(desk, portal, sessions, monkeypatch)
+        run = mail_with(desk, [], body="Please download the latest report from the Contoso vendor site and send it to me.",
+                        subject="Contoso report")
+        assert run.get("browser") is None and run["held"]["reason"] == "site_not_authorised" and portal.log == []
+
+
+def test_the_email_waits_for_the_workbook_change_however_often_the_run_is_advanced(sessions, portal, monkeypatch):
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk_with_portal(desk, portal, sessions, monkeypatch)
+        run = mail_with(desk, [{"filename": "budget.xlsx", "content": budget()}], body=ASK)
+        for _ in range(2):
+            again = post(desk, f"/runs/{run['runId']}/advance").json()
+            assert again["actions"] == [] and world.sent == [] and again["fileChanges"][0]["state"] == "suggested"
+        dismissed = post(desk, f"/runs/{run['runId']}/file-changes/{run['fileChanges'][0]['id']}/dismiss").json()
+        assert dismissed["actions"] == []                                  # set aside: the email that speaks of it is not written
+        assert post(desk, f"/runs/{run['runId']}/advance").json()["actions"] == []
+
+
+def test_a_file_that_cannot_be_kept_is_not_reported_as_fetched(sessions, portal, monkeypatch):
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        desk_with_portal(desk, portal, sessions, monkeypatch)
+        monkeypatch.setattr(desk["workflow"].gateway, "keep_download", lambda user, **kw: None)
+        run = mail_with(desk, [{"filename": "budget.xlsx", "content": budget()}], body=ASK)
+        assert run["browser"]["state"] == "FAILED" and run["browser"]["error"] == "file_not_kept"
+        assert run["browser"]["downloads"] == [] and run["fileChanges"] == [] and run["actions"] == []
+        assert run["lifecycle"]["reason"] == "browser_failed"

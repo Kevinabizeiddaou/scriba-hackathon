@@ -1,0 +1,928 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "follow_up",
+  "name": "G. Follow-up days",
+  "description": "Awaited replies arrive, one request stays unanswered for two days and has to be chased, and a deadline passes."
+ },
+ "seed": 7,
+ "executive": "trusting",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "0162cd0a01b6e020",
+ "engine": {
+  "overlay": "0.3.0",
+  "deskBackend": "0282558",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 6,
+   "notSent": 0,
+   "actionable": 6,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 5,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 3,
+    "corrected": 1,
+    "incorrect": 1,
+    "missed": 1
+   },
+   "completedCorrectly": 3,
+   "correctlyHandedToExecutive": 0,
+   "declinedByExecutive": 0,
+   "completedAfterHumanCorrection": 1,
+   "partlyCompleted": 0,
+   "leftForHuman": 1,
+   "incorrect": 1,
+   "incorrectRequests": [
+    "follow_up-rafael-documents"
+   ]
+  },
+  "verifiedWork": {
+   "calendarChanges": 2,
+   "emailReplies": 4,
+   "tasksAndReminders": 0,
+   "byKind": {
+    "calendar event created": 2,
+    "confirmation reply": 2,
+    "reply offering times": 2
+   },
+   "followUpsSatisfied": 5,
+   "duplicatesPrevented": 1,
+   "duplicatesPreventedDetail": [
+    {
+     "what": "a second reminder was not proposed",
+     "thread": "thread-yusuf-call"
+    }
+   ]
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 3,
+   "checksPassed": 11
+  },
+  "human": {
+   "decisions": 9,
+   "byCategory": {
+    "missing_information": 2,
+    "unreviewed_approval": 7
+   },
+   "mandatoryApprovals": 7,
+   "preferenceRejections": 0,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 0,
+   "missingInformationSupplied": 2,
+   "recoveryRetries": 0,
+   "fullTakeovers": 1,
+   "takeoverRequests": [
+    "follow_up-karim-quote"
+   ]
+  },
+  "autonomy": {
+   "actionableRequests": 6,
+   "handledWithApprovalsOnly": 3,
+   "rate": 0.5,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "overdue",
+     "thread": "thread-audit-documents"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting",
+     "thread": "thread-audit-documents"
+    },
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    }
+   ],
+   "openTasks": 3,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 0
+  },
+  "time": {
+   "wallSecondsForWholeDay": 17.06,
+   "apiCalls": 211,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 32,
+   "executionMsTotal": 14077,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 28.0,
+   "executiveMinutesDecidingInDesk": 2.2,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "follow_up-karim-quote": {
+   "subject": "Re: Crane maintenance quote for Q1",
+   "sender": "karim.saad@harborcrane.example",
+   "expected": {
+    "outcome": "close_follow_up",
+    "follow_up": "fu-crane-quote"
+   },
+   "verdict": "missed",
+   "notes": [
+    "the answer arrived and the awaited reply is still marked as waiting"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [],
+   "stages": []
+  },
+  "follow_up-greta-forecast": {
+   "subject": "Peak-season forecast",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-17T14:30:00+01:00",
+     "end": "2026-11-17T15:30:00+01:00"
+    },
+    "conflicts": [
+     "evt-budget-fy27"
+    ]
+   },
+   "verdict": "correct",
+   "notes": [
+    "quality: none of the offered times is on the day that was asked for (2026-11-17)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 11,
+     "toolCallId": 29,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "follow_up-yusuf-call": {
+   "subject": "Partnership call",
+   "sender": "yusuf.demir@anatoliacargo.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "yusuf",
+    "email": "yusuf.demir@anatoliacargo.example",
+    "because": "no_time_given"
+   },
+   "verdict": "corrected",
+   "notes": [
+    "the executive had to step in: missing_information on send_email (the Desk proposed this reply without a recipient; the executive typed it in)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 35,
+     "toolCallId": 50,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    35
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "follow_up-greta-picks": {
+   "subject": "Re: Peak-season forecast",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-16T10:00:00+01:00",
+    "end": "2026-11-16T10:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 56,
+     "toolCallId": 73,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 56,
+     "toolCallId": 79,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    56
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "follow_up-rafael-documents": {
+   "subject": "Re: Outstanding audit documents",
+   "sender": "rafael.costa@lumenaudit.example",
+   "expected": {
+    "outcome": "close_follow_up",
+    "follow_up": "fu-audit-documents"
+   },
+   "verdict": "incorrect",
+   "notes": [
+    "an answer that only had to be noted led to an external action"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    84
+   ],
+   "stages": [
+    "WAITING_FOR_RESPONSE"
+   ]
+  },
+  "follow_up-yusuf-answers": {
+   "subject": "Re: Partnership call",
+   "sender": "yusuf.demir@anatoliacargo.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "yusuf",
+    "email": "yusuf.demir@anatoliacargo.example",
+    "attendees": [
+     "yusuf.demir@anatoliacargo.example"
+    ],
+    "start": "2026-11-20T11:00:00+01:00",
+    "end": "2026-11-20T11:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 115,
+     "toolCallId": 132,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 115,
+     "toolCallId": 147,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    115
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 29,
+   "runId": 11,
+   "requestId": "follow_up-greta-forecast",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-02",
+   "at": "2026-11-16T08:45:48+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 50,
+   "runId": 35,
+   "requestId": "follow_up-yusuf-call",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-03",
+   "at": "2026-11-16T09:00:20+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 73,
+   "runId": 56,
+   "requestId": "follow_up-greta-picks",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-04",
+   "at": "2026-11-16T09:10:17+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 79,
+   "runId": 56,
+   "requestId": "follow_up-greta-picks",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-04",
+   "at": "2026-11-16T09:10:17+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 101,
+   "runId": 84,
+   "requestId": "follow_up-rafael-documents",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-05",
+   "at": "2026-11-16T14:00:46+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 108,
+   "runId": 35,
+   "requestId": "follow_up-yusuf-call",
+   "tool": "send_email",
+   "purpose": "nudge",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "missing_information",
+   "overrides": {
+    "to": "yusuf.demir@anatoliacargo.example",
+    "desk_confirmed_recipients": [
+     "yusuf.demir@anatoliacargo.example"
+    ]
+   },
+   "why": "the Desk proposed this reply without a recipient; the executive typed it in",
+   "countsAgainstAutonomy": true,
+   "stepId": "follow_up-07",
+   "at": "2026-11-18T09:30:36+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 137,
+   "runId": 84,
+   "requestId": "follow_up-rafael-documents",
+   "tool": "send_email",
+   "purpose": "nudge",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "missing_information",
+   "overrides": {
+    "to": "rafael.costa@lumenaudit.example",
+    "desk_confirmed_recipients": [
+     "rafael.costa@lumenaudit.example"
+    ]
+   },
+   "why": "the Desk proposed this reply without a recipient; the executive typed it in",
+   "countsAgainstAutonomy": true,
+   "stepId": "follow_up-09",
+   "at": "2026-11-18T15:00:33+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 132,
+   "runId": 115,
+   "requestId": "follow_up-yusuf-answers",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-09",
+   "at": "2026-11-18T15:00:33+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 147,
+   "runId": 115,
+   "requestId": "follow_up-yusuf-answers",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "follow_up-09",
+   "at": "2026-11-18T15:00:33+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "follow_up-06",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 4, the calendars hold 4"
+  },
+  {
+   "stepId": "follow_up-06",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 3, the task list holds 3"
+  },
+  {
+   "stepId": "follow_up-06",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "follow_up-06",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "4 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "follow_up-06",
+   "check": "briefing_reports_awaited_replies",
+   "passed": true,
+   "detail": "3 replies are awaited; the briefing mentions them"
+  },
+  {
+   "stepId": "follow_up-07",
+   "check": "overdue_follow_up_is_chased",
+   "passed": true,
+   "detail": "1 reminder(s) proposed in thread-yusuf-call (executed), 1 sent; the proposal had no recipient until the executive typed it in"
+  },
+  {
+   "stepId": "follow_up-08",
+   "check": "reminder_is_not_repeated",
+   "passed": true,
+   "detail": "1 reminder(s) exist in thread-yusuf-call"
+  },
+  {
+   "stepId": "follow_up-09",
+   "check": "answer_satisfies_follow_up",
+   "passed": true,
+   "detail": "follow-ups in thread-yusuf-call: fu-35-50=satisfied, fu-35-108=satisfied"
+  },
+  {
+   "stepId": "follow_up-10",
+   "check": "overdue_task_is_reported",
+   "passed": false,
+   "detail": "\"Review Atlas Pharma draft contract\" was due 2026-11-17T09:00:00+01:00 and is still open; the briefing has no overdue section"
+  },
+  {
+   "stepId": "follow_up-11",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 2, the calendars hold 2"
+  },
+  {
+   "stepId": "follow_up-11",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 3, the task list holds 3"
+  },
+  {
+   "stepId": "follow_up-11",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "follow_up-11",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "5 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "follow_up-11",
+   "check": "briefing_reports_awaited_replies",
+   "passed": true,
+   "detail": "3 replies are awaited; the briefing mentions them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "follow_up-01",
+   "at": "D+0 08:30",
+   "title": "An awaited reply arrives",
+   "kind": "email",
+   "job": [
+    "detect",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-karim-quote"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 125
+  },
+  {
+   "id": "follow_up-02",
+   "at": "D+0 08:45",
+   "title": "A client asks for a time that is taken: the Desk has to offer others",
+   "kind": "email",
+   "job": [
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-greta-forecast"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 2234
+  },
+  {
+   "id": "follow_up-03",
+   "at": "D+0 09:00",
+   "title": "A prospect asks for a call without naming a time",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-yusuf-call"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    35
+   ],
+   "wallMs": 2203
+  },
+  {
+   "id": "follow_up-04",
+   "at": "D+0 09:10",
+   "title": "The client answers the offer the same morning",
+   "kind": "counterpart_reply",
+   "job": [
+    "detect",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-greta-picks"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    56
+   ],
+   "wallMs": 2280
+  },
+  {
+   "id": "follow_up-05",
+   "at": "D+0 14:00",
+   "title": "The second awaited reply arrives",
+   "kind": "email",
+   "job": [
+    "detect",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-rafael-documents"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    84
+   ],
+   "wallMs": 2250
+  },
+  {
+   "id": "follow_up-06",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-06",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 4, the calendars hold 4"
+    },
+    {
+     "stepId": "follow_up-06",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 3, the task list holds 3"
+    },
+    {
+     "stepId": "follow_up-06",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "follow_up-06",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "4 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "follow_up-06",
+     "check": "briefing_reports_awaited_replies",
+     "passed": true,
+     "detail": "3 replies are awaited; the briefing mentions them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 140
+  },
+  {
+   "id": "follow_up-07",
+   "at": "D+2 09:30",
+   "title": "Two days later the prospect has not answered",
+   "kind": "time_passes",
+   "job": [
+    "chase"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-07",
+     "check": "overdue_follow_up_is_chased",
+     "passed": true,
+     "detail": "1 reminder(s) proposed in thread-yusuf-call (executed), 1 sent; the proposal had no recipient until the executive typed it in"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 2280
+  },
+  {
+   "id": "follow_up-08",
+   "at": "D+2 10:00",
+   "title": "Later the same morning: the reminder must not be sent twice",
+   "kind": "time_passes",
+   "job": [
+    "chase"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-08",
+     "check": "reminder_is_not_repeated",
+     "passed": true,
+     "detail": "1 reminder(s) exist in thread-yusuf-call"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 203
+  },
+  {
+   "id": "follow_up-09",
+   "at": "D+2 15:00",
+   "title": "The prospect finally answers with a time",
+   "kind": "email",
+   "job": [
+    "detect",
+    "coordinate",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "follow_up-yusuf-answers"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-09",
+     "check": "answer_satisfies_follow_up",
+     "passed": true,
+     "detail": "follow-ups in thread-yusuf-call: fu-35-50=satisfied, fu-35-108=satisfied"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    115
+   ],
+   "wallMs": 4438
+  },
+  {
+   "id": "follow_up-10",
+   "at": "D+2 16:00",
+   "title": "A task from Monday is now past its deadline",
+   "kind": "time_passes",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-10",
+     "check": "overdue_task_is_reported",
+     "passed": false,
+     "detail": "\"Review Atlas Pharma draft contract\" was due 2026-11-17T09:00:00+01:00 and is still open; the briefing has no overdue section"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 217
+  },
+  {
+   "id": "follow_up-11",
+   "at": "D+2 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "follow_up-11",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 2, the calendars hold 2"
+    },
+    {
+     "stepId": "follow_up-11",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 3, the task list holds 3"
+    },
+    {
+     "stepId": "follow_up-11",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "follow_up-11",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "5 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "follow_up-11",
+     "check": "briefing_reports_awaited_replies",
+     "passed": true,
+     "detail": "3 replies are awaited; the briefing mentions them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 250
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 9,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T07:34:51+00:00"
+}

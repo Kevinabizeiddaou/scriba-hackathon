@@ -1,0 +1,99 @@
+{
+ "simulated": true,
+ "label": "06-end-of-day",
+ "capturedAt": "2026-11-14T07:15:04.253Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T16:30:43+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 13,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite",
+    "Q3 board pack",
+    "URGENT: Rotterdam settlement offer expires today"
+   ],
+   "operations": 11,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T16:30:43+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 16:30 Europe/Paris  ·  capture 06-end-of-day",
+ "screens": [
+  {
+   "screen": "overview",
+   "route": "#/overview",
+   "what": "Overview: what needs the executive, the day, connections",
+   "file": "06-end-of-day-overview.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6222,
+   "viewport": {
+    "width": 1440,
+    "height": 1615
+   },
+   "heading": "Good afternoon, Alice",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": false
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "work-queue",
+   "route": "#/work",
+   "what": "Work queue: the Desk runs opened from incoming mail",
+   "file": "06-end-of-day-work-queue.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 945,
+   "viewport": {
+    "width": 1440,
+    "height": 2127
+   },
+   "heading": "Work queue",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [
+   {
+    "method": "GET",
+    "url": "http://localhost:8914/desk/runs/200",
+    "error": "net::ERR_ABORTED",
+    "screen": "start"
+   }
+  ],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

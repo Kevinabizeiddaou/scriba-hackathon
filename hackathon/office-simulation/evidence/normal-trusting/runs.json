@@ -1,0 +1,6137 @@
+{
+ "11": {
+  "runId": 11,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-mei-intro",
+   "thread_id": "thread-mei-intro",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+   "subject": "Cold-chain lanes: intro call",
+   "received_at": "2026-11-14T09:15:00+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T08:30:31+01:00",
+  "updatedAt": "2026-11-16T08:30:31+01:00",
+  "held": null,
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-mei-intro",
+    "thread_id": "thread-mei-intro",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (new). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T09:30:00+01:00 to 2026-11-16T10:00:00+01:00; 2026-11-16T10:00:00+01:00 to 2026-11-16T10:30:00+01:00; 2026-11-16T10:30:00+01:00 to 2026-11-16T11:00:00+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 2
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-mei-intro",
+    "thread_id": "thread-mei-intro"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "new_meeting",
+     "confidence": null,
+     "evidence": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [
+    "The requested time is free on every connected calendar (3 read)."
+   ],
+   "assumptions": [
+    "The only attendee is the sender; nobody named only in the text is invited."
+   ],
+   "missing": [],
+   "tools": [
+    "calendar.check_availability",
+    "calendar.find_free_slots",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "create_calendar_event",
+     "purpose": "book",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The meeting exists on the named calendar at the proposed time.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 28
+    },
+    {
+     "id": "s2",
+     "tool": "send_email",
+     "purpose": "confirm",
+     "dependsOn": [
+      "s1"
+     ],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": true,
+     "expected": "The sender has a reply in the original thread stating what was done.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 45
+    }
+   ],
+   "approvals": 2,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 28,
+    "tool_name": "create_calendar_event",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "book",
+    "reason": "The requested time is free on every connected calendar.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "title": "Cold-chain lanes: intro call",
+     "start": "2026-11-18T14:00:00+01:00",
+     "end": "2026-11-18T14:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "attendees": [
+      "mei.tanaka@brightwavefoods.example"
+     ],
+     "description": "Requested by Mei Tanaka <mei.tanaka@brightwavefoods.example> by email.",
+     "calendar_provider": "google",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-mei-intro",
+     "thread_id": "thread-mei-intro",
+     "provider": "gmail",
+     "desk_verified_recipients": [
+      "mei.tanaka@brightwavefoods.example"
+     ]
+    },
+    "output": {
+     "availability": {
+      "free": true,
+      "complete": true,
+      "reason": null,
+      "conflicts": [],
+      "calendars": [
+       {
+        "provider": "google",
+        "account": "layla.mansour@meridianfreight.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "google",
+        "account": "layla@mansour-advisory.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "outlook",
+        "account": "layla.mansour@portalliance.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       }
+      ],
+      "within_working_hours": true,
+      "timezone": "Europe/Paris",
+      "slot": {
+       "start": "2026-11-18T14:00:00+01:00",
+       "end": "2026-11-18T14:30:00+01:00"
+      }
+     },
+     "operation": {
+      "kind": "calendar_invitation",
+      "provider": "google_calendar",
+      "organizer_account": "layla.mansour@meridianfreight.example",
+      "title": "Cold-chain lanes: intro call",
+      "start": "2026-11-18T14:00:00+01:00",
+      "end": "2026-11-18T14:30:00+01:00",
+      "timezone": "Europe/Paris",
+      "attendees": [
+       "mei.tanaka@brightwavefoods.example"
+      ],
+      "conference": false,
+      "conference_provider": null,
+      "invitation_delivery": "google_calendar",
+      "gmail_message": "not_requested",
+      "note": "Google Calendar delivers the invitation email to the attendees from the organizer account. Scriba does not send a separate Gmail message, so nothing will appear in Gmail Sent."
+     },
+     "desk_approval_key": "sim:normal:28:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "action": {
+       "type": "create",
+       "event": {
+        "summary": "Cold-chain lanes: intro call",
+        "description": "Requested by Mei Tanaka <mei.tanaka@brightwavefoods.example> by email.",
+        "start": "2026-11-18T14:00:00+01:00",
+        "end": "2026-11-18T14:30:00+01:00",
+        "attendees": [
+         "mei.tanaka@brightwavefoods.example"
+        ],
+        "location": null,
+        "timezone": "Europe/Paris",
+        "event_type": "meeting",
+        "conference": false
+       }
+      },
+      "provider_account_id": "layla.mansour@meridianfreight.example"
+     },
+     "execution_status": "executed",
+     "result": {
+      "event": {
+       "id": "evt-office-meridian-1",
+       "start": "2026-11-18T14:00:00+01:00",
+       "end": "2026-11-18T14:30:00+01:00",
+       "attendees": [
+        "mei.tanaka@brightwavefoods.example"
+       ]
+      },
+      "calendar_result": {
+       "event": {
+        "id": "evt-office-meridian-1",
+        "start": "2026-11-18T14:00:00+01:00",
+        "end": "2026-11-18T14:30:00+01:00",
+        "attendees": [
+         "mei.tanaka@brightwavefoods.example"
+        ]
+       }
+      }
+     },
+     "error": null,
+     "calendar_provider": "google_calendar",
+     "meeting_status": "pending",
+     "invited_attendees": [
+      "mei.tanaka@brightwavefoods.example"
+     ],
+     "calendar_event_id": "evt-office-meridian-1",
+     "invitation_sent": true,
+     "outcome": {
+      "operation": "calendar_invitation",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "calendar_event",
+        "status": "created",
+        "provider": "google_calendar",
+        "organizer_account": "layla.mansour@meridianfreight.example",
+        "event_id": "evt-office-meridian-1",
+        "meet_link": null,
+        "title": "Cold-chain lanes: intro call",
+        "start": "2026-11-18T14:00:00+01:00",
+        "end": "2026-11-18T14:30:00+01:00",
+        "timezone": "Europe/Paris",
+        "attendees": [
+         "mei.tanaka@brightwavefoods.example"
+        ],
+        "invitation_delivery": "google_calendar",
+        "invitation_status": "sent",
+        "already_booked": false
+       },
+       {
+        "kind": "email",
+        "status": "not_requested",
+        "provider": "google_calendar",
+        "note": "No separate Gmail message was sent; the invitation email came from Google Calendar."
+       }
+      ],
+      "summary": "Calendar invitation sent by Google Calendar from layla.mansour@meridianfreight.example to mei.tanaka@brightwavefoods.example: event 'Cold-chain lanes: intro call' created. No separate Gmail message was sent.",
+      "recorded_at": "2026-11-14T07:31:55.505152+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": {
+     "free": true,
+     "complete": true,
+     "reason": null,
+     "conflicts": [],
+     "calendars": [
+      {
+       "provider": "google",
+       "account": "layla.mansour@meridianfreight.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "google",
+       "account": "layla@mansour-advisory.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "outlook",
+       "account": "layla.mansour@portalliance.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      }
+     ],
+     "within_working_hours": true,
+     "timezone": "Europe/Paris",
+     "slot": {
+      "start": "2026-11-18T14:00:00+01:00",
+      "end": "2026-11-18T14:30:00+01:00"
+     }
+    },
+    "idempotencyKey": "desk:5e0be9a76943d4d58201d677a6b22176:28",
+    "assistantActionId": 500001,
+    "verified": true,
+    "verification": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:30:31+01:00",
+    "decisions": [
+     {
+      "toolCallId": 28,
+      "tool": "create_calendar_event",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:30:31+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500001,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "approve": null
+   },
+   {
+    "toolCallId": 45,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "confirm",
+    "reason": "The calendar change has taken effect, so the sender is told.",
+    "stepId": "s2",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "mei.tanaka@brightwavefoods.example",
+     "subject": "Re: Cold-chain lanes: intro call",
+     "body": "Thank you for your message. I have scheduled \"Cold-chain lanes: intro call\" for Wednesday 18 November, 14:00 to 14:30 (Europe/Paris). You should receive a calendar invitation separately.",
+     "thread_id": "thread-mei-intro",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-mei-intro",
+     "desk_verified_recipients": [
+      "mei.tanaka@brightwavefoods.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "mei.tanaka@brightwavefoods.example",
+      "subject": "Re: Cold-chain lanes: intro call",
+      "thread_id": "thread-mei-intro"
+     },
+     "desk_approval_key": "sim:normal:45:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "mei.tanaka@brightwavefoods.example",
+      "subject": "Re: Cold-chain lanes: intro call",
+      "text": "Thank you for your message. I have scheduled \"Cold-chain lanes: intro call\" for Wednesday 18 November, 14:00 to 14:30 (Europe/Paris). You should receive a calendar invitation separately.",
+      "thread_id": "thread-mei-intro",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-mei-intro"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-3",
+      "thread_id": "thread-mei-intro",
+      "to": [
+       "mei.tanaka@brightwavefoods.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "mei.tanaka@brightwavefoods.example",
+        "subject": "Re: Cold-chain lanes: intro call",
+        "message_id": "sent-office-meridian-3",
+        "thread_id": "thread-mei-intro"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to mei.tanaka@brightwavefoods.example ('Re: Cold-chain lanes: intro call').",
+      "recorded_at": "2026-11-14T07:31:57.646238+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:5e0be9a76943d4d58201d677a6b22176:45",
+    "assistantActionId": 500003,
+    "verified": true,
+    "verification": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:30:31+01:00",
+    "decisions": [
+     {
+      "toolCallId": 45,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:30:31+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500003,
+     "durationMs": 2000,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-mei-intro",
+     "threadId": "thread-mei-intro",
+     "receivedAt": "2026-11-14T09:15:00+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high",
+     "reasons": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "meetingIntent": "new",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-mei-intro",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:30:31+01:00",
+     "timeMax": "2026-11-21T08:30:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:30:31+01:00",
+     "timeMax": "2026-11-21T08:30:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:30:31+01:00",
+     "timeMax": "2026-11-21T08:30:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: read.",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": true,
+     "error": null
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 2 steps, 2 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-mei-intro",
+      "thread_id": "thread-mei-intro"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null,
+       "evidence": [
+        "question",
+        "direct_request",
+        "meeting_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [
+      "The requested time is free on every connected calendar (3 read)."
+     ],
+     "assumptions": [
+      "The only attendee is the sender; nobody named only in the text is invited."
+     ],
+     "missing": [],
+     "tools": [
+      "calendar.check_availability",
+      "calendar.find_free_slots",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "create_calendar_event",
+       "purpose": "book",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The meeting exists on the named calendar at the proposed time.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      },
+      {
+       "id": "s2",
+       "tool": "send_email",
+       "purpose": "confirm",
+       "dependsOn": [
+        "s1"
+       ],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": true,
+       "expected": "The sender has a reply in the original thread stating what was done.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 2,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "decision",
+    "summary": "The requested time is free, so the meeting is proposed for your approval.",
+    "data": {
+     "decision": "propose",
+     "reason": "time_free",
+     "explanation": "The requested time is free, so the meeting is proposed for your approval."
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "proposal",
+    "summary": "Proposed create_calendar_event for approval.",
+    "data": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "stepId": "s1",
+     "binding": "3d0a15263e55e50401623fa6",
+     "purpose": "book",
+     "reason": "The requested time is free on every connected calendar.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved create_calendar_event.",
+    "data": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "execution",
+    "summary": "create_calendar_event: executed.",
+    "data": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500001,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "verification",
+    "summary": "create_calendar_event: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "stepId": "s2",
+     "binding": "96896c2920af4ac6554d8f5a",
+     "purpose": "confirm",
+     "reason": "The calendar change has taken effect, so the sender is told.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500003,
+     "durationMs": 2000,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 45,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "30": {
+  "runId": 30,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-board-pack",
+   "thread_id": "thread-board-pack",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Omar Haddad <omar.haddad@meridianfreight.example>",
+   "subject": "Q3 board pack",
+   "received_at": "2026-11-13T17:40:00+00:00"
+  },
+  "category": "action_item",
+  "outcome": "task",
+  "flags": [],
+  "createdAt": "2026-11-16T08:30:31+01:00",
+  "updatedAt": "2026-11-16T08:30:31+01:00",
+  "held": null,
+  "draftRequest": null,
+  "actionCounts": {
+   "executed": 1
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-board-pack",
+    "thread_id": "thread-board-pack"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "task",
+     "confidence": null,
+     "evidence": [
+      "no_question_or_request",
+      "desk_action_requested"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "task.list"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "create_task",
+     "purpose": "record_task",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": false,
+     "deferred": false,
+     "expected": "The task or reminder exists in the executive's own records.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 40
+    }
+   ],
+   "approvals": 1,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 40,
+    "tool_name": "create_task",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "record_task",
+    "reason": "The message names something to do, due 2026-11-19T17:00:00+01:00.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "title": "Q3 board pack",
+     "description": "From Omar Haddad <omar.haddad@meridianfreight.example>, received 2026-11-13T17:40:00+00:00 (gmail). Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+     "priority": "low",
+     "due_at": "2026-11-19T17:00:00+01:00",
+     "email_id": "normal-board-pack",
+     "thread_id": "thread-board-pack",
+     "provider": "gmail"
+    },
+    "output": {
+     "desk_approval_key": "sim:normal:40:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "title": "Q3 board pack",
+      "description": "From Omar Haddad <omar.haddad@meridianfreight.example>, received 2026-11-13T17:40:00+00:00 (gmail). Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+      "due_at": "2026-11-19T17:00:00+01:00",
+      "priority": "low",
+      "source_item_id": null
+     },
+     "execution_status": "executed",
+     "result": {
+      "task": {
+       "id": "task-office-meridian-2",
+       "title": "Q3 board pack",
+       "description": "From Omar Haddad <omar.haddad@meridianfreight.example>, received 2026-11-13T17:40:00+00:00 (gmail). Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+       "due_at": "2026-11-19T17:00:00+01:00",
+       "priority": "low",
+       "status": "open",
+       "created_at": "2026-11-16T08:30:31+01:00"
+      }
+     },
+     "error": null
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:4b7d5063db1164c9d0368af8014e0cb5:40",
+    "assistantActionId": 500002,
+    "verified": true,
+    "verification": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:30:31+01:00",
+    "decisions": [
+     {
+      "toolCallId": 40,
+      "tool": "create_task",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:30:31+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500002,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T08:30:31+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-board-pack",
+     "threadId": "thread-board-pack",
+     "receivedAt": "2026-11-13T17:40:00+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "action_item",
+     "outcome": "task",
+     "priority": "low",
+     "reasons": [
+      "no_question_or_request",
+      "desk_action_requested"
+     ],
+     "meetingIntent": null,
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "task",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-board-pack",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "read",
+    "summary": "task.list: read.",
+    "data": {
+     "tool": "task.list",
+     "ok": true,
+     "count": 3
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 1 step, 1 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-board-pack",
+      "thread_id": "thread-board-pack"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "task",
+       "confidence": null,
+       "evidence": [
+        "no_question_or_request",
+        "desk_action_requested"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "task.list"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "create_task",
+       "purpose": "record_task",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": false,
+       "deferred": false,
+       "expected": "The task or reminder exists in the executive's own records.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 1,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "decision",
+    "summary": "A task is proposed from this message.",
+    "data": {
+     "decision": "propose",
+     "reason": "action_item",
+     "explanation": "A task is proposed from this message."
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "proposal",
+    "summary": "Proposed create_task for approval.",
+    "data": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "stepId": "s1",
+     "binding": "cc445ccb1c5e819ed549edb6",
+     "purpose": "record_task",
+     "reason": "The message names something to do, due 2026-11-19T17:00:00+01:00.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved create_task.",
+    "data": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "execution",
+    "summary": "create_task: executed.",
+    "data": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500002,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:30:31+01:00",
+    "kind": "verification",
+    "summary": "create_task: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 40,
+     "tool": "create_task",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "53": {
+  "runId": 53,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-greta-forecast",
+   "thread_id": "thread-greta-forecast",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+   "subject": "Peak-season forecast",
+   "received_at": "2026-11-16T07:35:08+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T08:35:08+01:00",
+  "updatedAt": "2026-11-16T08:50:26+01:00",
+  "held": {
+   "reason": "calendar_conflict",
+   "slots": [
+    {
+     "start": "2026-11-16T09:30:00+01:00",
+     "end": "2026-11-16T10:00:00+01:00"
+    },
+    {
+     "start": "2026-11-16T10:00:00+01:00",
+     "end": "2026-11-16T10:30:00+01:00"
+    },
+    {
+     "start": "2026-11-16T10:30:00+01:00",
+     "end": "2026-11-16T11:00:00+01:00"
+    },
+    {
+     "start": "2026-11-16T12:00:00+01:00",
+     "end": "2026-11-16T12:30:00+01:00"
+    },
+    {
+     "start": "2026-11-16T12:30:00+01:00",
+     "end": "2026-11-16T13:00:00+01:00"
+    }
+   ],
+   "calendars": [
+    {
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 1
+    },
+    {
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 0
+    },
+    {
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 0
+    }
+   ],
+   "message": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply.",
+   "requested": {
+    "start": "2026-11-17T14:30:00+01:00",
+    "end": "2026-11-17T15:30:00+01:00"
+   },
+   "conflicts": [
+    {
+     "start": "2026-11-17T14:00:00+01:00",
+     "end": "2026-11-17T15:00:00+01:00",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "title": null
+    }
+   ]
+  },
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-greta-forecast",
+    "thread_id": "thread-greta-forecast",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (new). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T09:30:00+01:00 to 2026-11-16T10:00:00+01:00; 2026-11-16T10:00:00+01:00 to 2026-11-16T10:30:00+01:00; 2026-11-16T10:30:00+01:00 to 2026-11-16T11:00:00+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 1
+  },
+  "next": [],
+  "followUps": [
+   {
+    "id": "fu-53-71",
+    "state": "satisfied",
+    "toolCallId": 71,
+    "threadId": "thread-greta-forecast",
+    "waitingOn": "greta.lindqvist@nordlicht-retail.example",
+    "subject": "Peak-season forecast",
+    "sentAt": "2026-11-16T08:35:08+01:00",
+    "dueAt": "2026-11-18T08:35:08+01:00",
+    "updatedAt": "2026-11-16T08:50:26+01:00",
+    "satisfiedBy": "normal-greta-picks",
+    "satisfiedAt": "2026-11-16T07:50:26+00:00"
+   }
+  ],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-greta-forecast",
+    "thread_id": "thread-greta-forecast"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "new_meeting",
+     "confidence": null,
+     "evidence": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "calendar.check_availability",
+    "calendar.find_free_slots",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "send_email",
+     "purpose": "offer_times",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The sender has a reply offering only times verified free.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 71
+    }
+   ],
+   "approvals": 1,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 71,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "offer_times",
+    "reason": "Only times verified free on every connected calendar are offered.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": [
+     {
+      "start": "2026-11-16T09:30:00+01:00",
+      "end": "2026-11-16T10:00:00+01:00"
+     },
+     {
+      "start": "2026-11-16T10:00:00+01:00",
+      "end": "2026-11-16T10:30:00+01:00"
+     },
+     {
+      "start": "2026-11-16T10:30:00+01:00",
+      "end": "2026-11-16T11:00:00+01:00"
+     }
+    ],
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "greta.lindqvist@nordlicht-retail.example",
+     "subject": "Re: Peak-season forecast",
+     "body": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-greta-forecast",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-greta-forecast",
+     "desk_verified_recipients": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "greta.lindqvist@nordlicht-retail.example",
+      "subject": "Re: Peak-season forecast",
+      "thread_id": "thread-greta-forecast"
+     },
+     "desk_approval_key": "sim:normal:71:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "greta.lindqvist@nordlicht-retail.example",
+      "subject": "Re: Peak-season forecast",
+      "text": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
+      "thread_id": "thread-greta-forecast",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-greta-forecast"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-4",
+      "thread_id": "thread-greta-forecast",
+      "to": [
+       "greta.lindqvist@nordlicht-retail.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "greta.lindqvist@nordlicht-retail.example",
+        "subject": "Re: Peak-season forecast",
+        "message_id": "sent-office-meridian-4",
+        "thread_id": "thread-greta-forecast"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to greta.lindqvist@nordlicht-retail.example ('Re: Peak-season forecast').",
+      "recorded_at": "2026-11-14T07:31:59.931027+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:a8ff954bdc4c48a59fc573bc36e5ab08:71",
+    "assistantActionId": 500004,
+    "verified": true,
+    "verification": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:35:08+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:35:08+01:00",
+    "decisions": [
+     {
+      "toolCallId": 71,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:35:08+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500004,
+     "durationMs": 2000,
+     "simulated": true,
+     "at": "2026-11-16T08:35:08+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-greta-forecast",
+     "threadId": "thread-greta-forecast",
+     "receivedAt": "2026-11-16T07:35:08+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high",
+     "reasons": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "meetingIntent": "new",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-greta-forecast",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:35:08+01:00",
+     "timeMax": "2026-11-21T08:35:08+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:35:08+01:00",
+     "timeMax": "2026-11-21T08:35:08+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:35:08+01:00",
+     "timeMax": "2026-11-21T08:35:08+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: read.",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": true,
+     "error": null
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-17T14:30:00+01:00",
+     "timeMax": "2026-11-17T15:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-17T14:30:00+01:00",
+     "timeMax": "2026-11-17T15:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-17T14:30:00+01:00",
+     "timeMax": "2026-11-17T15:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 1 step, 1 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-greta-forecast",
+      "thread_id": "thread-greta-forecast"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null,
+       "evidence": [
+        "question",
+        "direct_request",
+        "meeting_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "calendar.check_availability",
+      "calendar.find_free_slots",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "send_email",
+       "purpose": "offer_times",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The sender has a reply offering only times verified free.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 1,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "decision",
+    "summary": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply.",
+    "data": {
+     "decision": "hold",
+     "reason": "calendar_conflict",
+     "explanation": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply."
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "decision",
+    "summary": "A reply offering verified free times is proposed.",
+    "data": {
+     "decision": "propose",
+     "reason": "offer_times",
+     "explanation": "A reply offering verified free times is proposed."
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "stepId": "s1",
+     "binding": "242a5f3dddf4f512de39d397",
+     "purpose": "offer_times",
+     "reason": "Only times verified free on every connected calendar are offered.",
+     "proposedSlots": [
+      {
+       "start": "2026-11-16T09:30:00+01:00",
+       "end": "2026-11-16T10:00:00+01:00"
+      },
+      {
+       "start": "2026-11-16T10:00:00+01:00",
+       "end": "2026-11-16T10:30:00+01:00"
+      },
+      {
+       "start": "2026-11-16T10:30:00+01:00",
+       "end": "2026-11-16T11:00:00+01:00"
+      }
+     ],
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500004,
+     "durationMs": 2000,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 71,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:35:08+01:00",
+    "kind": "followup",
+    "summary": "Follow-up waiting.",
+    "data": {
+     "id": "fu-53-71",
+     "state": "waiting",
+     "toolCallId": 71,
+     "threadId": "thread-greta-forecast",
+     "waitingOn": "greta.lindqvist@nordlicht-retail.example",
+     "subject": "Peak-season forecast",
+     "sentAt": "2026-11-16T08:35:08+01:00",
+     "dueAt": "2026-11-18T08:35:08+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "followup",
+    "summary": "Follow-up satisfied.",
+    "data": {
+     "id": "fu-53-71",
+     "state": "satisfied",
+     "satisfiedBy": "normal-greta-picks",
+     "satisfiedAt": "2026-11-16T07:50:26+00:00"
+    }
+   }
+  ],
+  "usage": null
+ },
+ "77": {
+  "runId": 77,
+  "duplicate": false,
+  "state": "no_action_proposed",
+  "lifecycle": {
+   "stage": "ESCALATED",
+   "reason": "reply_needs_author",
+   "final": false,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-term-sheet",
+   "thread_id": "thread-term-sheet",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Ingrid Solberg <ingrid.solberg@bluewatershipping.example>",
+   "subject": "Joint-venture term sheet",
+   "received_at": "2026-11-16T07:40:16+00:00"
+  },
+  "category": "needs_reply",
+  "outcome": "reply",
+  "flags": [],
+  "createdAt": "2026-11-16T08:40:16+01:00",
+  "updatedAt": "2026-11-16T08:40:16+01:00",
+  "held": null,
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-term-sheet",
+    "thread_id": "thread-term-sheet",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "Draft a concise, professional reply for the executive to review."
+   }
+  },
+  "actionCounts": {},
+  "next": [
+   "draft_reply"
+  ],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-term-sheet",
+    "thread_id": "thread-term-sheet"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "reply_needed",
+     "confidence": null,
+     "evidence": [
+      "direct_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [],
+   "steps": [],
+   "approvals": 0,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [],
+  "timeline": [
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-term-sheet",
+     "threadId": "thread-term-sheet",
+     "receivedAt": "2026-11-16T07:40:16+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "needs_reply",
+     "outcome": "reply",
+     "priority": "high",
+     "reasons": [
+      "direct_request"
+     ],
+     "meetingIntent": null,
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "reply_needed",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-term-sheet",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 0 steps, 0 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-term-sheet",
+      "thread_id": "thread-term-sheet"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "reply_needed",
+       "confidence": null,
+       "evidence": [
+        "direct_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [],
+     "steps": [],
+     "approvals": 0,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:40:16+01:00",
+    "kind": "decision",
+    "summary": "This needs a reply in your words. A draft can be prepared for you to review.",
+    "data": {
+     "decision": "escalate",
+     "reason": "reply_needs_author",
+     "explanation": "This needs a reply in your words. A draft can be prepared for you to review."
+    }
+   }
+  ],
+  "usage": null
+ },
+ "86": {
+  "runId": 86,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-greta-picks",
+   "thread_id": "thread-greta-forecast",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+   "subject": "Re: Peak-season forecast",
+   "received_at": "2026-11-16T07:50:26+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T08:50:26+01:00",
+  "updatedAt": "2026-11-16T08:50:26+01:00",
+  "held": null,
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-greta-picks",
+    "thread_id": "thread-greta-forecast",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (new). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T09:30:00+01:00 to 2026-11-16T10:00:00+01:00; 2026-11-16T10:00:00+01:00 to 2026-11-16T10:30:00+01:00; 2026-11-16T10:30:00+01:00 to 2026-11-16T11:00:00+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 2
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-greta-picks",
+    "thread_id": "thread-greta-forecast"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "new_meeting",
+     "confidence": null,
+     "evidence": [
+      "question",
+      "direct_request",
+      "desk_meeting_new"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [
+    "The requested time is free on every connected calendar (3 read)."
+   ],
+   "assumptions": [
+    "The only attendee is the sender; nobody named only in the text is invited."
+   ],
+   "missing": [],
+   "tools": [
+    "calendar.check_availability",
+    "calendar.find_free_slots",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "create_calendar_event",
+     "purpose": "book",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The meeting exists on the named calendar at the proposed time.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 103
+    },
+    {
+     "id": "s2",
+     "tool": "send_email",
+     "purpose": "confirm",
+     "dependsOn": [
+      "s1"
+     ],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": true,
+     "expected": "The sender has a reply in the original thread stating what was done.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 109
+    }
+   ],
+   "approvals": 2,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 103,
+    "tool_name": "create_calendar_event",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "book",
+    "reason": "The requested time is free on every connected calendar.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "title": "Re: Peak-season forecast",
+     "start": "2026-11-16T10:00:00+01:00",
+     "end": "2026-11-16T10:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "attendees": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ],
+     "description": "Requested by Greta Lindqvist <greta.lindqvist@nordlicht-retail.example> by email.",
+     "calendar_provider": "google",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-greta-picks",
+     "thread_id": "thread-greta-forecast",
+     "provider": "gmail",
+     "desk_verified_recipients": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ]
+    },
+    "output": {
+     "availability": {
+      "free": true,
+      "complete": true,
+      "reason": null,
+      "conflicts": [],
+      "calendars": [
+       {
+        "provider": "google",
+        "account": "layla.mansour@meridianfreight.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "google",
+        "account": "layla@mansour-advisory.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "outlook",
+        "account": "layla.mansour@portalliance.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       }
+      ],
+      "within_working_hours": true,
+      "timezone": "Europe/Paris",
+      "slot": {
+       "start": "2026-11-16T10:00:00+01:00",
+       "end": "2026-11-16T10:30:00+01:00"
+      }
+     },
+     "operation": {
+      "kind": "calendar_invitation",
+      "provider": "google_calendar",
+      "organizer_account": "layla.mansour@meridianfreight.example",
+      "title": "Re: Peak-season forecast",
+      "start": "2026-11-16T10:00:00+01:00",
+      "end": "2026-11-16T10:30:00+01:00",
+      "timezone": "Europe/Paris",
+      "attendees": [
+       "greta.lindqvist@nordlicht-retail.example"
+      ],
+      "conference": false,
+      "conference_provider": null,
+      "invitation_delivery": "google_calendar",
+      "gmail_message": "not_requested",
+      "note": "Google Calendar delivers the invitation email to the attendees from the organizer account. Scriba does not send a separate Gmail message, so nothing will appear in Gmail Sent."
+     },
+     "desk_approval_key": "sim:normal:103:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "action": {
+       "type": "create",
+       "event": {
+        "summary": "Re: Peak-season forecast",
+        "description": "Requested by Greta Lindqvist <greta.lindqvist@nordlicht-retail.example> by email.",
+        "start": "2026-11-16T10:00:00+01:00",
+        "end": "2026-11-16T10:30:00+01:00",
+        "attendees": [
+         "greta.lindqvist@nordlicht-retail.example"
+        ],
+        "location": null,
+        "timezone": "Europe/Paris",
+        "event_type": "meeting",
+        "conference": false
+       }
+      },
+      "provider_account_id": "layla.mansour@meridianfreight.example"
+     },
+     "execution_status": "executed",
+     "result": {
+      "event": {
+       "id": "evt-office-meridian-5",
+       "start": "2026-11-16T10:00:00+01:00",
+       "end": "2026-11-16T10:30:00+01:00",
+       "attendees": [
+        "greta.lindqvist@nordlicht-retail.example"
+       ]
+      },
+      "calendar_result": {
+       "event": {
+        "id": "evt-office-meridian-5",
+        "start": "2026-11-16T10:00:00+01:00",
+        "end": "2026-11-16T10:30:00+01:00",
+        "attendees": [
+         "greta.lindqvist@nordlicht-retail.example"
+        ]
+       }
+      }
+     },
+     "error": null,
+     "calendar_provider": "google_calendar",
+     "meeting_status": "pending",
+     "invited_attendees": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ],
+     "calendar_event_id": "evt-office-meridian-5",
+     "invitation_sent": true,
+     "outcome": {
+      "operation": "calendar_invitation",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "calendar_event",
+        "status": "created",
+        "provider": "google_calendar",
+        "organizer_account": "layla.mansour@meridianfreight.example",
+        "event_id": "evt-office-meridian-5",
+        "meet_link": null,
+        "title": "Re: Peak-season forecast",
+        "start": "2026-11-16T10:00:00+01:00",
+        "end": "2026-11-16T10:30:00+01:00",
+        "timezone": "Europe/Paris",
+        "attendees": [
+         "greta.lindqvist@nordlicht-retail.example"
+        ],
+        "invitation_delivery": "google_calendar",
+        "invitation_status": "sent",
+        "already_booked": false
+       },
+       {
+        "kind": "email",
+        "status": "not_requested",
+        "provider": "google_calendar",
+        "note": "No separate Gmail message was sent; the invitation email came from Google Calendar."
+       }
+      ],
+      "summary": "Calendar invitation sent by Google Calendar from layla.mansour@meridianfreight.example to greta.lindqvist@nordlicht-retail.example: event 'Re: Peak-season forecast' created. No separate Gmail message was sent.",
+      "recorded_at": "2026-11-14T07:32:00.307698+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": {
+     "free": true,
+     "complete": true,
+     "reason": null,
+     "conflicts": [],
+     "calendars": [
+      {
+       "provider": "google",
+       "account": "layla.mansour@meridianfreight.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "google",
+       "account": "layla@mansour-advisory.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "outlook",
+       "account": "layla.mansour@portalliance.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      }
+     ],
+     "within_working_hours": true,
+     "timezone": "Europe/Paris",
+     "slot": {
+      "start": "2026-11-16T10:00:00+01:00",
+      "end": "2026-11-16T10:30:00+01:00"
+     }
+    },
+    "idempotencyKey": "desk:55fad30929cecd0821a0a175a4092bc2:103",
+    "assistantActionId": 500005,
+    "verified": true,
+    "verification": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:50:26+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:50:26+01:00",
+    "decisions": [
+     {
+      "toolCallId": 103,
+      "tool": "create_calendar_event",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:50:26+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500005,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T08:50:26+01:00"
+    },
+    "approve": null
+   },
+   {
+    "toolCallId": 109,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "confirm",
+    "reason": "The calendar change has taken effect, so the sender is told.",
+    "stepId": "s2",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "greta.lindqvist@nordlicht-retail.example",
+     "subject": "Re: Peak-season forecast",
+     "body": "Thank you for your message. I have scheduled \"Re: Peak-season forecast\" for Monday 16 November, 10:00 to 10:30 (Europe/Paris). You should receive a calendar invitation separately.",
+     "thread_id": "thread-greta-forecast",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-greta-picks",
+     "desk_verified_recipients": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "greta.lindqvist@nordlicht-retail.example",
+      "subject": "Re: Peak-season forecast",
+      "thread_id": "thread-greta-forecast"
+     },
+     "desk_approval_key": "sim:normal:109:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "greta.lindqvist@nordlicht-retail.example",
+      "subject": "Re: Peak-season forecast",
+      "text": "Thank you for your message. I have scheduled \"Re: Peak-season forecast\" for Monday 16 November, 10:00 to 10:30 (Europe/Paris). You should receive a calendar invitation separately.",
+      "thread_id": "thread-greta-forecast",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-greta-picks"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-6",
+      "thread_id": "thread-greta-forecast",
+      "to": [
+       "greta.lindqvist@nordlicht-retail.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "greta.lindqvist@nordlicht-retail.example",
+        "subject": "Re: Peak-season forecast",
+        "message_id": "sent-office-meridian-6",
+        "thread_id": "thread-greta-forecast"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to greta.lindqvist@nordlicht-retail.example ('Re: Peak-season forecast').",
+      "recorded_at": "2026-11-14T07:32:02.376348+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:55fad30929cecd0821a0a175a4092bc2:109",
+    "assistantActionId": 500006,
+    "verified": true,
+    "verification": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T08:50:26+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T08:50:26+01:00",
+    "decisions": [
+     {
+      "toolCallId": 109,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T08:50:26+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500006,
+     "durationMs": 2015,
+     "simulated": true,
+     "at": "2026-11-16T08:50:26+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-greta-picks",
+     "threadId": "thread-greta-forecast",
+     "receivedAt": "2026-11-16T07:50:26+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high",
+     "reasons": [
+      "question",
+      "direct_request",
+      "desk_meeting_new"
+     ],
+     "meetingIntent": "new",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 2
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-greta-forecast",
+     "count": 2
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:50:26+01:00",
+     "timeMax": "2026-11-21T08:50:26+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:50:26+01:00",
+     "timeMax": "2026-11-21T08:50:26+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T08:50:26+01:00",
+     "timeMax": "2026-11-21T08:50:26+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: read.",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": true,
+     "error": null
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T10:00:00+01:00",
+     "timeMax": "2026-11-16T10:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T10:00:00+01:00",
+     "timeMax": "2026-11-16T10:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T10:00:00+01:00",
+     "timeMax": "2026-11-16T10:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 2 steps, 2 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-greta-picks",
+      "thread_id": "thread-greta-forecast"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null,
+       "evidence": [
+        "question",
+        "direct_request",
+        "desk_meeting_new"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [
+      "The requested time is free on every connected calendar (3 read)."
+     ],
+     "assumptions": [
+      "The only attendee is the sender; nobody named only in the text is invited."
+     ],
+     "missing": [],
+     "tools": [
+      "calendar.check_availability",
+      "calendar.find_free_slots",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "create_calendar_event",
+       "purpose": "book",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The meeting exists on the named calendar at the proposed time.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      },
+      {
+       "id": "s2",
+       "tool": "send_email",
+       "purpose": "confirm",
+       "dependsOn": [
+        "s1"
+       ],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": true,
+       "expected": "The sender has a reply in the original thread stating what was done.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 2,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "decision",
+    "summary": "The requested time is free, so the meeting is proposed for your approval.",
+    "data": {
+     "decision": "propose",
+     "reason": "time_free",
+     "explanation": "The requested time is free, so the meeting is proposed for your approval."
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "proposal",
+    "summary": "Proposed create_calendar_event for approval.",
+    "data": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "stepId": "s1",
+     "binding": "cd163018de6799c3d2fdb097",
+     "purpose": "book",
+     "reason": "The requested time is free on every connected calendar.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved create_calendar_event.",
+    "data": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "execution",
+    "summary": "create_calendar_event: executed.",
+    "data": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500005,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "verification",
+    "summary": "create_calendar_event: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "stepId": "s2",
+     "binding": "2efa374d0ea395d9c17d8e3e",
+     "purpose": "confirm",
+     "reason": "The calendar change has taken effect, so the sender is told.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500006,
+     "durationMs": 2015,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T08:50:26+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 109,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "114": {
+  "runId": 114,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-priya-move",
+   "thread_id": "thread-priya-move",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Priya Nair <priya.nair@meridianfreight.example>",
+   "subject": "Our 1:1 today",
+   "received_at": "2026-11-16T08:00:36+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T09:00:36+01:00",
+  "updatedAt": "2026-11-16T09:00:36+01:00",
+  "held": null,
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-priya-move",
+    "thread_id": "thread-priya-move",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (reschedule). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T12:00:36+01:00 to 2026-11-16T12:30:36+01:00; 2026-11-16T12:30:36+01:00 to 2026-11-16T13:00:36+01:00; 2026-11-16T13:00:36+01:00 to 2026-11-16T13:30:36+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 2
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-priya-move",
+    "thread_id": "thread-priya-move"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "reschedule",
+     "confidence": null,
+     "evidence": [
+      "question",
+      "direct_request",
+      "urgent",
+      "desk_meeting_reschedule"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [
+    "The sender is on \"1:1 Priya Nair\", the only meeting this can be about."
+   ],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "calendar.check_availability",
+    "calendar.find_free_slots",
+    "calendar.list_events",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "update_calendar_event",
+     "purpose": "reschedule",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The original event is at the new time; no second event exists.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 132
+    },
+    {
+     "id": "s2",
+     "tool": "send_email",
+     "purpose": "confirm",
+     "dependsOn": [
+      "s1"
+     ],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": true,
+     "expected": "The sender has a reply in the original thread stating what was done.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 137
+    }
+   ],
+   "approvals": 2,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 132,
+    "tool_name": "update_calendar_event",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "reschedule",
+    "reason": "The new time is free on every connected calendar. The existing event is moved.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "event_id": "evt-priya-1on1",
+     "calendar_provider": "google",
+     "timezone": "Europe/Paris",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "start": "2026-11-16T16:30:00+01:00",
+     "end": "2026-11-16T17:15:00+01:00",
+     "email_id": "normal-priya-move",
+     "thread_id": "thread-priya-move",
+     "provider": "gmail",
+     "planned_change": {
+      "start": "2026-11-16T16:30:00+01:00",
+      "end": "2026-11-16T17:15:00+01:00"
+     },
+     "event_title": "1:1 Priya Nair"
+    },
+    "output": {
+     "operation": {
+      "provider": "google_calendar",
+      "calendar_label": "Google Calendar",
+      "event_id": "evt-priya-1on1",
+      "title": "1:1 Priya Nair",
+      "before": {
+       "title": "1:1 Priya Nair",
+       "start": "2026-11-16T15:00:00+01:00",
+       "end": "2026-11-16T15:45:00+01:00",
+       "timezone": "Europe/Paris",
+       "when": "Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris)",
+       "attendees": [
+        "priya.nair@meridianfreight.example"
+       ],
+       "location": ""
+      },
+      "attendees": [
+       "priya.nair@meridianfreight.example"
+      ],
+      "organizer_account": "layla.mansour@meridianfreight.example",
+      "kind": "calendar_update",
+      "after": {
+       "title": "1:1 Priya Nair",
+       "start": "2026-11-16T16:30:00+01:00",
+       "end": "2026-11-16T17:15:00+01:00",
+       "timezone": "Europe/Paris",
+       "when": "Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris)",
+       "attendees": [
+        "priya.nair@meridianfreight.example"
+       ],
+       "location": ""
+      },
+      "changes": [
+       "Time: Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris) → Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris)"
+      ],
+      "added": [],
+      "removed": [],
+      "attendees_notified": [
+       "priya.nair@meridianfreight.example"
+      ],
+      "notice": "Google Calendar emails the updated invitation to priya.nair@meridianfreight.example."
+     },
+     "availability": {
+      "free": true,
+      "complete": true,
+      "reason": null,
+      "conflicts": [],
+      "calendars": [
+       {
+        "provider": "google",
+        "account": "layla.mansour@meridianfreight.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "google",
+        "account": "layla@mansour-advisory.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       },
+       {
+        "provider": "outlook",
+        "account": "layla.mansour@portalliance.example",
+        "ok": true,
+        "error": null,
+        "busy_count": 0
+       }
+      ],
+      "within_working_hours": true,
+      "timezone": "Europe/Paris",
+      "slot": {
+       "start": "2026-11-16T16:30:00+01:00",
+       "end": "2026-11-16T17:15:00+01:00"
+      }
+     },
+     "desk_approval_key": "sim:normal:132:1",
+     "execution_status": "executed",
+     "result": {
+      "event": {
+       "id": "evt-priya-1on1",
+       "start": "2026-11-16T16:30:00+01:00",
+       "end": "2026-11-16T17:15:00+01:00",
+       "status": "confirmed"
+      },
+      "calendar_result": {
+       "event": {
+        "id": "evt-priya-1on1",
+        "start": "2026-11-16T16:30:00+01:00",
+        "end": "2026-11-16T17:15:00+01:00",
+        "status": "confirmed"
+       }
+      }
+     },
+     "calendar_event_id": "evt-priya-1on1",
+     "calendar_provider": "google_calendar",
+     "changes_applied": [
+      "Time: Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris) → Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris)"
+     ],
+     "attendees_notified": [
+      "priya.nair@meridianfreight.example"
+     ],
+     "change_summary": "Moved “1:1 Priya Nair” to Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris) (was Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris)). Google Calendar emailed the update to priya.nair@meridianfreight.example.",
+     "outcome": {
+      "operation": "calendar_update",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "calendar_event",
+        "provider": "google_calendar",
+        "event_id": "evt-priya-1on1",
+        "title": "1:1 Priya Nair",
+        "timezone": "Europe/Paris",
+        "previous_start": "2026-11-16T15:00:00+01:00",
+        "previous_end": "2026-11-16T15:45:00+01:00",
+        "attendees": [
+         "priya.nair@meridianfreight.example"
+        ],
+        "status": "updated",
+        "start": "2026-11-16T16:30:00+01:00",
+        "end": "2026-11-16T17:15:00+01:00",
+        "changes": [
+         "Time: Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris) → Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris)"
+        ]
+       }
+      ],
+      "summary": "Moved “1:1 Priya Nair” to Mon, Nov 16 · 4:30 PM – 5:15 PM (Europe/Paris) (was Mon, Nov 16 · 3:00 PM – 3:45 PM (Europe/Paris)). Google Calendar emailed the update to priya.nair@meridianfreight.example.",
+      "recorded_at": "2026-11-14T07:32:02.563194+00:00"
+     },
+     "approved_overrides": {},
+     "final_payload": {
+      "action": {
+       "type": "reschedule",
+       "event": {
+        "timezone": "Europe/Paris",
+        "start": "2026-11-16T16:30:00+01:00",
+        "end": "2026-11-16T17:15:00+01:00"
+       },
+       "target_event_id": "evt-priya-1on1"
+      },
+      "provider_account_id": "layla.mansour@meridianfreight.example"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": {
+     "free": true,
+     "complete": true,
+     "reason": null,
+     "conflicts": [],
+     "calendars": [
+      {
+       "provider": "google",
+       "account": "layla.mansour@meridianfreight.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "google",
+       "account": "layla@mansour-advisory.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      },
+      {
+       "provider": "outlook",
+       "account": "layla.mansour@portalliance.example",
+       "ok": true,
+       "error": null,
+       "busy_count": 0
+      }
+     ],
+     "within_working_hours": true,
+     "timezone": "Europe/Paris",
+     "slot": {
+      "start": "2026-11-16T16:30:00+01:00",
+      "end": "2026-11-16T17:15:00+01:00"
+     }
+    },
+    "idempotencyKey": "desk:4cae5deb40b40b40d6abd79187a6248a:132",
+    "assistantActionId": 500007,
+    "verified": true,
+    "verification": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T09:00:36+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T09:00:36+01:00",
+    "decisions": [
+     {
+      "toolCallId": 132,
+      "tool": "update_calendar_event",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T09:00:36+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500007,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T09:00:36+01:00"
+    },
+    "approve": null
+   },
+   {
+    "toolCallId": 137,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "confirm",
+    "reason": "The calendar change has taken effect, so the sender is told.",
+    "stepId": "s2",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "priya.nair@meridianfreight.example",
+     "subject": "Re: Our 1:1 today",
+     "body": "Thank you for your message. I have moved \"1:1 Priya Nair\" to Monday 16 November, 16:30 to 17:15 (Europe/Paris). You should receive a calendar update separately.",
+     "thread_id": "thread-priya-move",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-priya-move",
+     "desk_verified_recipients": [
+      "priya.nair@meridianfreight.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "priya.nair@meridianfreight.example",
+      "subject": "Re: Our 1:1 today",
+      "thread_id": "thread-priya-move"
+     },
+     "desk_approval_key": "sim:normal:137:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "priya.nair@meridianfreight.example",
+      "subject": "Re: Our 1:1 today",
+      "text": "Thank you for your message. I have moved \"1:1 Priya Nair\" to Monday 16 November, 16:30 to 17:15 (Europe/Paris). You should receive a calendar update separately.",
+      "thread_id": "thread-priya-move",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-priya-move"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-7",
+      "thread_id": "thread-priya-move",
+      "to": [
+       "priya.nair@meridianfreight.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "priya.nair@meridianfreight.example",
+        "subject": "Re: Our 1:1 today",
+        "message_id": "sent-office-meridian-7",
+        "thread_id": "thread-priya-move"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to priya.nair@meridianfreight.example ('Re: Our 1:1 today').",
+      "recorded_at": "2026-11-14T07:32:04.627920+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:4cae5deb40b40b40d6abd79187a6248a:137",
+    "assistantActionId": 500008,
+    "verified": true,
+    "verification": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T09:00:36+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T09:00:36+01:00",
+    "decisions": [
+     {
+      "toolCallId": 137,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T09:00:36+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500008,
+     "durationMs": 2015,
+     "simulated": true,
+     "at": "2026-11-16T09:00:36+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-priya-move",
+     "threadId": "thread-priya-move",
+     "receivedAt": "2026-11-16T08:00:36+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high",
+     "reasons": [
+      "question",
+      "direct_request",
+      "urgent",
+      "desk_meeting_reschedule"
+     ],
+     "meetingIntent": "reschedule",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "reschedule",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-priya-move",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T09:00:36+01:00",
+     "timeMax": "2026-11-21T09:00:36+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T09:00:36+01:00",
+     "timeMax": "2026-11-21T09:00:36+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T09:00:36+01:00",
+     "timeMax": "2026-11-21T09:00:36+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: read.",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": true,
+     "error": null
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.list_events: read.",
+    "data": {
+     "tool": "calendar.list_events",
+     "ok": true,
+     "count": 13,
+     "timeMin": "2026-11-15T09:00:36+01:00",
+     "timeMax": "2026-12-31T09:00:36+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T16:30:00+01:00",
+     "timeMax": "2026-11-16T17:15:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T16:30:00+01:00",
+     "timeMax": "2026-11-16T17:15:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T16:30:00+01:00",
+     "timeMax": "2026-11-16T17:15:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 2 steps, 2 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-priya-move",
+      "thread_id": "thread-priya-move"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "reschedule",
+       "confidence": null,
+       "evidence": [
+        "question",
+        "direct_request",
+        "urgent",
+        "desk_meeting_reschedule"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [
+      "The sender is on \"1:1 Priya Nair\", the only meeting this can be about."
+     ],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "calendar.check_availability",
+      "calendar.find_free_slots",
+      "calendar.list_events",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "update_calendar_event",
+       "purpose": "reschedule",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The original event is at the new time; no second event exists.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      },
+      {
+       "id": "s2",
+       "tool": "send_email",
+       "purpose": "confirm",
+       "dependsOn": [
+        "s1"
+       ],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": true,
+       "expected": "The sender has a reply in the original thread stating what was done.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 2,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "decision",
+    "summary": "Moving \"1:1 Priya Nair\" is proposed for your approval.",
+    "data": {
+     "decision": "propose",
+     "reason": "new_time_free",
+     "explanation": "Moving \"1:1 Priya Nair\" is proposed for your approval."
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "proposal",
+    "summary": "Proposed update_calendar_event for approval.",
+    "data": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "stepId": "s1",
+     "binding": "e230a76bfe71ae65b1948a2e",
+     "purpose": "reschedule",
+     "reason": "The new time is free on every connected calendar. The existing event is moved.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved update_calendar_event.",
+    "data": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "execution",
+    "summary": "update_calendar_event: executed.",
+    "data": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500007,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "verification",
+    "summary": "update_calendar_event: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "stepId": "s2",
+     "binding": "e9f2e69ea9a980c1fcf9215b",
+     "purpose": "confirm",
+     "reason": "The calendar change has taken effect, so the sender is told.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500008,
+     "durationMs": 2015,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T09:00:36+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 137,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "142": {
+  "runId": 142,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-settlement",
+   "thread_id": "thread-settlement",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Elena Petrova <elena.petrova@meridianfreight.example>",
+   "subject": "URGENT: Rotterdam settlement offer expires today",
+   "received_at": "2026-11-16T09:00:06+00:00"
+  },
+  "category": "action_item",
+  "outcome": "task",
+  "flags": [],
+  "createdAt": "2026-11-16T10:00:06+01:00",
+  "updatedAt": "2026-11-16T10:00:06+01:00",
+  "held": null,
+  "draftRequest": null,
+  "actionCounts": {
+   "executed": 1
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-settlement",
+    "thread_id": "thread-settlement"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "task",
+     "confidence": null,
+     "evidence": [
+      "no_question_or_request",
+      "desk_action_requested"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "task.list"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "create_task",
+     "purpose": "record_task",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": false,
+     "deferred": false,
+     "expected": "The task or reminder exists in the executive's own records.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 152
+    }
+   ],
+   "approvals": 1,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 152,
+    "tool_name": "create_task",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "record_task",
+    "reason": "The message names something to do, due 2026-11-16T17:00:00+01:00.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "title": "URGENT: Rotterdam settlement offer expires today",
+     "description": "From Elena Petrova <elena.petrova@meridianfreight.example>, received 2026-11-16T09:00:06+00:00 (gmail). Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+     "priority": "high",
+     "due_at": "2026-11-16T17:00:00+01:00",
+     "email_id": "normal-settlement",
+     "thread_id": "thread-settlement",
+     "provider": "gmail"
+    },
+    "output": {
+     "desk_approval_key": "sim:normal:152:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "title": "URGENT: Rotterdam settlement offer expires today",
+      "description": "From Elena Petrova <elena.petrova@meridianfreight.example>, received 2026-11-16T09:00:06+00:00 (gmail). Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+      "due_at": "2026-11-16T17:00:00+01:00",
+      "priority": "high",
+      "source_item_id": null
+     },
+     "execution_status": "executed",
+     "result": {
+      "task": {
+       "id": "task-office-meridian-8",
+       "title": "URGENT: Rotterdam settlement offer expires today",
+       "description": "From Elena Petrova <elena.petrova@meridianfreight.example>, received 2026-11-16T09:00:06+00:00 (gmail). Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+       "due_at": "2026-11-16T17:00:00+01:00",
+       "priority": "high",
+       "status": "open",
+       "created_at": "2026-11-16T10:00:06+01:00"
+      }
+     },
+     "error": null
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:66d5f30b6220de9032c24fe0898cf9f8:152",
+    "assistantActionId": 500009,
+    "verified": true,
+    "verification": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T10:00:06+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T10:00:06+01:00",
+    "decisions": [
+     {
+      "toolCallId": 152,
+      "tool": "create_task",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T10:00:06+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500009,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T10:00:06+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-settlement",
+     "threadId": "thread-settlement",
+     "receivedAt": "2026-11-16T09:00:06+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "action_item",
+     "outcome": "task",
+     "priority": "urgent",
+     "reasons": [
+      "no_question_or_request",
+      "desk_action_requested"
+     ],
+     "meetingIntent": null,
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "task",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-settlement",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "read",
+    "summary": "task.list: read.",
+    "data": {
+     "tool": "task.list",
+     "ok": true,
+     "count": 4
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 1 step, 1 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-settlement",
+      "thread_id": "thread-settlement"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "task",
+       "confidence": null,
+       "evidence": [
+        "no_question_or_request",
+        "desk_action_requested"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "task.list"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "create_task",
+       "purpose": "record_task",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": false,
+       "deferred": false,
+       "expected": "The task or reminder exists in the executive's own records.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 1,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "decision",
+    "summary": "A task is proposed from this message.",
+    "data": {
+     "decision": "propose",
+     "reason": "action_item",
+     "explanation": "A task is proposed from this message."
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "proposal",
+    "summary": "Proposed create_task for approval.",
+    "data": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "stepId": "s1",
+     "binding": "e65147784306f719a9ee1d33",
+     "purpose": "record_task",
+     "reason": "The message names something to do, due 2026-11-16T17:00:00+01:00.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved create_task.",
+    "data": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "execution",
+    "summary": "create_task: executed.",
+    "data": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500009,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T10:00:06+01:00",
+    "kind": "verification",
+    "summary": "create_task: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 152,
+     "tool": "create_task",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "157": {
+  "runId": 157,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "COMPLETED",
+   "reason": null,
+   "final": true,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-tomas-cancel",
+   "thread_id": "thread-tomas-cancel",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Tomas Vega <tomas.vega@kestrelinsurance.example>",
+   "subject": "Friday's renewal call",
+   "received_at": "2026-11-16T10:00:55+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T11:00:55+01:00",
+  "updatedAt": "2026-11-16T11:00:55+01:00",
+  "held": null,
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-tomas-cancel",
+    "thread_id": "thread-tomas-cancel",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (cancel). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T12:00:55+01:00 to 2026-11-16T12:30:55+01:00; 2026-11-16T12:30:55+01:00 to 2026-11-16T13:00:55+01:00; 2026-11-16T13:00:55+01:00 to 2026-11-16T13:30:55+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 2
+  },
+  "next": [],
+  "followUps": [],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-tomas-cancel",
+    "thread_id": "thread-tomas-cancel"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "cancellation",
+     "confidence": null,
+     "evidence": [
+      "meeting_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [
+    "The sender is on \"Insurance renewal call\", the only meeting this can be about."
+   ],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "calendar.find_free_slots",
+    "calendar.list_events",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "cancel_calendar_event",
+     "purpose": "cancel",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The original event is cancelled.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 172
+    },
+    {
+     "id": "s2",
+     "tool": "send_email",
+     "purpose": "confirm",
+     "dependsOn": [
+      "s1"
+     ],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": true,
+     "expected": "The sender has a reply in the original thread stating what was done.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 177
+    }
+   ],
+   "approvals": 2,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 172,
+    "tool_name": "cancel_calendar_event",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "cancel",
+    "reason": "tomas.vega@kestrelinsurance.example is on this meeting and asked to cancel it.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "event_id": "evt-insurance-renewal",
+     "calendar_provider": "google",
+     "timezone": "Europe/Paris",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-tomas-cancel",
+     "thread_id": "thread-tomas-cancel",
+     "provider": "gmail",
+     "planned_change": {},
+     "event_title": "Insurance renewal call"
+    },
+    "output": {
+     "operation": {
+      "provider": "google_calendar",
+      "calendar_label": "Google Calendar",
+      "event_id": "evt-insurance-renewal",
+      "title": "Insurance renewal call",
+      "before": {
+       "title": "Insurance renewal call",
+       "start": "2026-11-20T10:00:00+01:00",
+       "end": "2026-11-20T10:30:00+01:00",
+       "timezone": "Europe/Paris",
+       "when": "Fri, Nov 20 · 10:00 AM – 10:30 AM (Europe/Paris)",
+       "attendees": [
+        "tomas.vega@kestrelinsurance.example"
+       ],
+       "location": ""
+      },
+      "attendees": [
+       "tomas.vega@kestrelinsurance.example"
+      ],
+      "organizer_account": "layla.mansour@meridianfreight.example",
+      "kind": "calendar_cancellation",
+      "notice": "Google Calendar emails a cancellation to tomas.vega@kestrelinsurance.example.",
+      "attendees_notified": [
+       "tomas.vega@kestrelinsurance.example"
+      ],
+      "message": null,
+      "message_delivery": "none"
+     },
+     "desk_approval_key": "sim:normal:172:1",
+     "execution_status": "executed",
+     "result": {
+      "event": {
+       "id": "evt-insurance-renewal",
+       "start": "2026-11-20T10:00:00+01:00",
+       "end": "2026-11-20T10:30:00+01:00",
+       "status": "cancelled"
+      },
+      "calendar_result": {
+       "event": {
+        "id": "evt-insurance-renewal",
+        "start": "2026-11-20T10:00:00+01:00",
+        "end": "2026-11-20T10:30:00+01:00",
+        "status": "cancelled"
+       }
+      }
+     },
+     "calendar_event_id": "evt-insurance-renewal",
+     "calendar_provider": "google_calendar",
+     "changes_applied": [
+      "Cancelled: Fri, Nov 20 · 10:00 AM – 10:30 AM (Europe/Paris)"
+     ],
+     "attendees_notified": [
+      "tomas.vega@kestrelinsurance.example"
+     ],
+     "change_summary": "Cancelled “Insurance renewal call” (Fri, Nov 20 · 10:00 AM – 10:30 AM (Europe/Paris)). Google Calendar emailed a cancellation to tomas.vega@kestrelinsurance.example.",
+     "outcome": {
+      "operation": "calendar_cancellation",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "calendar_event",
+        "provider": "google_calendar",
+        "event_id": "evt-insurance-renewal",
+        "title": "Insurance renewal call",
+        "timezone": "Europe/Paris",
+        "previous_start": "2026-11-20T10:00:00+01:00",
+        "previous_end": "2026-11-20T10:30:00+01:00",
+        "attendees": [
+         "tomas.vega@kestrelinsurance.example"
+        ],
+        "status": "cancelled",
+        "start": "2026-11-20T10:00:00+01:00",
+        "end": "2026-11-20T10:30:00+01:00"
+       }
+      ],
+      "summary": "Cancelled “Insurance renewal call” (Fri, Nov 20 · 10:00 AM – 10:30 AM (Europe/Paris)). Google Calendar emailed a cancellation to tomas.vega@kestrelinsurance.example.",
+      "recorded_at": "2026-11-14T07:32:05.183751+00:00"
+     },
+     "approved_overrides": {},
+     "final_payload": {
+      "action": {
+       "type": "cancel",
+       "event": {
+        "timezone": "Europe/Paris"
+       },
+       "target_event_id": "evt-insurance-renewal"
+      },
+      "provider_account_id": "layla.mansour@meridianfreight.example"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:17f71b96ea69fb192e0d5c3c76000662:172",
+    "assistantActionId": 500010,
+    "verified": true,
+    "verification": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T11:00:55+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T11:00:55+01:00",
+    "decisions": [
+     {
+      "toolCallId": 172,
+      "tool": "cancel_calendar_event",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T11:00:55+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500010,
+     "durationMs": 0,
+     "simulated": true,
+     "at": "2026-11-16T11:00:55+01:00"
+    },
+    "approve": null
+   },
+   {
+    "toolCallId": 177,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "confirm",
+    "reason": "The calendar change has taken effect, so the sender is told.",
+    "stepId": "s2",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": null,
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "tomas.vega@kestrelinsurance.example",
+     "subject": "Re: Friday's renewal call",
+     "body": "Thank you for letting me know. \"Insurance renewal call\" has been cancelled, and a calendar cancellation has been sent separately.",
+     "thread_id": "thread-tomas-cancel",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-tomas-cancel",
+     "desk_verified_recipients": [
+      "tomas.vega@kestrelinsurance.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "tomas.vega@kestrelinsurance.example",
+      "subject": "Re: Friday's renewal call",
+      "thread_id": "thread-tomas-cancel"
+     },
+     "desk_approval_key": "sim:normal:177:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "tomas.vega@kestrelinsurance.example",
+      "subject": "Re: Friday's renewal call",
+      "text": "Thank you for letting me know. \"Insurance renewal call\" has been cancelled, and a calendar cancellation has been sent separately.",
+      "thread_id": "thread-tomas-cancel",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-tomas-cancel"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-9",
+      "thread_id": "thread-tomas-cancel",
+      "to": [
+       "tomas.vega@kestrelinsurance.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "tomas.vega@kestrelinsurance.example",
+        "subject": "Re: Friday's renewal call",
+        "message_id": "sent-office-meridian-9",
+        "thread_id": "thread-tomas-cancel"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to tomas.vega@kestrelinsurance.example ('Re: Friday's renewal call').",
+      "recorded_at": "2026-11-14T07:32:07.254625+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:17f71b96ea69fb192e0d5c3c76000662:177",
+    "assistantActionId": 500011,
+    "verified": true,
+    "verification": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T11:00:55+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T11:00:55+01:00",
+    "decisions": [
+     {
+      "toolCallId": 177,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T11:00:55+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500011,
+     "durationMs": 2000,
+     "simulated": true,
+     "at": "2026-11-16T11:00:55+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-tomas-cancel",
+     "threadId": "thread-tomas-cancel",
+     "receivedAt": "2026-11-16T10:00:55+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "medium",
+     "reasons": [
+      "meeting_request"
+     ],
+     "meetingIntent": "cancel",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "cancellation",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-tomas-cancel",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T11:00:55+01:00",
+     "timeMax": "2026-11-21T11:00:55+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T11:00:55+01:00",
+     "timeMax": "2026-11-21T11:00:55+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T11:00:55+01:00",
+     "timeMax": "2026-11-21T11:00:55+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: could not be read (no_single_written_time).",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": false,
+     "error": "no_single_written_time"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "read",
+    "summary": "calendar.list_events: read.",
+    "data": {
+     "tool": "calendar.list_events",
+     "ok": true,
+     "count": 13,
+     "timeMin": "2026-11-15T11:00:55+01:00",
+     "timeMax": "2026-12-31T11:00:55+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 2 steps, 2 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-tomas-cancel",
+      "thread_id": "thread-tomas-cancel"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "cancellation",
+       "confidence": null,
+       "evidence": [
+        "meeting_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [
+      "The sender is on \"Insurance renewal call\", the only meeting this can be about."
+     ],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "calendar.find_free_slots",
+      "calendar.list_events",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "cancel_calendar_event",
+       "purpose": "cancel",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The original event is cancelled.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      },
+      {
+       "id": "s2",
+       "tool": "send_email",
+       "purpose": "confirm",
+       "dependsOn": [
+        "s1"
+       ],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": true,
+       "expected": "The sender has a reply in the original thread stating what was done.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 2,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "decision",
+    "summary": "Cancelling \"Insurance renewal call\" is proposed for your approval.",
+    "data": {
+     "decision": "propose",
+     "reason": "cancel_requested",
+     "explanation": "Cancelling \"Insurance renewal call\" is proposed for your approval."
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "proposal",
+    "summary": "Proposed cancel_calendar_event for approval.",
+    "data": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "stepId": "s1",
+     "binding": "ab3cbd3cf71acfe4f5247300",
+     "purpose": "cancel",
+     "reason": "tomas.vega@kestrelinsurance.example is on this meeting and asked to cancel it.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved cancel_calendar_event.",
+    "data": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "execution",
+    "summary": "cancel_calendar_event: executed.",
+    "data": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500010,
+     "durationMs": 0,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "verification",
+    "summary": "cancel_calendar_event: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "stepId": "s2",
+     "binding": "7fad8f744ae153696e1e4a4a",
+     "purpose": "confirm",
+     "reason": "The calendar change has taken effect, so the sender is told.",
+     "proposedSlots": null,
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500011,
+     "durationMs": 2000,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T11:00:55+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 177,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   }
+  ],
+  "usage": null
+ },
+ "182": {
+  "runId": 182,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "WAITING_FOR_RESPONSE",
+   "reason": null,
+   "final": false,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-mei-prep",
+   "thread_id": "thread-mei-intro",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+   "subject": "Re: Cold-chain lanes: intro call",
+   "received_at": "2026-11-16T11:00:47+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T12:00:47+01:00",
+  "updatedAt": "2026-11-16T12:00:47+01:00",
+  "held": {
+   "reason": "time_not_understood",
+   "slots": [
+    {
+     "start": "2026-11-16T12:00:47+01:00",
+     "end": "2026-11-16T12:30:47+01:00"
+    },
+    {
+     "start": "2026-11-16T12:30:47+01:00",
+     "end": "2026-11-16T13:00:47+01:00"
+    },
+    {
+     "start": "2026-11-16T13:00:47+01:00",
+     "end": "2026-11-16T13:30:47+01:00"
+    },
+    {
+     "start": "2026-11-16T13:30:47+01:00",
+     "end": "2026-11-16T14:00:47+01:00"
+    },
+    {
+     "start": "2026-11-16T14:00:47+01:00",
+     "end": "2026-11-16T14:30:47+01:00"
+    }
+   ],
+   "calendars": [
+    {
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 6
+    },
+    {
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 1
+    },
+    {
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 2
+    }
+   ],
+   "message": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+  },
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-mei-prep",
+    "thread_id": "thread-mei-intro",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (new). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T12:00:47+01:00 to 2026-11-16T12:30:47+01:00; 2026-11-16T12:30:47+01:00 to 2026-11-16T13:00:47+01:00; 2026-11-16T13:00:47+01:00 to 2026-11-16T13:30:47+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 1
+  },
+  "next": [],
+  "followUps": [
+   {
+    "id": "fu-182-197",
+    "state": "waiting",
+    "toolCallId": 197,
+    "threadId": "thread-mei-intro",
+    "waitingOn": "mei.tanaka@brightwavefoods.example",
+    "subject": "Re: Cold-chain lanes: intro call",
+    "sentAt": "2026-11-16T12:00:47+01:00",
+    "dueAt": "2026-11-18T12:00:47+01:00",
+    "updatedAt": "2026-11-16T12:00:47+01:00"
+   }
+  ],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-mei-prep",
+    "thread_id": "thread-mei-intro"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "new_meeting",
+     "confidence": null,
+     "evidence": [
+      "meeting_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "calendar.find_free_slots",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "send_email",
+     "purpose": "clarify",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The sender has been asked for the missing detail.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 197
+    }
+   ],
+   "approvals": 1,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 197,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "clarify",
+    "reason": "Only times verified free on every connected calendar are offered.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": [
+     {
+      "start": "2026-11-16T12:00:47+01:00",
+      "end": "2026-11-16T12:30:47+01:00"
+     },
+     {
+      "start": "2026-11-16T12:30:47+01:00",
+      "end": "2026-11-16T13:00:47+01:00"
+     },
+     {
+      "start": "2026-11-16T13:00:47+01:00",
+      "end": "2026-11-16T13:30:47+01:00"
+     }
+    ],
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "mei.tanaka@brightwavefoods.example",
+     "subject": "Re: Cold-chain lanes: intro call",
+     "body": "Thank you for your message. I would be glad to find a time.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 12:00 to 12:30\n- Monday 16 November, 12:30 to 13:00\n- Monday 16 November, 13:00 to 13:30\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-mei-intro",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-mei-prep",
+     "desk_verified_recipients": [
+      "mei.tanaka@brightwavefoods.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "mei.tanaka@brightwavefoods.example",
+      "subject": "Re: Cold-chain lanes: intro call",
+      "thread_id": "thread-mei-intro"
+     },
+     "desk_approval_key": "sim:normal:197:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "mei.tanaka@brightwavefoods.example",
+      "subject": "Re: Cold-chain lanes: intro call",
+      "text": "Thank you for your message. I would be glad to find a time.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 12:00 to 12:30\n- Monday 16 November, 12:30 to 13:00\n- Monday 16 November, 13:00 to 13:30\n\nPlease let me know which suits you, or suggest another.",
+      "thread_id": "thread-mei-intro",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-mei-prep"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-10",
+      "thread_id": "thread-mei-intro",
+      "to": [
+       "mei.tanaka@brightwavefoods.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "mei.tanaka@brightwavefoods.example",
+        "subject": "Re: Cold-chain lanes: intro call",
+        "message_id": "sent-office-meridian-10",
+        "thread_id": "thread-mei-intro"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to mei.tanaka@brightwavefoods.example ('Re: Cold-chain lanes: intro call').",
+      "recorded_at": "2026-11-14T07:32:09.636716+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:873ceba5f1566f8e0bf1a20d74795928:197",
+    "assistantActionId": 500012,
+    "verified": true,
+    "verification": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T12:00:47+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T12:00:47+01:00",
+    "decisions": [
+     {
+      "toolCallId": 197,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T12:00:47+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500012,
+     "durationMs": 2000,
+     "simulated": true,
+     "at": "2026-11-16T12:00:47+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-mei-prep",
+     "threadId": "thread-mei-intro",
+     "receivedAt": "2026-11-16T11:00:47+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "medium",
+     "reasons": [
+      "meeting_request"
+     ],
+     "meetingIntent": "new",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 2
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-mei-intro",
+     "count": 2
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T12:00:47+01:00",
+     "timeMax": "2026-11-21T12:00:47+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T12:00:47+01:00",
+     "timeMax": "2026-11-21T12:00:47+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T12:00:47+01:00",
+     "timeMax": "2026-11-21T12:00:47+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: could not be read (no_single_written_time).",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": false,
+     "error": "no_single_written_time"
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 1 step, 1 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-mei-prep",
+      "thread_id": "thread-mei-intro"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null,
+       "evidence": [
+        "meeting_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "calendar.find_free_slots",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "send_email",
+       "purpose": "clarify",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The sender has been asked for the missing detail.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 1,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "decision",
+    "summary": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply.",
+    "data": {
+     "decision": "hold",
+     "reason": "time_not_understood",
+     "explanation": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "decision",
+    "summary": "A reply offering verified free times is proposed.",
+    "data": {
+     "decision": "propose",
+     "reason": "clarify",
+     "explanation": "A reply offering verified free times is proposed."
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "stepId": "s1",
+     "binding": "8daf50eda6a9d09e6af9a411",
+     "purpose": "clarify",
+     "reason": "Only times verified free on every connected calendar are offered.",
+     "proposedSlots": [
+      {
+       "start": "2026-11-16T12:00:47+01:00",
+       "end": "2026-11-16T12:30:47+01:00"
+      },
+      {
+       "start": "2026-11-16T12:30:47+01:00",
+       "end": "2026-11-16T13:00:47+01:00"
+      },
+      {
+       "start": "2026-11-16T13:00:47+01:00",
+       "end": "2026-11-16T13:30:47+01:00"
+      }
+     ],
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500012,
+     "durationMs": 2000,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 197,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T12:00:47+01:00",
+    "kind": "followup",
+    "summary": "Follow-up waiting.",
+    "data": {
+     "id": "fu-182-197",
+     "state": "waiting",
+     "toolCallId": 197,
+     "threadId": "thread-mei-intro",
+     "waitingOn": "mei.tanaka@brightwavefoods.example",
+     "subject": "Re: Cold-chain lanes: intro call",
+     "sentAt": "2026-11-16T12:00:47+01:00",
+     "dueAt": "2026-11-18T12:00:47+01:00"
+    }
+   }
+  ],
+  "usage": null
+ },
+ "203": {
+  "runId": 203,
+  "duplicate": false,
+  "state": "completed",
+  "lifecycle": {
+   "stage": "WAITING_FOR_RESPONSE",
+   "reason": null,
+   "final": false,
+   "outcomeUnknown": false,
+   "compensation": null
+  },
+  "trigger": "worker",
+  "simulated": true,
+  "email": {
+   "provider": "gmail",
+   "email_id": "normal-jonas-pricing",
+   "thread_id": "thread-jonas-pricing",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "from_addr": "Jonas Weber <jonas.weber@meridianfreight.example>",
+   "subject": "Brightwave pricing prep",
+   "received_at": "2026-11-16T14:00:31+00:00"
+  },
+  "category": "meeting_request",
+  "outcome": "schedule",
+  "flags": [],
+  "createdAt": "2026-11-16T15:00:31+01:00",
+  "updatedAt": "2026-11-16T15:00:31+01:00",
+  "held": {
+   "reason": "calendar_conflict",
+   "slots": [
+    {
+     "start": "2026-11-16T15:00:31+01:00",
+     "end": "2026-11-16T15:30:31+01:00"
+    },
+    {
+     "start": "2026-11-16T15:30:31+01:00",
+     "end": "2026-11-16T16:00:31+01:00"
+    },
+    {
+     "start": "2026-11-17T09:00:00+01:00",
+     "end": "2026-11-17T09:30:00+01:00"
+    },
+    {
+     "start": "2026-11-17T09:30:00+01:00",
+     "end": "2026-11-17T10:00:00+01:00"
+    },
+    {
+     "start": "2026-11-17T11:00:00+01:00",
+     "end": "2026-11-17T11:30:00+01:00"
+    }
+   ],
+   "calendars": [
+    {
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 1
+    },
+    {
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 0
+    },
+    {
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "busy_count": 0
+    }
+   ],
+   "message": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply.",
+   "requested": {
+    "start": "2026-11-18T14:00:00+01:00",
+    "end": "2026-11-18T14:30:00+01:00"
+   },
+   "conflicts": [
+    {
+     "start": "2026-11-18T14:00:00+01:00",
+     "end": "2026-11-18T14:30:00+01:00",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "title": null
+    }
+   ]
+  },
+  "draftRequest": {
+   "method": "POST",
+   "path": "/drafts/create",
+   "body": {
+    "provider": "gmail",
+    "email_id": "normal-jonas-pricing",
+    "thread_id": "thread-jonas-pricing",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "user_context": "This is a meeting request (new). Times verified free on every connected calendar (Europe/Paris): 2026-11-16T15:00:31+01:00 to 2026-11-16T15:30:31+01:00; 2026-11-16T15:30:31+01:00 to 2026-11-16T16:00:31+01:00; 2026-11-17T09:00:00+01:00 to 2026-11-17T09:30:00+01:00. If the sender asked for a time that is not in this list, do not confirm it; offer these times instead. Never state that a meeting has been booked."
+   }
+  },
+  "actionCounts": {
+   "executed": 1
+  },
+  "next": [],
+  "followUps": [
+   {
+    "id": "fu-203-221",
+    "state": "waiting",
+    "toolCallId": 221,
+    "threadId": "thread-jonas-pricing",
+    "waitingOn": "jonas.weber@meridianfreight.example",
+    "subject": "Brightwave pricing prep",
+    "sentAt": "2026-11-16T15:00:31+01:00",
+    "dueAt": "2026-11-18T15:00:31+01:00",
+    "updatedAt": "2026-11-16T15:00:31+01:00"
+   }
+  ],
+  "plan": {
+   "version": 1,
+   "message": {
+    "provider": "gmail",
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "email_id": "normal-jonas-pricing",
+    "thread_id": "thread-jonas-pricing"
+   },
+   "planner": "rules",
+   "intents": [
+    {
+     "type": "new_meeting",
+     "confidence": null,
+     "evidence": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "missing": [],
+     "source": "rules"
+    }
+   ],
+   "unsupported": [],
+   "facts": [],
+   "assumptions": [],
+   "missing": [],
+   "tools": [
+    "calendar.check_availability",
+    "calendar.find_free_slots",
+    "model.extract_request",
+    "rules.extract_time"
+   ],
+   "steps": [
+    {
+     "id": "s1",
+     "tool": "send_email",
+     "purpose": "offer_times",
+     "dependsOn": [],
+     "requiresApproval": true,
+     "external": true,
+     "deferred": false,
+     "expected": "The sender has a reply offering only times verified free.",
+     "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
+     "state": "executed",
+     "toolCallId": 221
+    }
+   ],
+   "approvals": 1,
+   "escalation": [
+    "A calendar cannot be read: availability is unknown and nothing is booked.",
+    "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+    "A step fails or is rejected: the steps that depend on it are not proposed.",
+    "An executed action cannot be verified: the run is handed to the person."
+   ]
+  },
+  "actions": [
+   {
+    "toolCallId": 221,
+    "tool_name": "send_email",
+    "status": "executed",
+    "requiresApproval": true,
+    "purpose": "offer_times",
+    "reason": "Only times verified free on every connected calendar are offered.",
+    "stepId": "s1",
+    "held": false,
+    "attempts": 1,
+    "proposedSlots": [
+     {
+      "start": "2026-11-16T15:00:31+01:00",
+      "end": "2026-11-16T15:30:31+01:00"
+     },
+     {
+      "start": "2026-11-16T15:30:31+01:00",
+      "end": "2026-11-16T16:00:31+01:00"
+     },
+     {
+      "start": "2026-11-17T09:00:00+01:00",
+      "end": "2026-11-17T09:30:00+01:00"
+     }
+    ],
+    "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "jonas.weber@meridianfreight.example",
+     "subject": "Re: Brightwave pricing prep",
+     "body": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 15:00 to 15:30\n- Monday 16 November, 15:30 to 16:00\n- Tuesday 17 November, 09:00 to 09:30\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-jonas-pricing",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "normal-jonas-pricing",
+     "desk_verified_recipients": [
+      "jonas.weber@meridianfreight.example"
+     ]
+    },
+    "output": {
+     "operation": {
+      "kind": "email_reply",
+      "provider": "gmail",
+      "from_account": "layla.mansour@meridianfreight.example",
+      "to": "jonas.weber@meridianfreight.example",
+      "subject": "Re: Brightwave pricing prep",
+      "thread_id": "thread-jonas-pricing"
+     },
+     "desk_approval_key": "sim:normal:221:1",
+     "approved_overrides": {},
+     "final_payload": {
+      "provider": "gmail",
+      "mode": "reply",
+      "to": "jonas.weber@meridianfreight.example",
+      "subject": "Re: Brightwave pricing prep",
+      "text": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 15:00 to 15:30\n- Monday 16 November, 15:30 to 16:00\n- Tuesday 17 November, 09:00 to 09:30\n\nPlease let me know which suits you, or suggest another.",
+      "thread_id": "thread-jonas-pricing",
+      "message_id": null,
+      "attachments": [],
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-jonas-pricing"
+     },
+     "execution_status": "executed",
+     "result": {
+      "message_id": "sent-office-meridian-11",
+      "thread_id": "thread-jonas-pricing",
+      "to": [
+       "jonas.weber@meridianfreight.example"
+      ]
+     },
+     "error": null,
+     "outcome": {
+      "operation": "email",
+      "status": "succeeded",
+      "components": [
+       {
+        "kind": "email",
+        "status": "sent",
+        "provider": "gmail",
+        "mode": "reply",
+        "from_account": "layla.mansour@meridianfreight.example",
+        "to": "jonas.weber@meridianfreight.example",
+        "subject": "Re: Brightwave pricing prep",
+        "message_id": "sent-office-meridian-11",
+        "thread_id": "thread-jonas-pricing"
+       }
+      ],
+      "summary": "Email sent from layla.mansour@meridianfreight.example to jonas.weber@meridianfreight.example ('Re: Brightwave pricing prep').",
+      "recorded_at": "2026-11-14T07:32:12.327558+00:00"
+     }
+    },
+    "message": null,
+    "error": null,
+    "errorCode": null,
+    "availability": null,
+    "idempotencyKey": "desk:836ceba7864b15ef3a07bc33291f75a5:221",
+    "assistantActionId": 500013,
+    "verified": true,
+    "verification": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true,
+     "at": "2026-11-16T15:00:31+01:00"
+    },
+    "outcomeUnknown": false,
+    "simulated": true,
+    "proposedAt": "2026-11-16T15:00:31+01:00",
+    "decisions": [
+     {
+      "toolCallId": 221,
+      "tool": "send_email",
+      "decision": "approve",
+      "by": "alice@example.com",
+      "edited": [],
+      "simulated": true,
+      "at": "2026-11-16T15:00:31+01:00"
+     }
+    ],
+    "execution": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500013,
+     "durationMs": 2000,
+     "simulated": true,
+     "at": "2026-11-16T15:00:31+01:00"
+    },
+    "approve": null
+   }
+  ],
+  "timeline": [
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "stage",
+    "summary": "Request received.",
+    "data": {
+     "stage": "RECEIVED",
+     "trigger": "worker",
+     "provider": "gmail",
+     "account": "layla.mansour@meridianfreight.example",
+     "messageId": "normal-jonas-pricing",
+     "threadId": "thread-jonas-pricing",
+     "receivedAt": "2026-11-16T14:00:31+00:00"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "stage",
+    "summary": "Request classified.",
+    "data": {
+     "stage": "UNDERSTANDING",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high",
+     "reasons": [
+      "question",
+      "direct_request",
+      "meeting_request"
+     ],
+     "meetingIntent": "new",
+     "flags": [],
+     "source": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null
+      }
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "stage",
+    "summary": "Context gathered.",
+    "data": {
+     "stage": "INVESTIGATING",
+     "threadMessages": 1
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "email.read_thread: read.",
+    "data": {
+     "tool": "email.read_thread",
+     "ok": true,
+     "threadId": "thread-jonas-pricing",
+     "count": 1
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T15:00:31+01:00",
+     "timeMax": "2026-11-21T15:00:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T15:00:31+01:00",
+     "timeMax": "2026-11-21T15:00:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.find_free_slots: read.",
+    "data": {
+     "tool": "calendar.find_free_slots",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-16T15:00:31+01:00",
+     "timeMax": "2026-11-21T15:00:31+01:00",
+     "durationMinutes": 30
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "model.extract_request: could not be read (model_not_configured).",
+    "data": {
+     "tool": "model.extract_request",
+     "ok": false,
+     "error": "model_not_configured"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "rules.extract_time: read.",
+    "data": {
+     "tool": "rules.extract_time",
+     "ok": true,
+     "error": null
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla.mansour@meridianfreight.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "google",
+     "account": "layla@mansour-advisory.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "read",
+    "summary": "calendar.check_availability: read.",
+    "data": {
+     "tool": "calendar.check_availability",
+     "provider": "outlook",
+     "account": "layla.mansour@portalliance.example",
+     "ok": true,
+     "error": null,
+     "timeMin": "2026-11-18T14:00:00+01:00",
+     "timeMax": "2026-11-18T14:30:00+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "stage",
+    "summary": "Plan made.",
+    "data": {
+     "stage": "PLANNING",
+     "planner": "rules"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "plan",
+    "summary": "Plan written: 1 step, 1 to approve.",
+    "data": {
+     "version": 1,
+     "message": {
+      "provider": "gmail",
+      "provider_account_id": "layla.mansour@meridianfreight.example",
+      "email_id": "normal-jonas-pricing",
+      "thread_id": "thread-jonas-pricing"
+     },
+     "planner": "rules",
+     "intents": [
+      {
+       "type": "new_meeting",
+       "confidence": null,
+       "evidence": [
+        "question",
+        "direct_request",
+        "meeting_request"
+       ],
+       "missing": [],
+       "source": "rules"
+      }
+     ],
+     "unsupported": [],
+     "facts": [],
+     "assumptions": [],
+     "missing": [],
+     "tools": [
+      "calendar.check_availability",
+      "calendar.find_free_slots",
+      "model.extract_request",
+      "rules.extract_time"
+     ],
+     "steps": [
+      {
+       "id": "s1",
+       "tool": "send_email",
+       "purpose": "offer_times",
+       "dependsOn": [],
+       "requiresApproval": true,
+       "external": true,
+       "deferred": false,
+       "expected": "The sender has a reply offering only times verified free.",
+       "onFailure": "Dependent steps are not proposed; the run is handed to the person."
+      }
+     ],
+     "approvals": 1,
+     "escalation": [
+      "A calendar cannot be read: availability is unknown and nothing is booked.",
+      "A provider does not confirm a write: the outcome is unknown and is not retried blindly.",
+      "A step fails or is rejected: the steps that depend on it are not proposed.",
+      "An executed action cannot be verified: the run is handed to the person."
+     ]
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "decision",
+    "summary": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply.",
+    "data": {
+     "decision": "hold",
+     "reason": "calendar_conflict",
+     "explanation": "The requested time conflicts with an existing commitment. No event is proposed. Offer verified free times in a reply."
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "decision",
+    "summary": "A reply offering verified free times is proposed.",
+    "data": {
+     "decision": "propose",
+     "reason": "offer_times",
+     "explanation": "A reply offering verified free times is proposed."
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "proposal",
+    "summary": "Proposed send_email for approval.",
+    "data": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "stepId": "s1",
+     "binding": "3eb7820f3de3eb81491e879f",
+     "purpose": "offer_times",
+     "reason": "Only times verified free on every connected calendar are offered.",
+     "proposedSlots": [
+      {
+       "start": "2026-11-16T15:00:31+01:00",
+       "end": "2026-11-16T15:30:31+01:00"
+      },
+      {
+       "start": "2026-11-16T15:30:31+01:00",
+       "end": "2026-11-16T16:00:31+01:00"
+      },
+      {
+       "start": "2026-11-17T09:00:00+01:00",
+       "end": "2026-11-17T09:30:00+01:00"
+      }
+     ],
+     "status": "awaiting_approval"
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "approval",
+    "summary": "alice@example.com approved send_email.",
+    "data": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "decision": "approve",
+     "by": "alice@example.com",
+     "edited": [],
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "execution",
+    "summary": "send_email: executed.",
+    "data": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "status": "executed",
+     "error": null,
+     "assistantActionId": 500013,
+     "durationMs": 2000,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "verification",
+    "summary": "send_email: verified (sandbox_readback).",
+    "data": {
+     "toolCallId": 221,
+     "tool": "send_email",
+     "verified": true,
+     "method": "sandbox_readback",
+     "reason": null,
+     "simulated": true
+    }
+   },
+   {
+    "at": "2026-11-16T15:00:31+01:00",
+    "kind": "followup",
+    "summary": "Follow-up waiting.",
+    "data": {
+     "id": "fu-203-221",
+     "state": "waiting",
+     "toolCallId": 221,
+     "threadId": "thread-jonas-pricing",
+     "waitingOn": "jonas.weber@meridianfreight.example",
+     "subject": "Brightwave pricing prep",
+     "sentAt": "2026-11-16T15:00:31+01:00",
+     "dueAt": "2026-11-18T15:00:31+01:00"
+    }
+   }
+  ],
+  "usage": null
+ }
+}

@@ -1,0 +1,1196 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "normal",
+  "name": "A. Normal day",
+  "description": "Ordinary messages, meetings, tasks, an awaited reply and a daily briefing."
+ },
+ "seed": 7,
+ "executive": "attentive",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "bbe9e922fb71b42a",
+ "engine": {
+  "overlay": "0.3.0",
+  "deskBackend": "0282558",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 14,
+   "notSent": 0,
+   "actionable": 11,
+   "needingNothing": 3,
+   "actionableDetectedByDesk": 10,
+   "needingNothingLeftAlone": 3
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 7,
+    "correct_none": 3,
+    "missed": 1,
+    "rescued": 2,
+    "safe_escalation": 1
+   },
+   "completedCorrectly": 7,
+   "correctlyHandedToExecutive": 0,
+   "declinedByExecutive": 0,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 0,
+   "leftForHuman": 4,
+   "incorrect": 0,
+   "incorrectRequests": []
+  },
+  "verifiedWork": {
+   "calendarChanges": 4,
+   "emailReplies": 5,
+   "tasksAndReminders": 2,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 2,
+    "calendar event moved": 1,
+    "confirmation reply": 4,
+    "reply offering times": 1,
+    "task created": 2
+   },
+   "followUpsSatisfied": 1,
+   "duplicatesPrevented": 0,
+   "duplicatesPreventedDetail": []
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 3,
+   "checksPassed": 3
+  },
+  "human": {
+   "decisions": 13,
+   "byCategory": {
+    "approval": 11,
+    "corrective_rejection": 2
+   },
+   "mandatoryApprovals": 11,
+   "preferenceRejections": 0,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 2,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 0,
+   "fullTakeovers": 4,
+   "takeoverRequests": [
+    "normal-term-sheet",
+    "normal-karim-quote",
+    "normal-mei-prep",
+    "normal-jonas-pricing"
+   ]
+  },
+  "autonomy": {
+   "actionableRequests": 11,
+   "handledWithApprovalsOnly": 7,
+   "rate": 0.636,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 5,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 1
+  },
+  "time": {
+   "wallSecondsForWholeDay": 15.19,
+   "apiCalls": 294,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 32,
+   "executionMsTotal": 10076,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 43.0,
+   "executiveMinutesDecidingInDesk": 3.2,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "normal-newsletter": {
+   "subject": "This week in freight: rates, ports and capacity",
+   "sender": "newsletter@freightweekly.example",
+   "expected": {
+    "outcome": "none"
+   },
+   "verdict": "correct_none",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [],
+   "stages": []
+  },
+  "normal-itinerary": {
+   "subject": "Your itinerary: Paris to Hamburg, 24 November",
+   "sender": "no-reply@travelhub.example",
+   "expected": {
+    "outcome": "none"
+   },
+   "verdict": "correct_none",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [],
+   "stages": []
+  },
+  "normal-brightwave-news": {
+   "subject": "Brightwave renewal signed",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "none"
+   },
+   "verdict": "correct_none",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [],
+   "stages": []
+  },
+  "normal-board-pack": {
+   "subject": "Q3 board pack",
+   "sender": "omar.haddad@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "board pack"
+    ],
+    "dueDate": "2026-11-19",
+    "urgent": false
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 30,
+     "toolCallId": 40,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    30
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-mei-intro": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "mei",
+    "email": "mei.tanaka@brightwavefoods.example",
+    "attendees": [
+     "mei.tanaka@brightwavefoods.example"
+    ],
+    "start": "2026-11-18T14:00:00+01:00",
+    "end": "2026-11-18T14:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 11,
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 11,
+     "toolCallId": 45,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-greta-forecast": {
+   "subject": "Peak-season forecast",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-17T14:30:00+01:00",
+     "end": "2026-11-17T15:30:00+01:00"
+    },
+    "conflicts": [
+     "evt-budget-fy27"
+    ]
+   },
+   "verdict": "correct",
+   "notes": [
+    "quality: none of the offered times is on the day that was asked for (2026-11-17)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 53,
+     "toolCallId": 71,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    53
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-term-sheet": {
+   "subject": "Joint-venture term sheet",
+   "sender": "ingrid.solberg@bluewatershipping.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "term sheet"
+    ],
+    "dueDate": "2026-11-20",
+    "urgent": false
+   },
+   "verdict": "safe_escalation",
+   "notes": [
+    "the task was not done; the Desk handed it over"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    77
+   ],
+   "stages": [
+    "ESCALATED"
+   ]
+  },
+  "normal-greta-picks": {
+   "subject": "Re: Peak-season forecast",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-16T10:00:00+01:00",
+    "end": "2026-11-16T10:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 86,
+     "toolCallId": 103,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 86,
+     "toolCallId": 109,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    86
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-priya-move": {
+   "subject": "Our 1:1 today",
+   "sender": "priya.nair@meridianfreight.example",
+   "expected": {
+    "outcome": "reschedule",
+    "event": "evt-priya-1on1",
+    "start": "2026-11-16T16:30:00+01:00",
+    "end": "2026-11-16T17:15:00+01:00",
+    "with": "priya",
+    "email": "priya.nair@meridianfreight.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event moved",
+     "runId": 114,
+     "toolCallId": 132,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 114,
+     "toolCallId": 137,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    114
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-karim-quote": {
+   "subject": "Re: Crane maintenance quote for Q1",
+   "sender": "karim.saad@harborcrane.example",
+   "expected": {
+    "outcome": "close_follow_up",
+    "follow_up": "fu-crane-quote"
+   },
+   "verdict": "missed",
+   "notes": [
+    "the answer arrived and the awaited reply is still marked as waiting"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [],
+   "stages": []
+  },
+  "normal-settlement": {
+   "subject": "URGENT: Rotterdam settlement offer expires today",
+   "sender": "elena.petrova@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "settlement",
+     "Rotterdam"
+    ],
+    "dueDate": "2026-11-16",
+    "urgent": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 142,
+     "toolCallId": 152,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    142
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-tomas-cancel": {
+   "subject": "Friday's renewal call",
+   "sender": "tomas.vega@kestrelinsurance.example",
+   "expected": {
+    "outcome": "cancel",
+    "event": "evt-insurance-renewal",
+    "with": "tomas",
+    "email": "tomas.vega@kestrelinsurance.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 157,
+     "toolCallId": 172,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 157,
+     "toolCallId": 177,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    157
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "normal-mei-prep": {
+   "subject": "Re: Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "either",
+    "options": [
+     {
+      "outcome": "reminder",
+      "title_has": [
+       "lane-volume",
+       "figures"
+      ],
+      "before": "2026-11-18T14:00:00+01:00"
+     },
+     {
+      "outcome": "task",
+      "title_has": [
+       "lane-volume",
+       "figures"
+      ],
+      "dueDate": "2026-11-18",
+      "urgent": false
+     }
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "the executive rejected a wrong proposal: the message does not ask to find a meeting time, so a reply offering times is not what it needs"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    182
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "normal-jonas-pricing": {
+   "subject": "Brightwave pricing prep",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "jonas",
+    "email": "jonas.weber@meridianfreight.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-18T14:00:00+01:00",
+     "end": "2026-11-18T14:30:00+01:00"
+    },
+    "conflicts": [
+     "evt-office-meridian-1"
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "the executive rejected a wrong proposal: it offers a meeting starting 2026-11-16T15:00:31+01:00, which is the moment the reply is written or earlier"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    200
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 28,
+   "runId": 11,
+   "requestId": "normal-mei-intro",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-01",
+   "at": "2026-11-16T08:30:31+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 40,
+   "runId": 30,
+   "requestId": "normal-board-pack",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the task and its deadline are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-01",
+   "at": "2026-11-16T08:30:31+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 45,
+   "runId": 11,
+   "requestId": "normal-mei-intro",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-01",
+   "at": "2026-11-16T08:30:31+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 71,
+   "runId": 53,
+   "requestId": "normal-greta-forecast",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it offers only times that are really free",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-02",
+   "at": "2026-11-16T08:35:08+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 103,
+   "runId": 86,
+   "requestId": "normal-greta-picks",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-04",
+   "at": "2026-11-16T08:50:26+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 109,
+   "runId": 86,
+   "requestId": "normal-greta-picks",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-04",
+   "at": "2026-11-16T08:50:26+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 132,
+   "runId": 114,
+   "requestId": "normal-priya-move",
+   "tool": "update_calendar_event",
+   "purpose": "reschedule",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is moved to the right time",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-05",
+   "at": "2026-11-16T09:00:36+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 137,
+   "runId": 114,
+   "requestId": "normal-priya-move",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-05",
+   "at": "2026-11-16T09:00:36+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 152,
+   "runId": 142,
+   "requestId": "normal-settlement",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the task and its deadline are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-07",
+   "at": "2026-11-16T10:00:06+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 172,
+   "runId": 157,
+   "requestId": "normal-tomas-cancel",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is cancelled",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-08",
+   "at": "2026-11-16T11:00:55+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 177,
+   "runId": 157,
+   "requestId": "normal-tomas-cancel",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "normal-08",
+   "at": "2026-11-16T11:00:55+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 197,
+   "runId": 182,
+   "requestId": "normal-mei-prep",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "the message does not ask to find a meeting time, so a reply offering times is not what it needs",
+   "countsAgainstAutonomy": true,
+   "stepId": "normal-09",
+   "at": "2026-11-16T12:00:47+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 218,
+   "runId": 200,
+   "requestId": "normal-jonas-pricing",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "it offers a meeting starting 2026-11-16T15:00:31+01:00, which is the moment the reply is written or earlier",
+   "countsAgainstAutonomy": true,
+   "stepId": "normal-11",
+   "at": "2026-11-16T15:00:31+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "normal-10",
+   "check": "overdue_awaited_reply_is_surfaced",
+   "passed": false,
+   "detail": "the reply from rafael.costa@lumenaudit.example was expected by 2026-11-16T12:00:00+01:00 and is still waiting; the Desk neither flags it nor proposes a reminder"
+  },
+  {
+   "stepId": "normal-12",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 4, the calendars hold 4"
+  },
+  {
+   "stepId": "normal-12",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 5, the task list holds 5"
+  },
+  {
+   "stepId": "normal-12",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "normal-12",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "7 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "normal-12",
+   "check": "briefing_reports_awaited_replies",
+   "passed": false,
+   "detail": "2 replies are awaited; the briefing does not mention them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "normal-01",
+   "at": "D+0 08:30",
+   "title": "The executive begins the day with unread mail from the weekend",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "prioritize",
+    "gather",
+    "coordinate",
+    "prepare",
+    "execute",
+    "record"
+   ],
+   "requests": [
+    "normal-newsletter",
+    "normal-itinerary",
+    "normal-brightwave-news",
+    "normal-board-pack",
+    "normal-mei-intro"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11,
+    30
+   ],
+   "wallMs": 2561
+  },
+  {
+   "id": "normal-02",
+   "at": "D+0 08:35",
+   "title": "A client requests a meeting at a time that is already taken",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "prepare",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "normal-greta-forecast"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    53
+   ],
+   "wallMs": 2359
+  },
+  {
+   "id": "normal-03",
+   "at": "D+0 08:40",
+   "title": "A partner asks for a deliverable by Friday",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prioritize",
+    "record"
+   ],
+   "requests": [
+    "normal-term-sheet"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    77
+   ],
+   "wallMs": 234
+  },
+  {
+   "id": "normal-04",
+   "at": "D+0 08:50",
+   "title": "The client answers the times she was offered",
+   "kind": "counterpart_reply",
+   "job": [
+    "detect",
+    "understand",
+    "coordinate",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "normal-greta-picks"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    86
+   ],
+   "wallMs": 2405
+  },
+  {
+   "id": "normal-05",
+   "at": "D+0 09:00",
+   "title": "A colleague asks to move a meeting that was already agreed",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "normal-priya-move"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    114
+   ],
+   "wallMs": 2421
+  },
+  {
+   "id": "normal-06",
+   "at": "D+0 09:30",
+   "title": "An awaited reply arrives and settles an outstanding follow-up",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "chase",
+    "record"
+   ],
+   "requests": [
+    "normal-karim-quote"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 235
+  },
+  {
+   "id": "normal-07",
+   "at": "D+0 10:00",
+   "title": "An urgent message needs a decision from the executive today",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prioritize",
+    "prepare",
+    "record"
+   ],
+   "requests": [
+    "normal-settlement"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    142
+   ],
+   "wallMs": 405
+  },
+  {
+   "id": "normal-08",
+   "at": "D+0 11:00",
+   "title": "An external attendee cancels an existing meeting",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "normal-tomas-cancel"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    157
+   ],
+   "wallMs": 2546
+  },
+  {
+   "id": "normal-09",
+   "at": "D+0 12:00",
+   "title": "A meeting confirmation asks for preparation",
+   "kind": "email",
+   "job": [
+    "understand",
+    "record"
+   ],
+   "requests": [
+    "normal-mei-prep"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    182
+   ],
+   "wallMs": 405
+  },
+  {
+   "id": "normal-10",
+   "at": "D+0 14:00",
+   "title": "A supplier has still not answered an important request",
+   "kind": "time_passes",
+   "job": [
+    "chase",
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "normal-10",
+     "check": "overdue_awaited_reply_is_surfaced",
+     "passed": false,
+     "detail": "the reply from rafael.costa@lumenaudit.example was expected by 2026-11-16T12:00:00+01:00 and is still waiting; the Desk neither flags it nor proposes a reminder"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 297
+  },
+  {
+   "id": "normal-11",
+   "at": "D+0 15:00",
+   "title": "A colleague asks for a slot that was booked earlier today",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "prepare",
+    "chase"
+   ],
+   "requests": [
+    "normal-jonas-pricing"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    200
+   ],
+   "wallMs": 390
+  },
+  {
+   "id": "normal-12",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "normal-12",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 4, the calendars hold 4"
+    },
+    {
+     "stepId": "normal-12",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 5, the task list holds 5"
+    },
+    {
+     "stepId": "normal-12",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "normal-12",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "7 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "normal-12",
+     "check": "briefing_reports_awaited_replies",
+     "passed": false,
+     "detail": "2 replies are awaited; the briefing does not mention them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 342
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 11,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T07:41:46+00:00"
+}

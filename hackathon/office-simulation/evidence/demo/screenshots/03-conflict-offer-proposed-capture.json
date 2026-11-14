@@ -1,0 +1,125 @@
+{
+ "simulated": true,
+ "label": "03-conflict-offer-proposed",
+ "capturedAt": "2026-11-14T07:14:05.611Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T08:35:08+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 12,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite",
+    "Q3 board pack"
+   ],
+   "operations": 3,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T08:35:08+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 08:35 Europe/Paris  ·  capture 03-conflict-offer-proposed",
+ "screens": [
+  {
+   "screen": "run",
+   "route": "#/work/53",
+   "what": "Run detail: plan, proposed actions, evidence, timeline (needs --run)",
+   "file": "03-conflict-offer-proposed-run-53.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6078,
+   "actionCards": 1,
+   "run": {
+    "runId": 53,
+    "subject": null,
+    "state": "awaiting_approval",
+    "stage": "AWAITING_APPROVAL",
+    "simulated": true,
+    "actions": [
+     {
+      "toolCallId": 71,
+      "tool": "send_email",
+      "status": "awaiting_approval",
+      "simulated": true
+     }
+    ]
+   },
+   "viewport": {
+    "width": 1440,
+    "height": 2677
+   },
+   "heading": "Peak-season forecast",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "awaiting_approval",
+     "label": "Send an email: Re: Peak-season forecast"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "approvals",
+   "route": "#/approvals",
+   "what": "Approval center: every action waiting for a decision",
+   "file": "03-conflict-offer-proposed-approvals.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 791,
+   "viewport": {
+    "width": 1440,
+    "height": 1326
+   },
+   "heading": "Approval center",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "awaiting_approval",
+     "label": "Send an email: Re: Peak-season forecast"
+    },
+    {
+     "status": "awaiting_approval",
+     "label": "Create a task: Archive old reports"
+    },
+    {
+     "status": "awaiting_approval",
+     "label": "Create a task: Prepare the quarterly deck"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

@@ -1,0 +1,1533 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "unreliable",
+  "name": "D. Unreliable services",
+  "description": "Provider outages, delayed reads, failed and uncertain writes, duplicate notifications, a restart and an interrupted action."
+ },
+ "seed": 7,
+ "executive": "attentive",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "b9e47451020e7d38",
+ "engine": {
+  "overlay": "0.3.0",
+  "deskBackend": "0282558",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "sqlite"
+ },
+ "metrics": {
+  "requests": {
+   "received": 11,
+   "notSent": 0,
+   "actionable": 11,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 11,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 9,
+    "correct_escalation": 2
+   },
+   "completedCorrectly": 9,
+   "correctlyHandedToExecutive": 2,
+   "declinedByExecutive": 0,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 0,
+   "leftForHuman": 0,
+   "incorrect": 0,
+   "incorrectRequests": []
+  },
+  "verifiedWork": {
+   "calendarChanges": 8,
+   "emailReplies": 8,
+   "tasksAndReminders": 1,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 6,
+    "calendar event moved": 1,
+    "confirmation reply": 8,
+    "task created": 1
+   },
+   "followUpsSatisfied": 0,
+   "duplicatesPrevented": 3,
+   "duplicatesPreventedDetail": [
+    {
+     "what": "second notification for one message",
+     "message": "unreliable-tomas-cancel",
+     "runId": 130
+    },
+    {
+     "what": "no message taken in twice after a restart",
+     "runs": 10
+    },
+    {
+     "what": "repeated request held (already_scheduled)",
+     "message": "unreliable-mei-resend-2"
+    }
+   ]
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 5,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 2,
+   "checksPassed": 9
+  },
+  "human": {
+   "decisions": 23,
+   "byCategory": {
+    "approval": 17,
+    "recovery_retry": 6
+   },
+   "mandatoryApprovals": 17,
+   "preferenceRejections": 0,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 0,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 6,
+   "fullTakeovers": 0,
+   "takeoverRequests": []
+  },
+  "autonomy": {
+   "actionableRequests": 11,
+   "handledWithApprovalsOnly": 11,
+   "rate": 1.0,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 4,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 2
+  },
+  "time": {
+   "wallSecondsForWholeDay": 28.25,
+   "apiCalls": 436,
+   "intakePassMsMedian": 16,
+   "intakePassMsMax": 109,
+   "executionMsTotal": 16123,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 57.0,
+   "executiveMinutesDecidingInDesk": 5.8,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "unreliable-mei-outage": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "escalate",
+    "why": "A calendar cannot be read: availability is unknown, so nothing may be booked or offered."
+   },
+   "verdict": "correct_escalation",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "ESCALATED"
+   ]
+  },
+  "unreliable-jonas-recovered": {
+   "subject": "Pipeline numbers",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "jonas",
+    "email": "jonas.weber@meridianfreight.example",
+    "attendees": [
+     "jonas.weber@meridianfreight.example"
+    ],
+    "start": "2026-11-18T11:00:00+01:00",
+    "end": "2026-11-18T11:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 28,
+     "toolCallId": 45,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 28,
+     "toolCallId": 50,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    28
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-travel-policy": {
+   "subject": "Revised travel policy",
+   "sender": "omar.haddad@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "travel policy"
+    ],
+    "dueDate": "2026-11-18",
+    "urgent": false
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 55,
+     "toolCallId": 65,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    55
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-greta-write-fails": {
+   "subject": "Forecast call",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-18T15:00:00+01:00",
+    "end": "2026-11-18T15:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 70,
+     "toolCallId": 87,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 3,
+     "approvedBy": [
+      "alice@example.com",
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 70,
+     "toolCallId": 95,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    70
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-priya-uncertain": {
+   "subject": "Our 1:1 today",
+   "sender": "priya.nair@meridianfreight.example",
+   "expected": {
+    "outcome": "reschedule",
+    "event": "evt-priya-1on1",
+    "start": "2026-11-16T16:30:00+01:00",
+    "end": "2026-11-16T17:15:00+01:00",
+    "with": "priya",
+    "email": "priya.nair@meridianfreight.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event moved",
+     "runId": 102,
+     "toolCallId": 120,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 102,
+     "toolCallId": 125,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    102
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-tomas-cancel": {
+   "subject": "Friday's renewal call",
+   "sender": "tomas.vega@kestrelinsurance.example",
+   "expected": {
+    "outcome": "cancel",
+    "event": "evt-insurance-renewal",
+    "with": "tomas",
+    "email": "tomas.vega@kestrelinsurance.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 130,
+     "toolCallId": 145,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 130,
+     "toolCallId": 150,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    130
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-daniel-partial": {
+   "subject": "Pricing annex",
+   "sender": "daniel.okafor@atlaspharma.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "daniel",
+    "email": "daniel.okafor@atlaspharma.example",
+    "attendees": [
+     "daniel.okafor@atlaspharma.example"
+    ],
+    "start": "2026-11-19T11:00:00+01:00",
+    "end": "2026-11-19T11:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 155,
+     "toolCallId": 172,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 155,
+     "toolCallId": 177,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 5,
+     "approvedBy": [
+      "alice@example.com",
+      "alice@example.com",
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    155
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-ingrid-uncertain": {
+   "subject": "Site visit debrief",
+   "sender": "ingrid.solberg@bluewatershipping.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "ingrid",
+    "email": "ingrid.solberg@bluewatershipping.example",
+    "attendees": [
+     "ingrid.solberg@bluewatershipping.example"
+    ],
+    "start": "2026-11-20T14:00:00+01:00",
+    "end": "2026-11-20T14:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 191,
+     "toolCallId": 208,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 191,
+     "toolCallId": 213,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    191
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-mei-resend": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "mei",
+    "email": "mei.tanaka@brightwavefoods.example",
+    "attendees": [
+     "mei.tanaka@brightwavefoods.example"
+    ],
+    "start": "2026-11-18T14:00:00+01:00",
+    "end": "2026-11-18T14:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 218,
+     "toolCallId": 235,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 218,
+     "toolCallId": 240,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    218
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "unreliable-mei-resend-2": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "escalate",
+    "why": "This meeting is already booked: no second event, no second reply."
+   },
+   "verdict": "correct_escalation",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    245
+   ],
+   "stages": [
+    "ESCALATED"
+   ]
+  },
+  "unreliable-hannah-interrupted": {
+   "subject": "Budget committee prep",
+   "sender": "hannah.schmidt@portalliance.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "hannah",
+    "email": "hannah.schmidt@portalliance.example",
+    "attendees": [
+     "hannah.schmidt@portalliance.example"
+    ],
+    "start": "2026-11-18T12:00:00+01:00",
+    "end": "2026-11-18T12:45:00+01:00",
+    "provider": "outlook",
+    "account": "layla.mansour@portalliance.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 262,
+     "toolCallId": 279,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 3,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 262,
+     "toolCallId": 286,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    262
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 45,
+   "runId": 28,
+   "requestId": "unreliable-jonas-recovered",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-04",
+   "at": "2026-11-16T08:51:46+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 50,
+   "runId": 28,
+   "requestId": "unreliable-jonas-recovered",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-04",
+   "at": "2026-11-16T08:51:46+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 65,
+   "runId": 55,
+   "requestId": "unreliable-travel-policy",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the task and its deadline are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-07",
+   "at": "2026-11-16T09:25:44+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 87,
+   "runId": 70,
+   "requestId": "unreliable-greta-write-fails",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-08",
+   "at": "2026-11-16T09:30:37+01:00",
+   "result": "failed",
+   "error": null,
+   "errorCode": "internal_error"
+  },
+  {
+   "toolCallId": 87,
+   "runId": 70,
+   "requestId": "unreliable-greta-write-fails",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "it failed (internal_error)",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-08",
+   "at": "2026-11-16T09:30:37+01:00",
+   "result": "executed",
+   "error": null,
+   "reconciled": false,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 95,
+   "runId": 70,
+   "requestId": "unreliable-greta-write-fails",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-08",
+   "at": "2026-11-16T09:30:37+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 120,
+   "runId": 102,
+   "requestId": "unreliable-priya-uncertain",
+   "tool": "update_calendar_event",
+   "purpose": "reschedule",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is moved to the right time",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-09",
+   "at": "2026-11-16T10:00:26+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 125,
+   "runId": 102,
+   "requestId": "unreliable-priya-uncertain",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-09",
+   "at": "2026-11-16T10:00:26+01:00",
+   "result": "failed",
+   "error": null,
+   "errorCode": "outcome_unknown"
+  },
+  {
+   "toolCallId": 125,
+   "runId": 102,
+   "requestId": "unreliable-priya-uncertain",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "the outcome was unknown",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-09",
+   "at": "2026-11-16T10:00:26+01:00",
+   "result": "executed",
+   "error": null,
+   "reconciled": true,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 145,
+   "runId": 130,
+   "requestId": "unreliable-tomas-cancel",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is cancelled",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-10",
+   "at": "2026-11-16T10:30:10+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 150,
+   "runId": 130,
+   "requestId": "unreliable-tomas-cancel",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-10",
+   "at": "2026-11-16T10:30:10+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 172,
+   "runId": 155,
+   "requestId": "unreliable-daniel-partial",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-11",
+   "at": "2026-11-16T11:00:33+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 177,
+   "runId": 155,
+   "requestId": "unreliable-daniel-partial",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-11",
+   "at": "2026-11-16T11:00:33+01:00",
+   "result": "failed",
+   "error": null,
+   "errorCode": "internal_error"
+  },
+  {
+   "toolCallId": 177,
+   "runId": 155,
+   "requestId": "unreliable-daniel-partial",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "it failed (internal_error)",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-11",
+   "at": "2026-11-16T11:00:33+01:00",
+   "result": "failed",
+   "error": null,
+   "reconciled": false,
+   "errorCode": "internal_error"
+  },
+  {
+   "toolCallId": 177,
+   "runId": 155,
+   "requestId": "unreliable-daniel-partial",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "it failed (internal_error)",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-12",
+   "at": "2026-11-16T11:30:32+01:00",
+   "result": "executed",
+   "error": null,
+   "reconciled": false,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 208,
+   "runId": 191,
+   "requestId": "unreliable-ingrid-uncertain",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-13",
+   "at": "2026-11-16T12:00:42+01:00",
+   "result": "failed",
+   "error": null,
+   "errorCode": "outcome_unknown"
+  },
+  {
+   "toolCallId": 208,
+   "runId": 191,
+   "requestId": "unreliable-ingrid-uncertain",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "the outcome was unknown",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-13",
+   "at": "2026-11-16T12:00:42+01:00",
+   "result": "executed",
+   "error": null,
+   "reconciled": true,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 213,
+   "runId": 191,
+   "requestId": "unreliable-ingrid-uncertain",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-13",
+   "at": "2026-11-16T12:00:42+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 235,
+   "runId": 218,
+   "requestId": "unreliable-mei-resend",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-14",
+   "at": "2026-11-16T13:00:05+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 240,
+   "runId": 218,
+   "requestId": "unreliable-mei-resend",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-14",
+   "at": "2026-11-16T13:00:05+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 279,
+   "runId": 262,
+   "requestId": "unreliable-hannah-interrupted",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-17",
+   "at": "2026-11-16T14:30:39+01:00",
+   "result": "interrupted",
+   "error": null,
+   "interrupted": true
+  },
+  {
+   "toolCallId": 279,
+   "runId": 262,
+   "requestId": "unreliable-hannah-interrupted",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "decision": "retry",
+   "category": "recovery_retry",
+   "why": "it failed (interrupted)",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-17",
+   "at": "2026-11-16T14:30:39+01:00",
+   "result": "executed",
+   "error": null,
+   "reconciled": false,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 286,
+   "runId": 262,
+   "requestId": "unreliable-hannah-interrupted",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "unreliable-17",
+   "at": "2026-11-16T14:30:39+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "unreliable-09",
+   "check": "unknown_outcome_is_read_back_not_repeated",
+   "passed": true,
+   "detail": "recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1"
+  },
+  {
+   "stepId": "unreliable-10",
+   "check": "duplicate_notification_one_run",
+   "passed": true,
+   "detail": "second intake of unreliable-tomas-cancel returned run 130 (duplicate=True)"
+  },
+  {
+   "stepId": "unreliable-11",
+   "check": "partial_success_reported_as_partial",
+   "passed": true,
+   "detail": "the event exists and the confirmation failed; the Desk reports the run as PARTIALLY_COMPLETED / partial, compensation escalate"
+  },
+  {
+   "stepId": "unreliable-13",
+   "check": "unknown_outcome_is_read_back_not_repeated",
+   "passed": true,
+   "detail": "recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1"
+  },
+  {
+   "stepId": "unreliable-16",
+   "check": "restart_opens_no_duplicate_runs",
+   "passed": true,
+   "detail": "10 runs before the restart, 10 after; the first pass opened 0"
+  },
+  {
+   "stepId": "unreliable-17",
+   "check": "interrupted_action_is_settled_then_takes_effect_once",
+   "passed": true,
+   "detail": "the Desk's recovery settled the stuck action without running it: True; after the executive's retry it is executed; the meeting is on the calendar 1 time(s); the run's evidence counts 3 execution records for it"
+  },
+  {
+   "stepId": "unreliable-18",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 3, the calendars hold 3"
+  },
+  {
+   "stepId": "unreliable-18",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 4, the task list holds 4"
+  },
+  {
+   "stepId": "unreliable-18",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "unreliable-18",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "9 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "unreliable-18",
+   "check": "briefing_reports_awaited_replies",
+   "passed": false,
+   "detail": "2 replies are awaited; the briefing does not mention them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "unreliable-01",
+   "at": "D+0 08:30",
+   "title": "The Outlook calendar stops answering",
+   "kind": "unreadable",
+   "job": [
+    "gather"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 125
+  },
+  {
+   "id": "unreliable-02",
+   "at": "D+0 08:31",
+   "title": "A meeting request arrives while one calendar cannot be read",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather"
+   ],
+   "requests": [
+    "unreliable-mei-outage"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 217
+  },
+  {
+   "id": "unreliable-03",
+   "at": "D+0 08:50",
+   "title": "The Outlook calendar answers again",
+   "kind": "unreadable",
+   "job": [
+    "gather"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 140
+  },
+  {
+   "id": "unreliable-04",
+   "at": "D+0 08:51",
+   "title": "A request after the calendar recovered",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "unreliable-jonas-recovered"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    28
+   ],
+   "wallMs": 2453
+  },
+  {
+   "id": "unreliable-05",
+   "at": "D+0 09:10",
+   "title": "The Gmail mailbox cannot be read",
+   "kind": "unreadable",
+   "job": [
+    "detect"
+   ],
+   "requests": [],
+   "notes": [
+    "worker: mailbox_unreadable"
+   ],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 155
+  },
+  {
+   "id": "unreliable-06",
+   "at": "D+0 09:12",
+   "title": "A message arrives while the mailbox cannot be read",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "record"
+   ],
+   "requests": [
+    "unreliable-travel-policy"
+   ],
+   "notes": [
+    "worker: mailbox_unreadable"
+   ],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 140
+  },
+  {
+   "id": "unreliable-07",
+   "at": "D+0 09:25",
+   "title": "The Gmail mailbox can be read again",
+   "kind": "unreadable",
+   "job": [
+    "detect"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 328
+  },
+  {
+   "id": "unreliable-08",
+   "at": "D+0 09:30",
+   "title": "The calendar provider rejects the first write",
+   "kind": "email",
+   "job": [
+    "execute"
+   ],
+   "requests": [
+    "unreliable-greta-write-fails"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    70
+   ],
+   "wallMs": 2484
+  },
+  {
+   "id": "unreliable-09",
+   "at": "D+0 10:00",
+   "title": "The mail provider times out after sending",
+   "kind": "email",
+   "job": [
+    "execute"
+   ],
+   "requests": [
+    "unreliable-priya-uncertain"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-09",
+     "check": "unknown_outcome_is_read_back_not_repeated",
+     "passed": true,
+     "detail": "recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    102
+   ],
+   "wallMs": 2703
+  },
+  {
+   "id": "unreliable-10",
+   "at": "D+0 10:30",
+   "title": "The mail provider notifies twice about one message",
+   "kind": "email",
+   "job": [
+    "detect",
+    "execute"
+   ],
+   "requests": [
+    "unreliable-tomas-cancel"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-10",
+     "check": "duplicate_notification_one_run",
+     "passed": true,
+     "detail": "second intake of unreliable-tomas-cancel returned run 130 (duplicate=True)"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    130
+   ],
+   "wallMs": 2608
+  },
+  {
+   "id": "unreliable-11",
+   "at": "D+0 11:00",
+   "title": "The mail provider refuses every send",
+   "kind": "email",
+   "job": [
+    "execute",
+    "report"
+   ],
+   "requests": [
+    "unreliable-daniel-partial"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-11",
+     "check": "partial_success_reported_as_partial",
+     "passed": true,
+     "detail": "the event exists and the confirmation failed; the Desk reports the run as PARTIALLY_COMPLETED / partial, compensation escalate"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    155
+   ],
+   "wallMs": 4780
+  },
+  {
+   "id": "unreliable-12",
+   "at": "D+0 11:30",
+   "title": "The mail provider recovers and the executive retries what failed",
+   "kind": "retry_failed",
+   "job": [
+    "execute"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 2328
+  },
+  {
+   "id": "unreliable-13",
+   "at": "D+0 12:00",
+   "title": "The calendar provider times out after creating the event",
+   "kind": "email",
+   "job": [
+    "execute"
+   ],
+   "requests": [
+    "unreliable-ingrid-uncertain"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-13",
+     "check": "unknown_outcome_is_read_back_not_repeated",
+     "passed": true,
+     "detail": "recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    191
+   ],
+   "wallMs": 2782
+  },
+  {
+   "id": "unreliable-14",
+   "at": "D+0 13:00",
+   "title": "The client sends the morning's request again",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "unreliable-mei-resend"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    218
+   ],
+   "wallMs": 2561
+  },
+  {
+   "id": "unreliable-15",
+   "at": "D+0 13:10",
+   "title": "And a third time",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand"
+   ],
+   "requests": [
+    "unreliable-mei-resend-2"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    245
+   ],
+   "wallMs": 405
+  },
+  {
+   "id": "unreliable-16",
+   "at": "D+0 14:00",
+   "title": "The intake worker's process restarts",
+   "kind": "restart",
+   "job": [
+    "detect"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-16",
+     "check": "restart_opens_no_duplicate_runs",
+     "passed": true,
+     "detail": "10 runs before the restart, 10 after; the first pass opened 0"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 359
+  },
+  {
+   "id": "unreliable-17",
+   "at": "D+0 14:30",
+   "title": "The process stops in the middle of an approved action",
+   "kind": "email",
+   "job": [
+    "execute"
+   ],
+   "requests": [
+    "unreliable-hannah-interrupted"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-17",
+     "check": "interrupted_action_is_settled_then_takes_effect_once",
+     "passed": true,
+     "detail": "the Desk's recovery settled the stuck action without running it: True; after the executive's retry it is executed; the meeting is on the calendar 1 time(s); the run's evidence counts 3 execution records for it"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    262
+   ],
+   "wallMs": 2734
+  },
+  {
+   "id": "unreliable-18",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "unreliable-18",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 3, the calendars hold 3"
+    },
+    {
+     "stepId": "unreliable-18",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 4, the task list holds 4"
+    },
+    {
+     "stepId": "unreliable-18",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "unreliable-18",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "9 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "unreliable-18",
+     "check": "briefing_reports_awaited_replies",
+     "passed": false,
+     "detail": "2 replies are awaited; the briefing does not mention them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 359
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 20,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T07:40:36+00:00"
+}

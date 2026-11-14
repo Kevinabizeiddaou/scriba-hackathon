@@ -1,0 +1,868 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "compound",
+  "name": "F. Compound work",
+  "description": "Single messages that need several dependent actions."
+ },
+ "seed": 7,
+ "executive": "attentive",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "fa283cbe9180e5f8",
+ "engine": {
+  "overlay": "0.3.0",
+  "deskBackend": "0282558",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 6,
+   "notSent": 0,
+   "actionable": 6,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 6,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 1,
+    "declined": 1,
+    "partial": 1,
+    "rescued": 3
+   },
+   "completedCorrectly": 1,
+   "correctlyHandedToExecutive": 0,
+   "declinedByExecutive": 1,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 1,
+   "leftForHuman": 3,
+   "incorrect": 0,
+   "incorrectRequests": []
+  },
+  "verifiedWork": {
+   "calendarChanges": 2,
+   "emailReplies": 2,
+   "tasksAndReminders": 0,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 1,
+    "confirmation reply": 2
+   },
+   "followUpsSatisfied": 0,
+   "duplicatesPrevented": 0,
+   "duplicatesPreventedDetail": []
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 2,
+   "checksPassed": 6
+  },
+  "human": {
+   "decisions": 8,
+   "byCategory": {
+    "approval": 4,
+    "corrective_rejection": 3,
+    "preference_rejection": 1
+   },
+   "mandatoryApprovals": 4,
+   "preferenceRejections": 1,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 3,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 0,
+   "fullTakeovers": 3,
+   "takeoverRequests": [
+    "compound-ingrid-two-things",
+    "compound-greta-next-steps",
+    "compound-omar-prep"
+   ]
+  },
+  "autonomy": {
+   "actionableRequests": 6,
+   "handledWithApprovalsOnly": 2,
+   "rate": 0.333,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 3,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 0
+  },
+  "time": {
+   "wallSecondsForWholeDay": 6.3,
+   "apiCalls": 165,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 46,
+   "executionMsTotal": 4016,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 15.0,
+   "executiveMinutesDecidingInDesk": 2.0,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "compound-ingrid-two-things": {
+   "subject": "Our sync and the term sheet",
+   "sender": "ingrid.solberg@bluewatershipping.example",
+   "expected": {
+    "outcome": "compound",
+    "parts": [
+     {
+      "outcome": "reschedule",
+      "event": "evt-bluewater-sync",
+      "start": "2026-11-20T11:00:00+01:00",
+      "end": "2026-11-20T12:00:00+01:00",
+      "with": "ingrid",
+      "email": "ingrid.solberg@bluewatershipping.example",
+      "confirm": true
+     },
+     {
+      "outcome": "task",
+      "title_has": [
+       "term sheet"
+      ],
+      "dueDate": "2026-11-18",
+      "urgent": false
+     }
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "part 1 (reschedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs",
+    "part 2 (task): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs"
+   ],
+   "evidence": [],
+   "parts": [
+    {
+     "expected": "reschedule",
+     "verdict": "rescued"
+    },
+    {
+     "expected": "task",
+     "verdict": "rescued"
+    }
+   ],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "compound-daniel-annex": {
+   "subject": "Pricing annex",
+   "sender": "daniel.okafor@atlaspharma.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "daniel",
+    "email": "daniel.okafor@atlaspharma.example",
+    "attendees": [
+     "daniel.okafor@atlaspharma.example"
+    ],
+    "start": "2026-11-19T11:00:00+01:00",
+    "end": "2026-11-19T12:00:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 30,
+     "toolCallId": 47,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 30,
+     "toolCallId": 52,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    30
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "compound-mei-declined": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "declined",
+    "tool": "create_calendar_event"
+   },
+   "verdict": "declined",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    57
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "compound-greta-next-steps": {
+   "subject": "Next steps after the review",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "compound",
+    "parts": [
+     {
+      "outcome": "schedule",
+      "with": "greta",
+      "email": "greta.lindqvist@nordlicht-retail.example",
+      "attendees": [
+       "greta.lindqvist@nordlicht-retail.example"
+      ],
+      "start": "2026-11-20T15:00:00+01:00",
+      "end": "2026-11-20T15:30:00+01:00",
+      "provider": "google",
+      "account": "layla.mansour@meridianfreight.example",
+      "confirm": true,
+      "withinWorkingHours": true
+     },
+     {
+      "outcome": "task",
+      "title_has": [
+       "Q1 volumes",
+       "volumes"
+      ],
+      "dueDate": "2026-11-19",
+      "urgent": false
+     }
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "part 1 (schedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs",
+    "part 2 (task): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs"
+   ],
+   "evidence": [],
+   "parts": [
+    {
+     "expected": "schedule",
+     "verdict": "rescued"
+    },
+    {
+     "expected": "task",
+     "verdict": "rescued"
+    }
+   ],
+   "unverifiedActions": [],
+   "runIds": [
+    78
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "compound-omar-prep": {
+   "subject": "Budget review prep",
+   "sender": "omar.haddad@meridianfreight.example",
+   "expected": {
+    "outcome": "compound",
+    "parts": [
+     {
+      "outcome": "schedule",
+      "with": "omar",
+      "email": "omar.haddad@meridianfreight.example",
+      "attendees": [
+       "omar.haddad@meridianfreight.example"
+      ],
+      "start": "2026-11-16T16:00:00+01:00",
+      "end": "2026-11-16T16:30:00+01:00",
+      "provider": "google",
+      "account": "layla.mansour@meridianfreight.example",
+      "confirm": true,
+      "withinWorkingHours": true
+     },
+     {
+      "outcome": "either",
+      "options": [
+       {
+        "outcome": "reminder",
+        "title_has": [
+         "headcount"
+        ],
+        "before": "2026-11-16T16:00:00+01:00"
+       },
+       {
+        "outcome": "task",
+        "title_has": [
+         "headcount"
+        ],
+        "dueDate": "2026-11-16",
+        "urgent": false
+       }
+      ]
+     }
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "part 1 (schedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs",
+    "part 2 (reminder): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs"
+   ],
+   "evidence": [],
+   "parts": [
+    {
+     "expected": "schedule",
+     "verdict": "rescued"
+    },
+    {
+     "expected": "reminder",
+     "verdict": "rescued"
+    }
+   ],
+   "unverifiedActions": [],
+   "runIds": [
+    96
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "compound-tomas-rebook": {
+   "subject": "Friday's renewal call",
+   "sender": "tomas.vega@kestrelinsurance.example",
+   "expected": {
+    "outcome": "either",
+    "options": [
+     {
+      "outcome": "reschedule",
+      "event": "evt-insurance-renewal",
+      "start": "2026-11-23T10:00:00+01:00",
+      "end": "2026-11-23T10:30:00+01:00",
+      "with": "tomas",
+      "email": "tomas.vega@kestrelinsurance.example",
+      "confirm": true
+     },
+     {
+      "outcome": "compound",
+      "parts": [
+       {
+        "outcome": "cancel",
+        "event": "evt-insurance-renewal",
+        "with": "tomas",
+        "email": "tomas.vega@kestrelinsurance.example",
+        "confirm": true
+       },
+       {
+        "outcome": "schedule",
+        "with": "tomas",
+        "email": "tomas.vega@kestrelinsurance.example",
+        "attendees": [
+         "tomas.vega@kestrelinsurance.example"
+        ],
+        "start": "2026-11-23T10:00:00+01:00",
+        "end": "2026-11-23T10:30:00+01:00",
+        "provider": "google",
+        "account": "layla.mansour@meridianfreight.example",
+        "confirm": true,
+        "withinWorkingHours": true
+       }
+      ]
+     }
+    ]
+   },
+   "verdict": "partial",
+   "notes": [
+    "part 1 (cancel): correct",
+    "part 2 (schedule): missed: the meeting was needed and the Desk decided nothing was"
+   ],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 114,
+     "toolCallId": 129,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 114,
+     "toolCallId": 134,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [
+    {
+     "expected": "cancel",
+     "verdict": "correct"
+    },
+    {
+     "expected": "schedule",
+     "verdict": "missed"
+    }
+   ],
+   "unverifiedActions": [],
+   "runIds": [
+    114
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 27,
+   "runId": 11,
+   "requestId": "compound-ingrid-two-things",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "the message names a time that is free, so a reply offering other times is not what it needs",
+   "countsAgainstAutonomy": true,
+   "stepId": "compound-01",
+   "at": "2026-11-16T08:30:32+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 47,
+   "runId": 30,
+   "requestId": "compound-daniel-annex",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "compound-02",
+   "at": "2026-11-16T09:30:55+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 52,
+   "runId": 30,
+   "requestId": "compound-daniel-annex",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "compound-02",
+   "at": "2026-11-16T09:30:55+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 74,
+   "runId": 57,
+   "requestId": "compound-mei-declined",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "preference_rejection",
+   "why": "The executive will be travelling that afternoon.",
+   "countsAgainstAutonomy": false,
+   "stepId": "compound-03",
+   "at": "2026-11-16T10:30:43+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 93,
+   "runId": 78,
+   "requestId": "compound-greta-next-steps",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "the message names a time that is free, so a reply offering other times is not what it needs",
+   "countsAgainstAutonomy": true,
+   "stepId": "compound-04",
+   "at": "2026-11-16T11:30:41+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 111,
+   "runId": 96,
+   "requestId": "compound-omar-prep",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "the message names a time that is free, so a reply offering other times is not what it needs",
+   "countsAgainstAutonomy": true,
+   "stepId": "compound-05",
+   "at": "2026-11-16T13:00:50+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 129,
+   "runId": 114,
+   "requestId": "compound-tomas-rebook",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is cancelled",
+   "countsAgainstAutonomy": false,
+   "stepId": "compound-06",
+   "at": "2026-11-16T14:30:44+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 134,
+   "runId": 114,
+   "requestId": "compound-tomas-rebook",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "compound-06",
+   "at": "2026-11-16T14:30:44+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "compound-02",
+   "check": "confirmation_only_after_the_booking_took_effect",
+   "passed": true,
+   "detail": "plan declares the dependency: True; booking executed at timeline position 17, confirmation proposed at 19"
+  },
+  {
+   "stepId": "compound-03",
+   "check": "dependent_step_not_proposed_after_rejection",
+   "passed": true,
+   "detail": "emails proposed after the booking was rejected: 0"
+  },
+  {
+   "stepId": "compound-03",
+   "check": "blocked_step_is_recorded",
+   "passed": true,
+   "detail": "recorded by the Desk on its own: False; after a client called POST /desk/runs/(id)/advance: True"
+  },
+  {
+   "stepId": "compound-07",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 3, the calendars hold 3"
+  },
+  {
+   "stepId": "compound-07",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 3, the task list holds 3"
+  },
+  {
+   "stepId": "compound-07",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "compound-07",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "2 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "compound-07",
+   "check": "briefing_reports_awaited_replies",
+   "passed": false,
+   "detail": "2 replies are awaited; the briefing does not mention them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "compound-01",
+   "at": "D+0 08:30",
+   "title": "One message asks to move a meeting and sets a deadline",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "execute",
+    "record"
+   ],
+   "requests": [
+    "compound-ingrid-two-things"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 125
+  },
+  {
+   "id": "compound-02",
+   "at": "D+0 09:30",
+   "title": "A booking and the confirmation that depends on it",
+   "kind": "email",
+   "job": [
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "compound-daniel-annex"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "compound-02",
+     "check": "confirmation_only_after_the_booking_took_effect",
+     "passed": true,
+     "detail": "plan declares the dependency: True; booking executed at timeline position 17, confirmation proposed at 19"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    30
+   ],
+   "wallMs": 2328
+  },
+  {
+   "id": "compound-03",
+   "at": "D+0 10:30",
+   "title": "The first step is declined: what depends on it must not happen",
+   "kind": "email",
+   "job": [
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "compound-mei-declined"
+   ],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "compound-03",
+     "check": "dependent_step_not_proposed_after_rejection",
+     "passed": true,
+     "detail": "emails proposed after the booking was rejected: 0"
+    },
+    {
+     "stepId": "compound-03",
+     "check": "blocked_step_is_recorded",
+     "passed": true,
+     "detail": "recorded by the Desk on its own: False; after a client called POST /desk/runs/(id)/advance: True"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [
+    57
+   ],
+   "wallMs": 250
+  },
+  {
+   "id": "compound-04",
+   "at": "D+0 11:30",
+   "title": "One message with a meeting, a deadline and a piece of news",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "execute",
+    "record"
+   ],
+   "requests": [
+    "compound-greta-next-steps"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    78
+   ],
+   "wallMs": 140
+  },
+  {
+   "id": "compound-05",
+   "at": "D+0 13:00",
+   "title": "A meeting today and something to bring to it",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "execute",
+    "record"
+   ],
+   "requests": [
+    "compound-omar-prep"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    96
+   ],
+   "wallMs": 172
+  },
+  {
+   "id": "compound-06",
+   "at": "D+0 14:30",
+   "title": "A cancellation that asks for a new date in the same message",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "compound-tomas-rebook"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    114
+   ],
+   "wallMs": 2358
+  },
+  {
+   "id": "compound-07",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "compound-07",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 3, the calendars hold 3"
+    },
+    {
+     "stepId": "compound-07",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 3, the task list holds 3"
+    },
+    {
+     "stepId": "compound-07",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "compound-07",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "2 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "compound-07",
+     "check": "briefing_reports_awaited_replies",
+     "passed": false,
+     "detail": "2 replies are awaited; the briefing does not mention them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 141
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 4,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T07:37:41+00:00"
+}

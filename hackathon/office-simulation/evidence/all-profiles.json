@@ -1,0 +1,1079 @@
+{
+ "simulated": true,
+ "seed": 7,
+ "day": "2026-11-16",
+ "executive": "attentive",
+ "combined": {
+  "days": 8,
+  "requestsReceived": 81,
+  "actionable": 77,
+  "actionableDetectedByDesk": 73,
+  "completedCorrectly": 42,
+  "correctlyHandedToExecutive": 8,
+  "declinedByExecutive": 3,
+  "completedAfterHumanCorrection": 3,
+  "partlyCompleted": 2,
+  "leftForHuman": 19,
+  "incorrect": 0,
+  "handledWithApprovalsOnly": 53,
+  "autonomyRate": 0.688,
+  "calendarChangesVerified": 31,
+  "emailRepliesVerified": 38,
+  "tasksAndRemindersVerified": 7,
+  "followUpsSatisfied": 8,
+  "duplicatesPrevented": 4,
+  "mandatoryApprovals": 73,
+  "preferenceRejections": 3,
+  "preferenceEdits": 2,
+  "manualCorrections": 1,
+  "manualRescues": 14,
+  "missingInformationSupplied": 1,
+  "recoveryRetries": 6,
+  "invariantViolations": 0,
+  "checksPassed": 44,
+  "checksFailed": 17,
+  "executedButNotVerifiedByDesk": 1,
+  "backendErrors": 0
+ },
+ "perProfile": {
+  "normal": {
+   "replayFingerprint": "bbe9e922fb71b42a",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "A. Normal day: 14 messages, 11 actionable; 7 done correctly, 0 correctly handed over, 0 declined, 0 corrected, 0 partial, 4 left for a human, 0 incorrect. Approvals-only: 7/11. Decisions: 13. Checks: 3 pass, 3 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 14,
+     "notSent": 0,
+     "actionable": 11,
+     "needingNothing": 3,
+     "actionableDetectedByDesk": 10,
+     "needingNothingLeftAlone": 3
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 7,
+      "correct_none": 3,
+      "missed": 1,
+      "rescued": 2,
+      "safe_escalation": 1
+     },
+     "completedCorrectly": 7,
+     "correctlyHandedToExecutive": 0,
+     "declinedByExecutive": 0,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 0,
+     "leftForHuman": 4,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 4,
+     "emailReplies": 5,
+     "tasksAndReminders": 2,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 2,
+      "calendar event moved": 1,
+      "confirmation reply": 4,
+      "reply offering times": 1,
+      "task created": 2
+     },
+     "followUpsSatisfied": 1,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 3,
+     "checksPassed": 3
+    },
+    "human": {
+     "decisions": 13,
+     "byCategory": {
+      "approval": 11,
+      "corrective_rejection": 2
+     },
+     "mandatoryApprovals": 11,
+     "preferenceRejections": 0,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 2,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 4,
+     "takeoverRequests": [
+      "normal-term-sheet",
+      "normal-karim-quote",
+      "normal-mei-prep",
+      "normal-jonas-pricing"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 11,
+     "handledWithApprovalsOnly": 7,
+     "rate": 0.636,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 5,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 1
+    },
+    "time": {
+     "wallSecondsForWholeDay": 14.09,
+     "apiCalls": 294,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 10030,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 43.0,
+     "executiveMinutesDecidingInDesk": 3.2,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "busy": {
+   "replayFingerprint": "89b9a8d0d97cd8bf",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "B. Busy executive: 11 messages, 11 actionable; 7 done correctly, 0 correctly handed over, 0 declined, 0 corrected, 0 partial, 4 left for a human, 0 incorrect. Approvals-only: 7/11. Decisions: 15. Checks: 4 pass, 1 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 11,
+     "notSent": 0,
+     "actionable": 11,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 11,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 7,
+      "rescued": 4
+     },
+     "completedCorrectly": 7,
+     "correctlyHandedToExecutive": 0,
+     "declinedByExecutive": 0,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 0,
+     "leftForHuman": 4,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 4,
+     "emailReplies": 5,
+     "tasksAndReminders": 2,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 3,
+      "confirmation reply": 4,
+      "reply offering times": 1,
+      "task created": 2
+     },
+     "followUpsSatisfied": 0,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 1,
+     "checksPassed": 4
+    },
+    "human": {
+     "decisions": 15,
+     "byCategory": {
+      "approval": 11,
+      "corrective_rejection": 4
+     },
+     "mandatoryApprovals": 11,
+     "preferenceRejections": 0,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 4,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 4,
+     "takeoverRequests": [
+      "busy-daniel-move",
+      "busy-priya-cancel-again",
+      "busy-ingrid-move",
+      "busy-mei-today"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 11,
+     "handledWithApprovalsOnly": 7,
+     "rate": 0.636,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "jonas.weber@meridianfreight.example",
+       "state": "waiting",
+       "thread": "thread-jonas-overlap"
+      },
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 5,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 0
+    },
+    "time": {
+     "wallSecondsForWholeDay": 13.8,
+     "apiCalls": 306,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 10029,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 41.0,
+     "executiveMinutesDecidingInDesk": 3.8,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "multi_provider": {
+   "replayFingerprint": "2215880bf74bae89",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "C. Multi-provider day: 9 messages, 9 actionable; 7 done correctly, 1 correctly handed over, 0 declined, 0 corrected, 0 partial, 1 left for a human, 0 incorrect. Approvals-only: 8/9. Decisions: 13. Checks: 3 pass, 2 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 9,
+     "notSent": 0,
+     "actionable": 9,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 9,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 7,
+      "correct_escalation": 1,
+      "rescued": 1
+     },
+     "completedCorrectly": 7,
+     "correctlyHandedToExecutive": 1,
+     "declinedByExecutive": 0,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 0,
+     "leftForHuman": 1,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 5,
+     "emailReplies": 7,
+     "tasksAndReminders": 0,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 3,
+      "calendar event moved": 1,
+      "confirmation reply": 5,
+      "reply offering times": 2
+     },
+     "followUpsSatisfied": 1,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 2,
+     "checksPassed": 3
+    },
+    "human": {
+     "decisions": 13,
+     "byCategory": {
+      "approval": 12,
+      "corrective_rejection": 1
+     },
+     "mandatoryApprovals": 12,
+     "preferenceRejections": 0,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 1,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 1,
+     "takeoverRequests": [
+      "multi_provider-nora-deck"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 9,
+     "handledWithApprovalsOnly": 8,
+     "rate": 0.889,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "daniel.okafor@atlaspharma.example",
+       "state": "waiting",
+       "thread": "thread-daniel-annex"
+      },
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 3,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 1
+    },
+    "time": {
+     "wallSecondsForWholeDay": 17.92,
+     "apiCalls": 249,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 14031,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 45.0,
+     "executiveMinutesDecidingInDesk": 3.2,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "unreliable": {
+   "replayFingerprint": "b9e47451020e7d38",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "sqlite"
+   },
+   "headline": "D. Unreliable services: 11 messages, 11 actionable; 9 done correctly, 2 correctly handed over, 0 declined, 0 corrected, 0 partial, 0 left for a human, 0 incorrect. Approvals-only: 11/11. Decisions: 23. Checks: 9 pass, 2 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 11,
+     "notSent": 0,
+     "actionable": 11,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 11,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 9,
+      "correct_escalation": 2
+     },
+     "completedCorrectly": 9,
+     "correctlyHandedToExecutive": 2,
+     "declinedByExecutive": 0,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 0,
+     "leftForHuman": 0,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 8,
+     "emailReplies": 8,
+     "tasksAndReminders": 1,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 6,
+      "calendar event moved": 1,
+      "confirmation reply": 8,
+      "task created": 1
+     },
+     "followUpsSatisfied": 0,
+     "duplicatesPrevented": 3,
+     "duplicatesPreventedDetail": [
+      {
+       "what": "second notification for one message",
+       "message": "unreliable-tomas-cancel",
+       "runId": 130
+      },
+      {
+       "what": "no message taken in twice after a restart",
+       "runs": 10
+      },
+      {
+       "what": "repeated request held (already_scheduled)",
+       "message": "unreliable-mei-resend-2"
+      }
+     ]
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 5,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 2,
+     "checksPassed": 9
+    },
+    "human": {
+     "decisions": 23,
+     "byCategory": {
+      "approval": 17,
+      "recovery_retry": 6
+     },
+     "mandatoryApprovals": 17,
+     "preferenceRejections": 0,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 0,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 6,
+     "fullTakeovers": 0,
+     "takeoverRequests": []
+    },
+    "autonomy": {
+     "actionableRequests": 11,
+     "handledWithApprovalsOnly": 11,
+     "rate": 1.0,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 4,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 2
+    },
+    "time": {
+     "wallSecondsForWholeDay": 26.17,
+     "apiCalls": 436,
+     "intakePassMsMedian": 16,
+     "intakePassMsMax": 61,
+     "executionMsTotal": 16076,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 57.0,
+     "executiveMinutesDecidingInDesk": 5.8,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "human_in_loop": {
+   "replayFingerprint": "9f67ba0902a8a133",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "E. Human in the loop: 8 messages, 8 actionable; 5 done correctly, 1 correctly handed over, 1 declined, 0 corrected, 1 partial, 0 left for a human, 0 incorrect. Approvals-only: 7/8. Decisions: 11. Checks: 4 pass, 2 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 8,
+     "notSent": 0,
+     "actionable": 8,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 8,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 5,
+      "correct_escalation": 1,
+      "declined": 1,
+      "partial": 1
+     },
+     "completedCorrectly": 5,
+     "correctlyHandedToExecutive": 1,
+     "declinedByExecutive": 1,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 1,
+     "leftForHuman": 0,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 4,
+     "emailReplies": 4,
+     "tasksAndReminders": 1,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 3,
+      "confirmation reply": 3,
+      "reply offering times": 1,
+      "task created": 1
+     },
+     "followUpsSatisfied": 1,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 1,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 2,
+     "checksPassed": 4
+    },
+    "human": {
+     "decisions": 11,
+     "byCategory": {
+      "approval": 7,
+      "corrective_rejection": 1,
+      "preference_edit": 2,
+      "preference_rejection": 1
+     },
+     "mandatoryApprovals": 7,
+     "preferenceRejections": 1,
+     "preferenceEdits": 2,
+     "manualCorrections": 0,
+     "manualRescues": 1,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 0,
+     "takeoverRequests": []
+    },
+    "autonomy": {
+     "actionableRequests": 8,
+     "handledWithApprovalsOnly": 7,
+     "rate": 0.875,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 4,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 2
+    },
+    "time": {
+     "wallSecondsForWholeDay": 11.5,
+     "apiCalls": 236,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 8060,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 36.0,
+     "executiveMinutesDecidingInDesk": 2.8,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "compound": {
+   "replayFingerprint": "fa283cbe9180e5f8",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "F. Compound work: 6 messages, 6 actionable; 1 done correctly, 0 correctly handed over, 1 declined, 0 corrected, 1 partial, 3 left for a human, 0 incorrect. Approvals-only: 2/6. Decisions: 8. Checks: 6 pass, 2 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 6,
+     "notSent": 0,
+     "actionable": 6,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 6,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 1,
+      "declined": 1,
+      "partial": 1,
+      "rescued": 3
+     },
+     "completedCorrectly": 1,
+     "correctlyHandedToExecutive": 0,
+     "declinedByExecutive": 1,
+     "completedAfterHumanCorrection": 0,
+     "partlyCompleted": 1,
+     "leftForHuman": 3,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 2,
+     "emailReplies": 2,
+     "tasksAndReminders": 0,
+     "byKind": {
+      "calendar event cancelled": 1,
+      "calendar event created": 1,
+      "confirmation reply": 2
+     },
+     "followUpsSatisfied": 0,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 2,
+     "checksPassed": 6
+    },
+    "human": {
+     "decisions": 8,
+     "byCategory": {
+      "approval": 4,
+      "corrective_rejection": 3,
+      "preference_rejection": 1
+     },
+     "mandatoryApprovals": 4,
+     "preferenceRejections": 1,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 3,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 3,
+     "takeoverRequests": [
+      "compound-ingrid-two-things",
+      "compound-greta-next-steps",
+      "compound-omar-prep"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 6,
+     "handledWithApprovalsOnly": 2,
+     "rate": 0.333,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 3,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 0
+    },
+    "time": {
+     "wallSecondsForWholeDay": 6.3,
+     "apiCalls": 165,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 46,
+     "executionMsTotal": 4016,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 15.0,
+     "executiveMinutesDecidingInDesk": 2.0,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "follow_up": {
+   "replayFingerprint": "010b5ff081567b94",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "G. Follow-up days: 6 messages, 6 actionable; 3 done correctly, 0 correctly handed over, 0 declined, 2 corrected, 0 partial, 1 left for a human, 0 incorrect. Approvals-only: 3/6. Decisions: 8. Checks: 11 pass, 3 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 6,
+     "notSent": 0,
+     "actionable": 6,
+     "needingNothing": 0,
+     "actionableDetectedByDesk": 5,
+     "needingNothingLeftAlone": 0
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 3,
+      "corrected": 2,
+      "missed": 1
+     },
+     "completedCorrectly": 3,
+     "correctlyHandedToExecutive": 0,
+     "declinedByExecutive": 0,
+     "completedAfterHumanCorrection": 2,
+     "partlyCompleted": 0,
+     "leftForHuman": 1,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 2,
+     "emailReplies": 4,
+     "tasksAndReminders": 0,
+     "byKind": {
+      "calendar event created": 2,
+      "confirmation reply": 2,
+      "reply offering times": 2
+     },
+     "followUpsSatisfied": 5,
+     "duplicatesPrevented": 1,
+     "duplicatesPreventedDetail": [
+      {
+       "what": "a second reminder was not proposed",
+       "thread": "thread-yusuf-call"
+      }
+     ]
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 3,
+     "checksPassed": 11
+    },
+    "human": {
+     "decisions": 8,
+     "byCategory": {
+      "approval": 6,
+      "corrective_rejection": 1,
+      "missing_information": 1
+     },
+     "mandatoryApprovals": 6,
+     "preferenceRejections": 0,
+     "preferenceEdits": 0,
+     "manualCorrections": 0,
+     "manualRescues": 1,
+     "missingInformationSupplied": 1,
+     "recoveryRetries": 0,
+     "fullTakeovers": 1,
+     "takeoverRequests": [
+      "follow_up-karim-quote"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 6,
+     "handledWithApprovalsOnly": 3,
+     "rate": 0.5,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      }
+     ],
+     "openTasks": 3,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 0
+    },
+    "time": {
+     "wallSecondsForWholeDay": 12.58,
+     "apiCalls": 207,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 10059,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 28.0,
+     "executiveMinutesDecidingInDesk": 2.0,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  },
+  "surprise": {
+   "replayFingerprint": "2838b6af22bbebec",
+   "engine": {
+    "overlay": "0.3.0",
+    "deskBackend": "0282558",
+    "executionMode": "sandbox",
+    "externalWritesEnabled": false,
+    "modelConfigured": false,
+    "chatScope": "enforced",
+    "claims": "memory"
+   },
+   "headline": "H. Surprise day: 16 messages, 15 actionable; 3 done correctly, 4 correctly handed over, 1 declined, 1 corrected, 0 partial, 6 left for a human, 0 incorrect. Approvals-only: 8/15. Decisions: 9. Checks: 4 pass, 2 fail. Invariant violations: 0.",
+   "metrics": {
+    "requests": {
+     "received": 16,
+     "notSent": 0,
+     "actionable": 15,
+     "needingNothing": 1,
+     "actionableDetectedByDesk": 13,
+     "needingNothingLeftAlone": 1
+    },
+    "outcomes": {
+     "byVerdict": {
+      "correct": 3,
+      "correct_escalation": 4,
+      "correct_none": 1,
+      "corrected": 1,
+      "declined": 1,
+      "missed": 2,
+      "rescued": 2,
+      "safe_escalation": 2
+     },
+     "completedCorrectly": 3,
+     "correctlyHandedToExecutive": 4,
+     "declinedByExecutive": 1,
+     "completedAfterHumanCorrection": 1,
+     "partlyCompleted": 0,
+     "leftForHuman": 6,
+     "incorrect": 0,
+     "incorrectRequests": []
+    },
+    "verifiedWork": {
+     "calendarChanges": 2,
+     "emailReplies": 3,
+     "tasksAndReminders": 1,
+     "byKind": {
+      "calendar event created": 2,
+      "confirmation reply": 2,
+      "reply offering times": 1,
+      "task created": 1
+     },
+     "followUpsSatisfied": 0,
+     "duplicatesPrevented": 0,
+     "duplicatesPreventedDetail": []
+    },
+    "failures": {
+     "actionsFailedAtEndOfDay": 0,
+     "providerFailuresInjectedAndHit": 0,
+     "outcomesUnknownAtEndOfDay": 0,
+     "executedButNotVerifiedByDesk": 0,
+     "invariantViolations": 0,
+     "backendErrors": 0,
+     "checksFailed": 2,
+     "checksPassed": 4
+    },
+    "human": {
+     "decisions": 9,
+     "byCategory": {
+      "approval": 5,
+      "corrective_edit": 1,
+      "corrective_rejection": 2,
+      "preference_rejection": 1
+     },
+     "mandatoryApprovals": 5,
+     "preferenceRejections": 1,
+     "preferenceEdits": 0,
+     "manualCorrections": 1,
+     "manualRescues": 2,
+     "missingInformationSupplied": 0,
+     "recoveryRetries": 0,
+     "fullTakeovers": 6,
+     "takeoverRequests": [
+      "surprise-daniel-arvo",
+      "surprise-mei-ist",
+      "surprise-karim-french",
+      "surprise-legal-notice",
+      "surprise-tomas-orphan",
+      "surprise-greta-past"
+     ]
+    },
+    "autonomy": {
+     "actionableRequests": 15,
+     "handledWithApprovalsOnly": 8,
+     "rate": 0.533,
+     "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+    },
+    "outstanding": {
+     "repliesAwaited": [
+      {
+       "waitingOn": "greta.lindqvist@nordlicht-retail.example",
+       "state": "waiting",
+       "thread": "thread-greta-either"
+      },
+      {
+       "waitingOn": "karim.saad@harborcrane.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-crane-quote"
+      },
+      {
+       "waitingOn": "rafael.costa@lumenaudit.example",
+       "state": "waiting (from before the day)",
+       "thread": "thread-audit-documents"
+      }
+     ],
+     "openTasks": 4,
+     "runsAwaitingApproval": 0,
+     "runsHandedToExecutive": 6
+    },
+    "time": {
+     "wallSecondsForWholeDay": 12.06,
+     "apiCalls": 364,
+     "intakePassMsMedian": 16,
+     "intakePassMsMax": 78,
+     "executionMsTotal": 6030,
+     "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+    },
+    "model": {
+     "configured": false,
+     "runsWithUsage": 0,
+     "estimatedCostUsd": null,
+     "note": "No model call was recorded: the Desk ran on its rules."
+    },
+    "humanTimeEstimate": {
+     "IS_AN_ASSUMPTION": true,
+     "assistantMinutesForThisWork": 35.0,
+     "executiveMinutesDecidingInDesk": 2.2,
+     "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+    }
+   }
+  }
+ }
+}

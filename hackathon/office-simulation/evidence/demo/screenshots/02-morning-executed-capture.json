@@ -1,0 +1,122 @@
+{
+ "simulated": true,
+ "label": "02-morning-executed",
+ "capturedAt": "2026-11-14T07:13:49.422Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T08:30:31+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 12,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite",
+    "Q3 board pack"
+   ],
+   "operations": 3,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T08:30:31+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 08:30 Europe/Paris  ·  capture 02-morning-executed",
+ "screens": [
+  {
+   "screen": "work-queue",
+   "route": "#/work",
+   "what": "Work queue: the Desk runs opened from incoming mail",
+   "file": "02-morning-executed-work-queue.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6235,
+   "viewport": {
+    "width": 1440,
+    "height": 900
+   },
+   "heading": "Work queue",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "run",
+   "route": "#/work/11",
+   "what": "Run detail: plan, proposed actions, evidence, timeline (needs --run)",
+   "file": "02-morning-executed-run-11.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 785,
+   "actionCards": 2,
+   "run": {
+    "runId": 11,
+    "subject": null,
+    "state": "completed",
+    "stage": "COMPLETED",
+    "simulated": true,
+    "actions": [
+     {
+      "toolCallId": 28,
+      "tool": "create_calendar_event",
+      "status": "executed",
+      "simulated": true
+     },
+     {
+      "toolCallId": 45,
+      "tool": "send_email",
+      "status": "executed",
+      "simulated": true
+     }
+    ]
+   },
+   "viewport": {
+    "width": 1440,
+    "height": 3291
+   },
+   "heading": "Cold-chain lanes: intro call",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "executed",
+     "label": "Send a calendar invitation: Cold-chain lanes: intro call"
+    },
+    {
+     "status": "executed",
+     "label": "Send an email: Re: Cold-chain lanes: intro call"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

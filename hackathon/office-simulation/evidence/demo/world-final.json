@@ -1,0 +1,865 @@
+{
+ "id": "office-meridian",
+ "label": "office-simulation",
+ "now": "2026-11-16T16:30:43+01:00",
+ "timezone": "Europe/Paris",
+ "preferences": {
+  "timezone": "Europe/Paris",
+  "workday_start_time": "09:00:00",
+  "workday_end_time": "18:00:00",
+  "preferred_weekdays": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "meeting_buffer_minutes": 0,
+  "default_meeting_duration_minutes": 30
+ },
+ "accounts": {
+  "gmail": [
+   "layla.mansour@meridianfreight.example",
+   "layla@mansour-advisory.example"
+  ],
+  "outlook": "layla.mansour@portalliance.example"
+ },
+ "mail": {
+  "gmail": [
+   {
+    "id": "normal-newsletter",
+    "threadId": "thread-newsletter",
+    "from_addr": "Freight Weekly <newsletter@freightweekly.example>",
+    "subject": "This week in freight: rates, ports and capacity",
+    "snippet": "Your weekly digest of container rates, port congestion and capacity news. You are receiving this because you subscribed. Unsubscribe at any time from your preferences page.",
+    "body": "Your weekly digest of container rates, port congestion and capacity news. You are receiving this because you subscribed. Unsubscribe at any time from your preferences page.",
+    "timestamp": "2026-11-14T06:00:00+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX",
+     "CATEGORY_PROMOTIONS"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-itinerary",
+    "threadId": "thread-itinerary",
+    "from_addr": "TravelHub Notifications <no-reply@travelhub.example>",
+    "subject": "Your itinerary: Paris to Hamburg, 24 November",
+    "snippet": "This is an automated confirmation. Your flight departs Paris CDG on 24 November and returns the same evening. No reply is needed. Reference MFP-48213.",
+    "body": "This is an automated confirmation. Your flight departs Paris CDG on 24 November and returns the same evening. No reply is needed. Reference MFP-48213.",
+    "timestamp": "2026-11-15T17:20:00+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-brightwave-news",
+    "threadId": "thread-brightwave-news",
+    "from_addr": "Jonas Weber <jonas.weber@meridianfreight.example>",
+    "subject": "Brightwave renewal signed",
+    "snippet": "Layla, good news: Brightwave signed the two-year renewal on Friday evening. Nothing needed from you, I just wanted you to know before stand-up.",
+    "body": "Layla, good news: Brightwave signed the two-year renewal on Friday evening. Nothing needed from you, I just wanted you to know before stand-up.",
+    "timestamp": "2026-11-15T19:05:00+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-board-pack",
+    "threadId": "thread-board-pack",
+    "from_addr": "Omar Haddad <omar.haddad@meridianfreight.example>",
+    "subject": "Q3 board pack",
+    "snippet": "Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+    "body": "Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+    "timestamp": "2026-11-13T17:40:00+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-mei-intro",
+    "threadId": "thread-mei-intro",
+    "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+    "subject": "Cold-chain lanes: intro call",
+    "snippet": "Hi Layla, would you be free on Wednesday at 14:00 for a 30 minute call to walk through the new cold-chain lanes? Jonas suggested I reach out to you directly.",
+    "body": "Hi Layla, would you be free on Wednesday at 14:00 for a 30 minute call to walk through the new cold-chain lanes? Jonas suggested I reach out to you directly.",
+    "timestamp": "2026-11-14T09:15:00+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-greta-forecast",
+    "threadId": "thread-greta-forecast",
+    "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+    "subject": "Peak-season forecast",
+    "snippet": "Hi Layla, could we meet tomorrow at 14:30 for an hour to go over the peak-season forecast? I would like to settle the volumes before our teams talk on Thursday.",
+    "body": "Hi Layla, could we meet tomorrow at 14:30 for an hour to go over the peak-season forecast? I would like to settle the volumes before our teams talk on Thursday.",
+    "timestamp": "2026-11-16T07:35:08+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-term-sheet",
+    "threadId": "thread-term-sheet",
+    "from_addr": "Ingrid Solberg <ingrid.solberg@bluewatershipping.example>",
+    "subject": "Joint-venture term sheet",
+    "snippet": "Dear Layla, as agreed last week, please send us the signed joint-venture term sheet by Friday. Our board meets the following Monday and needs it in the pack.",
+    "body": "Dear Layla, as agreed last week, please send us the signed joint-venture term sheet by Friday. Our board meets the following Monday and needs it in the pack.",
+    "timestamp": "2026-11-16T07:40:16+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-greta-picks",
+    "threadId": "thread-greta-forecast",
+    "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+    "subject": "Re: Peak-season forecast",
+    "snippet": "Thank you, Layla. Monday 16 November from 10:00 to 10:30 works for us. Could we confirm that slot?",
+    "body": "Thank you, Layla. Monday 16 November from 10:00 to 10:30 works for us. Could we confirm that slot?",
+    "timestamp": "2026-11-16T07:50:26+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-priya-move",
+    "threadId": "thread-priya-move",
+    "from_addr": "Priya Nair <priya.nair@meridianfreight.example>",
+    "subject": "Our 1:1 today",
+    "snippet": "Layla, could we move our 1:1 to today at 16:30? My terminal walk-through is running over and I will not be back by three.",
+    "body": "Layla, could we move our 1:1 to today at 16:30? My terminal walk-through is running over and I will not be back by three.",
+    "timestamp": "2026-11-16T08:00:36+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-karim-quote",
+    "threadId": "thread-crane-quote",
+    "from_addr": "Karim Saad <karim.saad@harborcrane.example>",
+    "subject": "Re: Crane maintenance quote for Q1",
+    "snippet": "Layla, apologies for the delay. The revised quote is EUR 48,200 for the quarter for both gantry cranes, unchanged scope, valid until the end of the month. The signed PDF is attached.",
+    "body": "Layla, apologies for the delay. The revised quote is EUR 48,200 for the quarter for both gantry cranes, unchanged scope, valid until the end of the month. The signed PDF is attached.",
+    "timestamp": "2026-11-16T08:30:22+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-settlement",
+    "threadId": "thread-settlement",
+    "from_addr": "Elena Petrova <elena.petrova@meridianfreight.example>",
+    "subject": "URGENT: Rotterdam settlement offer expires today",
+    "snippet": "Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+    "body": "Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+    "timestamp": "2026-11-16T09:00:06+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-tomas-cancel",
+    "threadId": "thread-tomas-cancel",
+    "from_addr": "Tomas Vega <tomas.vega@kestrelinsurance.example>",
+    "subject": "Friday's renewal call",
+    "snippet": "Layla, I am sorry but I have to cancel our insurance renewal call on Friday. I will be travelling to Madrid that day. I will send new dates next week.",
+    "body": "Layla, I am sorry but I have to cancel our insurance renewal call on Friday. I will be travelling to Madrid that day. I will send new dates next week.",
+    "timestamp": "2026-11-16T10:00:55+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-mei-prep",
+    "threadId": "thread-mei-intro",
+    "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+    "subject": "Re: Cold-chain lanes: intro call",
+    "snippet": "Thanks Layla, Wednesday is confirmed on our side. Please have the lane-volume figures for Q3 to hand so that we can go through them together.",
+    "body": "Thanks Layla, Wednesday is confirmed on our side. Please have the lane-volume figures for Q3 to hand so that we can go through them together.",
+    "timestamp": "2026-11-16T11:00:47+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   },
+   {
+    "id": "normal-jonas-pricing",
+    "threadId": "thread-jonas-pricing",
+    "from_addr": "Jonas Weber <jonas.weber@meridianfreight.example>",
+    "subject": "Brightwave pricing prep",
+    "snippet": "Layla, could we meet on Wednesday at 14:00 for 30 minutes to prepare the Brightwave pricing before your call with Mei?",
+    "body": "Layla, could we meet on Wednesday at 14:00 for 30 minutes to prepare the Brightwave pricing before your call with Mei?",
+    "timestamp": "2026-11-16T14:00:31+00:00",
+    "provider": "gmail",
+    "is_read": false,
+    "reply_supported": true,
+    "provider_account_id": "layla.mansour@meridianfreight.example",
+    "account_email": "layla.mansour@meridianfreight.example",
+    "source_item_id": null,
+    "priority": null,
+    "labels": [
+     "INBOX"
+    ],
+    "to": [
+     "layla.mansour@meridianfreight.example"
+    ]
+   }
+  ],
+  "outlook": []
+ },
+ "sent": [
+  {
+   "id": "sent-crane-quote-request",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "karim.saad@harborcrane.example"
+   ],
+   "subject": "Crane maintenance quote for Q1",
+   "text": "Karim, could you send the revised quarterly quote for the two gantry cranes? We need it to close the Q1 budget.",
+   "thread_id": "thread-crane-quote",
+   "mode": "compose",
+   "in_reply_to": null,
+   "sent_at": "2026-11-12T14:10:00+00:00"
+  },
+  {
+   "id": "sent-audit-documents-request",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "rafael.costa@lumenaudit.example"
+   ],
+   "subject": "Outstanding audit documents",
+   "text": "Rafael, please confirm which documents are still outstanding for the interim audit so we can send them this week.",
+   "thread_id": "thread-audit-documents",
+   "mode": "compose",
+   "in_reply_to": null,
+   "sent_at": "2026-11-13T09:05:00+00:00"
+  },
+  {
+   "id": "sent-office-meridian-3",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "mei.tanaka@brightwavefoods.example"
+   ],
+   "subject": "Re: Cold-chain lanes: intro call",
+   "text": "Thank you for your message. I have scheduled \"Cold-chain lanes: intro call\" for Wednesday 18 November, 14:00 to 14:30 (Europe/Paris). You should receive a calendar invitation separately.",
+   "thread_id": "thread-mei-intro",
+   "mode": "reply",
+   "in_reply_to": "normal-mei-intro",
+   "sent_at": "2026-11-16T07:30:31+00:00"
+  },
+  {
+   "id": "sent-office-meridian-4",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "greta.lindqvist@nordlicht-retail.example"
+   ],
+   "subject": "Re: Peak-season forecast",
+   "text": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
+   "thread_id": "thread-greta-forecast",
+   "mode": "reply",
+   "in_reply_to": "normal-greta-forecast",
+   "sent_at": "2026-11-16T07:35:08+00:00"
+  },
+  {
+   "id": "sent-office-meridian-6",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "greta.lindqvist@nordlicht-retail.example"
+   ],
+   "subject": "Re: Peak-season forecast",
+   "text": "Thank you for your message. I have scheduled \"Re: Peak-season forecast\" for Monday 16 November, 10:00 to 10:30 (Europe/Paris). You should receive a calendar invitation separately.",
+   "thread_id": "thread-greta-forecast",
+   "mode": "reply",
+   "in_reply_to": "normal-greta-picks",
+   "sent_at": "2026-11-16T07:50:26+00:00"
+  },
+  {
+   "id": "sent-office-meridian-7",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "priya.nair@meridianfreight.example"
+   ],
+   "subject": "Re: Our 1:1 today",
+   "text": "Thank you for your message. I have moved \"1:1 Priya Nair\" to Monday 16 November, 16:30 to 17:15 (Europe/Paris). You should receive a calendar update separately.",
+   "thread_id": "thread-priya-move",
+   "mode": "reply",
+   "in_reply_to": "normal-priya-move",
+   "sent_at": "2026-11-16T08:00:36+00:00"
+  },
+  {
+   "id": "sent-office-meridian-9",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "tomas.vega@kestrelinsurance.example"
+   ],
+   "subject": "Re: Friday's renewal call",
+   "text": "Thank you for letting me know. \"Insurance renewal call\" has been cancelled, and a calendar cancellation has been sent separately.",
+   "thread_id": "thread-tomas-cancel",
+   "mode": "reply",
+   "in_reply_to": "normal-tomas-cancel",
+   "sent_at": "2026-11-16T10:00:55+00:00"
+  }
+ ],
+ "drafts": [],
+ "events": [
+  {
+   "id": "evt-standup-mon",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Leadership stand-up",
+   "start": "2026-11-16T09:00:00+01:00",
+   "end": "2026-11-16T09:30:00+01:00",
+   "attendees": [
+    "omar.haddad@meridianfreight.example",
+    "priya.nair@meridianfreight.example",
+    "jonas.weber@meridianfreight.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-office-meridian-5",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Re: Peak-season forecast",
+   "start": "2026-11-16T10:00:00+01:00",
+   "end": "2026-11-16T10:30:00+01:00",
+   "attendees": [
+    "greta.lindqvist@nordlicht-retail.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "Requested by Greta Lindqvist <greta.lindqvist@nordlicht-retail.example> by email.",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:50:26+01:00"
+  },
+  {
+   "id": "evt-nordlicht-qbr",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Nordlicht quarterly review",
+   "start": "2026-11-16T11:00:00+01:00",
+   "end": "2026-11-16T12:00:00+01:00",
+   "attendees": [
+    "greta.lindqvist@nordlicht-retail.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": "Video call",
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-priya-1on1",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "1:1 Priya Nair",
+   "start": "2026-11-16T16:30:00+01:00",
+   "end": "2026-11-16T17:15:00+01:00",
+   "attendees": [
+    "priya.nair@meridianfreight.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T09:00:36+01:00"
+  },
+  {
+   "id": "evt-atlas-negotiation",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Atlas Pharma contract negotiation",
+   "start": "2026-11-17T10:00:00+01:00",
+   "end": "2026-11-17T11:00:00+01:00",
+   "attendees": [
+    "daniel.okafor@atlaspharma.example",
+    "elena.petrova@meridianfreight.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-budget-fy27",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Budget review FY27",
+   "start": "2026-11-17T14:00:00+01:00",
+   "end": "2026-11-17T15:00:00+01:00",
+   "attendees": [
+    "omar.haddad@meridianfreight.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-pa-board",
+   "provider": "outlook",
+   "account": "layla.mansour@portalliance.example",
+   "title": "Port Alliance board meeting",
+   "start": "2026-11-17T16:00:00+01:00",
+   "end": "2026-11-17T17:30:00+01:00",
+   "attendees": [
+    "hannah.schmidt@portalliance.example"
+   ],
+   "organizer": "hannah.schmidt@portalliance.example",
+   "location": "Port Alliance, Room 4",
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-pipeline-review",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Sales pipeline review",
+   "start": "2026-11-18T09:30:00+01:00",
+   "end": "2026-11-18T10:30:00+01:00",
+   "attendees": [
+    "jonas.weber@meridianfreight.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-office-meridian-1",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Cold-chain lanes: intro call",
+   "start": "2026-11-18T14:00:00+01:00",
+   "end": "2026-11-18T14:30:00+01:00",
+   "attendees": [
+    "mei.tanaka@brightwavefoods.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "Requested by Mei Tanaka <mei.tanaka@brightwavefoods.example> by email.",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:30:31+01:00"
+  },
+  {
+   "id": "evt-verde-advisory",
+   "provider": "google",
+   "account": "layla@mansour-advisory.example",
+   "title": "Advisory session: Verde Mobility",
+   "start": "2026-11-18T16:00:00+01:00",
+   "end": "2026-11-18T17:00:00+01:00",
+   "attendees": [
+    "nora.aziz@verdemobility.example"
+   ],
+   "organizer": "layla@mansour-advisory.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-pa-safety",
+   "provider": "outlook",
+   "account": "layla.mansour@portalliance.example",
+   "title": "Port Alliance safety committee",
+   "start": "2026-11-19T09:00:00+01:00",
+   "end": "2026-11-19T10:00:00+01:00",
+   "attendees": [
+    "hannah.schmidt@portalliance.example"
+   ],
+   "organizer": "layla.mansour@portalliance.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-bluewater-sync",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Bluewater partnership sync",
+   "start": "2026-11-19T13:00:00+01:00",
+   "end": "2026-11-19T14:00:00+01:00",
+   "attendees": [
+    "ingrid.solberg@bluewatershipping.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "confirmed",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T08:00:00+01:00"
+  },
+  {
+   "id": "evt-insurance-renewal",
+   "provider": "google",
+   "account": "layla.mansour@meridianfreight.example",
+   "title": "Insurance renewal call",
+   "start": "2026-11-20T10:00:00+01:00",
+   "end": "2026-11-20T10:30:00+01:00",
+   "attendees": [
+    "tomas.vega@kestrelinsurance.example"
+   ],
+   "organizer": "layla.mansour@meridianfreight.example",
+   "location": null,
+   "description": "",
+   "status": "cancelled",
+   "show_as": "busy",
+   "updated_at": "2026-11-16T11:00:55+01:00"
+  }
+ ],
+ "tasks": [
+  {
+   "description": "",
+   "created_at": "2026-11-16T08:00:00+01:00",
+   "id": "task-atlas-contract",
+   "title": "Review Atlas Pharma draft contract",
+   "due_at": "2026-11-17T09:00:00+01:00",
+   "priority": "high",
+   "status": "open"
+  },
+  {
+   "description": "",
+   "created_at": "2026-11-16T08:00:00+01:00",
+   "id": "task-crane-renewal",
+   "title": "Sign Harbor Crane maintenance renewal",
+   "due_at": "2026-11-20T17:00:00+01:00",
+   "priority": "medium",
+   "status": "open"
+  },
+  {
+   "description": "",
+   "created_at": "2026-11-16T08:00:00+01:00",
+   "id": "task-q4-marketing",
+   "title": "Approve Q4 marketing budget",
+   "due_at": "2026-11-18T17:00:00+01:00",
+   "priority": "medium",
+   "status": "open"
+  },
+  {
+   "description": "",
+   "created_at": "2026-11-16T08:00:00+01:00",
+   "id": "task-offsite-venue",
+   "title": "Choose venue for leadership offsite",
+   "due_at": "2026-11-13T17:00:00+01:00",
+   "priority": "low",
+   "status": "done"
+  },
+  {
+   "id": "task-office-meridian-2",
+   "title": "Q3 board pack",
+   "description": "From Omar Haddad <omar.haddad@meridianfreight.example>, received 2026-11-13T17:40:00+00:00 (gmail). Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
+   "due_at": "2026-11-19T17:00:00+01:00",
+   "priority": "low",
+   "status": "open",
+   "created_at": "2026-11-16T08:30:31+01:00"
+  },
+  {
+   "id": "task-office-meridian-8",
+   "title": "URGENT: Rotterdam settlement offer expires today",
+   "description": "From Elena Petrova <elena.petrova@meridianfreight.example>, received 2026-11-16T09:00:06+00:00 (gmail). Layla, opposing counsel's settlement offer on the Rotterdam demurrage claim expires at 17:00 today. I need your decision: accept at EUR 120,000 or proceed to arbitration. I recommend accepting.",
+   "due_at": "2026-11-16T17:00:00+01:00",
+   "priority": "high",
+   "status": "open",
+   "created_at": "2026-11-16T10:00:06+01:00"
+  }
+ ],
+ "reminders": [
+  {
+   "created_at": "2026-11-16T08:00:00+01:00",
+   "id": "rem-call-omar",
+   "title": "Call Omar before the budget review",
+   "remind_at": "2026-11-17T13:30:00+01:00",
+   "timezone": "Europe/Paris",
+   "status": "scheduled"
+  }
+ ],
+ "followUps": [
+  {
+   "id": "fu-crane-quote",
+   "subject": "Crane maintenance quote for Q1",
+   "threadId": "thread-crane-quote",
+   "waitingOn": {
+    "email": "karim.saad@harborcrane.example",
+    "name": "Karim Saad"
+   },
+   "sentAt": "2026-11-12T15:10:00+01:00",
+   "expectedBy": "2026-11-16T12:00:00+01:00",
+   "status": "waiting"
+  },
+  {
+   "id": "fu-audit-documents",
+   "subject": "Outstanding audit documents",
+   "threadId": "thread-audit-documents",
+   "waitingOn": {
+    "email": "rafael.costa@lumenaudit.example",
+    "name": "Rafael Costa"
+   },
+   "sentAt": "2026-11-13T10:05:00+01:00",
+   "expectedBy": "2026-11-16T12:00:00+01:00",
+   "status": "waiting"
+  }
+ ],
+ "faults": [],
+ "unreadable": {},
+ "operations": [
+  {
+   "seq": 1,
+   "at": "2026-11-16T07:30:31+00:00",
+   "op": "calendar.create_event",
+   "status": "executed",
+   "object_id": "evt-office-meridian-1",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 2,
+   "at": "2026-11-16T07:30:31+00:00",
+   "op": "task.create",
+   "status": "executed",
+   "object_id": "task-office-meridian-2",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 3,
+   "at": "2026-11-16T07:30:31+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-3",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 4,
+   "at": "2026-11-16T07:35:08+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-4",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 5,
+   "at": "2026-11-16T07:50:26+00:00",
+   "op": "calendar.create_event",
+   "status": "executed",
+   "object_id": "evt-office-meridian-5",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 6,
+   "at": "2026-11-16T07:50:26+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-6",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 7,
+   "at": "2026-11-16T08:00:36+00:00",
+   "op": "calendar.update_event",
+   "status": "executed",
+   "object_id": "evt-priya-1on1",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 8,
+   "at": "2026-11-16T08:00:36+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-7",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 9,
+   "at": "2026-11-16T09:00:06+00:00",
+   "op": "task.create",
+   "status": "executed",
+   "object_id": "task-office-meridian-8",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 10,
+   "at": "2026-11-16T10:00:55+00:00",
+   "op": "calendar.cancel_event",
+   "status": "executed",
+   "object_id": "evt-insurance-renewal",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 11,
+   "at": "2026-11-16T10:00:55+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-9",
+   "error": null,
+   "simulated": true
+  }
+ ],
+ "isolationViolations": [],
+ "simulated": true
+}

@@ -10,14 +10,31 @@
  */
 import type { ExecutiveDeskApi } from './client';
 import { HttpExecutiveDesk } from './httpAdapter';
-import { MockExecutiveDesk } from './mock/mockAdapter';
-import { MockWorkspace } from './mock/workspaceMock';
+import type { MockExecutiveDesk } from './mock/mockAdapter';
 import { WaitingWorkspace, type WorkspaceApi } from './workspace';
-import { PRINCIPAL } from '../evaluation/fixtures/world';
 import { deskModeFrom } from '../lib/mode';
 
 let instance: ExecutiveDeskApi | null = null;
 let workspace: WorkspaceApi | null = null;
+
+/**
+ * The in-memory mock, when it has been loaded. It is not imported here: the live application
+ * never needs it, so it stays out of the live bundle. Demo mode, the evaluation screen and the
+ * tests load src/harness/mock/runtime.ts, which registers it.
+ */
+export interface MockRuntime {
+  /** The demo data source: seeded, with scripted delays. */
+  createDemo(): ExecutiveDeskApi;
+  /** The mock workspace for an API that is the mock; null for any other implementation. */
+  workspaceFor(api: ExecutiveDeskApi): WorkspaceApi | null;
+  /** A fresh scripted reference agent for the evaluation harness. */
+  createReferenceAgent(): MockExecutiveDesk;
+}
+let mockRuntime: MockRuntime | null = null;
+
+export function installMockRuntime(runtime: MockRuntime): void {
+  mockRuntime = runtime;
+}
 
 export function createApi(env: Record<string, string | undefined>): ExecutiveDeskApi {
   if (env.VITE_API_MODE === 'http') {
@@ -29,7 +46,8 @@ export function createApi(env: Record<string, string | undefined>): ExecutiveDes
   if (deskModeFrom(env) === 'live') {
     throw new Error('The live Desk is installed by the session gate after sign-in; it is never created implicitly.');
   }
-  return new MockExecutiveDesk({ stepDelayMs: 700, seed: true });
+  if (!mockRuntime) throw new Error('Demo mode needs the mock data layer (src/harness/mock/runtime.ts), which has not been loaded.');
+  return mockRuntime.createDemo();
 }
 
 export function getApi(): ExecutiveDeskApi {
@@ -45,7 +63,7 @@ export function getApi(): ExecutiveDeskApi {
 export function getWorkspace(): WorkspaceApi {
   if (!workspace) {
     const api = getApi();
-    workspace = api instanceof MockExecutiveDesk ? new MockWorkspace(api) : new WaitingWorkspace();
+    workspace = mockRuntime?.workspaceFor(api) ?? new WaitingWorkspace();
   }
   return workspace;
 }
@@ -63,9 +81,9 @@ let evaluationApi: MockExecutiveDesk | null = null;
  * every result is labelled as a reference result, never as the real agent's.
  */
 export function getReferenceAgent(): MockExecutiveDesk {
-  if (!evaluationApi) evaluationApi = new MockExecutiveDesk({ stepDelayMs: 0, seed: false });
+  if (!mockRuntime) throw new Error('The reference agent needs the mock data layer, which has not been loaded.');
+  if (!evaluationApi) evaluationApi = mockRuntime.createReferenceAgent();
   return evaluationApi;
 }
 
-export { PRINCIPAL as MOCK_PRINCIPAL };
 export type { ExecutiveDeskApi } from './client';

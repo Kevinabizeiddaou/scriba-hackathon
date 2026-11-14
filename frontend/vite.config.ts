@@ -8,6 +8,20 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173, strictPort: true },
   preview: { port: 5173, strictPort: true },
+  build: {
+    // React and the data libraries change far less often than the Desk does, so they are kept in
+    // their own files: a new Desk build does not make a returning user download them again.
+    rolldownOptions: {
+      output: {
+        advancedChunks: {
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+            { name: 'data', test: /node_modules[\\/](@tanstack|axios)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   test: {
     // The transplanted harness tests use describe/it/expect as globals.
     globals: true,

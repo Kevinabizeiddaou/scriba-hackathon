@@ -32,8 +32,14 @@ export interface ChatContext {
   prompt?: string
 }
 let pendingContext: ChatContext | null = null
+/** Text to put in the message box of a new conversation, with no email attached. The user still sends it. */
+let pendingPrompt: string | null = null
 export function openChatAbout(context: ChatContext): void {
   pendingContext = context
+  navigate('chat', 'new')
+}
+export function openChatWithPrompt(prompt: string): void {
+  pendingPrompt = prompt
   navigate('chat', 'new')
 }
 
@@ -80,6 +86,10 @@ export function LiveChatPage({ conversationId: param }: { conversationId: string
 
   // Pick up the email the inbox handed over, once.
   useEffect(() => {
+    if (param === 'new' && pendingPrompt) {
+      setText(pendingPrompt)
+      pendingPrompt = null
+    }
     if (param === 'new' && pendingContext) {
       setContext(pendingContext)
       if (pendingContext.prompt) setText(pendingContext.prompt)

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { AlarmClock, AlertTriangle, CalendarCheck, CalendarX, CalendarClock, Check, CircleHelp, ListTodo, Mail, MessageSquareText, RotateCcw, Search, ShieldAlert, ShieldCheck, X, type LucideIcon } from 'lucide-react'
+import { AlarmClock, AlertTriangle, CalendarCheck, CalendarX, CalendarClock, Check, CircleHelp, ListTodo, Mail, MailOpen, MessageSquareText, RotateCcw, Search, ShieldAlert, ShieldCheck, X, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getErrorMessage } from '../api/client'
@@ -10,6 +10,8 @@ import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
 import { AVAILABILITY_OVERRIDE_FLAG, describeAction, heldByAvailability, providerLabel, type ActionDescription, type ActionKind } from './describeAction'
 import { approveChatToolCall, cancelChatToolCall, retryChatToolCall, type ChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
+import { CONFIRMED_RECIPIENTS_FLAG, explainHold, unverifiedRecipients } from './deskHolds'
+import { RUNS_KEY } from './deskRuns'
 import { WORK_QUEUE_KEY, WORK_STAGES, stageOf } from './workQueue'
 import { approvalGate, toolEffect } from './writePolicy'
 
@@ -62,6 +64,8 @@ interface Props {
   reason?: string
   /** Shown in the approval center, where the card is away from its conversation. */
   conversation?: { id: number; title: string }
+  /** The Desk run this action belongs to, when it came from an incoming message. */
+  run?: { runId: number; subject: string | null }
   compact?: boolean
 }
 
@@ -72,7 +76,7 @@ interface Props {
  * then re-read; the card never moves itself forward. Approvals that reach outside the Desk are
  * gated by the write policy (writePolicy.ts).
  */
-export function ToolCallCard({ toolCall, reason, conversation, compact = false }: Props) {
+export function ToolCallCard({ toolCall, reason, conversation, run, compact = false }: Props) {
   const session = useRequiredLiveSession()
   const queryClient = useQueryClient()
   const description = describeAction(toolCall)
@@ -82,16 +86,25 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
   const Icon = ICON[description.kind]
   const [confirmRetry, setConfirmRetry] = useState(false)
   const [override, setOverride] = useState(false)
+  const [recipientsConfirmed, setRecipientsConfirmed] = useState(false)
 
   const afterChange = () => {
     void queryClient.invalidateQueries({ queryKey: WORK_QUEUE_KEY })
+    // A card that belongs to a Desk run changes that run's state and its next step.
+    void queryClient.invalidateQueries({ queryKey: RUNS_KEY })
     void queryClient.invalidateQueries({ queryKey: chatMessagesKey(toolCall.conversation_id) })
     // A task or reminder created here shows on the Tasks screen and the briefing.
     session.workspace.refresh()
     void queryClient.invalidateQueries({ queryKey: ['desk', 'briefing'] })
   }
   const approve = useMutation({
-    mutationFn: () => approveChatToolCall(toolCall.id, override ? { [AVAILABILITY_OVERRIDE_FLAG]: true } : undefined),
+    mutationFn: () => {
+      // Only the overrides the backend honours on an approve request, and only when the user ticked the box for each.
+      const overrides: Record<string, unknown> = {}
+      if (heldForAvailability && override) overrides[AVAILABILITY_OVERRIDE_FLAG] = true
+      if (heldForRecipients && recipientsConfirmed) overrides[CONFIRMED_RECIPIENTS_FLAG] = unverified
+      return approveChatToolCall(toolCall.id, Object.keys(overrides).length > 0 ? overrides : undefined)
+    },
     onSettled: afterChange,
   })
   const cancel = useMutation({ mutationFn: () => cancelChatToolCall(toolCall.id), onSettled: afterChange })
@@ -101,10 +114,14 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
 
   const status = toolCall.status
   const waiting = status === 'awaiting_approval' || status === 'needs_info'
+  const hold = status === 'needs_info' ? explainHold(description.errorCode) : null
+  const unverified = unverifiedRecipients(toolCall)
   const heldForAvailability = status === 'needs_info' && heldByAvailability(description)
-  // needs_info for any other reason means the card is incomplete: it is finished in chat, not approved as it is.
-  const incomplete = status === 'needs_info' && !heldForAvailability
-  const canApprove = gate.allowed && !incomplete && (!heldForAvailability || override)
+  const heldForRecipients = hold?.resolution === 'confirm_recipients' && unverified.length > 0
+  // needs_info for any other reason cannot be approved as it is: it is completed in chat, looked at in its thread, or waited out.
+  const incomplete = status === 'needs_info' && !heldForAvailability && !heldForRecipients
+  const canApprove = gate.allowed && !incomplete && (!heldForAvailability || override) && (!heldForRecipients || recipientsConfirmed)
+  const completeInChat = incomplete && (hold === null || hold.resolution === 'complete_in_chat')
   const unknownOutcome = description.outcome.some(row => row.state === 'unknown')
 
   if (effect === 'read') {
@@ -199,11 +216,23 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
         </div>
       )}
 
-      {description.message && status === 'needs_info' && (
-        <p role="status" className="mx-4 mt-3 flex gap-2 rounded-lg border border-warn/30 bg-warn/[0.08] px-3 py-2.5 text-[12.5px] text-warn">
+      {status === 'needs_info' && (hold || description.message) && (
+        <div role="status" aria-label="Why this is held" className="mx-4 mt-3 flex gap-2 rounded-lg border border-warn/30 bg-warn/[0.08] px-3 py-2.5 text-[12.5px] text-warn">
           <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{description.message}</span>
-        </p>
+          <div className="min-w-0">
+            {hold && <p className="font-semibold">Held: {hold.title}</p>}
+            {hold && <p className="mt-0.5 text-ink">{hold.detail}</p>}
+            {unverified.length > 0 && (
+              <ul aria-label="Unverified recipients" className="mt-1.5 space-y-0.5">
+                {unverified.map(address => (
+                  <li key={address} className="break-all font-mono text-[12px] text-ink">{address}</li>
+                ))}
+              </ul>
+            )}
+            {description.message && <p className={hold ? 'mt-1.5 text-soft' : undefined}>{hold ? 'The backend says: ' : ''}{description.message}</p>}
+            {!hold && description.errorCode && <p className="mt-1 text-soft">Reason code: {description.errorCode}. This version of the Desk does not know it, so it offers no way to approve past it.</p>}
+          </div>
+        </div>
       )}
 
       {description.outcome.length > 0 && (
@@ -260,7 +289,13 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
 
       <footer className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-white/[0.02] px-4 py-3">
         <p className="min-w-0 flex-1 text-[12px] text-mute">
-          {conversation && (
+          {run && (
+            <a href={hrefFor('work', String(run.runId))} className="tap mr-3 inline-flex items-center gap-1 font-medium text-accent hover:underline">
+              <MailOpen aria-hidden className="h-3.5 w-3.5" />
+              From the message: {run.subject || `run ${run.runId}`}
+            </a>
+          )}
+          {conversation && !run && (
             <a href={hrefFor('chat', String(conversation.id))} className="tap mr-3 inline-flex items-center gap-1 font-medium text-accent hover:underline">
               <MessageSquareText aria-hidden className="h-3.5 w-3.5" />
               {conversation.title || 'Open the conversation'}
@@ -277,7 +312,13 @@ export function ToolCallCard({ toolCall, reason, conversation, compact = false }
                 <span>Book this time anyway. I have read the finding above; the booking will be recorded as made despite it.</span>
               </label>
             )}
-            {incomplete && (
+            {heldForRecipients && gate.allowed && (
+              <label className="flex basis-full cursor-pointer items-start gap-2 text-[12.5px] text-warn">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" checked={recipientsConfirmed} onChange={event => setRecipientsConfirmed(event.target.checked)} />
+                <span>I have checked {unverified.length === 1 ? 'this address' : 'these addresses'} and want {unverified.length === 1 ? 'it' : 'them'} to receive this: {unverified.join(', ')}</span>
+              </label>
+            )}
+            {completeInChat && (
               <a href={hrefFor('chat', String(toolCall.conversation_id))} className="btn btn-secondary">
                 <MessageSquareText aria-hidden className="h-4 w-4" />
                 Answer in chat

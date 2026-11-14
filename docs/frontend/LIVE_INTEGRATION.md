@@ -36,6 +36,10 @@ Authentication is Scriba's and only Scriba's: the HttpOnly session cookie, read 
 | `frontend/src/live/liveDesk.ts` | `ScribaWorkspace`, the live data source for the inbox, calendar and tasks screens | Frontend |
 | `frontend/src/live/workQueue.ts`, `describeAction.ts`, `writePolicy.ts` | Work stages, what an action card says, which approvals are allowed | Frontend |
 | `frontend/src/live/Live*.tsx`, `ToolCallCard.tsx` | The live overview, chat, approval center, activity and message detail | Frontend |
+| `frontend/src/live/deskRuns.ts`, `LiveWorkQueuePage.tsx`, `LiveRunDetail.tsx` | Desk runs: the work queue, the bounded inbox check, the run detail and its timeline | Frontend |
+| `frontend/src/live/scheduling.ts`, `LiveSchedulingPage.tsx` | The scheduling workspace on the availability and slot-check routes | Frontend |
+| `frontend/src/live/deskHolds.ts` | What each Desk safety hold means and the one way past it | Frontend |
+| `frontend/src/live/LiveRoutes.tsx`, `src/DemoApp.tsx`, `harness/mock/runtime.ts` | The live route table; demo mode and the mock as separate chunks | Frontend |
 | `frontend/src/pages/`, `components/` | The screens shared by live and demo, and the demo-only screens | Frontend |
 | `frontend/src/harness/` | The predecessor's contract-v1 API: types, mock, HTTP adapter, reference server | Frontend |
 | `frontend/src/evaluation/` | The suites, scorer, runner and reports | Frontend |
@@ -59,11 +63,16 @@ Authentication is Scriba's and only Scriba's: the HttpOnly session cookie, read 
 | Chat | `GET` and `POST /chat/conversations`, `GET .../messages`, `POST .../messages/stream`, `POST .../messages` as fallback | Seeded: a new conversation, a streamed turn, the stored reply |
 | Approvals, activity | The action cards in `GET .../messages`; `POST /chat/tool-calls/{id}/approve`, `/cancel` | Seeded: one task approved (the task then existed in `GET /tasks`), one cancelled |
 | Retry | `POST /chat/tool-calls/{id}/retry` | Unit |
+| Work queue | `GET /desk/runs`, then `GET /desk/runs/{id}` for the newest 20, four at a time | Seeded: one run, state `no_action_proposed`. Other states: Unit |
+| Check for new work | `POST /desk/intake/sweep` `{provider: "all", limit: 25, max_new: 5}`, once per click | Seeded: 25 examined, none opened, because no seeded message needs work |
+| Start one run | `POST /desk/intake` `{provider, id, mailbox}` | Unit |
+| Run detail | `GET /desk/runs/{id}`, `GET /chat/tool-calls/{id}` per action, `GET /desk/connections` for the mailbox name | Seeded for a run with no action. With actions: Unit |
+| Confirmation reply | `POST /desk/runs/{id}/advance` | Unit |
+| Scheduling workspace | `GET /desk/availability` (whole days, no offset, at most 31), `POST /desk/slots/check` | Seeded: no calendar connected, shown as unknown. Slots, conflicts, an unreadable calendar: Unit |
 
 Not called: `POST /send`, `POST /reply`, `POST /drafts/{id}/send`, `POST`, `PATCH` and `DELETE`
-on `/calendar/events`, and `POST /desk/slots/check` and `GET /desk/availability` (the chat
-agent's tools and the message detail cover the same ground; a standalone availability screen is
-a next step).
+on `/calendar/events`. Nothing in the frontend sends mail or writes a calendar by itself: those
+happen only when Scriba executes an approved action card.
 
 ## 4. Mapping rules
 
@@ -112,8 +121,25 @@ uses, so a repeated request cannot run the action twice. The Desk never repeats 
 own. In chat, once the stream has opened the server has the message: if the connection drops the
 conversation is re-read and the message is not sent again.
 
-**Booking despite a conflict.** With the Desk chat scope (branch `agent1/chat-workflow`, not on
-`main`) a calendar card held for a conflict or an unreadable calendar arrives as `needs_info`
+**Safety holds.** The Desk's own checks hold a card as `needs_info` with `output.error_code`
+(backend contract section 7). The card names the check, says why in plain words, and offers the one
+way forward the contract gives for that code and no other (`deskHolds.ts`):
+
+| Code | The card offers |
+| --- | --- |
+| `unverified_recipient` | The address, and a box to tick. Approve then sends `payload_overrides.desk_confirmed_recipients` with exactly the listed addresses |
+| `calendar_conflict`, `availability_unknown` | The finding, and "book anyway" (below) |
+| `recipient_required`, `body_required`, `title_required`, `reminder_incomplete`, `start_required`, `reply_target_missing` | "Answer in chat": the action is completed in its conversation |
+| `reply_target_changed` | No approval. The thread has to be looked at first |
+| `reply_target_unverified`, `desk_check_failed` | No approval. Try later |
+| Any other code | The raw code, and no way to approve past it |
+
+`reply_target_missing` is emitted by `backend/desk_overlay/safeguards.py` but is not in the
+contract's list. A frontend test reads the backend's codes and fails if one has no explanation.
+Both overrides are reachable only when external writes are enabled, so on today's backends they
+are unit-tested and not run.
+
+**Booking despite a conflict.** With the Desk chat scope (on `main` since pull request 2) a calendar card held for a conflict or an unreadable calendar arrives as `needs_info`
 with `output.availability`. The Desk shows the finding and offers an explicit "book anyway"
 checkbox that sends `payload_overrides.desk_availability_override: true`. It is reachable only
 when external writes are enabled. Unit-tested against the shape in that branch; not run.
@@ -142,6 +168,25 @@ reports:
 
 A status the frontend does not know is shown as planning, never as finished.
 
+**Runs.** A Desk run has its own state and its own timeline (`deskRuns.ts`). The run detail shows
+Picked up, Classified, Calendars read (meeting requests only, when the run carries the reads),
+Proposed, Approval, Execution and Verified. "Verified" is the backend's `verified` flag: the
+action executed and Scriba recorded it. There is no separate verifying stage, because the backend
+reports none. The queue sorts runs by what they need:
+
+| List | Runs in it |
+| --- | --- |
+| Awaiting your approval | `awaiting_approval` with at least one card that can be approved as it is |
+| Needs your input | Every open card is held; or a meeting request is held (`held`); or a reply has to be drafted (`next: draft_reply`); or the event exists and the confirmation reply is not proposed yet (`next: advance`) |
+| Did not finish | `failed`, `partial`, and a `completed` run with a partly executed action |
+| In progress | `executing` |
+| Completed | `completed`, with nothing left in `next` |
+| No action needed, Cancelled | `no_action_proposed` with nothing held; `cancelled` |
+| State not recognised | Any state this version does not know. Never shown as finished |
+
+One difference from the backend is deliberate: `workflow.py` counts a `partially_executed` action
+as done, so the run says `completed`. The Desk lists that run under "Did not finish".
+
 ## 7. What was verified
 
 **Seeded backend.** Scriba at `3ae3a2aa` run by `backend/dev/seeded_desk_server.py`: the real
@@ -161,11 +206,30 @@ Frontend on `http://localhost:5173`. Checked in Chrome on 2026-11-14:
 - Layout at 375, 792 and 1422 pixels wide: no horizontal overflow on any live screen; the
   navigation switches to the bottom bar below the large breakpoint.
 
-On this machine the seeded backend answered `/desk/*` in 10 to 16 seconds, because it retries
-its absent database on each request. The screens show a loading state for that time.
+On this machine the seeded backend answered `/desk/briefing` in about 14 seconds and
+`/desk/inbox` and `/desk/connections` in about 5, because it retries its absent database; the
+run routes answered in a fifth of a second. The screens show a loading state for that time.
 
-Screenshots could not be captured in this session, so the mock screenshots in `screenshots/`
-are still the only images. They show demo mode.
+**Second pass, 14 November 2026, same seeded backend.** Checked with a scripted Chrome session
+signed in as a seeded user, and with the repository's smoke script (27 of 27 checks passed):
+
+- Work queue: the one existing run listed with the server's state. "Check for new work" made one
+  request and reported 25 examined, 0 opened, 25 needing no run.
+- Run detail: source message, mailbox, timeline and next step for that run.
+- Scheduling workspace: "No calendar is connected", no time offered, the busy list stating that
+  nothing was read.
+- A tour of overview, work queue, run detail, scheduling, approvals, activity, inbox, tasks and
+  chat: no request answered 400 or above, and no screen repeated a request except
+  `GET /providers/status` once at sign-in.
+- 1440 and 390 pixels wide: no horizontal overflow on the new screens.
+
+The seeded backend's messages are all informational, so no run there reaches an approval. The
+approval, held, executing, partial and verified states of a run are covered by tests on the
+contract's shapes and have not been seen in a browser.
+
+Screenshots from this pass are in `screenshots/live-seeded/`. Nothing in them is intercepted or
+staged: each shows what the seeded backend answered. The images directly in `screenshots/` are
+older and show demo mode.
 
 **Not verified.** Any live Gmail, Outlook or calendar. Any model: no real agent turn, plan,
 draft or approval of an agent-proposed action has been seen. Calendar events from two providers.
@@ -187,6 +251,35 @@ Results are kept in four kinds, and the Evaluation screen says which exist:
 | Live provider | The agent acting on real accounts | **None.** The suite never sends real mail or changes a real calendar |
 
 No agent pass rate, cost or latency exists. None is shown.
+
+**Holdout variations** (`src/evaluation/fixtures/holdout.ts`). Each of the twenty desk cases has
+one variation: the same situation, people, dates and facts, and the very same expectation objects,
+with the incoming message worded differently (a deadline written as "12:00" instead of "noon", a
+cancellation that never says "cancel", an injection dressed as an automated notice instead of a
+system note). An agent that handles the official wording and not this one has learned the wording.
+The set is `desk-holdout-v1`, run with `npm run eval -- --suite holdout`. It is reported as its own
+case set and is never folded into the desk suite's numbers. It is left out of the generated case
+document and the exported fixture files on purpose; a test checks that. Against the scripted mock
+all twenty are satisfied by their base case's reference script, which shows the variations are
+consistent with the official expectations and nothing more.
+
+**Reliability campaigns and comparison** (`src/evaluation/campaign.ts`). One pass over twenty
+cases says little about an agent that is not deterministic, so the runner can repeat a suite and
+compare runs:
+
+```bash
+npm run eval -- --target mock --repeat 3            # three runs, one report each, plus a campaign
+npm run eval -- --compare before.json --with after.json --out eval-results
+```
+
+A campaign reports, per case: how often it passed with no rescue, whether it is flaky, its
+failure classes, safety violations, incorrect writes, duplicate operations, mandatory approvals,
+rescues, median time, usage and cost. A comparison lists what regressed first, then what was
+fixed, with the checks that changed, and exits non-zero on a regression or a new safety
+violation. Reports are combined or compared only within one case set and one kind of target: a
+scripted run is never mixed with a real-agent run. For scripted runs the output shows counts and
+no pass rate, and the files are named `*.simulated.*`. A total cost is given only when every
+executed run was priced; a partial sum would understate it.
 
 **The runner and Scriba's session.** The command-line runner now signs in the way Scriba
 requires and asks before it sends anything:
@@ -225,20 +318,21 @@ Please also confirm two things the frontend currently has to assume:
 - Retry: is immediate execution the intended behaviour for mail? If a retry should come back
   for approval instead, the frontend's confirmation step can go.
 
-### 2. A work-queue listing (unblocks a complete approval center and activity)
+### 2. The run list (the work queue is built on it)
 
-There is no way to list actions across conversations, so the Desk reads the twelve most recent
-conversations and says so when there are more. Proposed:
+`GET /desk/runs` exists and the work queue uses it. Two things would complete it:
 
-```
-GET /desk/work?status=&limit=&cursor=
-```
+- **State on each row.** A row has no `state`, so the queue reads the newest 20 runs one by one
+  and says how many it did not read. Wanted per row: `state`, `next`, `held.reason`, and the
+  number of actions by status.
+- **`partial` for a partly executed action.** Today such a run is `completed`.
 
-returning, newest first, each action with: its tool-call fields as today, the conversation id
-and title, the assistant text and user request that led to it, `expires_at` when an approval
-can expire, and, once automations create work, the source email (`provider`,
-`provider_account_id`, message id) and the trigger. The same shape would carry the missing
-stages when they exist: `received`, `verifying`, `awaiting_reply`, `escalated`.
+Also useful on a run: a time for each stage, the message's arrival time and preview, the reason
+each action was proposed, and each action's `output`, which today takes one more request per
+action. The earlier proposal for `GET /desk/work` is withdrawn in favour of this.
+
+The approval center and the activity list still read the twelve most recent conversations, since
+actions proposed in chat are not runs.
 
 ### 3. Sandbox evaluation routes (unblocks real-model results)
 

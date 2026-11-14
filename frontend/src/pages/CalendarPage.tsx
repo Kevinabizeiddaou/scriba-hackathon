@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { AlertTriangle, CalendarDays, MapPin, ShieldCheck, Users, X } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CalendarSearch, MapPin, ShieldCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { getApi } from '../harness';
 import type { AgendaEvent } from '../harness/workspace';
@@ -218,6 +218,13 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
         title="Calendar"
         subtitle="Google Calendar and Outlook Calendar together, with the slots the secretary has proposed and any clash between the two."
         actions={
+          <>
+          {session && (
+            <a href={hrefFor('calendar', 'find-a-time')} className="btn btn-secondary">
+              <CalendarSearch aria-hidden className="h-4 w-4" />
+              Find a time
+            </a>
+          )}
           <div role="group" aria-label="Calendar view" className="inline-flex rounded-full border border-line bg-sunken/60 p-1">
             {(['week', 'day'] as const).map((v) => (
               <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={clsx('tap inline-flex h-8 cursor-pointer items-center rounded-full px-3.5 text-[13px] font-semibold capitalize transition-colors duration-150', view === v ? 'bg-brand-500/50 text-ink' : 'text-soft hover:text-ink')}>
@@ -225,6 +232,7 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
               </button>
             ))}
           </div>
+          </>
         }
       />
       <div className="px-4 pb-12 sm:px-6 lg:px-8">

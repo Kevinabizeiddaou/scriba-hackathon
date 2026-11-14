@@ -232,7 +232,7 @@ describe('live overview', () => {
   })
 
   it('separates what is waiting on the user from what the secretary has in hand, and lists finished work only when the server says it ran', async () => {
-    setBackend([CALLS.email, { ...CALLS.task, status: 'executed' }, CALLS.failed])
+    setBackend([CALLS.email, { ...CALLS.task, status: 'executed' }, { ...CALLS.task, id: 25, status: 'executed', input: { title: 'Book the room' } }, CALLS.failed])
     renderApp()
 
     const strip = await screen.findByRole('region', { name: 'Where the work stands' })
@@ -241,12 +241,14 @@ describe('live overview', () => {
     await waitFor(() => expect(within(yours).getByText('Awaiting approval').closest('a')).toHaveTextContent('1'))
     expect(within(yours).getByText('Failed or partial').closest('a')).toHaveTextContent('1')
     expect(within(yours).getByText('Need action')).toBeInTheDocument()
-    expect(within(theirs).getByText('Completed').closest('a')).toHaveTextContent('1')
+    expect(within(theirs).getByText('Completed').closest('a')).toHaveTextContent('2')
     expect(within(theirs).getByText('Arrived')).toBeInTheDocument()
     expect(within(theirs).queryByText('Awaiting approval')).toBeNull()
 
     const handled = screen.getByRole('region', { name: 'Handled by the secretary' })
     await waitFor(() => expect(within(handled).getByText('Send the board pack')).toBeInTheDocument())
+    expect(within(handled).getByText('Book the room')).toBeInTheDocument()
+    expect(within(handled).getAllByRole('listitem')).toHaveLength(2)
     // A proposal that is still waiting and an action that failed are not finished work.
     expect(handled).not.toHaveTextContent('Re: Board pack')
     expect(handled).not.toHaveTextContent('File expenses')

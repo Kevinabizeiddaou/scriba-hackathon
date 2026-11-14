@@ -18,7 +18,7 @@ const NO_DATA = '—';
 function Kpi({ label, value, caption, empty }: { label: string; value: string; caption: ReactNode; empty: boolean }) {
   return (
     <div className="min-w-0 bg-surface px-4 py-3">
-      <p className="eyebrow">{label}</p>
+      <p className="eyebrow flex items-end xl:min-h-[36px]">{label}</p>
       {/* A number that does not exist yet is drawn small and grey, so six empty tiles do not read as six results. */}
       <p className={clsx('mt-1 font-bold tabular-nums tracking-[-0.01em]', empty ? 'text-[18px] leading-6 text-mute' : 'text-[24px] leading-8 text-ink')} aria-label={empty ? `${label}: no data yet` : undefined}>
         {value}

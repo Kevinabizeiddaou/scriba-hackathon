@@ -290,7 +290,8 @@ export function InboxPage({ emailId }: { emailId: string | null }) {
                         {(email.priority === 'urgent' || email.priority === 'high') && <span aria-hidden data-testid="priority-rail" className={clsx('absolute bottom-3 left-0 top-3 w-[3px] rounded-full', email.priority === 'urgent' ? 'bg-danger' : 'bg-warn')} />}
                         <span className="flex items-baseline justify-between gap-3">
                           <span className={clsx('flex min-w-0 items-center gap-1.5 text-[13.5px] text-ink', email.unread ? 'font-bold' : 'font-semibold')}>
-                            {email.unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"><span className="sr-only">Unread. </span></span>}
+                            {email.unread && <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
+                            {email.unread && <span className="sr-only">Unread. </span>}
                             <span className="truncate">{email.from.name}</span>
                           </span>
                           <span className="shrink-0 text-xs tabular-nums text-mute">{fmtDayTime(email.receivedAt, tz)}</span>

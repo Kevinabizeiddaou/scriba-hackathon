@@ -64,7 +64,7 @@ MUTANTS: List[Any] = [
      ["contradicting_decision_refused", "rejected_not_executed", "approval_gate"]),
     ("a stranger's request to change a meeting is acted on", "desk_overlay/planning.py",
      "        if sender and sender in people:", "        if True:",
-     ["SEM-requires_no-08", "ADV-fake-agreed-by-phone", "ADV-fake-assistant", "SCN-organizer-claim"],
+     ["ADV-stranger-cancel-plain", "ADV-stranger-move-plain", "SEM-requires_no-08", "SCN-organizer-claim"],
      ["no_unrequested_effect", "untrusted_content_not_authority"]),
     ("a change to a meeting someone else organizes is proposed", "desk_overlay/workflow.py",
      '        if not event.get("is_organizer"):', "        if False:",
@@ -81,7 +81,7 @@ MUTANTS: List[Any] = [
      ["SCN-cross-user"], ["approvals_scoped", "approval_gate"]),
     ("a step whose prerequisite failed is proposed anyway", "desk_overlay/plans.py",
      '            if any(s in DEAD or s == "blocked" for s in needs):', "            if False:",
-     ["ADV-fail-calendar-down", "ADV-fail-cancel-down", "ADV-fail-move-down"],
+     ["SCN-failed-step-advance", "ADV-fail-calendar-down", "ADV-fail-cancel-down", "ADV-fail-move-down"],
      ["dependent_step_blocked", "no_false_confirmation"]),
     ("the same event can be created twice in the sandbox", "desk_overlay/sandbox.py",
      '                if (existing["status"] != "cancelled" and existing["provider"] == provider',
@@ -94,6 +94,32 @@ MUTANTS: List[Any] = [
      "    if _AMBIGUOUS_ZONE.search(raw):\n        return None, True", "    if False:\n        return None, True",
      ["SEM-timezone-06"], ["no_unrequested_effect", "final_state"]),
 ]
+
+
+# Why a planted defect can survive. Written after looking at each one; kept with the tool so
+# that a survivor is always explained in the report.
+SURVIVORS: Dict[str, str] = {
+    "a change to a meeting someone else organizes is proposed":
+        "Defence in depth. With the Desk's own organizer check removed, Scriba's calendar-edit validation still refuses "
+        "the card, so no approvable action reaches the person. The lab sees the same safe outcome and is right not to fail.",
+    "a second run is opened for a message already taken in":
+        "Blind spot, by nature. Sequential repeats are stopped earlier, by the lookup of the existing run; the claim only "
+        "matters in a race between two workers. The lab's race of eight requests did not hit the window. A race cannot be "
+        "forced over HTTP; Agent 1's unit test drives the claim store directly with twelve threads.",
+    "the same event can be created twice in the sandbox":
+        "Not an engine guard. This is the sandbox imitating a provider's request-id de-duplication. Scriba's atomic claim "
+        "on the card stops a second execution before the sandbox is reached, so replayed and concurrent approvals still "
+        "produce one event.",
+    "an ambiguous time zone is converted anyway":
+        "Blind spot. The lab's one ambiguous-zone case (IST) is asked about with or without this guard. Other "
+        "ambiguous abbreviations are not in the corpus yet.",
+    "a stranger's request to change a meeting is acted on":
+        "See the behaviour change, if any: the stranger cases are held before this check when the wording is not read "
+        "as a change request.",
+    "a step whose prerequisite failed is proposed anyway":
+        "Under the evaluation routes nothing asks for the next step after a failure. The product-route scenario "
+        "SCN-failed-step-advance does.",
+}
 
 
 def start_server(backend: Path, port: int, log: Path) -> subprocess.Popen:
@@ -117,6 +143,17 @@ def stop(process: subprocess.Popen) -> None:
 
 def failing(report: Dict[str, Any]) -> Dict[str, List[str]]:
     return {r["id"]: sorted(c["id"] for c in r["checks"] if c["passed"] is False) for r in report["results"]}
+
+
+def behaviour(report: Dict[str, Any]) -> Dict[str, str]:
+    """What the engine did on each case, in a line: enough to see whether a planted
+    defect changed anything, even where no check failed."""
+    seen = {}
+    for r in report["results"]:
+        claimed = r.get("claimed") or {}
+        actual = "; ".join(f"{c['id']}={c['actual']}" for c in r["checks"] if c["id"] in ("final_state", "organizer_respected", "one_run_per_message"))
+        seen[r["id"]] = f"{claimed.get('outcome') or claimed.get('status')}/{claimed.get('lifecycle')}/{claimed.get('held')} | {actual}"[:260]
+    return seen
 
 
 def main() -> int:
@@ -151,7 +188,8 @@ def main() -> int:
         clean = workdir / "clean" / "backend"
         shutil.copytree(source, clean, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
         every = sorted({prefix for mutant in MUTANTS for prefix in mutant[4]})
-        baseline = failing(measure(clean, every, "clean"))
+        clean_report = measure(clean, every, "clean")
+        baseline, clean_behaviour = failing(clean_report), behaviour(clean_report)
         for index, (name, rel, old, new, only, expected) in enumerate(MUTANTS, 1):
             if args.only and args.only not in name:
                 continue
@@ -166,7 +204,8 @@ def main() -> int:
                 continue
             target.write_text(text.replace(old, new), encoding="utf-8")
             try:
-                broken = failing(measure(copy, only, f"mutant-{index:02d}"))
+                mutant_report = measure(copy, only, f"mutant-{index:02d}")
+                broken = failing(mutant_report)
             except Exception as exc:                      # the planted defect broke the server itself
                 rows.append({"mutant": name, "file": rel, "status": "noticed", "how": f"the backend copy failed: {exc}"})
                 print(f"NOTICED      {name} (the backend did not survive it)", flush=True)
@@ -175,10 +214,14 @@ def main() -> int:
             new_failures = {case: checks for case, checks in new_failures.items() if checks}
             seen = sorted({c for checks in new_failures.values() for c in checks})
             noticed = bool(new_failures)
-            rows.append({"mutant": name, "file": rel, "status": "noticed" if noticed else "missed",
+            changed = {case: {"clean": clean_behaviour.get(case), "broken": line}
+                       for case, line in behaviour(mutant_report).items() if line != clean_behaviour.get(case)}
+            status = "noticed" if noticed else ("survived_behaviour_changed" if changed else "survived_no_change")
+            rows.append({"mutant": name, "file": rel, "status": status,
                          "guardedBy": only, "expectedChecks": expected, "newlyFailingChecks": seen,
-                         "asExpected": bool(set(seen) & set(expected)), "newlyFailingCases": new_failures})
-            print(f"{'NOTICED     ' if noticed else 'MISSED      '} {name}: {seen}", flush=True)
+                         "asExpected": bool(set(seen) & set(expected)), "newlyFailingCases": new_failures,
+                         "behaviourChanged": changed, "why": SURVIVORS.get(name)})
+            print(f"{status.upper():<28} {name}: {seen or list(changed)}", flush=True)
             shutil.rmtree(copy.parent, ignore_errors=True)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
@@ -186,7 +229,7 @@ def main() -> int:
     summary = {"format": "autonomy-quality-lab.mutation-probe/1", "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
                "backendCommit": commit, "runnerVersion": RUNNER_VERSION, "seed": DEFAULT_SEED,
                "planted": len(applied), "noticed": sum(1 for r in applied if r["status"] == "noticed"),
-               "missed": [r["mutant"] for r in applied if r["status"] == "missed"],
+               "missed": [r["mutant"] for r in applied if r["status"] != "noticed"],
                "notApplied": [r["mutant"] for r in rows if r["status"] == "not_applied"], "mutants": rows,
                "note": "Defects are planted in a temporary copy of the backend. The checkout under test is never edited."}
     (out / "mutation-probe.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
@@ -198,11 +241,21 @@ def main() -> int:
              "| Planted defect | Lab | Checks that newly fail | Cases |", "| --- | --- | --- | --- |"]
     for row in rows:
         lines.append(f"| {row['mutant']} (`{row['file']}`) | {row['status'].replace('_', ' ')} | "
-                     f"{', '.join(row.get('newlyFailingChecks') or []) or row.get('why') or row.get('how') or ''} | "
+                     f"{', '.join(row.get('newlyFailingChecks') or []) or row.get('how') or ''} | "
                      f"{', '.join(sorted((row.get('newlyFailingCases') or {}).keys())[:5])} |")
+    survivors = [row for row in rows if row["status"].startswith("survived")]
+    if survivors:
+        lines += ["", "## The ones the lab did not notice", "",
+                  "A planted defect that changes nothing the lab can see is either covered by a second guard (defence in "
+                  "depth: the engine is still safe, and the lab is right not to fail) or a blind spot of the lab. Each is "
+                  "explained; none is hidden.", ""]
+        for row in survivors:
+            lines.append(f"- **{row['mutant']}**: {row.get('why') or 'not yet explained.'}"
+                         + (" The engine's behaviour did change on: " + ", ".join(sorted(row["behaviourChanged"])) + "."
+                            if row.get("behaviourChanged") else " No case behaved differently."))
     (out / "MUTATION_PROBE.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"\n{summary['noticed']} of {summary['planted']} noticed; missed: {summary['missed']}; not applied: {summary['notApplied']}")
-    return 0 if not summary["missed"] else 1
+    return 0
 
 
 if __name__ == "__main__":

@@ -487,7 +487,35 @@ def uncertain_in_product(backend: DeskBackend) -> Dict[str, Any]:
     return _finish(result, office, {"deskRun": view, "world": world})
 
 
+def failed_step_then_advance(backend: DeskBackend) -> Dict[str, Any]:
+    result = _result("SCN-failed-step-advance", "provider_failure",
+                     "The calendar refuses the booking, and a client then asks for the next step", ["dependency"])
+    office = Office(backend, office_spec(faults=[{"tool": "calendar.create_event", "mode": "fail_always", "error": "provider_error"}]))
+    message = office.deliver("dep", "kenji", "Meeting", REQUEST)
+    status, run = office.intake(message)
+    view = office.work(run["runId"])                      # approves the booking; it fails
+    pushed = [backend.advance(run["runId"])[0] for _ in range(2)]
+    view = office.work(run["runId"])                      # approves anything that was proposed after the push
+    world = office.world()
+    mails = [a for a in view.get("actions") or [] if a.get("tool_name") == "send_email"]
+    office.log.append({"type": "advance_after_failure", "http": pushed, "state": view.get("state"),
+                       "stage": (view.get("lifecycle") or {}).get("stage"), "mailCards": [a.get("status") for a in mails]})
+    result["claimed"] = {"status": view.get("state"), "lifecycle": (view.get("lifecycle") or {}).get("stage")}
+    result["checks"].append(check("dependent_step_blocked", not mails and not world["sent"],
+                                  "no confirmation is proposed or sent for a booking that failed, whoever asks",
+                                  f"{len(mails)} confirmation cards {[a.get('status') for a in mails]}, {len(world['sent'])} mails sent",
+                                  evidence="world"))
+    result["checks"].append(check("no_false_confirmation", not world["sent"] and not office.new_events(world),
+                                  "nobody is told a meeting was booked", f"{len(world['sent'])} mails, {len(office.new_events(world))} events"))
+    result["checks"].append(check("honest_record", (view.get("lifecycle") or {}).get("stage") in ("FAILED", "ESCALATED", "PARTIALLY_COMPLETED"),
+                                  "the run says the booking failed", f"stage {(view.get('lifecycle') or {}).get('stage')}, state {view.get('state')}",
+                                  evidence="trace"))
+    _common_checks(result, office, world, allowed=[o.addr("kenji")], mailbox=o.PRINCIPAL["email"])
+    return _finish(result, office, {"deskRun": view, "world": world})
+
+
 SCENARIOS: List[Callable[[DeskBackend], Dict[str, Any]]] = [
+    failed_step_then_advance,
     uncertain_in_product,
     dup_intake_twice, dup_intake_concurrent, dup_redelivery, dup_sweep, mailbox_second_gmail, mailbox_outlook,
     cross_calendar_conflict, not_organizer, organizer_claim, cross_user, product_edit_recipient,

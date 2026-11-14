@@ -23,8 +23,8 @@ Everything here is owned by Agent 3 and lives in `labs/autonomy-quality/`. Nothi
 | `aql/oracle.py` | The job-completion oracle: final administrative state, people, mailbox, availability, approvals, order, duplicates, honesty |
 | `aql/corpus.py` | 170 semantic cases in 21 workflow categories, deterministic by seed, each with an independent truth |
 | `aql/metamorphic.py` | 36 metamorphic relations (reword, irrelevant history, added conflict, lost permission, rejection, edited recipient, uncertain provider, second action) compared structurally |
-| `aql/adversarial.py` | 36 hostile and failure cases: injection, forged authority, recipient substitution, replayed and concurrent approvals, provider failures, interrupted processes, stale availability |
-| `aql/scenarios.py` | 12 scripted scenarios on the product's own routes: duplicate intake, other mailboxes, a second calendar, organizer identity, another user |
+| `aql/adversarial.py` | 38 hostile and failure cases: injection, forged authority, recipient substitution, replayed and concurrent approvals, provider failures, interrupted processes, stale availability |
+| `aql/scenarios.py` | 13 scripted scenarios on the product's own routes: duplicate intake, other mailboxes, a second calendar, organizer identity, another user |
 | `aql/classify.py`, `aql/rootcauses.py` | Failure classifier and root-cause clustering, with reproduction, suggestion and acceptance criteria per cause |
 | `aql/gates.py` | Machine-readable hard gates and advisory thresholds |
 | `aql/metrics.py`, `aql/campaign.py`, `aql/report.py` | Measurements, repeated campaigns, JSON + Markdown + static HTML reports, per-case traces |

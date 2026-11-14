@@ -4,6 +4,8 @@
     python -m aql corpus    [--seed N] [--out fixtures/corpus-v1.jsonl]
     python -m aql run       --api URL [--seed N] [--families semantic,metamorphic,adversarial,scenario]
                             [--repeat N] [--only PREFIX,...] [--label TEXT] [--out DIR]
+    python -m aql trace     --report DIR --case ID
+    python -m aql render    --report DIR
     python -m aql selftest
     python -m aql gates     --report DIR/report.json
     python -m aql compare   --before DIR/report.json --after DIR/report.json [--out FILE.md]
@@ -125,6 +127,58 @@ def cmd_selftest(args: argparse.Namespace) -> int:
     return 0 if outcome["passed"] == outcome["total"] else 1
 
 
+def cmd_trace(args: argparse.Namespace) -> int:
+    import gzip
+
+    with gzip.open(Path(args.report) / "traces.jsonl.gz", "rt", encoding="utf-8") as archive:
+        for line in archive:
+            payload = json.loads(line)
+            if payload["id"] == args.case:
+                print(json.dumps(payload, indent=1, ensure_ascii=False))
+                return 0
+    print(f"No trace for {args.case} in {args.report}", file=sys.stderr)
+    return 2
+
+
+def cmd_render(args: argparse.Namespace) -> int:
+    """Write the views again from report.json and the traces, without running anything."""
+    import gzip
+
+    from .campaign import write_report
+
+    out = Path(args.report)
+    report = json.loads((out / "report.json").read_text(encoding="utf-8"))
+    full = []
+    if (out / "traces").is_dir():
+        full = [json.loads(path.read_text(encoding="utf-8")) for path in sorted((out / "traces").glob("*.json"))]
+    elif (out / "traces.jsonl.gz").is_file():
+        with gzip.open(out / "traces.jsonl.gz", "rt", encoding="utf-8") as archive:
+            full = [json.loads(line) for line in archive]
+    order = {r["id"]: index for index, r in enumerate(report["results"])}
+    full.sort(key=lambda payload: order.get(payload["id"], len(order)))
+    from .campaign import strip
+    from .classify import classify, cluster
+    from .rootcauses import KNOWLEDGE
+
+    for payload in full:
+        payload["_case"] = payload.pop("case", None)
+        # Diagnosis is a function of the stored result: it is derived again, so that a
+        # sharper classifier or a new knowledge entry shows without re-running anything.
+        # Verdicts and checks are never recomputed here.
+        if payload.get("family") != "scenario" and payload.get("_case"):
+            payload["failureClasses"], payload["rootCause"] = [], None
+            classify(payload, payload["_case"])
+    by_id = {payload["id"]: payload for payload in full}
+    report["results"] = [strip(by_id[r["id"]]) if r["id"] in by_id else r for r in report["results"]]
+    reproduce = "python -m aql run --api {api} --seed {seed} --only {{id}}".format(
+        api=report["target"]["apiRoot"], seed=report["traceability"]["seed"])
+    report["rootCauses"] = cluster(full, {p["id"]: p["_case"] for p in full if p.get("_case")}, KNOWLEDGE, reproduce)
+    report["_full"] = full
+    paths = write_report(report, out)
+    print(f"rendered {len(full)} traces: {paths['markdown']}")
+    return 0
+
+
 def cmd_gates(args: argparse.Namespace) -> int:
     report = json.loads(Path(args.report).read_text(encoding="utf-8"))
     for gate in report["gates"]["hard"]:
@@ -183,6 +237,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     p = sub.add_parser("selftest", help="deliberately wrong traces the oracle must reject")
     p.add_argument("--out")
     p.set_defaults(func=cmd_selftest)
+    p = sub.add_parser("trace", help="print one case's full trace from a report directory")
+    p.add_argument("--report", required=True)
+    p.add_argument("--case", required=True)
+    p.set_defaults(func=cmd_trace)
+    p = sub.add_parser("render", help="write REPORT.md, dashboard.html, CASES.md and the trace archive again")
+    p.add_argument("--report", required=True)
+    p.set_defaults(func=cmd_render)
     p = sub.add_parser("gates", help="the hard gates of a written report")
     p.add_argument("--report", required=True)
     p.set_defaults(func=cmd_gates)

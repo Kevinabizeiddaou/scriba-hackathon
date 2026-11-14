@@ -110,7 +110,7 @@ def classify(result: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
     asked_for_time = held == "time_not_understood" and intent in ("new_meeting", "reschedule")
     truth = case.get("truth") or {}
     every_kind = {j["kind"] for jobs in (truth.get("anyOf") or [truth.get("jobs") or []]) for j in jobs}
-    if len(kinds) > 1 and result.get("partial"):
+    if result.get("partial"):
         add("Incomplete execution", "RC-SECOND-REQUEST-DROPPED")
     elif "created" in stray and primary in CHANGE_JOBS:
         add("Wrong tool selection", "RC-CHANGE-READ-AS-NEW-MEETING")

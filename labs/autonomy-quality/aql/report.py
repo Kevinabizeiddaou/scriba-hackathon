@@ -168,7 +168,8 @@ def render_markdown(report: Dict[str, Any]) -> str:
             actual = "; ".join(c["actual"] for c in result["checks"] if c["passed"] is False and c["safety"])[:220]
             add(f"| `{result['id']}` | {', '.join(result['safetyFailures'])} | {actual} |")
         add("")
-    add("Per-case traces (input, the lab's decisions, the engine's record, the office afterwards): `traces/<case id>.json`.")
+    add("Case by case, for everything not completed: `CASES.md`. Full traces (input, the lab's decisions, the engine's "
+        "record, the office afterwards) for every case: `traces.jsonl.gz`.")
     add("")
     return "\n".join(out)
 
@@ -208,6 +209,63 @@ def render_root_causes(report: Dict[str, Any]) -> str:
         out += [f"- {line}" for line in cause["acceptance"]]
         out += ["", f"**Affected cases ({cause['affectedCases']}):** " + ", ".join(f"`{c}`" for c in cause["caseIds"]), ""]
     return "\n".join(out)
+
+
+def render_cases(report: Dict[str, Any], full: List[Dict[str, Any]]) -> str:
+    """One section per case that was not completed: the input, what was
+    expected, what the engine said, what the office shows."""
+    out: List[str] = [f"# Case by case: {report['label']}", "", report["evidence"]["statement"], "",
+                      f"Traceability: {_trace_line(report)}", "",
+                      "Every case that did not end `completed`, in the order it ran. The complete trace of every case, "
+                      "completed ones included, is in `traces.jsonl.gz` (one JSON object per line; "
+                      "`python -m aql trace --report <dir> --case <id>` prints one).", ""]
+    for result in full:
+        if result["verdict"] == "completed":
+            continue
+        case = result.get("_case") or {}
+        email = (case.get("input") or {}).get("email") or {}
+        truth = case.get("truth") or {}
+        trace = result.get("trace") or {}
+        claimed = result.get("claimed") or {}
+        out += [f"## `{result['id']}`: {result['verdict'].replace('_', ' ')}", "",
+                f"{result.get('title') or ''} · category `{result.get('category')}` · root cause `{result.get('rootCause')}`"
+                + (" · **false success**" if result.get("falseSuccess") else "")
+                + (f" · instrumented: {', '.join(result['instrumented'])}" if result.get("instrumented") else ""), ""]
+        if email:
+            out += [f"- From: {(email.get('from') or {}).get('email')}", f"- Subject: {email.get('subject')}",
+                    "- Body: " + " ".join(str(email.get("bodyText") or "").split())[:500]]
+            thread = (case.get("input") or {}).get("thread") or []
+            if thread:
+                out.append(f"- Thread: {len(thread)} earlier message(s); the last: \"" +
+                           " ".join(str(thread[-1].get('bodyText') or '').split())[:200] + "\"")
+        if case.get("script"):
+            out.append(f"- Script: `{json_short(case['script'])}`")
+        if truth:
+            jobs = truth.get("anyOf") or [truth.get("jobs") or []]
+            wanted = " OR ".join(" + ".join(j["kind"] for j in alternative) for alternative in jobs)
+            out.append(f"- Truth: {wanted}; intent one of {truth.get('intents')}")
+        out.append(f"- Engine: classification `{result['intent'].get('actual')}`, outcome `{claimed.get('outcome')}`, "
+                   f"stage `{claimed.get('lifecycle')}`, held `{claimed.get('held')}`, approvals given "
+                   f"{result['human']['mandatoryApprovals']}, rescues {result['human']['rescues']}")
+        actions = [(a.get("tool"), a.get("status")) for a in (trace.get("run") or {}).get("actions") or [] if a.get("sideEffect")
+                   or a.get("tool") in ("task.create", "reminder.create")]
+        if actions:
+            out.append("- Its actions: " + ", ".join(f"{tool} {status}" for tool, status in actions))
+        for item in result["checks"]:
+            if item["passed"] is False:
+                out.append(f"- FAILED `{item['id']}`{' (safety)' if item['safety'] else ''} [{item['evidence']}]: "
+                           f"expected {item['expected']}; actual {item['actual']}")
+        for error in result.get("errors") or []:
+            out.append(f"- {error.get('code')}: {error.get('message')}")
+        out.append("")
+    return "\n".join(out)
+
+
+def json_short(value: Any) -> str:
+    import json
+
+    text = json.dumps(value, ensure_ascii=False)
+    return text if len(text) <= 300 else text[:297] + "..."
 
 
 def render_html(report: Dict[str, Any]) -> str:
@@ -318,7 +376,7 @@ tr:last-child td{{border-bottom:0}}td{{font-variant-numeric:tabular-nums}}.bar{{
 <h2>Every result</h2>
 <div class="filters" id="filters"><button data-v="" aria-pressed="true">all</button><button data-v="unsafe" aria-pressed="false">unsafe</button><button data-v="failed" aria-pressed="false">failed</button><button data-v="safe_handoff" aria-pressed="false">handed over</button><button data-v="completed" aria-pressed="false">completed</button></div>
 <div class="wrap"><table id="results"><tr><th>Case</th><th>Category</th><th>Verdict</th><th>Engine's intent</th><th>Engine's outcome</th><th>Approvals</th><th>False success</th><th>Root cause</th><th>What the office shows</th></tr>{rows}</table></div>
-<p class="sub" style="margin-top:18px">Per-case traces are beside this file in <code>traces/</code>. The numbers on this page are those of <code>report.json</code>.</p>
+<p class="sub" style="margin-top:18px">Case-by-case detail is in <code>CASES.md</code>; full traces are in <code>traces.jsonl.gz</code>. The numbers on this page are those of <code>report.json</code>.</p>
 </main><script>
 document.getElementById('filters').addEventListener('click',function(ev){{var b=ev.target.closest('button');if(!b)return;
 this.querySelectorAll('button').forEach(function(x){{x.setAttribute('aria-pressed',x===b?'true':'false')}});

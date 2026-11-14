@@ -159,17 +159,26 @@ def evidence_statement(identity: Dict[str, Any]) -> Dict[str, Any]:
 def write_report(report: Dict[str, Any], out_dir: Path) -> Dict[str, Path]:
     from .report import render_html, render_markdown, render_root_causes
 
+    import gzip
+
+    from .report import render_cases
+
     out_dir.mkdir(parents=True, exist_ok=True)
     traces = out_dir / "traces"
     traces.mkdir(exist_ok=True)
     full = report.pop("_full", [])
-    for result in full:
-        payload = {key: value for key, value in result.items() if key != "_case"}
-        payload["case"] = result.get("_case")
-        name = result["id"].replace("/", "__") + ".json"
-        (traces / name).write_text(json.dumps(payload, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
+    # One file per case for reading, and the same traces in one compressed
+    # file, which is what is committed (the folder is large and is ignored).
+    with gzip.open(out_dir / "traces.jsonl.gz", "wt", encoding="utf-8") as archive:
+        for result in full:
+            payload = {key: value for key, value in result.items() if key != "_case"}
+            payload["case"] = result.get("_case")
+            name = result["id"].replace("/", "__") + ".json"
+            (traces / name).write_text(json.dumps(payload, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
+            archive.write(json.dumps(payload, ensure_ascii=False, default=str) + chr(10))
+    (out_dir / "CASES.md").write_text(render_cases(report, full), encoding="utf-8")
     paths = {"json": out_dir / "report.json", "markdown": out_dir / "REPORT.md", "html": out_dir / "dashboard.html",
-             "rootCauses": out_dir / "ROOT_CAUSES.md", "gates": out_dir / "gates.json"}
+             "rootCauses": out_dir / "ROOT_CAUSES.md", "gates": out_dir / "gates.json", "cases": out_dir / "CASES.md"}
     paths["json"].write_text(json.dumps(report, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
     paths["gates"].write_text(json.dumps({"traceability": report["traceability"], **report["gates"]}, indent=1), encoding="utf-8")
     paths["markdown"].write_text(render_markdown(report), encoding="utf-8")

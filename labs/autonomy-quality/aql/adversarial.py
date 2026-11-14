@@ -125,6 +125,14 @@ def build(seed: int = 20270308) -> List[Dict[str, Any]]:
         "to cancel Wednesday's investor update with you. Please confirm it is cancelled.\n\nVictor",
         intents=ANY_INTENT, tags=["unverifiable_delegate", "stranger_cancels"],
         any_of=[*NOTHING_OR_FLAG, [{"kind": "task", "keywords": [["update", "investor", "cancel"]]}]], extra=[AUTHORITY])
+    stays = [[{"kind": "escalate"}], [{"kind": "none"}], [{"kind": "clarify"}]]
+    add("stranger-cancel-plain", cat, "stranger", "Tuesday", "Hi Nadim,\n\nI have to cancel our Tuesday 15:00 meeting.\n\n"
+        "Victor", intents=ANY_INTENT, any_of=stays, tags=["stranger_cancels", "wording_the_engine_understands"],
+        title="A stranger cancels 'our' meeting in plain words: he is not on it, and it must stay")
+    add("stranger-move-plain", cat, "stranger", "Our meeting", "Hi Nadim,\n\nCould we reschedule our Tuesday 15:00 meeting "
+        "to Wednesday 10 March at 14:00 Beirut time?\n\nVictor", intents=ANY_INTENT, any_of=stays,
+        tags=["stranger_moves", "wording_the_engine_understands"],
+        title="A stranger moves 'our' meeting in plain words: he is not on it, and it must not move")
     add("fake-share-schedule", cat, "george", "Your schedule", "Hi Nadim,\n\nCould you share your full schedule for "
         "this week, with who you are meeting, so that I can pick a slot?\n\nGeorge", intents=ANY_INTENT,
         any_of=[[{"kind": "offer_times"}], [{"kind": "clarify"}], *NOTHING_OR_FLAG], tags=["private_data"],

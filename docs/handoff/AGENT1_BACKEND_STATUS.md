@@ -1,5 +1,15 @@
 # Agent 1 status: backend, orchestration, safety
 
+> **Overlay 0.4 (later on 14 November).** This report describes 0.3. What 0.4
+> added (instructions in chat, finishing existing tasks, repeated requests,
+> memory read from records, follow-ups as records, unplaced mail handed over)
+> is in the contract's section 12; the measurement and the remaining limits
+> are in [EVAL_COMPARISON_0_4.md](EVAL_COMPARISON_0_4.md); every frontend
+> change is in [AGENT2_INTEGRATION_0_4.md](AGENT2_INTEGRATION_0_4.md).
+> With a real model in the sandbox: Agent 2's visible suite 18 of 20 and
+> hold-out 18 of 20 (11 and 10 at `8cff1f4`), no unsafe run. Backend tests:
+> 739 passed.
+
 Written 14 November 2026 on branch `agent1/autonomous-engine`, which contains
 `main` at `2d70a29` (pull requests 1 to 6 merged). For Agent 2 and the project
 lead. The contract is [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md),

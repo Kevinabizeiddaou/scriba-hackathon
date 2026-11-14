@@ -457,8 +457,10 @@ class ExecutionGate:
         """
         from app import chat_service
 
+        from .workflow import effective_input
+
         repo = chat_service.repo
-        now, settled = self.clock(), 0
+        now, settled, landed = self.clock(), 0, 0
         try:
             world = self.world_for_run(user, run)
         except LookupError:
@@ -470,8 +472,9 @@ class ExecutionGate:
             reference = world.now() if world is not None else now
             if touched is None or (reference - touched).total_seconds() < older_than_seconds:
                 continue
-            tool, data = str(card.get("tool_name") or ""), card.get("input") or {}
+            tool, data = str(card.get("tool_name") or ""), effective_input(card)
             found = _find_effect(world, tool, data) if world is not None else None
+            landed += int(bool(found))
             if found:
                 repo.update_tool_call(card["id"], user_id=user.id, status="executed", error=None,
                                       output_payload_patch={"reconciled": True, "recovered": True,
@@ -497,7 +500,20 @@ class ExecutionGate:
                 self._record(user, run, "execution", {"toolCallId": card["id"], "tool": tool,
                                                       "status": "unknown", "recovered": True}, world)
             settled += 1
+        if landed:
+            self._follow_on(user, run, world)
         return settled
+
+    def _follow_on(self, user: DeskUser, run: Optional[Dict[str, Any]], world: Optional[SandboxWorld]) -> None:
+        """An action took effect: propose what may only follow it. A failure
+        here never changes what is known about the action itself."""
+        if run is None or not callable(self.on_settled):
+            return
+        try:
+            with self.registry.using(world):
+                self.on_settled(user, run)
+        except Exception:
+            logger.exception("desk follow-on step could not be proposed")
 
     # ── an approval is bound to the action that was proposed ────────────────
     def _bindings(self, user: DeskUser, run: Optional[Dict[str, Any]], card_id: Any) -> List[str]:
@@ -568,12 +584,7 @@ class ExecutionGate:
                 "code": (card.get("output") or {}).get("error_code") or card.get("error")}, world)
         if status in ("executed", "partially_executed"):
             self._verify(ctx, tool, card, result)
-            if run is not None and callable(self.on_settled):
-                try:
-                    with self.registry.using(world):
-                        self.on_settled(user, run)
-                except Exception:
-                    logger.exception("desk follow-on step could not be proposed")
+            self._follow_on(user, run, world)
         return result
 
     def _object_id(self, tool: str, card: Mapping[str, Any], result: Mapping[str, Any]) -> Optional[str]:
@@ -593,8 +604,11 @@ class ExecutionGate:
 
     def _verify(self, ctx: Dict[str, Any], tool: str, card: Mapping[str, Any], result: Mapping[str, Any]) -> None:
         user, run, world = ctx["user"], ctx["run"], ctx.get("world")
+        from .workflow import effective_input
+
         op = TOOL_OPS.get(tool)
-        data = card.get("input") or {}
+        # Verified against what was approved, an edit by the person included.
+        data = effective_input(dict(card))
         expected = _expected(tool, data)
         readback = None
         try:
@@ -615,8 +629,10 @@ class ExecutionGate:
     def _reconcile(self, ctx: Dict[str, Any], tool: str, overrides: Dict[str, Any],
                    hold: Callable[..., Any]) -> Optional[Dict[str, Any]]:
         """Before re-running a card whose outcome is unknown: did it happen?"""
+        from .workflow import effective_input
+
         user, run, world, row, repo = ctx["user"], ctx["run"], ctx.get("world"), ctx["row"], ctx["repo"]
-        data = row.get("input_payload") or {}
+        data = effective_input(dict(row))
         found = None
         if world is not None:
             found = _find_effect(world, tool, data)
@@ -630,6 +646,9 @@ class ExecutionGate:
             self._record(user, run, "verification", {
                 "toolCallId": row.get("id"), "tool": tool, "verified": True,
                 "method": "sandbox_readback", "reconciled": True, "objectId": found}, world)
+            # The action is settled: what may only follow it is proposed now,
+            # exactly as after an ordinary execution.
+            self._follow_on(user, run, world)
             return {"tool_call": repo.serialize_tool_call(updated or row), "reconciled": True}
         if world is None and overrides.get(RETRY_CONFIRM_FLAG) is not True:
             return hold(ctx, row.get("id"), UNKNOWN_CODE,

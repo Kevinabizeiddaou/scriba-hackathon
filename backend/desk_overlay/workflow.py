@@ -881,7 +881,7 @@ class DeskWorkflow:
             if plan is None:
                 self._advance_without_plan(user, run, cards, events)
             else:
-                states = plans.step_states(plan, _cards_by_step(cards, events))
+                states = plans.step_states(plan, _cards_by_step(cards, events), _unverified(events))
                 by_id = {step["id"]: step for step in states}
                 blocked = {(e.get("data") or {}).get("stepId") for e in events
                            if e.get("kind") == "decision" and (e.get("data") or {}).get("decision") == "step_blocked"}
@@ -896,7 +896,7 @@ class DeskWorkflow:
                         self._record(user, run, "decision", {
                             "decision": "step_blocked", "stepId": step["id"], "tool": step["tool"],
                             "dependsOn": step["dependsOn"],
-                            "explanation": "A step this one depends on did not take effect, so it "
+                            "explanation": "A step this one depends on did not take effect, or ran and could not be verified, so it "
                                            "is not proposed."})
             self._track_follow_ups(ctx, user, run)
         return self.view(ctx, user, run_id)
@@ -918,7 +918,8 @@ class DeskWorkflow:
         meta = run["meta"]
         if not sender_address(str(meta.get("from_addr") or "")):
             return
-        data, output = changed.get("input") or {}, changed.get("output") or {}
+        # As approved: an edit the person made is what the sender is told.
+        data, output = effective_input(changed), changed.get("output") or {}
         after = ((output.get("operation") or {}).get("after") or {})
         planned = data.get("planned_change") or {}
         title = str(data.get("title") or data.get("event_title") or after.get("title")
@@ -1077,7 +1078,8 @@ class DeskWorkflow:
         has_confirmation = any(a["tool_name"] == "send_email" and a["purpose"] == "confirm" for a in actions)
         next_steps: List[str] = []
         plan = _plan_of(events)
-        steps = plans.step_states(plan, _cards_by_step(cards, events)) if plan is not None else []
+        steps = plans.step_states(plan, _cards_by_step(cards, events), _unverified(events)) \
+            if plan is not None else []
         if plan is not None:
             ready = any(step.get("deferred") and step["toolCallId"] is None and step["state"] == "ready"
                         for step in steps)
@@ -1177,8 +1179,57 @@ def _binding(tool_name: str, data: Any) -> str:
     return hashlib.sha256(json.dumps(material, sort_keys=True).encode("utf-8")).hexdigest()[:24]
 
 
+# Fields an edit at approval may change that decide what the action does or says.
+_EDITABLE_FIELDS = MATERIAL_FIELDS + ("timezone", "location", "description")
+
+
+def approved_edits(card: Any) -> Dict[str, Any]:
+    """The fields the person changed in the approve request, as Scriba keeps
+    them (``output.approved_overrides``). Control flags of the Desk
+    (``desk_confirmed_recipients`` and the like) are not edits of the action."""
+    card = card if isinstance(card, dict) else {}
+    output = card.get("output") if isinstance(card.get("output"), dict) else card.get("output_payload")
+    approved = (output or {}).get("approved_overrides") if isinstance(output, dict) else None
+    if not isinstance(approved, dict):
+        return {}
+    return {key: approved[key] for key in _EDITABLE_FIELDS if approved.get(key) not in (None, "", [], {})}
+
+
+def effective_input(card: Any) -> Dict[str, Any]:
+    """What the action does, or did: the stored input with the edit the
+    person made when approving it.
+
+    Scriba keeps a card's input as it was proposed and the person's edit
+    beside it. Everything that speaks about the action AFTER the approval
+    (the verification read-back, the search for its effect, the confirmation
+    sent to the other person) has to speak about the edited action."""
+    card = card if isinstance(card, dict) else {}
+    stored = card.get("input") if isinstance(card.get("input"), dict) else card.get("input_payload")
+    data = dict(stored) if isinstance(stored, dict) else {}
+    edits = approved_edits(card)
+    if not edits:
+        return data
+    data.update(edits)
+    if isinstance(data.get("planned_change"), dict):
+        # A move states its new time in ``planned_change``.
+        data["planned_change"] = {**data["planned_change"],
+                                  **{key: edits[key] for key in ("start", "end") if key in edits}}
+    return data
+
+
 def _plan_of(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return next((dict(e.get("data") or {}) for e in events if e.get("kind") == "plan"), None)
+
+
+def _unverified(events: List[Dict[str, Any]]) -> set:
+    """Cards whose latest verification failed: executed, and not shown by the
+    state read back."""
+    latest: Dict[Any, bool] = {}
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "verification" and data.get("toolCallId") is not None:
+            latest[data["toolCallId"]] = data.get("verified") is False
+    return {card_id for card_id, failed in latest.items() if failed}
 
 
 def _cards_by_step(cards: List[Dict[str, Any]], events: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -1267,24 +1318,39 @@ def _action_view(card: Dict[str, Any], evidence: Dict[str, Any], meta: Dict[str,
     else:
         verified = bool(status in _DONE and card.get("assistant_action_id"))
     unknown = bool(output.get("outcome_unknown")) and status == "failed"
+    held = bool(status == "needs_info" and output.get("blocked"))
+    error_code = output.get("error_code") or (card.get("error") if status in ("needs_info", "failed") else None)
+    attempts = int(evidence.get("attempts", 0))
+    state = lifecycle.action_state(status, held=held, verified=verified, verification=verification,
+                                   outcome_unknown=unknown, error_code=error_code)
+    edits = approved_edits(card)
     return {
         "toolCallId": card.get("id"),
         "tool_name": card.get("tool_name"),
         "status": status,
+        # The explicit state of this action (lifecycle.ACTION_STATES).
+        "lifecycle": state,
+        "final": state in lifecycle.ACTION_FINAL,
+        # What a retry would do first, or null when there is nothing to retry.
+        "retry": lifecycle.retry_of(state, simulated=bool(meta.get("sandbox")), attempts=attempts),
         "requiresApproval": True,
         "purpose": proposal.get("purpose"),
         "reason": proposal.get("reason"),
         "stepId": proposal.get("stepId"),
         # Held by a guard: it cannot be approved as it stands.
-        "held": bool(status == "needs_info" and output.get("blocked")),
+        "held": held,
         # How many times execution was attempted (a retry is one more).
-        "attempts": int(evidence.get("attempts", 0)),
+        "attempts": attempts,
         "proposedSlots": proposal.get("proposedSlots"),
         "input": card.get("input") or {},
+        # The fields the person changed when approving, and the action as it
+        # then ran: ``input`` stays as proposed, so an edit is never silent.
+        "edited": sorted(edits),
+        "effectiveInput": effective_input(card),
         "output": output,
         "message": output.get("message"),
         "error": card.get("error"),
-        "errorCode": output.get("error_code") or (card.get("error") if status in ("needs_info", "failed") else None),
+        "errorCode": error_code,
         "availability": output.get("availability"),
         # One identity per real-world effect: a retry of this card reuses it.
         "idempotencyKey": f"desk:{meta.get('key')}:{card.get('id')}",

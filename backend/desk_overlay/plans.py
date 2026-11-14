@@ -82,13 +82,21 @@ def _step(step_id: str, tool: str, purpose: Optional[str], depends_on: List[str]
             "onFailure": "Dependent steps are not proposed; the run is handed to the person."}
 
 
-def step_states(plan: Optional[Mapping[str, Any]], cards_by_step: Mapping[str, Mapping[str, Any]]) -> List[Dict[str, Any]]:
+def step_states(plan: Optional[Mapping[str, Any]], cards_by_step: Mapping[str, Mapping[str, Any]],
+                unverified: Any = ()) -> List[Dict[str, Any]]:
     """Each step with where it stands.
 
     ``proposed`` steps take their card's status. A step with no card is
     ``ready`` when every step it depends on has taken effect, ``blocked``
     when one of them is dead (failed, rejected) and ``waiting`` otherwise.
+
+    ``unverified`` holds the ids of cards that executed and whose
+    verification FAILED: the provider accepted the request and reading the
+    state back did not show it. Such a step did not provably take effect, so
+    nothing that depends on it is proposed: telling someone "it is done"
+    would rest on a call that returned, not on a result.
     """
+    unverified = set(unverified or ())
     states: List[Dict[str, Any]] = []
     by_id: Dict[str, Dict[str, Any]] = {}
     for step in (plan or {}).get("steps") or []:
@@ -96,8 +104,10 @@ def step_states(plan: Optional[Mapping[str, Any]], cards_by_step: Mapping[str, M
         if card is not None:
             state = str(card.get("status") or "proposed")
         else:
-            needs = [by_id.get(dep, {}).get("state") for dep in step.get("dependsOn") or []]
-            if any(s in DEAD or s == "blocked" for s in needs):
+            deps = [by_id.get(dep, {}) for dep in step.get("dependsOn") or []]
+            needs = [dep.get("state") for dep in deps]
+            if any(s in DEAD or s == "blocked" for s in needs) \
+                    or any(dep.get("state") in EFFECT and dep.get("toolCallId") in unverified for dep in deps):
                 state = "blocked"
             elif needs and all(s in EFFECT for s in needs):
                 state = "ready"

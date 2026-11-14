@@ -208,6 +208,80 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
             "outcomeUnknown": unknown, "compensation": compensation}
 
 
+# ── the lifecycle of ONE action ─────────────────────────────────────────────
+#
+# A run's stage says where the whole request stands. Each action has its own
+# state, and it is explicit: a client never has to work it out from a status,
+# a flag and an error code. "The provider accepted the request" is EXECUTED_
+# UNVERIFIED; only evidence makes it VERIFIED.
+ACTION_STATES = (
+    "PROPOSED",              # waits for the person; can be approved as it stands
+    "HELD",                  # a guard or a missing detail holds it; cannot be approved as it stands
+    "APPROVED",              # approved, claimed, not started
+    "EXECUTING",             # being carried out
+    "EXECUTED_UNVERIFIED",   # the call returned; there is no evidence yet that it took effect
+    "VERIFIED",              # it took effect, on evidence
+    "VERIFICATION_FAILED",   # the call returned and the state read back does not show it
+    "PARTIALLY_EXECUTED",    # part of it took effect; nothing is undone
+    "OUTCOME_UNKNOWN",       # the provider did not confirm; it may or may not have happened
+    "INTERRUPTED",           # the process stopped; read back, the effect is not there
+    "FAILED",                # it did not take effect
+    "REJECTED",              # the person rejected it; it never ran
+)
+ACTION_FINAL = ("VERIFIED", "REJECTED")
+
+
+def action_state(status: str, *, held: bool = False, verified: bool = False,
+                 verification: Optional[Mapping[str, Any]] = None, outcome_unknown: bool = False,
+                 error_code: Optional[str] = None) -> str:
+    """The explicit state of one action, from its card and the evidence."""
+    status = str(status or "")
+    if status in ("needs_info",) or (status in OPEN and held):
+        return "HELD"
+    if status in OPEN:
+        return "PROPOSED"
+    if status == "approved":
+        return "APPROVED"
+    if status == "executing":
+        return "EXECUTING"
+    if status in EXECUTED:
+        if verified:
+            return "VERIFIED"
+        if verification is not None and verification.get("verified") is False:
+            return "VERIFICATION_FAILED"
+        return "EXECUTED_UNVERIFIED"
+    if status in PARTIAL:
+        return "PARTIALLY_EXECUTED"
+    if status == "failed":
+        if outcome_unknown:
+            return "OUTCOME_UNKNOWN"
+        return "INTERRUPTED" if error_code == "interrupted" else "FAILED"
+    if status == "cancelled":
+        return "REJECTED"
+    return "FAILED" if status == "unsupported" else "PROPOSED"
+
+
+def retry_of(state: str, *, simulated: bool, attempts: int) -> Optional[Dict[str, Any]]:
+    """Whether a retry is possible and what it does first. None: no retry.
+
+    - ``rerun``: nothing happened, so the action is simply run.
+    - ``readback_first``: the outcome is unknown and the state can be read
+      (a sandbox): the retry looks for the effect and does not repeat it.
+    - ``confirm_first``: the outcome is unknown and cannot be read (a real
+      provider): the retry is refused until the person says they checked
+      (``payload_overrides.desk_retry_after_unknown_confirmed``).
+    """
+    if state in ("FAILED", "INTERRUPTED"):
+        mode = "rerun"
+    elif state == "OUTCOME_UNKNOWN":
+        mode = "readback_first" if simulated else "confirm_first"
+    else:
+        return None
+    return {"mode": mode, "attempts": int(attempts),
+            # One identity per effect: a retry is the same effect, never a second one.
+            "sameEffect": True}
+
+
 def timeline(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     return [{"at": item.get("at"), "kind": item.get("kind"), "summary": summary_of(item),
              "data": item.get("data") or {}} for item in events]

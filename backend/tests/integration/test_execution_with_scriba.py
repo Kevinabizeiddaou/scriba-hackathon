@@ -835,3 +835,123 @@ def test_with_no_sandbox_an_interrupted_action_is_unknown_and_never_assumed():
         assert desk["gate"].recover_stale(user, desk_run) == 1
         row = desk["store"].rows[run["actions"][0]["toolCallId"]]
         assert row["status"] == "failed" and row["output_payload"]["outcome_unknown"] is True
+
+
+# ── the action as approved, an explicit lifecycle, and nothing after an unverified step ──
+
+def test_a_time_edited_at_approval_is_what_is_verified_and_what_the_sender_is_told():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        run = meeting(desk)
+        later = {"start": "2026-03-05T10:30:00+00:00", "end": "2026-03-05T11:00:00+00:00"}
+        assert approve(desk, run["actions"][0], payload_overrides=later)["status"] == "executed"
+        assert [str(e["start"]) for e in world.events.values()] == ["2026-03-05 10:30:00+00:00"]
+        view = get(desk, f"/runs/{run['runId']}").json()
+        booked, reply = view["actions"]
+        # Verified against the action as approved, not as first proposed.
+        assert booked["verified"] is True and booked["lifecycle"] == "VERIFIED"
+        assert booked["verification"]["reason"] is None
+        # The proposal stays as proposed; the edit is shown beside it, never silently.
+        assert booked["input"]["start"] == THU10[0]
+        assert booked["edited"] == ["end", "start"]
+        assert booked["effectiveInput"]["start"] == later["start"]
+        # The confirmation states the time the meeting was really booked at.
+        assert "10:30 to 11:00" in reply["input"]["body"] and "10:00 to 10:30" not in reply["input"]["body"]
+        assert view["lifecycle"]["stage"] == "AWAITING_APPROVAL"
+
+
+def test_an_unknown_outcome_settled_by_reading_back_still_gets_its_next_step():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        world.add_fault(OP_CREATE_EVENT, mode="uncertain", times=1, error="timeout")
+        run = meeting(desk)
+        card = approve(desk, run["actions"][0])
+        unknown = get(desk, f"/runs/{run['runId']}").json()["actions"][0]
+        assert unknown["lifecycle"] == "OUTCOME_UNKNOWN"
+        assert unknown["retry"] == {"mode": "readback_first", "attempts": 1, "sameEffect": True}
+        desk["client"].post(f"/chat/tool-calls/{card['id']}/retry", headers=ORIGIN)
+        settled = get(desk, f"/runs/{run['runId']}").json()
+        # The confirmation is proposed without anyone calling advance.
+        assert [a["tool_name"] for a in settled["actions"]] == ["create_calendar_event", "send_email"]
+        assert settled["actions"][1]["purpose"] == "confirm" and settled["actions"][1]["lifecycle"] == "PROPOSED"
+        assert "advance" not in settled["next"]
+        assert settled["actions"][0]["lifecycle"] == "VERIFIED" and settled["actions"][0]["retry"] is None
+        assert len(world.events) == 1 and world.sent == []
+
+
+def test_an_interrupted_action_that_landed_gets_its_next_step_from_recovery():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        stuck(desk, run)
+        desk["world"]().add_event(provider="google", title="Intro call", start=THU10[0], end=THU10[1],
+                                  attendees=["sofia@client.example"])
+        assert desk["gate"].recover_stale(*user_and_run(desk, run)) == 1
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert [a["purpose"] for a in view["actions"]] == ["book", "confirm"]
+        assert "advance" not in view["next"]
+
+
+def test_an_interrupted_action_that_did_not_land_says_so_and_proposes_nothing_after_it():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        stuck(desk, run)
+        assert desk["gate"].recover_stale(*user_and_run(desk, run)) == 1
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert len(view["actions"]) == 1
+        assert view["actions"][0]["lifecycle"] == "INTERRUPTED"
+        assert view["actions"][0]["retry"]["mode"] == "rerun"
+        assert view["plan"]["steps"][1]["state"] == "blocked"
+
+
+def test_a_step_that_ran_and_cannot_be_verified_is_not_followed_by_a_confirmation():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        run = meeting(desk)
+        # The provider accepts the request; reading the calendar back does not show it.
+        unseen = {"ok": False, "method": "sandbox_readback", "reason": "event_not_found"}
+        with patch.object(type(desk["gate"].gateway), "verify_effect", lambda self, *a, **k: unseen):
+            assert approve(desk, run["actions"][0])["status"] == "executed"
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert len(view["actions"]) == 1, "nothing may tell the sender it is done"
+        action = view["actions"][0]
+        assert action["status"] == "executed" and action["verified"] is False
+        assert action["lifecycle"] == "VERIFICATION_FAILED" and action["final"] is False
+        assert view["plan"]["steps"][1]["state"] == "blocked" and view["plan"]["steps"][1]["toolCallId"] is None
+        assert "advance" not in view["next"]
+        assert view["lifecycle"]["stage"] == "ESCALATED" and view["lifecycle"]["reason"] == "verification_failed"
+        blocked = [i["data"] for i in view["timeline"] if i["data"].get("decision") == "step_blocked"]
+        assert len(blocked) == 1 and blocked[0]["stepId"] == "s2"
+        # Asking again does not propose it either, and the block is recorded once.
+        again = post(desk, f"/runs/{run['runId']}/advance").json()
+        assert len(again["actions"]) == 1
+        assert len([i for i in again["timeline"] if i["data"].get("decision") == "step_blocked"]) == 1
+        assert world.sent == []
+
+
+def test_every_action_names_its_state_from_proposal_to_rejection():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        world.add_fault(OP_SEND_EMAIL, mode="fail_times", times=1)
+        run = meeting(desk)
+        first = run["actions"][0]
+        assert first["lifecycle"] == "PROPOSED" and first["final"] is False and first["retry"] is None
+        assert first["edited"] == [] and first["effectiveInput"] == first["input"]
+        approve(desk, first)
+        reply = get(desk, f"/runs/{run['runId']}").json()["actions"][1]
+        approve(desk, reply)
+        failed = get(desk, f"/runs/{run['runId']}").json()["actions"][1]
+        assert failed["lifecycle"] == "FAILED"
+        assert failed["retry"] == {"mode": "rerun", "attempts": 1, "sameEffect": True}
+
+        other = meeting(desk, message_id="m2", start="2026-03-06T10:00:00+00:00", end="2026-03-06T10:30:00+00:00",
+                        body="Could we meet on Friday at 10:00 for 30 minutes?")
+        cancelled = desk["client"].post(f"/chat/tool-calls/{other['actions'][0]['toolCallId']}/cancel", headers=ORIGIN)
+        assert cancelled.status_code == 200
+        rejected = get(desk, f"/runs/{other['runId']}").json()["actions"][0]
+        assert rejected["lifecycle"] == "REJECTED" and rejected["final"] is True and rejected["retry"] is None

@@ -28,7 +28,8 @@ import {
   type TriagedEmail,
 } from '../api/desk'
 import type { MailProvider } from '../api/contract'
-import { HELD_REASON_V3, LIFECYCLE, isKnownStage, stageOfRun } from './runLifecycle'
+import { explainHold } from './deskHolds'
+import { HELD_REASON_REVISED, HELD_REASON_V3, LIFECYCLE, LIFECYCLE_REASON, isKnownStage, stageOfRun } from './runLifecycle'
 import { stageOf, type WorkStage } from './workQueue'
 
 // ── the run list ────────────────────────────────────────────────────────────
@@ -291,6 +292,12 @@ export const HELD_REASON: Record<DeskHeldReason, { title: string; next: string }
   },
 }
 
+/** The wording for a held reason, including the ones the typed client does not declare yet. Null for a reason this version does not know. */
+export function heldReasonInfo(reason: string | null | undefined): { title: string; next: string } | null {
+  if (!reason) return null
+  return HELD_REASON[reason as DeskHeldReason] ?? HELD_REASON_REVISED[reason] ?? null
+}
+
 export interface NextStep {
   /** What the person can do now. `none` means nothing is asked of them. */
   kind: 'approve' | 'complete_card' | 'held' | 'draft_reply' | 'advance' | 'wait' | 'inspect_failure' | 'check_result' | 'none' | 'unknown'
@@ -315,16 +322,30 @@ export function nextStepOf(run: DeskRun): NextStep {
       ? { kind: 'approve', label: 'A reply is overdue: review the proposed reminder', detail: 'No answer came in two days. A reminder is proposed below; it is not sent unless you approve it.' }
       : { kind: 'wait', label: 'Nothing: waiting for the other person to answer', detail: 'A reply went out. If no answer arrives in two days, a reminder is proposed for your approval.' }
   }
-  if (stage === 'HELD') return { kind: 'complete_card', label: 'Every proposed action is held by a safety check', detail: run.lifecycle?.reason ? `Reason reported: ${run.lifecycle.reason.replace(/_/g, ' ')}. The action card says what can be done. Nothing can be approved as it stands.` : 'The action card says why. Nothing can be approved as it stands.' }
+  if (stage === 'HELD') {
+    const reason = run.lifecycle?.reason
+    const known = explainHold(reason)
+    return {
+      kind: 'complete_card',
+      label: known?.title ?? 'Every proposed action is held by a safety check',
+      detail: `${known ? '' : reason ? `Reason reported: ${reason.replace(/_/g, ' ')}. ` : ''}The action card says what can be done. Nothing can be approved as it stands.`,
+    }
+  }
   if (stage === 'NEEDS_CLARIFICATION' || stage === 'ESCALATED') {
-    const held = run.held ? HELD_REASON[run.held.reason as DeskHeldReason] : null
+    const held = heldReasonInfo(run.held?.reason)
     if (held) return { kind: 'held', label: held.title, detail: held.next }
     if (run.next.includes('draft_reply')) return { kind: 'draft_reply', label: 'Write a reply draft', detail: 'The message needs a reply. A draft is stored in Scriba for you to review; nothing is sent.' }
-    return { kind: 'held', label: LIFECYCLE[stage].label, detail: run.lifecycle?.reason || LIFECYCLE[stage].blurb }
+    return { kind: 'held', label: LIFECYCLE[stage].label, detail: (run.lifecycle?.reason && (LIFECYCLE_REASON[run.lifecycle.reason] ?? `Reason reported: ${run.lifecycle.reason.replace(/_/g, ' ')}.`)) || LIFECYCLE[stage].blurb }
   }
   if (group === 'decision') {
     const waiting = stages.filter(stage => stage === 'awaiting_approval').length
-    return { kind: 'approve', label: waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`, detail: 'Nothing has been sent or changed. Each action runs only if you approve it.' }
+    // An earlier step of the same run may already have run: "nothing has changed" would then be false.
+    const ran = stages.filter(stage => stage === 'completed' || stage === 'partially_completed').length
+    return {
+      kind: 'approve',
+      label: waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`,
+      detail: ran > 0 ? `${ran} earlier action${ran === 1 ? ' of this run has' : 's of this run have'} already run. What is waiting now runs only if you approve it.` : 'Nothing has been sent or changed. Each action runs only if you approve it.',
+    }
   }
   if (run.state === 'awaiting_approval') {
     return { kind: 'complete_card', label: 'A proposed action is held for a detail', detail: 'A safety check or a missing field stopped it. The action card says which.' }
@@ -333,7 +354,7 @@ export function nextStepOf(run: DeskRun): NextStep {
     return { kind: 'advance', label: 'Propose the confirmation reply', detail: 'The calendar event exists. The reply to the sender has not been proposed yet; proposing it sends nothing until you approve it.' }
   }
   if (run.state === 'no_action_proposed' && run.held) {
-    const held = HELD_REASON[run.held.reason]
+    const held = heldReasonInfo(run.held.reason)
     return { kind: 'held', label: held?.title ?? 'The meeting request is held', detail: held?.next ?? run.held.message }
   }
   if (run.state === 'no_action_proposed' && run.next.includes('draft_reply')) {
@@ -361,7 +382,7 @@ export function nextStepOf(run: DeskRun): NextStep {
 /** One line for the queue: what the run is proposing or why it stopped. */
 export function runHeadline(run: DeskRun): string {
   if (run.actions.length > 0) return run.actions.map(action => ACTION_LABEL[action.tool_name] ?? action.tool_name.replace(/_/g, ' ')).join(', then ')
-  if (run.held) return HELD_REASON[run.held.reason]?.title ?? run.held.message
+  if (run.held) return heldReasonInfo(run.held.reason)?.title ?? run.held.message
   if (run.next.includes('draft_reply')) return 'Needs a reply; no draft written yet'
   return 'Nothing to do'
 }

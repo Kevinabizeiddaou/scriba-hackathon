@@ -19,6 +19,8 @@ the screens, in the sandbox: a booking, a reply offering times, and a task.
 | `follow-ups.png`, `follow-ups-phone.png` | Follow-up workspace: one reply awaited |
 | `approvals.png` | Approval center in sandbox mode, with the readiness checks for real sending |
 | `evaluation.png` | Evaluation: the three kinds of result |
+| `run-plan.png`, `run-plan-phone.png` | The plan of a run after both of its steps were approved in the sandbox: cancel the meeting, then tell the sender. Taken against `0282558` |
+| `run-plan-blocked.png` | The plan of a run whose first step was rejected: the step that depends on it is blocked and is never proposed. Taken against `0282558` |
 
 Desktop images are 1440 by 900, phone images 375 by 844.
 

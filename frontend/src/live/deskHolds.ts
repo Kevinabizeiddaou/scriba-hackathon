@@ -94,12 +94,42 @@ const HOLDS: Record<KnownHoldCode, HoldExplanation> = {
   },
 }
 
+/**
+ * Codes the revised contract adds (agent1/autonomous-engine, 0282558) that the typed client does
+ * not declare yet. It cannot be approved past.
+ */
+const REVISED_HOLDS: Record<string, HoldExplanation> = {
+  proposal_changed: {
+    title: 'This action is no longer what was proposed',
+    detail: 'The stored action differs from the one the secretary proposed, and no edit of yours is on record. Nothing ran. Do not approve it as it is: cancel it, and the request can be picked up again.',
+    resolution: 'gate_closed',
+  },
+}
+
+/**
+ * Failure codes that need more than the raw word. `interrupted` is set by the worker's recovery
+ * (contract section 8, "Recovery after an interruption"): only in a sandbox, and only after the
+ * world was read back and the effect was not there.
+ */
+const FAILURES: Record<string, { title: string; detail: string }> = {
+  interrupted: {
+    title: 'The backend stopped while this action was being carried out',
+    detail: 'The sandbox was read back afterwards and the effect is not there, so it did not happen. It was not run again by itself.',
+  },
+}
+
+/** The explanation for a failed card's code, or null when the raw error is all there is to say. */
+export function explainFailure(code: string | null | undefined): { title: string; detail: string } | null {
+  return (code && FAILURES[code]) || null
+}
+
 /** The explanation for a hold code, or null for a code this version of the Desk does not know. */
 export function explainHold(code: string | null | undefined): HoldExplanation | null {
-  return (code && HOLDS[code as KnownHoldCode]) || null
+  return (code && (HOLDS[code as KnownHoldCode] ?? REVISED_HOLDS[code])) || null
 }
 
 export const HOLD_CODES = Object.keys(HOLDS) as KnownHoldCode[]
+export const REVISED_HOLD_CODES = Object.keys(REVISED_HOLDS)
 
 /** The addresses the backend could not verify on this card (`output.unverified_recipients`). */
 export function unverifiedRecipients(toolCall: Pick<ChatToolCall, 'output'>): string[] {

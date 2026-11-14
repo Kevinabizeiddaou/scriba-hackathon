@@ -13,7 +13,7 @@ import { ArrowLeft, Ban, CalendarClock, Check, CircleDashed, CircleDot, FilePen,
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiClientError, getErrorMessage } from '../api/client'
-import { advanceDeskRun, closeDeskFollowUp, fetchDeskRun, type CalendarRead, type DeskAction, type DeskHeldReason, type DeskRun } from '../api/desk'
+import { advanceDeskRun, closeDeskFollowUp, fetchDeskRun, type CalendarRead, type DeskAction, type DeskRun } from '../api/desk'
 import { Button, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui'
 import { SourceBadge } from '../components/workspace'
 import { getApi } from '../harness'
@@ -22,7 +22,7 @@ import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
 import { providerLabel } from './describeAction'
 import {
   ACTION_LABEL,
-  HELD_REASON,
+  heldReasonInfo,
   QUEUE_GROUPS,
   RUNS_KEY,
   RUN_STATE_LABEL,
@@ -38,7 +38,9 @@ import {
 } from './deskRuns'
 import { emailKey, parseSender } from './mappers'
 import { ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, SandboxTag } from './RunParts'
-import { FOLLOW_UP_ORDER, effectsOf, progressOf, stageInfo, stageOfRun } from './runLifecycle'
+import { FOLLOW_UP_ORDER, LIFECYCLE_REASON, effectsOf, progressOf, stageInfo, stageOfRun } from './runLifecycle'
+import { RunPlan } from './PlanView'
+import { planOf } from './runPlan'
 import { createDraftFromRequest, fetchChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
 import { ToolCallCard } from './ToolCallCard'
@@ -82,11 +84,19 @@ function CalendarReads({ calendars }: { calendars: CalendarRead[] }) {
 function Held({ run }: { run: DeskRun }) {
   const tz = getApi().info.principal.timezone
   const held = run.held!
+  // `missing` is sent with intent_unclear and details_missing; the typed client does not declare it yet.
+  const rawMissing = (held as unknown as { missing?: unknown }).missing
+  const missing = Array.isArray(rawMissing) ? rawMissing.filter((item): item is string => typeof item === 'string') : []
   const range = (slot: { start: string; end: string }) => (isInstant(slot.start) && isInstant(slot.end) ? fmtRange(slot.start, slot.end, tz) : `${slot.start} to ${slot.end}`)
   return (
     <section aria-label="Why nothing was proposed" className="card space-y-3 border-warn/30 p-4 sm:p-5">
-      <h2 className="text-[14.5px] font-semibold text-ink">{HELD_REASON[held.reason as DeskHeldReason]?.title ?? 'Why nothing was proposed'}</h2>
+      <h2 className="text-[14.5px] font-semibold text-ink">{heldReasonInfo(held.reason)?.title ?? 'Why nothing was proposed'}</h2>
       <p className="text-[13px] leading-[20px] text-soft">{held.message}</p>
+      {missing.length > 0 && (
+        <p className="text-[12.5px] text-warn" data-testid="held-missing">
+          <span className="font-semibold">Not stated in the message: </span>{missing.join(', ')}. Nothing is filled in for you.
+        </p>
+      )}
       {held.target && (
         <p className="text-[12.5px] text-soft">
           <span className="text-mute">The meeting this is about: </span>
@@ -127,7 +137,8 @@ function Held({ run }: { run: DeskRun }) {
           <CalendarReads calendars={held.calendars ?? []} />
         </div>
       )}
-      <div className={clsx(!MEETING_TIME_REASONS.includes(held.reason) && (held.slots?.length ?? 0) === 0 && 'hidden')}>
+      {(MEETING_TIME_REASONS.includes(held.reason) || (held.slots?.length ?? 0) > 0) && (
+      <div>
         <p className="eyebrow mb-1">Times verified free on every calendar</p>
         {(held.slots?.length ?? 0) > 0 ? (
           <ul className="flex flex-wrap gap-1.5" aria-label="Verified free times">
@@ -139,6 +150,7 @@ function Held({ run }: { run: DeskRun }) {
           <p className="text-[12.5px] text-mute">None. No time is offered unless every connected calendar was read.</p>
         )}
       </div>
+      )}
     </section>
   )
 }
@@ -262,6 +274,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
   const stage = stageOfRun(data)
   const progress = progressOf(data)
   const effects = effectsOf(data.actions)
+  const plan = planOf(data)
   const followUps = [...(data.followUps ?? [])].sort((a, b) => FOLLOW_UP_ORDER.indexOf(a.state) - FOLLOW_UP_ORDER.indexOf(b.state))
   const TRIGGER: Record<string, string> = { manual: 'You, from the inbox', sweep: 'You, with "Check for new work"', worker: 'The background intake worker', evaluation: 'An evaluation run' }
 
@@ -323,17 +336,22 @@ export function LiveRunDetail({ runId }: { runId: number }) {
               </div>
               <p className="text-[12.5px] leading-[19px] text-soft">
                 {stageInfo(stage)!.blurb}
-                {data.lifecycle?.reason ? ` Reason reported: ${data.lifecycle.reason.replace(/_/g, ' ')}.` : ''}
+                {data.lifecycle?.reason ? ` ${LIFECYCLE_REASON[data.lifecycle.reason] ?? `Reason reported: ${data.lifecycle.reason.replace(/_/g, ' ')}.`}` : ''}
               </p>
               <RunProgress steps={progress} timeZone={tz} />
               {data.lifecycle?.compensation && (
                 <p role="alert" className="rounded-lg border border-danger/30 bg-danger/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-danger">{data.lifecycle.compensation.message} The secretary never undoes an action that ran.</p>
+              )}
+              {((data.flags ?? []) as string[]).includes('outside_working_hours') && (
+                <p className="rounded-lg border border-warn/30 bg-warn/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-warn">The requested time is free but outside your working hours. It is proposed as usual; the decision is yours.</p>
               )}
               {(data.flags ?? []).includes('prompt_injection_suspected') && (
                 <p role="alert" className="rounded-lg border border-warn/30 bg-warn/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-warn">This message contains text addressed to an assistant. It was treated as untrusted: nothing was proposed from it and it was not passed to a model.</p>
               )}
             </section>
           )}
+
+          {plan && <RunPlan plan={plan} actions={data.actions} simulated={data.simulated === true} />}
 
           {breakdown && (
             <section aria-label="What ran and what did not" role="alert" className="card space-y-2 border-danger/35 p-4 sm:p-5">

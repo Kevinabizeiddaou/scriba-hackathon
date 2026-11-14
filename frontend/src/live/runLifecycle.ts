@@ -42,7 +42,7 @@ export const LIFECYCLE: Record<DeskLifecycleStage, StageInfo> = {
   CLASSIFIED: { label: 'Understanding', tone: 'accent', holder: 'secretary', blurb: 'The secretary has worked out what kind of request this is.' },
   CONTEXT_GATHERING: { label: 'Investigating', tone: 'info', holder: 'secretary', blurb: 'The thread, calendars and tasks that bear on it are being read.' },
   PLANNING: { label: 'Planning', tone: 'info', holder: 'secretary', blurb: 'The secretary is deciding what to propose.' },
-  AWAITING_APPROVAL: { label: 'Awaiting approval', tone: 'warn', holder: 'you', blurb: 'An action is proposed and waits for your decision. Nothing has happened yet.' },
+  AWAITING_APPROVAL: { label: 'Awaiting approval', tone: 'warn', holder: 'you', blurb: 'An action is proposed and waits for your decision. It does not run unless you approve it.' },
   EXECUTING: { label: 'Executing', tone: 'info', holder: 'secretary', blurb: 'An approved action is running, or the next step is about to be proposed.' },
   VERIFYING: { label: 'Verifying', tone: 'info', holder: 'secretary', blurb: 'An action ran and its result is not confirmed yet.' },
   COMPLETED: { label: 'Completed', tone: 'ok', holder: 'nobody', blurb: 'Everything proposed took effect and was verified, or nothing was needed.' },
@@ -166,6 +166,20 @@ export function progressOf(run: Pick<DeskRun, 'lifecycle' | 'timeline' | 'update
   return [...behind, { stage, label: known ? info.label : `${info.label}: ${stage}`, state: 'current', at: run.updatedAt ?? null, tone: info.tone }]
 }
 
+/**
+ * What `lifecycle.reason` means, for the reasons that need saying in a sentence. A reason not
+ * listed is shown as reported.
+ */
+export const LIFECYCLE_REASON: Record<string, string> = {
+  verification_failed: 'An action ran, but reading the mailbox or calendar back did not show its effect. It is not counted as done: check it yourself.',
+  not_yet_verified: 'An action ran and there is no evidence yet that it took effect.',
+  next_step_pending: 'A step took effect and the next one is about to be proposed.',
+  proposal_changed: 'The stored action is no longer what was proposed, and no edit of yours is on record. It cannot be approved as it is.',
+  external_writes_disabled: 'Sending mail and changing calendars are switched off on this backend, so the proposed action cannot run.',
+  reply_needs_author: 'The message needs a reply that only you can write. The secretary proposes none by itself.',
+  untrusted_instructions: 'The message contains text addressed to an assistant, so nothing was proposed from it.',
+}
+
 // ── held reasons added by overlay 0.3 ───────────────────────────────────────
 
 export const HELD_REASON_V3: Record<Exclude<DeskHeldReason, 'calendar_conflict' | 'availability_unknown' | 'time_not_understood' | 'change_request' | 'invalid_preferences'>, { title: string; next: string }> = {
@@ -178,9 +192,20 @@ export const HELD_REASON_V3: Record<Exclude<DeskHeldReason, 'calendar_conflict' 
   untrusted_instructions: { title: 'The message contains text addressed to the assistant', next: 'Read it yourself before acting. The secretary proposed nothing and the text was not passed to a model.' },
 }
 
+/**
+ * Reasons the revised contract adds (0282558) that the typed client does not declare yet. They
+ * are sent in `held.reason` when a model reads the message (`DESK_UNDERSTANDING=model`).
+ */
+export const HELD_REASON_REVISED: Record<string, { title: string; next: string }> = {
+  intent_unclear: { title: 'It is not clear enough what this message asks for', next: 'Read the message and decide. Nothing was proposed, because acting on an unclear reading would be a guess.' },
+  details_missing: { title: 'A detail needed to act is not in the message', next: 'Ask the sender for the missing detail, or handle it yourself. Nothing was filled in for you.' },
+}
+
 // ── evidence ────────────────────────────────────────────────────────────────
 
-export const EVIDENCE_KIND: Record<DeskTimelineItem['kind'], { label: string; tone: Tone }> = {
+/** `plan` is sent by the backend from 0282558; the typed client does not declare it yet. */
+export const EVIDENCE_KIND: Record<DeskTimelineItem['kind'] | 'plan', { label: string; tone: Tone }> = {
+  plan: { label: 'Plan', tone: 'accent' },
   stage: { label: 'Stage', tone: 'neutral' },
   decision: { label: 'Secretary decided', tone: 'accent' },
   read: { label: 'Read', tone: 'info' },

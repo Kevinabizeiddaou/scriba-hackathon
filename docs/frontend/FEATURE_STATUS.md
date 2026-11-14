@@ -6,7 +6,7 @@ What the Executive Desk frontend does on live data (the default mode), and what 
 
 | Status | Meaning | Features |
 | --- | --- | --- |
-| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 24 |
+| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 25 |
 | Connected, not verified end to end | Calls the real endpoint, but needs a model or a live provider to exercise. Covered by unit tests only | 9 |
 | Waiting for a backend | No backend exists for it. The live screen says so and shows nothing in its place | 6 |
 | Not implemented | Not built | 1 |
@@ -21,6 +21,7 @@ The seeded backend is Scriba's real application with in-memory storage: no datab
 | Executive overview and work queue | Connected, verified on the seeded backend | GET /desk/briefing, GET /desk/inbox, GET /desk/connections, chat action records | A backend work-queue listing, so the queue is not limited to recent conversations |
 | Overview: waiting on you, with the secretary, and finished work | Connected, verified on the seeded backend | Chat action records and GET /desk/runs: counts and the finished list come from server statuses only | A run for an actionable message on the seeded backend: in a browser only completed chat actions and a no-action run were seen |
 | Run lifecycle, recorded events, evidence per action and background intake status | Connected, verified on the seeded backend | GET /desk/runs, GET /desk/runs/{id}, GET /desk/worker and GET /desk/health on Desk overlay 0.3; falls back to the run state on overlay 0.2 | Overlay 0.3 merged. Seen in a browser in the sandbox: awaiting approval, executing to verified, awaiting reply, escalated, completed. Partial, failed and unknown outcome are covered by tests |
+| The plan of a run: what was understood, what it rests on, steps in order with what each waits for | Connected, verified on the seeded backend | DeskRun.plan on GET /desk/runs/{id} (agent1/autonomous-engine at 0282558, not on main). Read as untyped data: the typed client does not declare it yet | The plan declared in the typed client. Seen in a browser in the sandbox with rules only: awaiting approval, waiting, verified, rejected and blocked. A model reading (confidence, quotes, left-out intents) is covered by tests: no model has been run |
 | Connected accounts (Gmail, Outlook Mail, Google Calendar, Outlook Calendar) | Connected, verified on the seeded backend | GET /desk/connections | Nothing for the Desk; reconnecting happens in Scriba |
 | Activity and execution history | Connected, verified on the seeded backend | GET /chat/conversations and their messages: every action card with its server status | The same work-queue listing; automation runs are not included yet |
 

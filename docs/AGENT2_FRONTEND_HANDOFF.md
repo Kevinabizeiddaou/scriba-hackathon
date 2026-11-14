@@ -13,7 +13,7 @@ was used. Everything seen in a browser ran against an isolated sandbox world.
 | Branch | `agent2/frontend-excellence` |
 | Started from | `b1c8543` |
 | Pull request | https://github.com/Kevinabizeiddaou/scriba-hackathon/pull/7 "Frontend Excellence — Executive Secretary Experience", base `main`. Open, not merged |
-| Backend it was built against | `agent1/autonomous-engine` at `e86f449` (Desk overlay 0.3.0), read-only, run locally with `python backend/dev/seeded_desk_server.py --demo` |
+| Backend it was built against | `agent1/autonomous-engine` at `e86f449` (Desk overlay 0.3.0), then brought up to and run against `0282558` (section 7a). Read-only, run locally with `python backend/dev/seeded_desk_server.py --demo` |
 
 Two things happened outside this work that a reader should know:
 
@@ -30,9 +30,10 @@ Two things happened outside this work that a reader should know:
 No file under `backend/` and not `docs/BACKEND_CONTRACT.md` is changed.
 
 - **Agent 1's branch moved during this work**, from `e86f449` to `0282558`, and the contract on it
-  changed. Everything in this document was built and verified against `e86f449`. What changed, and
-  what the frontend does about it, is section 7a. **The backend at `0282558` has not been run
-  against this frontend.**
+  changed. The first round was built against `e86f449`. A second round (section 7a) brought the
+  frontend up to the contract at `0282558` and ran it against that backend: the run plan is shown,
+  and the new stage, reasons and codes have their own wording. `frontend/src/api/desk.ts` is still
+  Agent 1's file, unchanged, and still does not declare the new shapes.
 
 ## 2. What was built
 
@@ -127,6 +128,12 @@ Changed: `frontend/src/live/deskRuns.ts`, `LiveRunDetail.tsx`, `LiveWorkQueuePag
 `frontend/src/lib/featureStatus.ts` and its test; `frontend/src/App.test.tsx`;
 `docs/frontend/FEATURE_STATUS.md`; this file.
 
+Second round (contract at `0282558`). New: `frontend/src/live/runPlan.ts` (reads `DeskRun.plan`),
+`PlanView.tsx` (the `RunPlan` component), `runPlan.test.tsx`; a second evaluation report and three
+plan screenshots under `docs/frontend/`. Changed: `LiveRunDetail.tsx`, `RunParts.tsx`,
+`ToolCallCard.tsx`, `describeAction.ts`, `deskHolds.ts`, `deskRuns.ts`, `runLifecycle.ts`,
+`LiveWork.test.tsx`, `runLifecycle.test.tsx`, `lib/featureStatus.ts`.
+
 Taken unchanged from Agent 1: `frontend/src/api/desk.ts`.
 
 ## 4. Test results
@@ -135,14 +142,16 @@ Run on this branch, 14 November 2026.
 
 | What | Result |
 | --- | --- |
-| Frontend tests | 427 passed in 22 files (at `b1c8543`: 383 in 21) |
+| Frontend tests | 452 passed in 23 files (first round: 427 in 22; at `b1c8543`: 383 in 21) |
 | Type check | Clean |
-| Production build | Clean; largest script 277 kB, no chunk over 500 kB |
+| Production build | Clean; largest script 292 kB, no chunk over 500 kB |
 | Harness self-test | Passed |
-| Mutation check on the new tests | 19 planted defects, 19 caught |
+| Mutation check on the new tests | First round: 19 planted defects, 19 caught. Second round: 27 planted, 26 caught at first; one assertion was added and the 27th is caught |
 | Browser, live mode on overlay 0.3 in the sandbox, 1440 / 768 / 375 px | 13 screens at each width (39 page loads): no horizontal overflow, no failed request, no console error |
 | Approvals through the screens, in the sandbox | Three approved: a booking (the run then proposed its confirmation), a reply offering times (executed, verified by read-back, follow-up opened, stage `AWAITING_REPLY`), a task (stage `COMPLETED`). No request failed |
-| 20-case suite on `/desk/eval/v1` | Ran. See section 6 |
+| Browser, live mode on the backend at `0282558`, 1440 / 768 / 375 px | 14 screens at each width (42 page loads), four of them run pages with a plan: no horizontal overflow, no failed request, no console error. No text under 12 px in the plan |
+| Approvals through the screens on `0282558`, in the sandbox | A cancellation was approved (step 1 "Done and verified", the confirmation was then proposed as step 2), then the confirmation (stage `COMPLETED`). A reschedule was rejected: its confirmation step shows "Blocked: will not be proposed" and the run is `CANCELLED` |
+| 20-case suite on `/desk/eval/v1` | Ran on both backend commits. See section 6 |
 
 The new tests cover: every lifecycle stage; partial completion; failed execution; approval required
 and an approval the gate held; verification pending, verified with its method, and unknown outcome;
@@ -205,6 +214,14 @@ The seven failures, for Agent 1:
 | EVAL-028 News that work is finished closes the existing task | `outcome`, `tool:0`, `state:0` (no `task.complete`) |
 | EVAL-031 One email, three steps: book the meeting, confirm it, record the promised document | `tool:3`, `state:1` (the task for the promised document is not created) |
 
+### Run again on `0282558`
+
+The same suite was run against the backend at `0282558`, again with no model. Every case has the
+same verdict as before: 10 passed, 7 failed, 3 could not be scored, 0 safety violations, 12
+mandatory approvals. The report is
+`docs/frontend/evaluation/rules-only-sandbox-overlay-0.3.0-at-0282558.simulated.json`. It is a
+scripted-model result like the first and says nothing about the agent.
+
 ## 7. Discrepancies between the contract, the typed client and what the backend sent
 
 None of these blocks the screens; each is handled defensively. They are listed so the types and the
@@ -231,34 +248,53 @@ contract can be made to agree.
 8. **`health.writes` and the sidebar.** On a backend older than 0.3 `executionMode` is absent and
    the frontend treats that as "approval of mail and calendar actions is off", as before.
 
-## 7a. The contract changed while this was being built
+## 7a. The contract changed while this was being built, and what was done about it
 
-`docs/BACKEND_CONTRACT.md` at `0282558` differs from the `e86f449` this frontend was built on. The
-typed client `frontend/src/api/desk.ts` did not change between the two, so on Agent 1's own branch
-the contract and the client now disagree.
+`docs/BACKEND_CONTRACT.md` at `0282558` differs from the `e86f449` the first round was built on.
+The typed client `frontend/src/api/desk.ts` did not change between the two, so on Agent 1's own
+branch the contract and the client disagree. The backend at `0282558` was run locally and its
+responses read: **it sends what the contract says** (`UNDERSTANDING`, `INVESTIGATING`, `plan`,
+`stepId`, `held`, `attempts`, a `plan` timeline event), not what `desk.ts` declares.
 
-| Change in the contract at `0282558` | In `desk.ts` | What this frontend does |
-| --- | --- | --- |
-| Stage `CLASSIFIED` is now `UNDERSTANDING`, `CONTEXT_GATHERING` is `INVESTIGATING`, `AWAITING_REPLY` is `WAITING_FOR_RESPONSE`. The contract says the first names "were never merged and are not sent" | Still the first names | Accepts both spellings and treats them as the same stage (`STAGE_ALIASES` in `runLifecycle.ts`), with tests. Without this, every such run would show as "Stage not recognised" |
-| New stage `HELD`: every open card is held by a guard; `lifecycle.reason` is the first card's `errorCode` | Not declared | Shown as "Held", sorted under "Needs your input", with the reason. Tested on the shape the contract describes; not seen from a backend |
-| `AWAITING_APPROVAL` now means at least one card can be approved | n/a | Already how the queue splits "Awaiting your approval" from "Needs your input" |
-| `ESCALATED` also when an executed action's verification failed (`reason: "verification_failed"`) | n/a | Shown as escalated with the reason. No dedicated wording yet |
-| New held reasons `intent_unclear`, `details_missing`, with `held.missing[]` | Not declared | Falls back to the server's `held.message`. No dedicated wording, and `missing[]` is not listed yet |
-| New hold code `proposal_changed`: the stored action is no longer what was proposed | Not declared | Shown as an unknown reason code: the card offers no way to approve past it, which is what the contract asks. No dedicated wording yet |
-| New `DeskRun.plan` (intents, facts, assumptions, missing, steps with dependencies) | Not declared | **Not shown.** This is the largest gap: the run detail should show the plan and it does not |
-| New flag `outside_working_hours` | Not declared | Not shown as a flag; the card's `reason` carries the sentence |
-| An approval is bound to what was proposed; an edit by the person is recorded; a retry runs the action as approved | n/a | Nothing sends edits, so nothing conflicts. `decisions[].edited` is displayed when present |
-| Recovery after an interruption: `error_code: "interrupted"`, `output.recovered`, `worker.recovered` | Not declared | Not shown |
+`desk.ts` is Agent 1's file and is not edited here. Where the client does not declare a shape, the
+frontend reads it from the response as untyped data, checks it field by field, and shows nothing
+when it is absent (`frontend/src/live/runPlan.ts`). No second client and no new endpoint.
 
-None of the last six rows is implemented against a guess. They wait for the typed client to
-declare the shapes.
+| Change in the contract at `0282558` | In `desk.ts` | What this frontend does now | Seen from the backend |
+| --- | --- | --- | --- |
+| Stages renamed: `UNDERSTANDING`, `INVESTIGATING`, `WAITING_FOR_RESPONSE` | Still the first names | Accepts both spellings as the same stage (`STAGE_ALIASES`) | Yes: the first two, on every run. `WAITING_FOR_RESPONSE` in tests only |
+| New stage `HELD`, with `lifecycle.reason` the first card's `errorCode` | Not declared | "Held", under "Needs your input". A reason that is a known hold code is said in words | Tests only |
+| `DeskRun.plan` | Not declared | **Shown on the run page**, above the action cards: what the message asks for (with the rules matched, or a model's quote and confidence), facts verified by reading, assumptions, missing details, readings left out, the steps in order with what each waits for, and when the secretary stops. A run with `plan: null` shows no plan section | Yes, rules only |
+| `steps[].state`: card status, or `ready`, `waiting`, `blocked` | Not declared | Each has its own wording. A step is "Done and verified" only when its action carries `verified: true`; `executed` alone is "Ran, not verified". An unknown state is shown as unrecognised, never as done | Yes: awaiting approval, waiting, executed and verified, cancelled, blocked |
+| Action fields `stepId`, `held`, `attempts` | Not declared | `held` makes the step "Held"; more than one attempt is said under the action; `stepId` is shown on the proposal event | `stepId` yes; `held` and `attempts > 1` tests only |
+| Timeline kind `plan`; decision `step_blocked`; `human` event with `action: "edit"`, `fields[]` | Not declared | "Plan" in the record; the blocked step and what it depends on; "Fields you changed" on an edit, so an approved action is never changed without it showing | `plan` yes; the other two tests only |
+| `ESCALATED` with `reason: "verification_failed"` | n/a | Its own sentence: the action ran, reading back did not show its effect, it is not counted as done | Tests only |
+| Held reasons `intent_unclear`, `details_missing`, with `held.missing[]` | Not declared | Own titles and next steps; the missing details are listed with "Nothing is filled in for you" | Tests only (they need a model) |
+| Hold code `proposal_changed` | Not declared | Own wording; no way to approve past it | Tests only |
+| Flag `outside_working_hours` | Not declared | Said on the run page: free but outside working hours, the decision is the person's | Tests only |
+| `error_code: "interrupted"` after recovery | Not declared | Explained on the failed card: the sandbox was read back, the effect is not there, it was not run again | Tests only |
+| `event_title` on change and cancel cards | n/a | The card is headed with the meeting's name instead of "No title on the card" | Yes |
+
+Two wordings were wrong once a run has more than one step and were corrected: "Nothing has been
+sent or changed" is no longer said when an earlier step of the run has already run, and the
+"Awaiting approval" stage no longer says "Nothing has happened yet".
+
+Still not done: `worker.recovered` is not shown; nothing sends an edit on approve (question 7); the
+progress rail shows the first execution time under "Executing" while a later step waits for
+approval, which is accurate but reads oddly.
 
 ## 8. Exact questions for Agent 1
 
-0. **Which stage names does the backend send today: the ones in `desk.ts` or the ones in the
-   contract?** And will `desk.ts` be updated to the contract (stage names, `HELD`, `plan`,
-   `proposal_changed`, `intent_unclear`, `details_missing`, `outside_working_hours`,
-   `interrupted`)? The frontend's next step, showing the plan on the run detail, waits on that.
+0. **Will `desk.ts` be updated to the contract?** The backend at `0282558` sends the contract's
+   stage names, so the first half of this question is answered. The client still lacks: the three
+   renamed stages and `HELD`; `DeskRun.plan`; `stepId`, `held` and `attempts` on an action; the
+   `plan` timeline kind; `proposal_changed`; `intent_unclear` and `details_missing` with
+   `held.missing`; `outside_working_hours`; `interrupted`. The frontend reads all of these without
+   the types today; once they are declared, `runPlan.ts` can use them and drop its own.
+0a. **Is `plan.intents[].evidence` from a model always a quote of the message?** The screen shows it
+   as "Quoted from the message". From the rules it shows the rule names.
+0b. **`next` and `advance`.** In the sandbox the confirmation was proposed by itself after the
+   cancellation ran. When does a client still need to call `advance` for a `ready` step?
 
 1. **Is `no_action_proposed` with stage `ESCALATED` the only way a "needs a reply" message appears
    when the model step is off?** The frontend offers "Write a reply draft" there, which posts
@@ -318,9 +354,10 @@ approvals, and a sandbox result is never called a real success.
 
 ## 11. Next tasks for Agent 1
 
-0. Bring `frontend/src/api/desk.ts` in line with the contract at `0282558` (section 7a), or say
-   that Agent 2 should. Then Agent 2 shows `DeskRun.plan`, `HELD`, `proposal_changed` and the new
-   held reasons with their own wording.
+0. Bring `frontend/src/api/desk.ts` in line with the contract at `0282558` (question 0 lists what
+   is missing), or say that Agent 2 should. The screens already show all of it.
+0a. Produce, in the demo world or a test world, a run with a held card (`HELD`), a failed step and
+   an unknown outcome, so those states can be seen in a browser and not only in tests.
 1. Answer questions 0 to 7.
 2. Widen `DeskRunHeld.reason`, and add `toolCallId` to `DeskFollowUp` and `received_at` to
    `DeskRun.email` (discrepancies 1, 2, 4).

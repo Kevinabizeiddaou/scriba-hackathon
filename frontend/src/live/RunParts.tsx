@@ -12,6 +12,7 @@ import { hrefFor } from '../lib/router'
 import { fmtDayTime, fmtTime, isInstant } from '../lib/time'
 import { ACTION_LABEL } from './deskRuns'
 import { EVIDENCE_KIND, UNKNOWN_STAGE, followUpInfo, stageInfo, verificationOf, workerView, type ProgressStep } from './runLifecycle'
+import { planFieldsOf } from './runPlan'
 
 const when = (iso: string | null | undefined, tz: string, withDay = true): string | null => (iso && isInstant(iso) ? (withDay ? fmtDayTime(iso, tz) : fmtTime(iso, tz)) : null)
 
@@ -95,6 +96,9 @@ const DETAIL_KEYS: [string, string][] = [
   ['error', 'Error'],
   ['trigger', 'Started by'],
   ['account', 'Account'],
+  ['stepId', 'Plan step'],
+  ['fields', 'Fields you changed'],
+  ['dependsOn', 'Depends on'],
 ]
 
 /**
@@ -106,7 +110,7 @@ export function RunTimeline({ items, timeZone }: { items: DeskTimelineItem[]; ti
   return (
     <ol className="space-y-0">
       {items.map((item, index) => {
-        const kind = EVIDENCE_KIND[item.kind] ?? { label: item.kind, tone: 'neutral' as const }
+        const kind = (EVIDENCE_KIND as Record<string, { label: string; tone: string }>)[item.kind] ?? { label: item.kind, tone: 'neutral' }
         const failedRead = item.kind === 'read' && item.data?.ok === false
         const details = DETAIL_KEYS.map(([key, label]) => [label, short(item.data?.[key])] as const).filter(([, value]) => value !== null)
         return (
@@ -155,6 +159,7 @@ export function ExecutionStep({ action, timeZone, repeats = 0 }: { action: DeskA
   const decisions = action.decisions ?? []
   const execution = action.execution ?? null
   const proposed = when(action.proposedAt, timeZone)
+  const planned = planFieldsOf(action)
   const hasRecord = Boolean(action.purpose || action.reason || proposed || decisions.length || execution || action.verification || action.outcomeUnknown || action.idempotencyKey)
   if (!hasRecord) return null
   return (
@@ -184,6 +189,9 @@ export function ExecutionStep({ action, timeZone, repeats = 0 }: { action: DeskA
         )}
       </ul>
       <VerificationEvidence action={action} timeZone={timeZone} />
+{(planned.attempts ?? 0) > 1 && (
+        <p className="text-xs text-soft" data-testid={`attempts-${action.toolCallId}`}>Execution was attempted {planned.attempts} times. Each attempt carries the same identity, so the effect happens at most once.</p>
+      )}
       {action.idempotencyKey && <p className="break-all text-xs text-mute">Identity of this effect: {action.idempotencyKey}</p>}
     </div>
   )

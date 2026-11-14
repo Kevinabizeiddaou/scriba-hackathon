@@ -646,6 +646,40 @@ describe('run detail', () => {
     expect(within(fallback).getByRole('button', { name: 'Read again' })).toBeInTheDocument()
   })
 
+  it('shows the plan of a run when the backend sends one, and no plan section when it does not', async () => {
+    const plan = {
+      version: 1, planner: 'rules', intents: [{ type: 'task', confidence: null, evidence: ['deadline'], missing: [], source: 'rules' }], unsupported: [], facts: [], assumptions: [], missing: [], tools: [],
+      steps: [{ id: 's1', tool: 'create_task', purpose: 'record_task', dependsOn: [], deferred: false, requiresApproval: true, external: false, expected: "The task or reminder exists in the executive's own records.", onFailure: null, state: 'awaiting_approval', toolCallId: 31 }],
+      approvals: 1, escalation: [],
+    }
+    serveRuns([{ ...TASK_RUN, plan, flags: ['outside_working_hours'], lifecycle: { stage: 'AWAITING_APPROVAL', reason: null, final: false, outcomeUnknown: false, compensation: null }, timeline: [] } as unknown as DeskRun])
+    renderApp('#/work/7')
+    const section = await screen.findByRole('region', { name: 'Plan of this run' })
+    expect(section).toHaveTextContent('1 step, which needs your approval.')
+    expect(within(section).getByRole('listitem', { name: 'Step 1: Record it in your own records. Awaiting your approval' })).toHaveTextContent('your own records only')
+    // The plan sits above the action cards: what will happen is read before what to approve.
+    const actions = screen.getByRole('region', { name: 'Proposed actions' })
+    expect(section.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Where this run stands' })).toHaveTextContent('outside your working hours')
+    cleanup()
+
+    serveRuns([TASK_RUN])
+    renderApp('#/work/7')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Board pack by Thursday' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Plan of this run' })).not.toBeInTheDocument()
+  })
+
+  it('lists what a message did not state when a request is held as unclear, and fills nothing in', async () => {
+    serveRuns([{ ...HELD_RUN, held: { reason: 'intent_unclear', message: 'It is not clear enough what this message asks for, so nothing is proposed. Read it and decide.', slots: [], calendars: [], missing: ['time', 'attendees'] } } as unknown as DeskRun])
+    renderApp('#/work/8')
+    const held = await screen.findByRole('region', { name: 'Why nothing was proposed' })
+    expect(within(held).getByRole('heading', { level: 2 })).toHaveTextContent('It is not clear enough what this message asks for')
+    expect(within(held).getByTestId('held-missing')).toHaveTextContent('Not stated in the message: time, attendees. Nothing is filled in for you.')
+    // Not a question of finding a time, so no "no verified free time" line is shown.
+    expect(held).not.toHaveTextContent('No time is offered unless every connected calendar was read')
+    expect(screen.queryByRole('button', { name: /Approve/ })).not.toBeInTheDocument()
+  })
+
   it('says a run does not exist instead of offering to retry forever', async () => {
     renderApp('#/work/999')
     expect(await screen.findByText('Run 999 does not exist for this account.')).toBeInTheDocument()

@@ -103,7 +103,10 @@ describe('the stage names of the revised contract', () => {
     expect(stageOfRun(run)).toBe('HELD')
     expect(groupOf(run)).toBe('input')
     expect(nextStepOf(run)).toMatchObject({ kind: 'complete_card' })
-    expect(nextStepOf(run).detail).toContain('proposal changed')
+    // The reason is a hold code the Desk knows, so it is said in words, not as a code.
+    expect(nextStepOf(run).label).toBe(explainHold('proposal_changed')!.title)
+    // A reason it does not know is shown as reported.
+    expect(nextStepOf(deskRun({ lifecycle: lifecycle('HELD', { reason: 'new_guard' }), actions: [deskAction({ status: 'needs_info', approve: null })] })).detail).toContain('Reason reported: new guard')
     expect(nextStepOf(run).detail).toContain('Nothing can be approved as it stands')
     render(<RunStatus stage="HELD" />)
     expect(screen.getByText('Held')).toBeInTheDocument()

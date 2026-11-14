@@ -10,7 +10,7 @@ import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
 import { AVAILABILITY_OVERRIDE_FLAG, asRecord, describeAction, heldByAvailability, providerLabel, type ActionDescription, type ActionKind } from './describeAction'
 import { approveChatToolCall, cancelChatToolCall, retryChatToolCall, type ChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
-import { CONFIRMED_RECIPIENTS_FLAG, explainHold, unverifiedRecipients } from './deskHolds'
+import { CONFIRMED_RECIPIENTS_FLAG, explainFailure, explainHold, unverifiedRecipients } from './deskHolds'
 import { RUNS_KEY } from './deskRuns'
 import { WORK_QUEUE_KEY, WORK_STAGES, stageOf } from './workQueue'
 import { approvalGate, toolEffect } from './writePolicy'
@@ -265,7 +265,7 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
 
       {status === 'failed' && (
         <p role="alert" className="mx-4 mt-3 rounded-lg border border-danger/30 bg-danger/[0.08] px-3 py-2.5 text-[12.5px] text-danger">
-          {toolCall.error || description.message || 'This action failed. The backend gave no reason.'}
+          {explainFailure(description.errorCode) ? `${explainFailure(description.errorCode)!.title}. ${explainFailure(description.errorCode)!.detail}` : toolCall.error || description.message || 'This action failed. The backend gave no reason.'}
         </p>
       )}
 

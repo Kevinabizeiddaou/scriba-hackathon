@@ -186,6 +186,9 @@ const stagesOf = (run: DeskRun): WorkStage[] => run.actions.map(action => stageO
  * Where a run sits when the backend reports its lifecycle stage (overlay 0.3). Null when it does
  * not, so the caller falls back to the run state.
  */
+/** The typed client's stages plus `HELD`, which the revised contract adds. */
+type DeskLifecycleStageName = keyof typeof LIFECYCLE
+
 function groupOfStage(run: DeskRun): QueueGroup | null {
   const stage = stageOfRun(run)
   if (stage === null) return null
@@ -195,6 +198,7 @@ function groupOfStage(run: DeskRun): QueueGroup | null {
       return stagesOf(run).includes('awaiting_approval') ? 'decision' : 'input'
     case 'NEEDS_CLARIFICATION':
     case 'ESCALATED':
+    case 'HELD' as DeskLifecycleStageName:
       return 'input'
     case 'VERIFYING':
       // An outcome the provider did not confirm needs a person to look before anything is retried.
@@ -311,6 +315,7 @@ export function nextStepOf(run: DeskRun): NextStep {
       ? { kind: 'approve', label: 'A reply is overdue: review the proposed reminder', detail: 'No answer came in two days. A reminder is proposed below; it is not sent unless you approve it.' }
       : { kind: 'wait', label: 'Nothing: waiting for the other person to answer', detail: 'A reply went out. If no answer arrives in two days, a reminder is proposed for your approval.' }
   }
+  if (stage === 'HELD') return { kind: 'complete_card', label: 'Every proposed action is held by a safety check', detail: run.lifecycle?.reason ? `Reason reported: ${run.lifecycle.reason.replace(/_/g, ' ')}. The action card says what can be done. Nothing can be approved as it stands.` : 'The action card says why. Nothing can be approved as it stands.' }
   if (stage === 'NEEDS_CLARIFICATION' || stage === 'ESCALATED') {
     const held = run.held ? HELD_REASON[run.held.reason as DeskHeldReason] : null
     if (held) return { kind: 'held', label: held.title, detail: held.next }

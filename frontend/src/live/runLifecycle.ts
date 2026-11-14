@@ -54,6 +54,29 @@ export const LIFECYCLE: Record<DeskLifecycleStage, StageInfo> = {
   CANCELLED: { label: 'Cancelled', tone: 'neutral', holder: 'nobody', blurb: 'The proposed actions were cancelled. Nothing ran.' },
 }
 
+/**
+ * The contract on agent1/autonomous-engine was revised after the typed client was written
+ * (0282558): three stages were renamed and `HELD` was added, while `src/api/desk.ts` still
+ * declares the first names. Both spellings are accepted here so a run from either backend is
+ * understood. This is recorded as a discrepancy in docs/AGENT2_FRONTEND_HANDOFF.md.
+ */
+export const STAGE_ALIASES: Record<string, DeskLifecycleStage> = {
+  UNDERSTANDING: 'CLASSIFIED',
+  INVESTIGATING: 'CONTEXT_GATHERING',
+  WAITING_FOR_RESPONSE: 'AWAITING_REPLY',
+}
+
+/** A stage the revised contract adds and the typed client does not declare yet. */
+export const HELD_STAGE: StageInfo = {
+  label: 'Held',
+  tone: 'warn',
+  holder: 'you',
+  blurb: 'Every proposed action is held by a safety check, so nothing can be approved as it stands. The action card says why.',
+}
+
+/** The spelling this file works in, whichever one the backend sent. */
+export const canonicalStage = (stage: string): string => STAGE_ALIASES[stage] ?? stage
+
 export const UNKNOWN_STAGE: StageInfo = {
   label: 'Stage not recognised',
   tone: 'danger',
@@ -61,7 +84,7 @@ export const UNKNOWN_STAGE: StageInfo = {
   blurb: 'The backend reported a stage this version of the Desk does not know. It is not treated as finished.',
 }
 
-export const isKnownStage = (stage: unknown): stage is DeskLifecycleStage => typeof stage === 'string' && stage in LIFECYCLE
+export const isKnownStage = (stage: unknown): stage is DeskLifecycleStage => typeof stage === 'string' && (stage in LIFECYCLE || stage === 'HELD')
 
 /**
  * The stage the server reports for a run or a list row. Null when the backend reports none
@@ -72,11 +95,12 @@ export function stageOfRun(run: { lifecycle?: DeskRun['lifecycle'] | DeskLifecyc
   const lifecycle = run.lifecycle
   if (!lifecycle) return null
   const stage = typeof lifecycle === 'string' ? lifecycle : lifecycle.stage
-  return typeof stage === 'string' && stage ? stage : null
+  return typeof stage === 'string' && stage ? canonicalStage(stage) : null
 }
 
 export function stageInfo(stage: string | null): StageInfo | null {
   if (stage === null) return null
+  if (stage === 'HELD') return HELD_STAGE
   return isKnownStage(stage) ? LIFECYCLE[stage] : UNKNOWN_STAGE
 }
 
@@ -106,7 +130,7 @@ export function stageTimes(timeline: DeskTimelineItem[] | undefined): Map<string
     if (!times.has(stage)) times.set(stage, at)
   }
   for (const item of timeline ?? []) {
-    if (item.kind === 'stage' && typeof item.data?.stage === 'string') note(item.data.stage, item.at)
+    if (item.kind === 'stage' && typeof item.data?.stage === 'string') note(canonicalStage(item.data.stage), item.at)
     // The later stages are recorded as evidence, not as stage events.
     if (item.kind === 'proposal') note('AWAITING_APPROVAL', item.at)
     if (item.kind === 'execution') note('EXECUTING', item.at)
@@ -138,7 +162,7 @@ export function progressOf(run: Pick<DeskRun, 'lifecycle' | 'timeline' | 'update
   // Resting off the path (or in a stage this version does not know): show what was recorded, then where it stopped.
   const behind = PROGRESS_PATH.filter(s => times.has(s)).map(s => step(s, 'reached'))
   const info = stageInfo(stage)!
-  const known = (OFF_PATH as string[]).includes(stage)
+  const known = (OFF_PATH as string[]).includes(stage) || stage === 'HELD'
   return [...behind, { stage, label: known ? info.label : `${info.label}: ${stage}`, state: 'current', at: run.updatedAt ?? null, tone: info.tone }]
 }
 

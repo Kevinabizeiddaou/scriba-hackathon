@@ -83,6 +83,34 @@ describe('every lifecycle stage the contract names', () => {
   })
 })
 
+describe('the stage names of the revised contract', () => {
+  it('understands the three renamed stages as the stages they replace', () => {
+    for (const [sent, means] of [['UNDERSTANDING', 'CLASSIFIED'], ['INVESTIGATING', 'CONTEXT_GATHERING'], ['WAITING_FOR_RESPONSE', 'AWAITING_REPLY']] as const) {
+      const run = deskRun({ lifecycle: lifecycle(sent) })
+      expect(stageOfRun(run), sent).toBe(means)
+      expect(stageOfRun({ lifecycle: sent }), sent).toBe(means)
+      expect(groupOf(run), sent).not.toBe('unknown')
+    }
+    expect(groupOf(deskRun({ lifecycle: lifecycle('WAITING_FOR_RESPONSE'), state: 'completed', actions: [executedAction()] }))).toBe('awaiting_reply')
+    // Stage events written with the new names give the rail its times.
+    const times = stageTimes([event(1, 'stage', 'Understood.', { stage: 'UNDERSTANDING' }), event(2, 'stage', 'Investigated.', { stage: 'INVESTIGATING' })])
+    expect(times.get('CLASSIFIED')).toBe(at(1))
+    expect(times.get('CONTEXT_GATHERING')).toBe(at(2))
+  })
+
+  it('shows HELD as held, asks for input, and never offers it as something to approve', () => {
+    const run = deskRun({ lifecycle: lifecycle('HELD', { reason: 'proposal_changed' }), actions: [deskAction({ status: 'needs_info', approve: null, errorCode: 'proposal_changed' })], updatedAt: at(8), timeline: opening })
+    expect(stageOfRun(run)).toBe('HELD')
+    expect(groupOf(run)).toBe('input')
+    expect(nextStepOf(run)).toMatchObject({ kind: 'complete_card' })
+    expect(nextStepOf(run).detail).toContain('proposal changed')
+    expect(nextStepOf(run).detail).toContain('Nothing can be approved as it stands')
+    render(<RunStatus stage="HELD" />)
+    expect(screen.getByText('Held')).toBeInTheDocument()
+    expect(progressOf(run)!.at(-1)).toMatchObject({ label: 'Held', state: 'current' })
+  })
+})
+
 describe('an unknown stage or state', () => {
   it('is shown as unrecognised with its raw value, and never as finished', () => {
     const run = deskRun({ lifecycle: lifecycle('ARCHIVED_BY_POLICY'), state: 'completed', actions: [executedAction()], updatedAt: at(9) })

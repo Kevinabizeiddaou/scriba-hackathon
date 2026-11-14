@@ -41,6 +41,7 @@ in force, and is otherwise held (`external_writes_disabled`). See
 | `desk_overlay/eval_api.py` | `/desk/eval/v1`: the evaluation harness's five calls, on one sandbox world per case |
 | `desk_overlay/agent.py` | A bounded model step: read tools from a fixed list, and a reply, task or reminder as proposals. Off by default |
 | `desk_overlay/safeguards.py` | The Desk's own checks on a proposed action: completeness, recipient provenance, reply target (pure) |
+| `desk_overlay/jira/` | Jira, off unless `DESK_JIRA` is set: `/desk/jira/*`, reads through Scriba's connection, every write a proposal that is approved and read back. See [../docs/jira/README.md](../docs/jira/README.md) |
 | `desk_overlay/scriba_transferred/` | Scriba's slot search and time rules, transferred unchanged |
 | `dev/seeded_desk_server.py` | Scriba's seeded test backend with the overlay mounted. `--demo` adds sandbox worlds and the worker |
 | `dev/demo_world.py` | The synthetic mail and calendars of the demo |

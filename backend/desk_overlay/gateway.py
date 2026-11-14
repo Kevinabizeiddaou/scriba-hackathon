@@ -514,6 +514,64 @@ class ScribaGateway:
                                  title=(event.get("subject") or None)))
         return busy
 
+    # ── Jira (desk_overlay/jira): Scriba's connection, never a second one ───
+    def jira_connection(self, user: DeskUser) -> Dict[str, Any]:
+        """What Scriba knows about this person's Jira connection.
+
+        ``app.provider_config`` says whether the server holds the app's
+        credentials; the connected-accounts row holds the site and the granted
+        scopes; ``app.jira_client.get_access_token`` refreshes the token.
+        No token is returned from here.
+        """
+        from app import jira_client
+        from app.db import list_connected_accounts
+        from app.provider_config import jira_availability, jira_config
+
+        availability, config = jira_availability(), jira_config()
+        out: Dict[str, Any] = {
+            "configured": bool(availability.available),
+            "missingEnv": list(availability.missing_env_vars or ()),
+            "redirectUri": config.redirect_uri or None,
+            "publicApiBase": config.app_base_url or None,
+            "requestedScopes": list(config.scopes),
+            "connected": False, "hasAccount": False,
+        }
+        rows = list_connected_accounts(user.email, provider="jira")
+        if not rows:
+            return out
+        metadata = rows[0].get("auth_metadata") if isinstance(rows[0].get("auth_metadata"), dict) else {}
+        out.update({
+            "hasAccount": True,
+            # A token that can be obtained is the test. Scriba's own
+            # ``reconnect_required`` mark is reported but not trusted alone:
+            # its storage merges metadata, so the mark outlives a reconnect.
+            "connected": bool(jira_client.get_access_token(user.email)),
+            "scribaReconnectMark": bool(metadata.get("reconnect_required")),
+            "cloudId": metadata.get("cloud_id"), "siteName": metadata.get("site_name"),
+            "siteUrl": metadata.get("site_url"), "accountId": metadata.get("jira_account_id"),
+            "displayName": metadata.get("display_name"), "scopes": metadata.get("scopes") or [],
+        })
+        return out
+
+    def jira_token(self, user: DeskUser) -> Optional[str]:
+        """A valid access token, refreshed by Scriba when it is about to expire."""
+        from app import jira_client
+
+        return jira_client.get_access_token(user.email)
+
+    def jira_send(self) -> Any:
+        """The HTTP call the Jira transport uses (``requests``, as Scriba does)."""
+        import requests
+
+        return requests.request
+
+    def audit(self, user: DeskUser, action: str, entity_id: Optional[str], details: Dict[str, Any]) -> None:
+        """Scriba's audit log: a record that outlives this process."""
+        from app.services.audit_service import safe_log_audit_event
+
+        safe_log_audit_event(account_email=user.email, action=action, actor="user",
+                             entity_type="integration", entity_id=entity_id, details=details)
+
 
 # Keys Scriba's own test harness installs. They are not credentials.
 _PLACEHOLDER_KEYS = frozenset({"test-key", "test", "dummy", "sk-test"})

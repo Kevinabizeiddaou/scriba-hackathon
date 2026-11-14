@@ -132,6 +132,12 @@ next to this repository (or set `SCRIBA_PATH` to an existing checkout's
 git clone https://github.com/ScribaAssist/Scriba ../scriba
 ```
 
+The repository is tested against the Scriba revision in
+[`backend/SCRIBA_REVISION`](backend/SCRIBA_REVISION). The `api` container
+checks the checkout when it starts (`docker compose logs api`): it refuses to
+start if Scriba's `requirements.txt` changed since the image was built (run
+`docker compose build api`), and warns if the checkout is on another revision.
+
 Then, from the repository root:
 
 ```bash
@@ -142,7 +148,8 @@ docker compose build
 docker compose up -d
 ```
 
-Open http://localhost:5173. Stop it with `docker compose down`.
+Open http://localhost:5173. Stop it with `docker compose down`. Both ports are
+published on `127.0.0.1` only, so the app is not reachable from other machines.
 
 `up -d` starts two containers:
 
@@ -153,6 +160,18 @@ Open http://localhost:5173. Stop it with `docker compose down`.
 
 Seeded sign-in users are listed at the top of Scriba's
 `e2e/seeded_server.py`. All data resets when `api` restarts.
+
+Settings are optional and go in a `.env` file next to `docker-compose.yml`;
+[`.env.example`](.env.example) lists them all. Put them in `.env` rather than
+in front of one command: every `docker compose` command must see the same
+values, or compose recreates `api` with the other ones.
+
+**The demo:** with `DESK_DEMO=on` in `.env` and `docker compose up -d`, the
+seeded users Alice and Bob get synthetic Gmail and Outlook mail and calendars.
+The intake worker turns that mail into runs within a minute, and approving an
+action executes it against the synthetic world (`GET /desk/sandbox` lists what
+was done). Without it, `api` serves Scriba's own seeded inbox, where nothing
+needs work.
 
 - Edits under `frontend/` reload in the browser. The overlay (`backend/`) and
   the Scriba checkout are mounted read-only: run `docker compose restart api`
@@ -165,7 +184,12 @@ Seeded sign-in users are listed at the top of Scriba's
 - After a dependency change in `frontend/package.json`, run
   `docker compose build` and then `docker compose up -d -V` to refresh the
   container's `node_modules`.
-- Logs: `docker compose logs -f api` or `docker compose logs -f desk`.
+- Logs: `docker compose logs -f api` or `docker compose logs -f desk`
+  (rotated at 10 MB, three files kept).
+- Containers do not restart on their own: after a reboot or a Docker Desktop
+  restart, run `docker compose up -d` again.
+- `failed to get build context scriba` from `docker compose build` means the
+  Scriba checkout is missing: clone it as above or set `SCRIBA_PATH`.
 
 Other profiles:
 
@@ -173,7 +197,8 @@ Other profiles:
 docker compose --profile demo up -d desk-demo     # mock data, no backend:     http://localhost:5174
 docker compose --profile prod up -d desk-prod     # production build on nginx: http://localhost:5173 (instead of desk)
 docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
-docker compose --profile test run --rm backend-tests    # overlay unit and route tests
+docker compose --profile test run --rm backend-tests    # whole backend suite, incl. overlay on the real Scriba app
+docker compose --profile test run --rm smoke            # API smoke test against the running api
 ```
 
 For `desk-prod`, `VITE_API_BASE_URL` is baked in at build time, so rebuild
@@ -183,15 +208,24 @@ after changing it.
 
 ```bash
 docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
-docker compose --profile test run --rm backend-tests    # overlay unit and route tests
+docker compose --profile test run --rm backend-tests    # whole backend suite, incl. overlay on the real Scriba app
+docker compose --profile test run --rm smoke            # read-only API smoke against the api service
+docker compose --profile test run --rm smoke --desk-demo   # the same plus one demo run (DESK_DEMO=on)
 cd frontend && npm run eval                  # evaluation harness self-test (no backend, no agent)
-node scripts/smoke.mjs --base <scriba api>   # read-only API smoke
-node scripts/check-no-secrets.mjs            # run before every commit
 ```
 
-Signed-in smoke checks run when `SMOKE_EMAIL` and `SMOKE_PASSWORD` are set in
-the environment. The smoke test only reads; the one thing it changes is its
-own session.
+`backend-tests` runs in the `api` image (same Python, Scriba's pinned
+packages), including the integration tests that mount the overlay on the real
+Scriba app. Signed-in smoke checks run when `SMOKE_EMAIL` and `SMOKE_PASSWORD`
+(a seeded user) are set in `.env` or the environment. The smoke test only
+reads; the one thing it changes is its own session.
+
+Every commit runs the secret scan (`scripts/check-no-secrets.mjs`) through a
+Git hook. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
 
 ## Repository rules
 

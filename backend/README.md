@@ -131,6 +131,11 @@ explicit authorization. It is not done from this repository.
 
 ## Test it
 
+**Use Docker:** `docker compose --profile test run --rm backend-tests` from the
+repository root runs the whole suite below, integration tests included, in the
+`api` image (Python 3.12 with Scriba's pinned packages). The commands below are
+the same thing by hand.
+
 Use Scriba's Python environment (it has FastAPI, pytest and httpx).
 
 ```bash

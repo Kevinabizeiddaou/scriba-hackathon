@@ -75,6 +75,11 @@ describe('where a run sits in the queue', () => {
     expect([...QUEUE_ORDER].sort()).toEqual(Object.keys(QUEUE_GROUPS).sort())
     expect(QUEUE_ORDER.indexOf('decision')).toBeLessThan(QUEUE_ORDER.indexOf('done'))
     expect(QUEUE_ORDER.indexOf('problem')).toBeLessThan(QUEUE_ORDER.indexOf('in_progress'))
+    // Executed without verification is shown to the person before finished work, and is not green.
+    expect(QUEUE_ORDER.indexOf('unverified')).toBeLessThan(QUEUE_ORDER.indexOf('done'))
+    expect(QUEUE_GROUPS.unverified).toMatchObject({ label: 'Executed, not verified', tone: 'warn' })
+    expect(QUEUE_GROUPS.done).toMatchObject({ label: 'Completed and verified', tone: 'ok' })
+    expect(QUEUE_GROUPS.awaiting_reply.label).toBe('Waiting for a response')
   })
 })
 
@@ -88,9 +93,14 @@ describe('the next step', () => {
 
   it('does not call an executed action verified unless the backend says so', () => {
     const recorded = run({ state: 'completed', actions: [executed()] })
-    expect(nextStepOf(recorded)).toMatchObject({ kind: 'none', detail: 'Every action ran and Scriba recorded it.' })
+    expect(groupOf(recorded)).toBe('done')
+    expect(nextStepOf(recorded)).toMatchObject({ kind: 'none', detail: 'Every action ran and its effect was verified.' })
+    // In a sandbox the same finished run says where it ran, and that nothing real changed.
+    expect(nextStepOf(run({ state: 'completed', simulated: true, actions: [executed({ simulated: true })] })).detail).toBe('Every action was executed in the sandbox and read back there. Nothing real was sent or changed.')
     const unrecorded = run({ state: 'completed', actions: [executed({ assistantActionId: null, verified: false })] })
-    expect(nextStepOf(unrecorded).kind).toBe('check_result')
+    // Executed without evidence is its own list, never "completed".
+    expect(groupOf(unrecorded)).toBe('unverified')
+    expect(nextStepOf(unrecorded)).toMatchObject({ kind: 'check_result', label: 'Check the result yourself', detail: 'The action ran, but there is no verification evidence that it took effect.' })
     expect(timelineOf(unrecorded).find(step => step.id === 'verified')).toMatchObject({ state: 'held', detail: expect.stringContaining('no record in Scriba') })
   })
 

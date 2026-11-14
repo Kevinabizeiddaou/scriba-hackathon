@@ -37,7 +37,8 @@ import {
   type RunQueue,
 } from './deskRuns'
 import { LiveRunDetail } from './LiveRunDetail'
-import { AgentActivity, RunProgress, RunStatus, SandboxTag } from './RunParts'
+import { AgentActivity, RunProgress, RunStatus, SandboxTag, StepTally } from './RunParts'
+import { tallyOf } from './runPlan'
 import { progressOf, stageInfo, stageOfRun } from './runLifecycle'
 import { parseSender, toMailProvider } from './mappers'
 import { useRequiredLiveSession } from './session'
@@ -62,7 +63,7 @@ export function useDeskWorker() {
 
 export function runsNeedingUser(queue: RunQueue | undefined): number | null {
   if (!queue) return null
-  return queue.entries.filter(entry => entry.run && ['decision', 'input', 'problem', 'unknown'].includes(groupOf(entry.run))).length
+  return queue.entries.filter(entry => entry.run && ['decision', 'input', 'problem', 'unverified', 'unknown'].includes(groupOf(entry.run))).length
 }
 
 /** How often the opt-in automatic check runs, and when it gives up. */
@@ -101,7 +102,8 @@ function RunRow({ entry }: { entry: RunEntry }) {
         className="card group block px-4 py-3.5 hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
         <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
-          <div className="min-w-0 flex-1">
+          {/* On a phone the subject keeps the full width and the tags wrap under it. */}
+          <div className="min-w-[min(100%,240px)] flex-1">
             <p className="truncate text-[14.5px] font-semibold text-ink">{subject}</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-soft">
               <span className="truncate">{sender.name || sender.email || 'Unknown sender'}</span>{' '}
@@ -125,14 +127,19 @@ function RunRow({ entry }: { entry: RunEntry }) {
             <span className="text-xs text-mute">Stage: <RunStatusText stage={stage} /></span>
           </div>
         )}
+        {run && run.actions.length > 0 && (
+          <div className="mt-2">
+            <StepTally tally={tallyOf(run)} compact />
+          </div>
+        )}
         {run && next ? (
           <div className="mt-2.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5 border-t border-line pt-2.5 text-[12.5px]">
-            <p className="min-w-0 flex-1 text-soft">
+            <p className="min-w-[min(100%,200px)] flex-1 text-soft">
               <span className="text-mute">Proposed: </span>
               {runHeadline(run)}
             </p>
             <p className={clsx('flex items-center gap-1.5 font-semibold', next.kind === 'none' || next.kind === 'wait' ? 'text-mute' : 'text-accent')}>
-              {next.kind === 'none' ? 'Nothing needed from you' : next.label}
+              {next.kind === 'none' || next.kind === 'wait' ? 'Nothing needed from you' : next.label}
               <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
             </p>
           </div>

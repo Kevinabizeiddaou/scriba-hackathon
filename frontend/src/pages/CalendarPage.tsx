@@ -20,9 +20,9 @@ const minutesOf = (iso: string, tz: string) => {
 };
 
 /** Monday to Friday of the week that contains `now`, as YYYY-MM-DD in the principal's zone. */
-function weekDays(tz: string): string[] {
+function weekDays(tz: string, offset = 0): string[] {
   const today = localParts(new Date(nowMs()).toISOString(), tz);
-  const monday = Date.parse(`${today.date}T12:00:00Z`) - (today.weekday - 1) * 86_400_000;
+  const monday = Date.parse(`${today.date}T12:00:00Z`) - (today.weekday - 1) * 86_400_000 + offset * 7 * 86_400_000;
   return Array.from({ length: 5 }, (_, i) => new Date(monday + i * 86_400_000).toISOString().slice(0, 10));
 }
 
@@ -196,15 +196,22 @@ function Preparation({ event, all, onClose }: { event: AgendaEvent; all: AgendaE
 
 export function CalendarPage({ eventId }: { eventId: string | null }) {
   const tz = getApi().info.principal.timezone;
-  const agenda = useWorkspace((w) => w.listAgenda(), []);
+  // Which week is on screen: 0 is the week that contains now.
+  const [weekOffset, setWeekOffset] = useState(0);
+  const days = weekDays(tz, weekOffset);
+  const weekStart = days[0];
+  const weekEnd = new Date(Date.parse(`${weekStart}T12:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
+  const agenda = useWorkspace((w) => w.listAgenda({ start: weekStart, end: weekEnd }), [weekStart]);
   const session = useLiveSession();
   const unread = session && agenda.data ? session.workspace.lastCalendarErrors : [];
-  const days = weekDays(tz);
+  // In a sandbox the events are the sandbox world's own, never Scriba's seeded calendar.
+  const source = session && agenda.data ? session.workspace.calendarSource : 'scriba';
   const today = localParts(new Date(nowMs()).toISOString(), tz).date;
   const nowMinutes = minutesOf(new Date(nowMs()).toISOString(), tz);
   const wide = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 768px)').matches : true;
   const [view, setView] = useState<'week' | 'day'>(wide ? 'week' : 'day');
-  const [day, setDay] = useState(days.includes(today) ? today : days[0]);
+  const [pickedDay, setDay] = useState(days.includes(today) ? today : days[0]);
+  const day = days.includes(pickedDay) ? pickedDay : days[0];
 
   const events = agenda.data ?? [];
   const selected = events.find((e) => e.id === eventId) ?? null;
@@ -213,6 +220,9 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
   const nowTop = nowMinutes >= START_HOUR * 60 && nowMinutes <= END_HOUR * 60 ? ((nowMinutes - START_HOUR * 60) / 60) * HOUR_PX : null;
   const select = (id: string | null) => navigate('calendar', id);
+  // The first event after the week on screen, so an empty week still says where the next meeting is.
+  const inWeek = events.filter((e) => days.includes(localParts(e.start, tz).date)).length;
+  const nextAfter = events.filter((e) => localParts(e.start, tz).date >= weekEnd).sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0] ?? null;
 
   return (
     <div>
@@ -252,6 +262,29 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
                     </span>
                   </p>
                 )}
+                {source !== 'scriba' && (
+                  <p role="status" className="flex gap-2.5 rounded-xl border border-warn/30 bg-warn/[0.07] px-3.5 py-2.5 text-[13px] text-warn" data-testid="calendar-sandbox">
+                    <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      {source === 'sandbox'
+                        ? 'Sandbox calendar: these are the sandbox world\'s simulated meetings for the next two weeks, including any the secretary booked there. No real calendar is shown or changed.'
+                        : 'Sandbox calendar: this backend exposes only today\'s meetings of the sandbox world, so other days are not shown here (they are not known to be free). No real calendar is shown or changed.'}
+                    </span>
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div role="group" aria-label="Week" className="flex items-center gap-1.5">
+                    <button type="button" className="btn btn-secondary h-8 px-2.5" onClick={() => setWeekOffset((value) => value - 1)} aria-label="Previous week">‹</button>
+                    <button type="button" className="btn btn-secondary h-8 px-3" onClick={() => setWeekOffset(0)} disabled={weekOffset === 0}>This week</button>
+                    <button type="button" className="btn btn-secondary h-8 px-2.5" onClick={() => setWeekOffset((value) => value + 1)} aria-label="Next week">›</button>
+                    <span className="ml-1 text-[12.5px] tabular-nums text-soft" data-testid="week-label">{fmtDay(`${days[0]}T12:00:00Z`, 'UTC')} to {fmtDay(`${days[4]}T12:00:00Z`, 'UTC')} ({tz})</span>
+                  </div>
+                  {inWeek === 0 && nextAfter && (
+                    <button type="button" className="tap text-[12.5px] font-medium text-accent hover:underline" onClick={() => setWeekOffset((value) => value + 1)} data-testid="next-meeting-hint">
+                      Nothing this week. Next: {nextAfter.title}, {fmtDay(nextAfter.start, tz)} ›
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Legend />
                   {conflicts > 0 && (

@@ -1,0 +1,16 @@
+{
+  "name": "officesim-browser-capture",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Read-only Playwright capture of the Scriba Executive Desk frontend against the office-simulation sandbox. Every screenshot is labelled as simulated.",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

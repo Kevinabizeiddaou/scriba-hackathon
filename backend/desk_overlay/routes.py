@@ -26,18 +26,21 @@ import os
 from typing import Any, Dict, Mapping, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from . import __version__, readiness
 from .availability import InvalidAvailabilityRequest
 from .claims import MemoryClaims
+from .desktop import DesktopBridge, DesktopUnavailable
 from .sandbox import RoutedGateway, WorldRegistry
 from .service import DeskService, NotFound
 from .workflow import DeskWorkflow, IntakeBusy
 
 DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing",
                      "intake", "intake_sweep", "runs", "run_state", "run_lifecycle", "follow_ups",
-                     "worker_status", "external_write_readiness", "sandbox_execution"]
+                     "worker_status", "external_write_readiness", "sandbox_execution",
+                     "files", "desktop_bridge"]
 
 
 class SlotCheckBody(BaseModel):
@@ -69,6 +72,15 @@ class DeliverBody(BaseModel):
     subject: str = Field(min_length=1, max_length=300)
     body: str = Field(min_length=1, max_length=8000)
     thread_id: Optional[str] = Field(default=None, max_length=200)
+
+
+class DesktopJobBody(BaseModel):
+    """Run one of the caller's recorded tasks on one of their paired computers."""
+
+    recordingId: int = Field(ge=1)
+    deviceId: Optional[int] = Field(default=None, ge=1)
+    # An explicit go-ahead. Without it nothing is queued.
+    confirm: bool = False
 
 
 class SweepBody(BaseModel):
@@ -144,6 +156,14 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
             "worker": {key: value for key, value in worker_status(user).items()
                        if key in ("enabled", "running", "reason", "intervalSeconds", "lastTickAt")},
             "model": {"configured": bool(gateway.model_configured())},
+            # Files: read and generated through Scriba's own readers and
+            # generators. ``attachments`` says whether THIS user's mail
+            # attachments can be read here (a sandbox world: yes; a real
+            # mailbox: not connected to the Desk yet).
+            "files": {"attachments": world is not None, "generate": ["docx", "xlsx"],
+                      "read": ["pdf", "docx", "xlsx", "pptx", "csv", "txt"], "simulated": world is not None},
+            "desktop": {key: value for key, value in desktop.status(user).items()
+                        if key in ("available", "reason", "simulated")},
         }
         if callable(extra_health):
             body.update(extra_health(request) or {})
@@ -260,6 +280,12 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id, dismiss=True))
 
+    @router.post("/runs/{run_id}/unresolved/resolve")
+    def desk_unresolved_resolve(request: Request, run_id: int) -> Dict[str, Any]:
+        """The person takes over the requests the Desk identified and could not act on."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.resolve_unresolved(request, user, run_id))
+
     @router.get("/memory")
     def desk_memory(request: Request, thread: Optional[str] = None,
                     sender: Optional[str] = None) -> Dict[str, Any]:
@@ -291,6 +317,60 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
                             body=body.body, thread_id=body.thread_id)
         return {"delivered": {key: row[key] for key in ("id", "threadId", "provider", "timestamp",
                                                         "provider_account_id")}}
+
+    # ── the desktop bridge: Scriba's existing agent, never a new one ────────
+    desktop = DesktopBridge(gateway)
+    desk["desktop"] = desktop
+
+    def on_desktop(call: Any) -> Dict[str, Any]:
+        try:
+            return call()
+        except DesktopUnavailable as exc:
+            # The message is the body (Scriba's error envelope keeps a string);
+            # the stable code travels in a header a client can switch on.
+            raise HTTPException(status_code=exc.status, detail=exc.message,
+                                headers={"X-Desk-Error-Code": exc.code})
+
+    @router.get("/desktop")
+    def desk_desktop(request: Request) -> Dict[str, Any]:
+        """Whether a desktop can be used, the caller's paired computers and
+        their recorded tasks. ``available: false`` with a reason when not."""
+        user = gateway.current_user(request)
+        return {"account": user.email, **desktop.status(user)}
+
+    @router.post("/desktop/jobs")
+    def desk_desktop_assign(request: Request, body: DesktopJobBody) -> Dict[str, Any]:
+        """Queue a recorded task. 409 with a code when no desktop can take
+        it: a task is never reported as run when none ran it."""
+        user = gateway.current_user(request)
+        return on_desktop(lambda: desktop.assign(user, body.recordingId, body.deviceId, confirmed=body.confirm))
+
+    @router.get("/desktop/jobs/{job_id}")
+    def desk_desktop_job(request: Request, job_id: int) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return on_desktop(lambda: desktop.job(user, job_id))
+
+    @router.post("/desktop/jobs/{job_id}/cancel")
+    def desk_desktop_cancel(request: Request, job_id: int) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return on_desktop(lambda: desktop.cancel(user, job_id))
+
+    @router.get("/files/{file_id}")
+    def desk_file(request: Request, file_id: str) -> Response:
+        """A file of the caller's own records: one that arrived with their
+        mail, or one the Desk generated for them. Always a download, never
+        rendered: its content is untrusted. 404 for anyone else's file, and on
+        a backend that keeps no files for the Desk."""
+        user = gateway.current_user(request)
+        lookup = getattr(gateway, "stored_file", None)
+        found = lookup(user, file_id) if callable(lookup) else None
+        if not found:
+            raise HTTPException(status_code=404, detail="File not found.")
+        name = "".join(ch for ch in str(found.get("filename") or "file") if ch.isalnum() or ch in " ._-()")[:120]
+        return Response(content=found["content"], media_type="application/octet-stream", headers={
+            "Content-Disposition": f'attachment; filename="{name or "file"}"',
+            "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store",
+            "X-Desk-File-Origin": str(found.get("origin")), "X-Desk-File-Sha256": str(found.get("sha256"))})
 
     @router.get("/runs/{run_id}")
     def desk_run(request: Request, run_id: int) -> Dict[str, Any]:

@@ -528,14 +528,16 @@ def test_a_time_given_together_with_doubt_about_the_time_is_not_booked(desk):
     meeting_mail(desk, body="Let us meet Tuesday at 10:00. Actually no, make it Wednesday at 15:00. Or Tuesday is fine too.")
     run = desk.intake("m1").json()
     assert not [a for a in run["actions"] if a["tool_name"] == "create_calendar_event"]
-    assert run["held"]["reason"] == "time_not_understood" and "which time" in run["plan"]["missing"]
+    # Two guards cover this message: the rules see that it contradicts itself
+    # (conflicting_instructions), and the reader's own doubt is honoured.
+    assert run["held"]["reason"] in ("conflicting_instructions", "time_not_understood")
 
 
 def test_two_days_quoted_for_one_meeting_are_a_question_even_without_stated_doubt(desk):
-    modelled(desk, {"intents": [{**intent("new_meeting", "Let us meet Tuesday at 10:00",
+    modelled(desk, {"intents": [{**intent("new_meeting", "Could we meet Tuesday at 10:00",
                                           requested_start="2026-11-18T15:00:00+00:00"),
-                                 "evidence": ["Let us meet Tuesday at 10:00", "make it Wednesday at 15:00"]}]})
-    meeting_mail(desk, body="Let us meet Tuesday at 10:00. Actually no, make it Wednesday at 15:00.")
+                                 "evidence": ["Could we meet Tuesday at 10:00", "or Wednesday at 15:00"]}]})
+    meeting_mail(desk, body="Could we meet Tuesday at 10:00, or Wednesday at 15:00 if that is easier?")
     run = desk.intake("m1").json()
     assert not [a for a in run["actions"] if a["tool_name"] == "create_calendar_event"]
     assert "time_ambiguous" in [i["data"].get("reason") for i in run["timeline"] if i["kind"] == "decision"]

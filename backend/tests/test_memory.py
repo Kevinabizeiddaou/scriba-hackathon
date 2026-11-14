@@ -165,3 +165,19 @@ def test_the_model_step_is_shown_the_records_as_facts():
 def test_understanding_and_memory_do_not_break_when_the_model_reads_several_things(desk):
     modelled(desk, {"intents": []})
     assert first_request(desk)["actions"]
+
+
+def test_a_resend_after_the_first_attempt_was_only_handed_over_is_handled_afresh(desk):
+    """Found by Agent 4's simulation: the first request met an unreadable
+    calendar and was handed over with nothing proposed. The resend, when the
+    calendar could be read again, was dismissed as "already in progress"."""
+    account = f"google:{desk.world().gmail_accounts[0]}"
+    desk.world().unreadable[account] = "calendar_unavailable"
+    meeting_mail(desk, body=ASK)
+    desk.plan(book_plan())
+    first = desk.intake("m1").json()
+    assert first["actions"] == [] and first["lifecycle"]["stage"] in ("ESCALATED", "NEEDS_CLARIFICATION")
+    desk.world().unreadable.clear()
+    again = second(desk)
+    assert [a["tool_name"] for a in again["actions"]] == ["create_calendar_event"]
+    assert again["flags"] == [] and again["held"] is None

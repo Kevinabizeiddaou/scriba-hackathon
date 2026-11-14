@@ -1,0 +1,938 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "human_in_loop",
+  "name": "E. Human in the loop",
+  "description": "Approvals, one rejected proposal, two edited proposals, a clarification asked of the sender, and approvals that must be refused."
+ },
+ "seed": 7,
+ "executive": "trusting",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "0554133f316d3b40",
+ "engine": {
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 8,
+   "notSent": 0,
+   "actionable": 8,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 8,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 6,
+    "correct_escalation": 1,
+    "declined": 1
+   },
+   "completedCorrectly": 6,
+   "correctlyHandedToExecutive": 1,
+   "declinedByExecutive": 1,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 0,
+   "leftForHuman": 0,
+   "incorrect": 0,
+   "incorrectRequests": []
+  },
+  "verifiedWork": {
+   "calendarChanges": 4,
+   "emailReplies": 5,
+   "tasksAndReminders": 1,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 3,
+    "confirmation reply": 4,
+    "reply offering times": 1,
+    "task created": 1
+   },
+   "followUpsSatisfied": 1,
+   "duplicatesPrevented": 0,
+   "duplicatesPreventedDetail": []
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 2,
+   "checksPassed": 4
+  },
+  "human": {
+   "decisions": 11,
+   "byCategory": {
+    "preference_edit": 2,
+    "preference_rejection": 1,
+    "unreviewed_approval": 8
+   },
+   "mandatoryApprovals": 8,
+   "preferenceRejections": 1,
+   "preferenceEdits": 2,
+   "manualCorrections": 0,
+   "manualRescues": 0,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 0,
+   "fullTakeovers": 0,
+   "takeoverRequests": []
+  },
+  "autonomy": {
+   "actionableRequests": 8,
+   "handledWithApprovalsOnly": 8,
+   "rate": 1.0,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 4,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 1
+  },
+  "time": {
+   "wallSecondsForWholeDay": 13.75,
+   "apiCalls": 236,
+   "intakePassMsMedian": 14,
+   "intakePassMsMax": 32,
+   "executionMsTotal": 10072,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 36.0,
+   "executiveMinutesDecidingInDesk": 2.8,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "human_in_loop-yusuf-cold": {
+   "subject": "Introduction: Turkey to France road lane",
+   "sender": "yusuf.demir@anatoliacargo.example",
+   "expected": {
+    "outcome": "declined",
+    "tool": "create_calendar_event"
+   },
+   "verdict": "declined",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "human_in_loop-capex": {
+   "subject": "FY27 capex plan",
+   "sender": "omar.haddad@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "capex"
+    ],
+    "dueDate": "2026-11-18",
+    "urgent": false
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 31,
+     "toolCallId": 41,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 3,
+     "approvedBy": [
+      "alice@example.com",
+      "alice@example.com",
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    31
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-greta-forecast": {
+   "subject": "Peak-season forecast",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-18T11:00:00+01:00",
+    "end": "2026-11-18T12:00:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 47,
+     "toolCallId": 64,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 47,
+     "toolCallId": 69,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    47
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-mei-intro": {
+   "subject": "Cold-chain lanes: intro call",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "mei",
+    "email": "mei.tanaka@brightwavefoods.example",
+    "attendees": [
+     "mei.tanaka@brightwavefoods.example"
+    ],
+    "start": "2026-11-18T14:30:00+01:00",
+    "end": "2026-11-18T15:00:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 74,
+     "toolCallId": 91,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 74,
+     "toolCallId": 97,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    74
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-jonas-catchup": {
+   "subject": "Pipeline catch-up",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "jonas",
+    "email": "jonas.weber@meridianfreight.example",
+    "because": "no_time_given"
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 102,
+     "toolCallId": 117,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    102
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-jonas-picks": {
+   "subject": "Re: Pipeline catch-up",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "jonas",
+    "email": "jonas.weber@meridianfreight.example",
+    "attendees": [
+     "jonas.weber@meridianfreight.example"
+    ],
+    "start": "2026-11-16T12:00:00+01:00",
+    "end": "2026-11-16T12:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 123,
+     "toolCallId": 140,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 123,
+     "toolCallId": 146,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    123
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-tomas-cancel": {
+   "subject": "Friday's renewal call",
+   "sender": "tomas.vega@kestrelinsurance.example",
+   "expected": {
+    "outcome": "cancel",
+    "event": "evt-insurance-renewal",
+    "with": "tomas",
+    "email": "tomas.vega@kestrelinsurance.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 159,
+     "toolCallId": 174,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 159,
+     "toolCallId": 179,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    159
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "human_in_loop-press-comment": {
+   "subject": "Press enquiry on the Rotterdam claim",
+   "sender": "elena.petrova@meridianfreight.example",
+   "expected": {
+    "outcome": "escalate",
+    "why": "The answer is the executive's own position; the Desk must not write it for her."
+   },
+   "verdict": "correct_escalation",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    184
+   ],
+   "stages": [
+    "ESCALATED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 28,
+   "runId": 11,
+   "requestId": "human_in_loop-yusuf-cold",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "reject",
+   "category": "preference_rejection",
+   "why": "The executive does not take unsolicited introduction meetings.",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-01",
+   "at": "2026-11-16T08:30:16+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 41,
+   "runId": 31,
+   "requestId": "human_in_loop-capex",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "preference_edit",
+   "overrides": {
+    "due_at": "2026-11-18T12:00:00+01:00"
+   },
+   "why": "The executive wants a day in hand before the stated deadline.",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-02",
+   "at": "2026-11-16T09:00:27+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 64,
+   "runId": 47,
+   "requestId": "human_in_loop-greta-forecast",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-03",
+   "at": "2026-11-16T09:30:14+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 69,
+   "runId": 47,
+   "requestId": "human_in_loop-greta-forecast",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-03",
+   "at": "2026-11-16T09:30:14+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 91,
+   "runId": 74,
+   "requestId": "human_in_loop-mei-intro",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "preference_edit",
+   "overrides": {
+    "start": "2026-11-18T14:30:00+01:00",
+    "end": "2026-11-18T15:00:00+01:00"
+   },
+   "why": "The executive prefers half past: she has lunch out that day.",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-04",
+   "at": "2026-11-16T10:00:31+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 97,
+   "runId": 74,
+   "requestId": "human_in_loop-mei-intro",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-04",
+   "at": "2026-11-16T10:00:31+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 117,
+   "runId": 102,
+   "requestId": "human_in_loop-jonas-catchup",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-05",
+   "at": "2026-11-16T10:30:43+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 140,
+   "runId": 123,
+   "requestId": "human_in_loop-jonas-picks",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-06",
+   "at": "2026-11-16T10:45:12+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 146,
+   "runId": 123,
+   "requestId": "human_in_loop-jonas-picks",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-06",
+   "at": "2026-11-16T10:45:12+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 174,
+   "runId": 159,
+   "requestId": "human_in_loop-tomas-cancel",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-08",
+   "at": "2026-11-16T13:00:30+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 179,
+   "runId": 159,
+   "requestId": "human_in_loop-tomas-cancel",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "human_in_loop-08",
+   "at": "2026-11-16T13:00:30+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "human_in_loop-07",
+   "check": "invalid_approvals_change_nothing",
+   "passed": true,
+   "detail": "approve an action that already executed, same key: HTTP 200, card executed; approve an action that already executed, new key: HTTP 200, card executed; reject an action that already executed: HTTP 200, card executed; approve an action the executive rejected: HTTP 400, card None; approve an action that does not exist: HTTP 400, card None"
+  },
+  {
+   "stepId": "human_in_loop-10",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 4, the calendars hold 4"
+  },
+  {
+   "stepId": "human_in_loop-10",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 4, the task list holds 4"
+  },
+  {
+   "stepId": "human_in_loop-10",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "human_in_loop-10",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "6 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "human_in_loop-10",
+   "check": "briefing_reports_awaited_replies",
+   "passed": false,
+   "detail": "2 replies are awaited; the briefing does not mention them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "human_in_loop-01",
+   "at": "D+0 08:30",
+   "title": "A cold introduction the executive does not want",
+   "kind": "email",
+   "job": [
+    "prepare"
+   ],
+   "requests": [
+    "human_in_loop-yusuf-cold"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 280
+  },
+  {
+   "id": "human_in_loop-02",
+   "at": "D+0 09:00",
+   "title": "A task the executive wants due earlier than the sender asked",
+   "kind": "email",
+   "job": [
+    "prepare",
+    "record"
+   ],
+   "requests": [
+    "human_in_loop-capex"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    31
+   ],
+   "wallMs": 264
+  },
+  {
+   "id": "human_in_loop-03",
+   "at": "D+0 09:30",
+   "title": "An ordinary request, approved as proposed",
+   "kind": "email",
+   "job": [
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "human_in_loop-greta-forecast"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    47
+   ],
+   "wallMs": 2313
+  },
+  {
+   "id": "human_in_loop-04",
+   "at": "D+0 10:00",
+   "title": "A request the executive moves by half an hour before approving",
+   "kind": "email",
+   "job": [
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "human_in_loop-mei-intro"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    74
+   ],
+   "wallMs": 2453
+  },
+  {
+   "id": "human_in_loop-05",
+   "at": "D+0 10:30",
+   "title": "A request with no time in it: the sender has to be asked",
+   "kind": "email",
+   "job": [
+    "understand",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "human_in_loop-jonas-catchup"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    102
+   ],
+   "wallMs": 2312
+  },
+  {
+   "id": "human_in_loop-06",
+   "at": "D+0 10:45",
+   "title": "The sender answers with one of the offered times",
+   "kind": "counterpart_reply",
+   "job": [
+    "detect",
+    "coordinate",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "human_in_loop-jonas-picks"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    123
+   ],
+   "wallMs": 2468
+  },
+  {
+   "id": "human_in_loop-07",
+   "at": "D+0 12:00",
+   "title": "Approvals that must not do anything",
+   "kind": "invalid_approvals",
+   "job": [
+    "execute"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "human_in_loop-07",
+     "check": "invalid_approvals_change_nothing",
+     "passed": true,
+     "detail": "approve an action that already executed, same key: HTTP 200, card executed; approve an action that already executed, new key: HTTP 200, card executed; reject an action that already executed: HTTP 200, card executed; approve an action the executive rejected: HTTP 400, card None; approve an action that does not exist: HTTP 400, card None"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 281
+  },
+  {
+   "id": "human_in_loop-08",
+   "at": "D+0 13:00",
+   "title": "A cancellation, approved as proposed",
+   "kind": "email",
+   "job": [
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "human_in_loop-tomas-cancel"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    159
+   ],
+   "wallMs": 2359
+  },
+  {
+   "id": "human_in_loop-09",
+   "at": "D+0 15:00",
+   "title": "A question only the executive can answer",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prepare"
+   ],
+   "requests": [
+    "human_in_loop-press-comment"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    184
+   ],
+   "wallMs": 280
+  },
+  {
+   "id": "human_in_loop-10",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "human_in_loop-10",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 4, the calendars hold 4"
+    },
+    {
+     "stepId": "human_in_loop-10",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 4, the task list holds 4"
+    },
+    {
+     "stepId": "human_in_loop-10",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "human_in_loop-10",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "6 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "human_in_loop-10",
+     "check": "briefing_reports_awaited_replies",
+     "passed": false,
+     "detail": "2 replies are awaited; the briefing does not mention them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 219
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 10,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T11:12:38+00:00"
+}

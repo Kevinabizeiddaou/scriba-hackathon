@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import contextvars
 import datetime as dt
+import hashlib
 import itertools
 import threading
 from contextlib import contextmanager
@@ -40,6 +41,11 @@ OP_UPDATE_EVENT = "calendar.update_event"
 OP_CANCEL_EVENT = "calendar.cancel_event"
 OP_CREATE_TASK = "task.create"
 OP_CREATE_REMINDER = "reminder.create"
+# Files the Desk creates in the person's own records. Never a mailbox, a
+# calendar or anyone else's storage.
+OP_CREATE_DOCUMENT = "document.create"
+OP_CREATE_SPREADSHEET = "spreadsheet.create"
+FILE_OPS = (OP_CREATE_DOCUMENT, OP_CREATE_SPREADSHEET)
 WRITE_OPS = (OP_SEND_EMAIL, OP_DRAFT_EMAIL, OP_CREATE_EVENT, OP_UPDATE_EVENT, OP_CANCEL_EVENT,
              OP_CREATE_TASK, OP_CREATE_REMINDER)
 # Faults a world can be told to produce. ``uncertain`` applies the effect and
@@ -124,6 +130,14 @@ class SandboxWorld:
         self.tasks: List[Dict[str, Any]] = []
         self.reminders: List[Dict[str, Any]] = []
         self.follow_ups: List[Dict[str, Any]] = []
+        # Files of this world: attachments that arrived with mail, and files the
+        # Desk generated. Bytes live here only; nothing is written to disk.
+        # An attachment is never changed or removed: a generated file is new.
+        self.files: Dict[str, Dict[str, Any]] = {}
+        # A FAKE paired computer, when a demonstration or a test gives the
+        # world one (``add_desktop``). None: this world has no desktop, and
+        # nothing can be run on a computer from it.
+        self.desktop: Optional[Dict[str, Any]] = None
         self.faults: List[Dict[str, Any]] = []
         self.unreadable: Dict[str, str] = {}       # "google:<account>" / "outlook" / "gmail_mail" -> code
         self.oplog: List[Dict[str, Any]] = []
@@ -145,9 +159,12 @@ class SandboxWorld:
     def deliver(self, *, provider: str = "gmail", message_id: Optional[str] = None,
                 from_addr: str, subject: str, body: str, thread_id: Optional[str] = None,
                 received_at: Optional[dt.datetime] = None, account: Optional[str] = None,
-                labels: Optional[List[str]] = None, to: Optional[List[str]] = None) -> Dict[str, Any]:
+                labels: Optional[List[str]] = None, to: Optional[List[str]] = None,
+                attachments: Optional[List[Mapping[str, Any]]] = None) -> Dict[str, Any]:
         """A message arrives in one of the world's mailboxes. Returns the stored row,
-        in the shape of a row of Scriba's ``GET /emails``."""
+        in the shape of a row of Scriba's ``GET /emails``. ``attachments`` are
+        ``{filename, content (bytes), mime?}``; the row lists them by id, name
+        and size, never with their bytes."""
         if provider not in self.mail:
             raise ValueError(f"unknown mail provider: {provider}")
         mailbox = (account or (self.gmail_accounts[0] if provider == "gmail" and self.gmail_accounts
@@ -163,6 +180,19 @@ class SandboxWorld:
                 "provider_account_id": mailbox, "account_email": mailbox, "source_item_id": None,
                 "priority": None, "labels": list(labels or ["INBOX"]), "to": list(to or [mailbox]),
             }
+            listed = []
+            for index, attachment in enumerate(attachments or [], start=1):
+                content = bytes(attachment.get("content") or b"")
+                file_id = f"att-{row_id}-{index}"
+                self.files[file_id] = {
+                    "id": file_id, "origin": "attachment", "messageId": row_id,
+                    "filename": str(attachment.get("filename") or f"attachment-{index}"),
+                    "mimeType": attachment.get("mime"), "sizeBytes": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(), "content": content,
+                    "createdAt": row["timestamp"]}
+                listed.append({key: self.files[file_id][key] for key in ("id", "filename", "sizeBytes", "mimeType")})
+            if listed:
+                row["attachments"] = listed
             self.mail[provider] = [r for r in self.mail[provider] if r["id"] != row_id] + [row]
             return dict(row)
 
@@ -490,6 +520,61 @@ class SandboxWorld:
         return {"status": "failed", "result": {}, "error": error or "provider_error",
                 "error_code": error or "provider_error", "action": {}}
 
+    def add_desktop(self, *, name: str = "Sandbox desktop (simulated)", online: bool = True, locked: bool = False,
+                    recordings: Optional[List[Mapping[str, Any]]] = None) -> Dict[str, Any]:
+        """Give the world a fake paired computer and recorded tasks. Each
+        recording is ``{name, steps?, checks?, script?}``; ``script`` decides
+        how a replay of it ends (see desktop.SandboxDesktop)."""
+        self.desktop = {
+            "devices": [{"id": 1, "device_name": name, "device_kind": "desktop", "status": "online" if online else "offline",
+                         "ready": bool(online), "state": "ready" if online else "offline",
+                         "session_state": "locked" if locked else "unlocked", "agent_version": "simulated",
+                         "last_seen_at": self.now().astimezone(UTC).isoformat(), "allowed_folders": [],
+                         "capabilities": {}, "update": {"required": False}}],
+            "recordings": [{"id": index, "name": str(r.get("name") or f"Task {index}"), "kind": "desktop",
+                            "status": str(r.get("status") or "ready"), "step_count": int(r.get("steps") or 3),
+                            "has_password": False, "checks": [{"name": "check"}] * int(r.get("checks", 1)),
+                            "apps": list(r.get("apps") or ["Spreadsheet"]), "unattended": False,
+                            "script": str(r.get("script") or "pass")}
+                           for index, r in enumerate(recordings or [], start=1)],
+            "jobs": {},
+        }
+        return self.desktop
+
+    # ── files ───────────────────────────────────────────────────────────────
+    def attachments_of(self, message_id: str) -> List[Dict[str, Any]]:
+        """The attachments of one message: id, name and size. No bytes."""
+        with self._lock:
+            return [{key: f[key] for key in ("id", "filename", "sizeBytes", "mimeType", "sha256")}
+                    for f in self.files.values()
+                    if f["origin"] == "attachment" and f["messageId"] == str(message_id)]
+
+    def file(self, file_id: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            found = self.files.get(str(file_id))
+            return dict(found) if found else None
+
+    def store_generated(self, *, filename: str, content: bytes, mime_type: str, extension: str) -> Dict[str, Any]:
+        """Keep a file the Desk generated. The stand-in for Scriba's private
+        generated-documents store. Always a NEW file: an existing one, an
+        attachment least of all, is never replaced."""
+        op = OP_CREATE_SPREADSHEET if str(extension).lower() in (".xlsx", ".csv") else OP_CREATE_DOCUMENT
+        with self._lock:
+            fault = self._check_fault(op)
+            if fault is not None:
+                self._log(op, {}, status="failed", error=fault["error"])
+                raise SandboxFault(fault["error"], uncertain=fault["mode"] == "uncertain")
+            file_id = self._next("file")
+            content = bytes(content or b"")
+            self.files[file_id] = {
+                "id": file_id, "origin": "generated", "messageId": None, "filename": str(filename),
+                "mimeType": mime_type, "extension": str(extension), "sizeBytes": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(), "content": content,
+                "createdAt": self.now().astimezone(UTC).isoformat()}
+            self._log(op, {}, status="executed", object_id=file_id)
+            # The shape of a row of Scriba's ``generated_documents`` table.
+            return {"id": file_id, "filename": str(filename), "mime_type": mime_type, "size_bytes": len(content)}
+
     # ── verification: read the world back ───────────────────────────────────
     def verify(self, op: str, object_id: Optional[str], expected: Mapping[str, Any]) -> Dict[str, Any]:
         """Whether the world's state shows the effect. Reads only."""
@@ -523,6 +608,16 @@ class SandboxWorld:
                 return {"ok": any(r["id"] == object_id for r in self.reminders), "reason": None}
             if op == OP_DRAFT_EMAIL:
                 return {"ok": any(d["id"] == object_id for d in self.drafts), "reason": None}
+            if op in FILE_OPS:
+                # That the file is there. Whether it is the RIGHT file is
+                # decided by reopening it (files.verify_generated), which the
+                # gateway does with these bytes.
+                found = self.files.get(str(object_id or ""))
+                if not found or found["origin"] != "generated":
+                    return {"ok": False, "reason": "file_not_found"}
+                if hashlib.sha256(found["content"]).hexdigest() != found["sha256"]:
+                    return {"ok": False, "reason": "file_changed_after_it_was_written"}
+                return {"ok": True, "reason": None, "content": found["content"], "filename": found["filename"]}
         return {"ok": False, "reason": "unknown_operation"}
 
     def snapshot(self) -> Dict[str, Any]:
@@ -534,7 +629,9 @@ class SandboxWorld:
                 "accounts": {"gmail": list(self.gmail_accounts), "outlook": self.outlook_account},
                 "counts": {"inbox": sum(len(v) for v in self.mail.values()), "sent": len(self.sent),
                            "events": sum(1 for e in self.events.values() if e["status"] != "cancelled"),
-                           "tasks": len(self.tasks), "reminders": len(self.reminders)},
+                           "tasks": len(self.tasks), "reminders": len(self.reminders),
+                           "attachments": sum(1 for f in self.files.values() if f["origin"] == "attachment"),
+                           "generatedFiles": sum(1 for f in self.files.values() if f["origin"] == "generated")},
                 "operations": [dict(entry) for entry in self.oplog],
                 "isolationViolations": list(self.violations),
             }
@@ -773,4 +870,33 @@ class RoutedGateway:
         world = self.world_for(user)
         if world is None:
             return None
-        return {**world.verify(op, object_id, expected), "method": "sandbox_readback"}
+        found = world.verify(op, object_id, expected)
+        if op in FILE_OPS:
+            # A file that exists is not yet the file that was asked for: it is
+            # reopened with Scriba's own reader and checked against what was approved.
+            if found.get("ok"):
+                from . import files
+
+                found = files.verify_generated(found["content"], found["filename"], expected)
+            found.pop("content", None)
+            return {**found, "method": "file_reopened"}
+        return {**found, "method": "sandbox_readback"}
+
+    # ── files ───────────────────────────────────────────────────────────────
+    def attachments(self, user: Any, item: Mapping[str, Any]) -> Optional[List[Dict[str, Any]]]:
+        """The attachments of a message, or None where this backend cannot
+        read them (a real mailbox: not connected to the Desk yet)."""
+        world = self.world_for(user)
+        if world is None:
+            return None
+        return world.attachments_of(str(item.get("id") or ""))
+
+    def attachment_content(self, user: Any, file_id: str) -> Optional[bytes]:
+        world = self.world_for(user)
+        found = world.file(file_id) if world is not None else None
+        return found["content"] if found and found["origin"] == "attachment" else None
+
+    def stored_file(self, user: Any, file_id: str) -> Optional[Dict[str, Any]]:
+        """A file of the caller's own world, with its bytes. None for anyone else's."""
+        world = self.world_for(user)
+        return world.file(file_id) if world is not None else None

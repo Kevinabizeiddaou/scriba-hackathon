@@ -29,6 +29,7 @@ from .sandbox import parse_time
 MEETING_DAYS = 14
 RECENT = 20
 _FINAL_NOTHING = ("CANCELLED", "FAILED")
+_LIVE = ("awaiting_approval", "needs_info", "approved", "executing", "executed", "partially_executed")
 _QUOTED_LINE = re.compile(r"^\s*(?:>|on .{0,80} wrote:|from:|sent:|-{2,}\s*original message)", re.I)
 _RESEND = re.compile(r"\b(?:resending|re-sending|sending (?:this )?again|in case (?:this|it) (?:got|was) "
                      r"(?:buried|missed|lost)|following up on (?:my|the) (?:email|message|note) below|"
@@ -225,8 +226,15 @@ class Memory:
             run = self.gateway.find_run(user, key)
             if run is None:
                 continue
-            stage = self.workflow.view(ctx, user, run["id"], detail=False)["lifecycle"]["stage"]
+            earlier_view = self.workflow.view(ctx, user, run["id"], detail=False)
+            stage = earlier_view["lifecycle"]["stage"]
             if stage in _FINAL_NOTHING:
+                return None
+            counts = earlier_view.get("actionCounts") or {}
+            if not any(counts.get(status) for status in _LIVE):
+                # The earlier message was taken in and nothing came of it (a
+                # calendar could not be read, it was handed over). The Desk
+                # does not "have" that request: this one is handled afresh.
                 return None
             return {"runId": run["id"], "messageId": earlier.get("id"), "stage": stage,
                     "open": stage not in ("COMPLETED", "PARTIALLY_COMPLETED")}

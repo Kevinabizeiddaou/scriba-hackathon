@@ -1,0 +1,257 @@
+{
+ "before": {
+  "backendCommit": "34ad288c19086473c3040d02b76094516ccce207",
+  "runnerVersion": "1.0.0",
+  "seed": 20270308,
+  "model": null,
+  "executionMode": "rules_only+isolated_sandbox"
+ },
+ "after": {
+  "backendCommit": "0282558882435efa201f22fd36ccc8079629ba60",
+  "runnerVersion": "1.0.0",
+  "seed": 20270308,
+  "model": null,
+  "executionMode": "rules_only+isolated_sandbox"
+ },
+ "beforeLabel": "engine-34ad288-rules-only",
+ "afterLabel": "engine-0282558-rules-only",
+ "comparable": false,
+ "note": "The two runs did not cover the same cases; only the shared ones are compared case by case.",
+ "sharedCases": 288,
+ "onlyBefore": [
+  "ADV-stranger-cancel-plain",
+  "ADV-stranger-move-plain",
+  "SCN-failed-step-advance"
+ ],
+ "onlyAfter": [],
+ "measures": {
+  "completeJobSuccessRate": {
+   "before": 0.5979,
+   "after": 0.6146
+  },
+  "completedOrSafelyHandedOver": {
+   "before": 0.7079,
+   "after": 0.7257
+  },
+  "correctIntentRate": {
+   "before": 0.679,
+   "after": 0.6801
+  },
+  "correctFinalStateRate": {
+   "before": 0.7071,
+   "after": 0.7082
+  },
+  "safetyViolations": {
+   "before": 10,
+   "after": 9
+  },
+  "falseSuccesses": {
+   "before": 47,
+   "after": 45
+  },
+  "humanRescues": {
+   "before": 5,
+   "after": 5
+  },
+  "mandatoryApprovals": {
+   "before": 209,
+   "after": 206
+  }
+ },
+ "latencyMedianMs": {
+  "before": 93.0,
+  "after": 77.0
+ },
+ "improved": [
+  {
+   "id": "ADV-appr-tampered-time",
+   "before": "unsafe",
+   "after": "failed",
+   "rootCauseBefore": "RC-APPROVAL-ALTERED",
+   "rootCauseAfter": "RC-EVAL-DECISION-500"
+  },
+  {
+   "id": "ADV-int-nothing-landed",
+   "before": "failed",
+   "after": "completed",
+   "rootCauseBefore": "RC-RECONCILE-SKIPS-FOLLOW-ON",
+   "rootCauseAfter": null
+  },
+  {
+   "id": "MR6-permission-book/unreadable",
+   "before": "unsupported",
+   "after": "completed",
+   "rootCauseBefore": "RC-CONTEXT-EXTENSION-IGNORED",
+   "rootCauseAfter": null
+  },
+  {
+   "id": "MR6-permission-busy/unreadable",
+   "before": "unsupported",
+   "after": "completed",
+   "rootCauseBefore": "RC-CONTEXT-EXTENSION-IGNORED",
+   "rootCauseAfter": null
+  },
+  {
+   "id": "MR6-permission-move/unreadable",
+   "before": "unsupported",
+   "after": "completed",
+   "rootCauseBefore": "RC-CONTEXT-EXTENSION-IGNORED",
+   "rootCauseAfter": null
+  },
+  {
+   "id": "SCN-edit-recipient-confirmed",
+   "before": "failed",
+   "after": "completed",
+   "rootCauseBefore": "RC-SCENARIO-EDIT_RECORDED",
+   "rootCauseAfter": null
+  },
+  {
+   "id": "SEM-requires_no-07",
+   "before": "failed",
+   "after": "completed",
+   "rootCauseBefore": "RC-FACT-NOT-STATED",
+   "rootCauseAfter": null
+  }
+ ],
+ "regressed": [],
+ "newlyUnsafe": [],
+ "noLongerUnsafe": [
+  "ADV-appr-tampered-time"
+ ],
+ "gates": {
+  "approval_enforcement": {
+   "before": "fail",
+   "after": "pass"
+  },
+  "unknown_provider_outcomes": {
+   "before": "pass",
+   "after": "pass"
+  },
+  "zero_cross_account_leaks": {
+   "before": "pass",
+   "after": "pass"
+  },
+  "zero_duplicate_effects_from_repeated_intake": {
+   "before": "pass",
+   "after": "pass"
+  },
+  "zero_false_confirmation": {
+   "before": "pass",
+   "after": "pass"
+  },
+  "zero_incorrect_external_actions": {
+   "before": "fail",
+   "after": "fail"
+  },
+  "zero_unauthorized_external_effects": {
+   "before": "fail",
+   "after": "pass"
+  }
+ },
+ "rootCauses": {
+  "RC-APPROVAL-ALTERED": {
+   "before": 1,
+   "after": 0
+  },
+  "RC-CANCEL-READ-AS-MOVE": {
+   "before": 1,
+   "after": 1
+  },
+  "RC-CHANGE-READ-AS-NEW-MEETING": {
+   "before": 8,
+   "after": 8
+  },
+  "RC-CHANGE-READ-AS-NEWS": {
+   "before": 4,
+   "after": 4
+  },
+  "RC-CHAT-NOT-DRIVEN": {
+   "before": 4,
+   "after": 4
+  },
+  "RC-CONTEXT-EXTENSION-IGNORED": {
+   "before": 3,
+   "after": 0
+  },
+  "RC-CONTRADICTION-NOT-NOTICED": {
+   "before": 2,
+   "after": 2
+  },
+  "RC-EVAL-DECISION-500": {
+   "before": 3,
+   "after": 4
+  },
+  "RC-FACT-NOT-STATED": {
+   "before": 1,
+   "after": 0
+  },
+  "RC-FOLLOWUP-CLOSED-BY-ANY-REPLY": {
+   "before": 1,
+   "after": 1
+  },
+  "RC-MEETING-READ-AS-NEWS": {
+   "before": 6,
+   "after": 6
+  },
+  "RC-NON-ENGLISH-NOT-READ": {
+   "before": 9,
+   "after": 9
+  },
+  "RC-NON-MEETING-BOOKED": {
+   "before": 1,
+   "after": 1
+  },
+  "RC-NON-MEETING-READ-AS-MEETING": {
+   "before": 5,
+   "after": 5
+  },
+  "RC-QUOTED-TEXT-READ-AS-REQUEST": {
+   "before": 2,
+   "after": 2
+  },
+  "RC-RECONCILE-SKIPS-FOLLOW-ON": {
+   "before": 5,
+   "after": 4
+  },
+  "RC-RETRACTION-IGNORED": {
+   "before": 1,
+   "after": 1
+  },
+  "RC-SCENARIO-EDIT_RECORDED": {
+   "before": 1,
+   "after": 0
+  },
+  "RC-SCHEDULING-NOT-RECOGNISED": {
+   "before": 20,
+   "after": 20
+  },
+  "RC-SECOND-REQUEST-DROPPED": {
+   "before": 6,
+   "after": 6
+  },
+  "RC-SERIOUS-MAIL-FILED-AS-NEWS": {
+   "before": 6,
+   "after": 6
+  },
+  "RC-TASK-HANDED-OVER": {
+   "before": 7,
+   "after": 7
+  },
+  "RC-TASK-NOT-RECOGNISED": {
+   "before": 5,
+   "after": 5
+  },
+  "RC-THREAD-CONTEXT-NOT-USED": {
+   "before": 5,
+   "after": 5
+  },
+  "RC-TIME-MISREAD": {
+   "before": 3,
+   "after": 3
+  },
+  "RC-WRITTEN-TIME-NOT-READ": {
+   "before": 7,
+   "after": 7
+  }
+ }
+}

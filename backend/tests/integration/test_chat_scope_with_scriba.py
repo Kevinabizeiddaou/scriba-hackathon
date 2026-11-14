@@ -24,8 +24,13 @@ NOW = dt.datetime(2027, 3, 1, 8, 0, tzinfo=UTC)
 START = dt.datetime(2027, 3, 4, 10, 0, tzinfo=UTC)   # the harness's FUTURE_START
 EXCLUDED = ["send_slack_message", "send_teams_message", "create_jira_issue", "list_jira_issues",
             "recent_slack_messages", "recent_teams_messages", "search_google_drive", "search_onedrive",
-            "drive_upload_file", "onedrive_upload_file", "drive_delete_file", "create_spreadsheet",
-            "create_document", "run_automation_with_file", "capture_note", "remember_fact", "query_table"]
+            "drive_upload_file", "onedrive_upload_file", "drive_delete_file", "drive_rename_file",
+            "onedrive_import_file", "run_automation_with_file", "capture_note", "remember_fact", "query_table"]
+# Authorized into the Desk on 14 November 2026 (file automation): Scriba's own
+# create_document and create_spreadsheet. Both need an approval and write only
+# the person's own records; uploading, sharing and running an automation on a
+# file stay out.
+FILE_TOOLS = ["create_document", "create_spreadsheet"]
 
 
 def busy(provider, account, start_hour, end_hour, title=None):

@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiClientError } from './api/client'
 import type { ProviderDescriptor, ProviderStatusPayload } from './api/contract'
-import type { DeskBriefing, DeskConnections, DeskHealth, DeskInbox, TriagedEmail } from './api/desk'
+import type { DeskAction, DeskBriefing, DeskConnections, DeskHealth, DeskInbox, DeskRun, TriagedEmail } from './api/desk'
 import type { ChatConversation, ChatMessage, ChatToolCall } from './live/scribaApi'
 
 vi.mock('./api/scriba', async original => ({
@@ -28,6 +28,13 @@ vi.mock('./api/desk', async original => ({
   // The shell and the overview read the run queue; without these the tests would call a real backend.
   fetchDeskRuns: vi.fn(),
   fetchDeskRun: vi.fn(),
+  // Asked only on a sandbox backend.
+  fetchDeskSandbox: vi.fn(),
+}))
+// In a sandbox the workspace reads the world's calendar and tasks from /desk/memory.
+vi.mock('./live/deskContract', async original => ({
+  ...(await original<typeof import('./live/deskContract')>()),
+  fetchDeskMemory: vi.fn(),
 }))
 vi.mock('./live/scribaApi', async original => ({
   ...(await original<typeof import('./live/scribaApi')>()),
@@ -43,8 +50,9 @@ vi.mock('./live/scribaApi', async original => ({
 }))
 
 import App from './App'
-import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns } from './api/desk'
-import { deskRun, executedAction } from './test/deskFixtures'
+import { fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns, fetchDeskSandbox } from './api/desk'
+import { fetchDeskMemory } from './live/deskContract'
+import { deskAction, deskRun, executedAction } from './test/deskFixtures'
 import { fetchCalendarEvents, fetchProviderStatus, logout } from './api/scriba'
 import { approveChatToolCall, cancelChatToolCall, fetchChatConversations, fetchChatMessages, fetchDrafts, fetchReminders, fetchTasks, retryChatToolCall } from './live/scribaApi'
 
@@ -136,12 +144,42 @@ function setBackend(calls: ChatToolCall[] = [CALLS.email, CALLS.task]) {
   vi.mocked(fetchDeskInbox).mockResolvedValue(inbox())
   vi.mocked(fetchDeskBriefing).mockResolvedValue(briefing())
   vi.mocked(fetchDeskRuns).mockResolvedValue({ account: 'exec@example.test', runs: [] })
+  vi.mocked(fetchDeskSandbox).mockRejectedValue(new ApiClientError('Not Found', { status: 404 }))
+  vi.mocked(fetchDeskMemory).mockResolvedValue(null)
   vi.mocked(fetchChatConversations).mockResolvedValue([conversation])
   vi.mocked(fetchChatMessages).mockResolvedValue(thread(calls))
   vi.mocked(fetchTasks).mockResolvedValue({ tasks: [] })
   vi.mocked(fetchReminders).mockResolvedValue([])
   vi.mocked(fetchDrafts).mockResolvedValue([])
   vi.mocked(fetchCalendarEvents).mockResolvedValue({ meetings: [], timezone: 'Asia/Beirut' })
+}
+
+/**
+ * Makes the cards of the chat thread the Desk secretary's own. A Desk run IS a Scriba conversation
+ * (its `runId` is the conversation id) and lists its actions by tool-call id, so the backend
+ * answers GET /desk/runs with a run for that conversation. `verified` names the tool calls the
+ * Desk has verification evidence for.
+ */
+function serveDeskRun(calls: ChatToolCall[], { verified = [], over = {} }: { verified?: number[]; over?: Partial<DeskRun> } = {}): DeskRun {
+  const run = deskRun({
+    runId: conversation.id,
+    actions: calls.map(call =>
+      deskAction({
+        toolCallId: call.id,
+        tool_name: call.tool_name,
+        status: call.status as DeskAction['status'],
+        input: call.input,
+        error: call.error ?? null,
+        approve: call.status === 'awaiting_approval' ? { method: 'POST', path: `/chat/tool-calls/${call.id}/approve` } : null,
+        verified: verified.includes(call.id),
+        assistantActionId: verified.includes(call.id) ? 900 + call.id : null,
+      }),
+    ),
+    ...over,
+  })
+  vi.mocked(fetchDeskRuns).mockResolvedValue({ account: 'exec@desk.example', runs: [{ runId: run.runId, provider: run.email.provider, email_id: run.email.email_id, subject: run.email.subject, from_addr: run.email.from_addr, category: run.category, created_at: run.createdAt }] } as never)
+  vi.mocked(fetchDeskRun).mockResolvedValue(run)
+  return run
 }
 
 function renderApp(hash = '') {
@@ -155,6 +193,9 @@ function renderApp(hash = '') {
 }
 
 const MOCK_PEOPLE = /Layla|Mansour|Mock data|Simulated/
+
+/** The number on one tile of the status strip, without the sentence under it (which can hold digits of its own). */
+const tileCount = (scope: HTMLElement, label: string): string | null => within(scope).getByText(label).closest('a')!.children[1].textContent
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -208,7 +249,17 @@ describe('live overview', () => {
     renderApp()
 
     expect(await screen.findByRole('heading', { level: 1, name: /Rana/ })).toBeInTheDocument()
-    expect(screen.getAllByTestId('data-source')[0]).toHaveTextContent('Live: Scriba')
+    // Connected to a real backend, and nothing about real writes: this backend reports none, so they are off.
+    await waitFor(() => expect(screen.getAllByTestId('data-source')[0]).toHaveAttribute('data-mode', 'disabled'))
+    const note = screen.getAllByTestId('data-source')[0]
+    expect(within(note).getByTestId('mode-badge')).toHaveTextContent('WRITES OFF')
+    expect(note).toHaveTextContent('External writes disabled')
+    expect(note).toHaveTextContent('Connected to a Scriba backend: http://localhost:8000')
+    expect(note).toHaveTextContent('Desk overlay 0.2.0')
+    expect(note).not.toHaveTextContent(/Live/)
+    const banner = screen.getByTestId('mode-banner')
+    expect(banner).toHaveAttribute('data-mode', 'disabled')
+    expect(banner).toHaveTextContent('WRITES OFF')
     expect(await screen.findByTestId('connection-gmail')).toHaveTextContent('Connected')
     expect(screen.getByTestId('connection-google_calendar')).toHaveTextContent('Connected')
     const outlook = screen.getByTestId('connection-outlook_mail')
@@ -220,6 +271,8 @@ describe('live overview', () => {
 
   it('answers the dashboard questions from server data: arrived, classified, awaiting approval, failed', async () => {
     setBackend([CALLS.email, CALLS.task, CALLS.failed])
+    // The secretary proposed these for a run, so they are the Desk's own and count in its numbers.
+    serveDeskRun([CALLS.email, CALLS.task, CALLS.failed])
     renderApp()
 
     const queue = await screen.findByRole('region', { name: 'Where the work stands' })
@@ -227,13 +280,21 @@ describe('live overview', () => {
     expect(within(queue).getByText('Arrived').closest('a')).toHaveTextContent('1')
     expect(within(queue).getByText('Need action').closest('a')).toHaveTextContent('1')
     expect(within(queue).getByText('Failed or partial').closest('a')).toHaveTextContent('1')
-    expect(within(queue).getByText('Completed').closest('a')).toHaveTextContent('0')
+    // The finished tile is "Verified": nothing ran, so nothing is verified.
+    expect(tileCount(queue, 'Verified')).toBe('0')
+    expect(tileCount(queue, 'Awaiting approval')).toBe('2')
+    expect(tileCount(queue, 'Failed or partial')).toBe('1')
+    expect(within(queue).queryByText('Completed')).toBeNull()
+    expect(screen.queryByTestId('scriba-waiting')).toBeNull()
     expect(screen.getByTestId('classified')).toHaveTextContent('1 need a reply')
     expect(screen.getByRole('region', { name: 'Mail that needs you' })).toHaveTextContent('Dana Haddad')
   })
 
   it('separates what is waiting on the user from what the secretary has in hand, and lists finished work only when the server says it ran', async () => {
-    setBackend([CALLS.email, { ...CALLS.task, status: 'executed' }, { ...CALLS.task, id: 25, status: 'executed', input: { title: 'Book the room' } }, CALLS.failed])
+    const calls: ChatToolCall[] = [CALLS.email, { ...CALLS.task, status: 'executed' }, { ...CALLS.task, id: 25, status: 'executed', input: { title: 'Book the room' } }, CALLS.failed]
+    setBackend(calls)
+    // The Desk's own cards. Both tasks ran; the Desk has verification evidence for the first only.
+    serveDeskRun(calls, { verified: [CALLS.task.id] })
     renderApp()
 
     const strip = await screen.findByRole('region', { name: 'Where the work stands' })
@@ -242,7 +303,10 @@ describe('live overview', () => {
     await waitFor(() => expect(within(yours).getByText('Awaiting approval').closest('a')).toHaveTextContent('1'))
     expect(within(yours).getByText('Failed or partial').closest('a')).toHaveTextContent('1')
     expect(within(yours).getByText('Need action')).toBeInTheDocument()
-    expect(within(theirs).getByText('Completed').closest('a')).toHaveTextContent('2')
+    // Two actions ran, one with evidence: only that one is counted, and the other is said to be left out.
+    await waitFor(() => expect(tileCount(theirs, 'Verified')).toBe('1'))
+    expect(within(theirs).getByText('Verified').closest('a')).toHaveTextContent('1 more ran without verification and is not counted')
+    expect(within(theirs).queryByText('Completed')).toBeNull()
     expect(within(theirs).getByText('Arrived')).toBeInTheDocument()
     expect(within(theirs).queryByText('Awaiting approval')).toBeNull()
 
@@ -250,6 +314,10 @@ describe('live overview', () => {
     await waitFor(() => expect(within(handled).getByText('Send the board pack')).toBeInTheDocument())
     expect(within(handled).getByText('Book the room')).toBeInTheDocument()
     expect(within(handled).getAllByRole('listitem')).toHaveLength(2)
+    // Each says whether it was verified, and links to the run it belongs to.
+    await waitFor(() => expect(within(handled).getByText('Send the board pack').closest('a')).toHaveTextContent('Create a task: executed, verified'))
+    expect(within(handled).getByText('Book the room').closest('a')).toHaveTextContent('Create a task: executed, not verified')
+    expect(within(handled).getByText('Send the board pack').closest('a')).toHaveAttribute('href', '#/work/2')
     // A proposal that is still waiting and an action that failed are not finished work.
     expect(handled).not.toHaveTextContent('Re: Board pack')
     expect(handled).not.toHaveTextContent('File expenses')
@@ -300,7 +368,8 @@ describe('live overview', () => {
     vi.mocked(fetchDeskBriefing).mockRejectedValue(new ApiClientError('Gmail did not answer', { status: 502 }))
     renderApp()
 
-    expect(await screen.findByText(/The briefing could not be loaded: Gmail did not answer/)).toBeInTheDocument()
+    // The briefing is read once per session and again by this screen, so the note is looked up afresh on each try.
+    await waitFor(() => expect(screen.getByText(/The briefing could not be loaded: Gmail did not answer/)).toBeInTheDocument())
     const queue = screen.getByRole('region', { name: 'Where the work stands' })
     await waitFor(() => expect(within(queue).getByText('Arrived').closest('a')).toHaveTextContent('Could not be read'))
     // An unknown count is a dash, never a zero.
@@ -313,7 +382,45 @@ describe('live overview', () => {
     vi.mocked(fetchDeskHealth).mockRejectedValue(new ApiClientError('Not Found', { status: 404 }))
     renderApp()
     expect(await screen.findByText(/running without the Desk overlay/)).toBeInTheDocument()
-    expect(screen.getAllByTestId('data-source')[0]).toHaveTextContent('No Desk overlay on this backend')
+    const note = screen.getAllByTestId('data-source')[0]
+    expect(note).toHaveTextContent('No Desk overlay on this backend')
+    expect(note).toHaveAttribute('data-mode', 'no_overlay')
+    expect(note).toHaveTextContent('WRITES OFF')
+    expect(screen.getByTestId('mode-banner')).toHaveTextContent('No Desk overlay on this backend. External writes stay switched off.')
+    expect(fetchDeskRuns).not.toHaveBeenCalled()
+  })
+
+  it('counts every card as before on a backend without the Desk overlay', async () => {
+    setBackend([CALLS.email, CALLS.task, CALLS.failed])
+    vi.mocked(fetchDeskHealth).mockRejectedValue(new ApiClientError('Not Found', { status: 404 }))
+    renderApp()
+    // Without the overlay there are no Desk runs to sort by: nothing is set apart as "Scriba chat".
+    const strip = await screen.findByRole('region', { name: 'Where the work stands' })
+    // The navigation already counts them all (LiveApp.tsx); the overview must agree with it.
+    const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
+    expect(await within(nav).findByLabelText('2 approvals waiting')).toBeInTheDocument()
+    await waitFor(() => expect(tileCount(strip, 'Awaiting approval')).toBe('2'), { timeout: 3_000 })
+    expect(tileCount(strip, 'Failed or partial')).toBe('1')
+    expect(screen.queryByTestId('scriba-waiting')).toBeNull()
+    expect(screen.getByRole('region', { name: 'Waiting for you' })).toHaveTextContent('Re: Board pack')
+  })
+
+  it('counts only the secretary\'s own cards, and says how many more are waiting in Scriba chat', async () => {
+    // Cards proposed in Scriba's chat: no Desk run is their conversation or lists their ids.
+    setBackend([CALLS.email, CALLS.task, CALLS.failed])
+    renderApp()
+
+    const strip = await screen.findByRole('region', { name: 'Where the work stands' })
+    const waiting = await screen.findByTestId('scriba-waiting')
+    expect(waiting).toHaveTextContent('3 more actions are waiting in Scriba chat. They were not opened by the Desk and are listed apart in the approval center.')
+    expect(tileCount(strip, 'Awaiting approval')).toBe('0')
+    expect(within(strip).getByText('Awaiting approval').closest('a')).toHaveTextContent('3 more in Scriba chat, counted apart')
+    expect(tileCount(strip, 'Failed or partial')).toBe('0')
+    expect(screen.getByRole('region', { name: 'Waiting for you' })).toHaveTextContent('No proposal from the secretary is waiting for a decision, and nothing has failed.')
+    expect(screen.getByRole('region', { name: 'Waiting for you' })).not.toHaveTextContent('Re: Board pack')
+    // The navigation counts the secretary's cards too: none, so no badge.
+    const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
+    expect(within(within(nav).getByRole('link', { name: /Approval center/ })).queryByLabelText(/approvals waiting/)).toBeNull()
   })
 })
 
@@ -352,6 +459,29 @@ describe('live calendar and tasks', () => {
     expect(await screen.findByTestId('calendar-incomplete')).toHaveTextContent(/Outlook Calendar could not be read \(Graph timed out\).*not known to be free/)
   })
 
+  it('moves the calendar a week at a time and reads the week on screen', async () => {
+    setBackend()
+    const user = userEvent.setup()
+    renderApp('#/calendar')
+    const label = await screen.findByTestId('week-label')
+    const thisWeek = label.textContent
+    await waitFor(() => expect(fetchCalendarEvents).toHaveBeenCalled())
+    const first = vi.mocked(fetchCalendarEvents).mock.calls[0][1] as { start: string; end: string }
+    const days = (range: { start: string; end: string }) => (Date.parse(`${range.end}T00:00:00Z`) - Date.parse(`${range.start}T00:00:00Z`)) / 86_400_000
+    expect(days(first)).toBe(7)
+    expect(new Date(`${first.start}T12:00:00Z`).getUTCDay()).toBe(1) // Monday to Monday
+    expect(screen.getByRole('button', { name: 'This week' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Next week' }))
+    await waitFor(() => expect(vi.mocked(fetchCalendarEvents).mock.lastCall![1]).toEqual({ start: first.end, end: new Date(Date.parse(`${first.end}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10) }))
+    expect(screen.getByTestId('week-label').textContent).not.toBe(thisWeek)
+
+    await user.click(screen.getByRole('button', { name: 'This week' }))
+    await waitFor(() => expect(screen.getByTestId('week-label').textContent).toBe(thisWeek))
+    await user.click(screen.getByRole('button', { name: 'Previous week' }))
+    await waitFor(() => expect(vi.mocked(fetchCalendarEvents).mock.lastCall![1]).toMatchObject({ end: first.start }))
+  })
+
   it('says follow-up tracking does not exist yet, while tasks still load', async () => {
     setBackend()
     vi.mocked(fetchTasks).mockResolvedValue({ tasks: [{ id: 5, title: 'Prepare board slides', status: 'active' }] })
@@ -385,7 +515,85 @@ describe('approval center on live data', () => {
     renderApp('#/approvals')
     const email = await screen.findByRole('article', { name: /Send an email/ })
     await waitFor(() => expect(within(email).getByRole('button', { name: 'Approve and run' })).toBeEnabled())
-    expect(screen.queryByTestId('policy-note')).not.toBeInTheDocument()
+    // Real writes are said out loud: the note, the banner and the sidebar all read LIVE.
+    expect(screen.getByTestId('policy-note')).toHaveTextContent('Live. An approval you give here is carried out on the real mailbox or calendar and cannot be taken back.')
+    const banner = screen.getByTestId('mode-banner')
+    expect(banner).toHaveAttribute('data-mode', 'external')
+    expect(within(banner).getByTestId('mode-badge')).toHaveTextContent('LIVE')
+    expect(screen.getAllByTestId('data-source')[0]).toHaveTextContent('External writes authorized')
+    expect(within(email).queryByTestId('sandbox-tag')).toBeNull()
+  })
+
+  it('keeps sending off when the server holds external writes, even with the switch on', async () => {
+    setBackend()
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ executionMode: 'held', externalWrites: { enabled: true, message: 'The mailbox token has not been checked.' } }))
+    renderApp('#/approvals')
+    const banner = await screen.findByTestId('mode-banner')
+    await waitFor(() => expect(banner).toHaveAttribute('data-mode', 'disabled'))
+    expect(within(banner).getByTestId('mode-badge')).toHaveTextContent('WRITES OFF')
+    expect(await screen.findByTestId('policy-note')).toHaveTextContent('Connected: external writes disabled. Sending mail and changing calendars are refused by this backend. The mailbox token has not been checked.')
+  })
+
+  it('lists cards from Scriba chat apart from the secretary\'s, and counts only the secretary\'s', async () => {
+    setBackend([CALLS.email, CALLS.task, CALLS.failed])
+    // One Desk run: conversation 9, with its own proposed task.
+    const deskConversation: ChatConversation = { id: 9, title: 'Desk: Board pack by Thursday', status: 'active', last_message_at: '2026-11-13T09:20:00Z' }
+    const proposed = toolCall({ id: 31, message_id: 91, conversation_id: 9, tool_name: 'create_task', input: { title: 'Prepare the board pack' }, updated_at: '2026-11-13T09:20:00Z' })
+    vi.mocked(fetchChatConversations).mockResolvedValue([deskConversation, conversation])
+    vi.mocked(fetchChatMessages).mockImplementation(async id =>
+      id === 9
+        ? { conversation: deskConversation, messages: [{ id: 91, conversation_id: 9, role: 'assistant', content: 'Proposed for your approval: create_task.', status: 'complete', tool_calls: [proposed] }] }
+        : thread([CALLS.email, CALLS.task, CALLS.failed]),
+    )
+    vi.mocked(fetchDeskRuns).mockResolvedValue({ account: 'exec@desk.example', runs: [{ runId: 9, provider: 'gmail', email_id: 'm-9', subject: 'Board pack by Thursday', from_addr: 'dana@lumen.example', category: 'action_item', created_at: '2026-11-14T08:00:00+00:00' }] })
+    vi.mocked(fetchDeskRun).mockResolvedValue(deskRun({ runId: 9, actions: [deskAction({ toolCallId: 31, input: proposed.input })] }))
+    renderApp('#/approvals')
+
+    const mine = await screen.findByRole('region', { name: 'Waiting for your decision' })
+    expect(within(mine).getByRole('heading', { level: 2 })).toHaveTextContent('Proposed by the secretary, waiting for your decision (1)')
+    expect(within(mine).getAllByRole('article')).toHaveLength(1)
+    expect(within(mine).getByRole('article', { name: /Create a task: Prepare the board pack/ })).toBeInTheDocument()
+    expect(within(mine).getByRole('link', { name: 'From the message: Board pack by Thursday' })).toHaveAttribute('href', '#/work/9')
+    // The failed chat card is not the secretary's failure.
+    expect(screen.queryByRole('region', { name: 'Needs your attention' })).toBeNull()
+
+    const scriba = screen.getByTestId('scriba-cards')
+    expect(scriba.tagName).toBe('DETAILS')
+    expect(scriba).not.toHaveAttribute('open')
+    expect(within(scriba).getByText(/Waiting in Scriba chat \(3\)/)).toBeInTheDocument()
+    expect(scriba).toHaveTextContent('Not opened by the Desk')
+    expect(scriba).toHaveTextContent('They are not part of a Desk run and are not counted in the secretary\'s numbers.')
+    expect(within(scriba).getAllByTestId('tool-call')).toHaveLength(3)
+    expect(scriba).toHaveTextContent('Re: Board pack')
+    expect(scriba).toHaveTextContent('File expenses')
+    expect(scriba).not.toHaveTextContent('Prepare the board pack')
+
+    const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
+    expect(within(within(nav).getByRole('link', { name: /Approval center/ })).getByLabelText('1 approvals waiting')).toBeInTheDocument()
+    expect(within(within(nav).getByRole('link', { name: /Activity/ })).queryByLabelText(/failed or only partly ran/)).toBeNull()
+  })
+
+  it('keeps the activity record to the secretary\'s actions, with an Executed filter and Scriba\'s own records apart', async () => {
+    const ran = { ...CALLS.task, status: 'executed' as const }
+    setBackend([ran, CALLS.failed, { ...CALLS.email, id: 26, conversation_id: 3 }])
+    // The Desk run is conversation 2 and lists the two task cards; the email card (26) is from another chat.
+    vi.mocked(fetchChatMessages).mockResolvedValue(thread([ran, CALLS.failed, { ...CALLS.email, id: 26, conversation_id: 3 }]))
+    serveDeskRun([ran, CALLS.failed], { verified: [] })
+    const user = userEvent.setup()
+    renderApp('#/activity')
+
+    const filters = await screen.findByRole('group', { name: 'Filter by stage' })
+    await waitFor(() => expect(within(filters).getAllByRole('button').map(button => button.textContent)).toEqual(['All2', 'Open0', 'Executed1', 'Failed or partial1', 'Cancelled0']))
+    const scriba = await screen.findByTestId('scriba-cards')
+    expect(within(scriba).getByText(/In Scriba's own records \(1\)/)).toBeInTheDocument()
+    expect(within(scriba).getAllByTestId('tool-call')).toHaveLength(1)
+    expect(scriba).toHaveTextContent('Re: Board pack')
+
+    await user.click(within(filters).getByRole('button', { name: /Executed/ }))
+    const shown = screen.getAllByTestId('tool-call').filter(node => !scriba.contains(node))
+    expect(shown).toHaveLength(1)
+    // It ran, and the Desk has no verification evidence for it: not shown as a plain success.
+    expect(within(shown[0]).getByTestId('card-status')).toHaveTextContent('Executed, not verified')
   })
 
   it('approves a task once, then shows the status the server returns, not one of its own', async () => {

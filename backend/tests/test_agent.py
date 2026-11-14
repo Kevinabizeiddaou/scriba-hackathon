@@ -190,7 +190,10 @@ def test_a_second_thing_a_meeting_request_asks_for_becomes_a_task(desk):
                     "by Tuesday evening.", subject="Delivery windows")
     assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event", "create_task"]
     task = run["actions"][1]
-    assert task["input"]["title"] == "Send cut-off dates to Hannah"
+    # Since 0.5 the rules record the second request themselves, from its own
+    # sentence; the model's copy of the same task is refused as already planned.
+    assert task["input"]["title"] == "Send me your cut-off dates by Tuesday evening"
+    assert len([a for a in run["actions"] if a["tool_name"] == "create_task"]) == 1
     assert task["input"]["due_at"] == "2026-11-17T18:00:00+00:00"
     assert "hannah@nordhavn.example" in task["input"]["description"].lower()
 

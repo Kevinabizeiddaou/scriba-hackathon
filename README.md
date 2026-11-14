@@ -104,7 +104,7 @@ Tailwind and TypeScript configuration.
   cost per run. See the roadmap.
 - Triage state lives in Scriba; the Desk will not archive, label or move
   mail in Gmail or Outlook.
-- The Desk runs locally on `http://localhost:5173`. Hosting it needs
+- The Desk runs locally in Docker on `http://localhost:5173`. Hosting it needs
   configuration decisions listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Phases
@@ -121,27 +121,69 @@ authorized.
 
 ## Run it
 
-The Desk needs a running Scriba backend. It never stores a credential; the
-session is a cookie owned by the Scriba API.
+The app runs in Docker only; nothing else needs to be installed. `npm run dev`
+outside the container refuses to start and points here.
+
+One-time setup: the API is Scriba's own backend, so a Scriba checkout must sit
+next to this repository (or set `SCRIBA_PATH` to an existing checkout's
+`Gmail/` directory):
 
 ```bash
-cd frontend
-npm install
-npm run dev          # http://localhost:5173 (this port is required)
+git clone https://github.com/ScribaAssist/Scriba ../scriba
 ```
 
-By default the Desk on `localhost:5173` talks to a Scriba backend on
-`localhost:8000`. Set `VITE_API_BASE_URL` to use another Scriba API. The
-inbox, triage and briefing need the backend to run with the Desk overlay
-([backend/README.md](backend/README.md)).
+Then, from the repository root:
 
-`npm run dev:demo` runs the same screens on an in-memory mock with fictional
-people and no backend. It is labelled as mock data on every screen.
+```bash
+docker compose build
+```
+
+```bash
+docker compose up -d
+```
+
+Open http://localhost:5173. Stop it with `docker compose down`.
+
+`up -d` starts two containers:
+
+| Service | What it is | Port |
+| --- | --- | --- |
+| `api` | Scriba's seeded test backend (the real app, in-memory data, no database, providers or model) with the Desk overlay | 8000 |
+| `desk` | The Desk frontend, Vite dev server with hot reload; starts once `api` is healthy | 5173 |
+
+Seeded sign-in users are listed at the top of Scriba's
+`e2e/seeded_server.py`. All data resets when `api` restarts.
+
+- Edits under `frontend/` reload in the browser. The overlay (`backend/`) and
+  the Scriba checkout are mounted read-only: run `docker compose restart api`
+  after editing them.
+- Port 5173 is required (Scriba only trusts that origin), so nothing else may
+  be listening on it.
+- The browser, not the container, calls the API, so the Desk looks for it at
+  `http://localhost:8000`. Set `VITE_API_BASE_URL` in your shell or in a
+  `.env` next to `docker-compose.yml` to use another Scriba API.
+- After a dependency change in `frontend/package.json`, run
+  `docker compose build` and then `docker compose up -d -V` to refresh the
+  container's `node_modules`.
+- Logs: `docker compose logs -f api` or `docker compose logs -f desk`.
+
+Other profiles:
+
+```bash
+docker compose --profile demo up -d desk-demo     # mock data, no backend:     http://localhost:5174
+docker compose --profile prod up -d desk-prod     # production build on nginx: http://localhost:5173 (instead of desk)
+docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
+docker compose --profile test run --rm backend-tests    # overlay unit and route tests
+```
+
+For `desk-prod`, `VITE_API_BASE_URL` is baked in at build time, so rebuild
+after changing it.
 
 ## Tests
 
 ```bash
-cd frontend && npm test && npm run build     # unit tests, typecheck, build
+docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
+docker compose --profile test run --rm backend-tests    # overlay unit and route tests
 cd frontend && npm run eval                  # evaluation harness self-test (no backend, no agent)
 node scripts/smoke.mjs --base <scriba api>   # read-only API smoke
 node scripts/check-no-secrets.mjs            # run before every commit

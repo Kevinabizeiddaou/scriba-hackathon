@@ -62,6 +62,12 @@ in force, and is otherwise held (`external_writes_disabled`). See
 
 ## Run it
 
+**Use Docker:** `docker compose build`, then `docker compose up -d` from the
+repository root runs the overlay on Scriba's seeded backend (the `api`
+service; see "Run it" in the [main README](../README.md)). The manual commands
+below are what that container does, kept for reference and for running the
+overlay on a real Scriba backend.
+
 You need a Scriba checkout at commit `3ae3a2aa` or newer and its Python
 environment (the overlay adds no dependency). Nothing in Scriba is edited.
 Scriba's configuration stays where it is; none of it is copied here.

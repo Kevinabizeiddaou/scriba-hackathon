@@ -4,18 +4,18 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/require-docker.mjs && vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview --port 5173 --strictPort",
+    "preview": "node scripts/require-docker.mjs && vite preview --port 5173 --strictPort",
     "test:watch": "vitest",
     "eval": "tsx scripts/eval.ts",
     "fixtures:export": "tsx scripts/export-fixtures.ts",
     "docs:generate": "tsx scripts/generate-docs.ts",
     "contract:server": "tsx scripts/contract-server.ts",
     "dev:reference": "tsx scripts/dev-reference.ts",
-    "dev:demo": "vite --mode demo"
+    "dev:demo": "node scripts/require-docker.mjs && vite --mode demo"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "5.3.0",

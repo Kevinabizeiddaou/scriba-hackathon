@@ -63,7 +63,7 @@ function DeskScene() {
             </div>
             <div className="flex justify-end gap-2">
               <span className="h-8 w-20 rounded-[10px] border border-line-strong" />
-              <span className="h-8 w-24 rounded-[10px] bg-brand-500 shadow-[0_6px_18px_rgba(79,91,213,0.55)]" />
+              <span className="h-8 w-24 rounded-[10px] bg-brand-500 shadow-[0_6px_18px_rgba(143,31,61,0.55)]" />
             </div>
           </div>
         </div>

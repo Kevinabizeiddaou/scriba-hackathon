@@ -290,7 +290,7 @@ function WorkQueue() {
   if (overlayMissing) {
     return (
       <div>
-        <PageHeader title="Work queue" subtitle="Every request the secretary has picked up, where it stands, and what it needs from you." />
+        <PageHeader title="Automations" subtitle="Every request the secretary has picked up, where it stands, and what it needs from you." />
         <div className="max-w-3xl px-4 pb-12 sm:px-6 lg:px-8">
           <EmptyState icon={PlugZap} title="This backend has no Desk overlay">
             The work queue reads the Desk's runs, which exist only when Scriba is started with the Desk overlay. Chat, approvals and tasks still work.
@@ -315,7 +315,7 @@ function WorkQueue() {
   return (
     <div>
       <PageHeader
-        title="Work queue"
+        title="Automations"
         subtitle="Every request the secretary has picked up, where it stands, and what it needs from you."
         actions={
           <>

@@ -420,7 +420,7 @@ describe('live overview', () => {
     expect(screen.getByRole('region', { name: 'Waiting for you' })).not.toHaveTextContent('Re: Board pack')
     // The navigation counts the secretary's cards too: none, so no badge.
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
-    expect(within(within(nav).getByRole('link', { name: /Approval center/ })).queryByLabelText(/approvals waiting/)).toBeNull()
+    expect(within(within(nav).getByRole('link', { name: /Approvals/ })).queryByLabelText(/approvals waiting/)).toBeNull()
   })
 })
 
@@ -569,7 +569,7 @@ describe('approval center on live data', () => {
     expect(scriba).not.toHaveTextContent('Prepare the board pack')
 
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
-    expect(within(within(nav).getByRole('link', { name: /Approval center/ })).getByLabelText('1 approvals waiting')).toBeInTheDocument()
+    expect(within(within(nav).getByRole('link', { name: /Approvals/ })).getByLabelText('1 approvals waiting')).toBeInTheDocument()
     expect(within(within(nav).getByRole('link', { name: /Activity/ })).queryByLabelText(/failed or only partly ran/)).toBeNull()
   })
 

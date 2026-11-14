@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { CalendarDays, ClipboardList, FlaskConical, History, Inbox, LayoutDashboard, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, X, type LucideIcon } from 'lucide-react';
+import { CalendarDays, FlaskConical, History, Home, Inbox, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, Workflow, X, type LucideIcon } from 'lucide-react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getApi, getWorkspace } from '../harness';
 import { hrefFor, type Page } from '../lib/router';
@@ -14,30 +14,31 @@ interface NavItem {
   label: string;
   short: string;
   icon: LucideIcon;
-  group: 'Desk' | 'Work' | 'Quality';
+  /** The five places the product is made of, and the rest, which stay reachable below them. */
+  group: 'Main' | 'More';
   /** Shown only on a live backend: the screen has no demo counterpart. */
   liveOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
-  { page: 'overview', label: 'Overview', short: 'Overview', icon: LayoutDashboard, group: 'Desk' },
-  { page: 'inbox', label: 'Inbox', short: 'Inbox', icon: Inbox, group: 'Desk' },
-  { page: 'calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays, group: 'Desk' },
-  { page: 'tasks', label: 'Tasks and follow-ups', short: 'Tasks', icon: ListTodo, group: 'Desk' },
-  { page: 'work', label: 'Work queue', short: 'Work', icon: ClipboardList, group: 'Work', liveOnly: true },
-  { page: 'chat', label: 'Secretary chat', short: 'Chat', icon: MessageSquareText, group: 'Work' },
-  { page: 'approvals', label: 'Approval center', short: 'Approvals', icon: ShieldCheck, group: 'Work' },
-  { page: 'activity', label: 'Activity', short: 'Activity', icon: History, group: 'Work' },
-  { page: 'evaluation', label: 'Evaluation', short: 'Evaluation', icon: FlaskConical, group: 'Quality' },
+  { page: 'overview', label: 'Home', short: 'Home', icon: Home, group: 'Main' },
+  { page: 'inbox', label: 'Inbox', short: 'Inbox', icon: Inbox, group: 'Main' },
+  { page: 'work', label: 'Automations', short: 'Automations', icon: Workflow, group: 'Main', liveOnly: true },
+  { page: 'calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays, group: 'Main' },
+  { page: 'chat', label: 'Chat', short: 'Chat', icon: MessageSquareText, group: 'Main' },
+  { page: 'approvals', label: 'Approvals', short: 'Approvals', icon: ShieldCheck, group: 'More' },
+  { page: 'tasks', label: 'Tasks and follow-ups', short: 'Tasks', icon: ListTodo, group: 'More' },
+  { page: 'activity', label: 'Activity', short: 'Activity', icon: History, group: 'More' },
+  { page: 'evaluation', label: 'Evaluation', short: 'Evaluation', icon: FlaskConical, group: 'More' },
 ];
 /** The four destinations that fit in the phone's bottom bar. The rest are behind "More". */
-const BOTTOM: Page[] = ['overview', 'inbox', 'calendar', 'approvals'];
-/** On a live backend the work queue takes the calendar's place: it is where the day's work is. */
-const LIVE_BOTTOM: Page[] = ['overview', 'work', 'inbox', 'approvals'];
+const BOTTOM: Page[] = ['overview', 'inbox', 'calendar', 'chat'];
+/** On a live backend Automations takes the calendar's place: it is where the work is. */
+const LIVE_BOTTOM: Page[] = ['overview', 'inbox', 'work', 'chat'];
 
 function Mark() {
   return (
-    <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-brand-400 to-brand-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_16px_rgba(79,91,213,0.4)]">
+    <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-brand-400 to-brand-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_16px_rgba(143,31,61,0.4)]">
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16.5 8c-.7-1.800-2.400-3-4.500-3-2.600 0-4.500 1.500-4.500 3.600 0 4.600 9 2.400 9 7 0 2.100-1.900 3.400-4.500 3.400-2.200 0-3.900-1-4.700-2.700" />
       </svg>
@@ -69,12 +70,30 @@ export interface ShellBadges {
 export const ShellBadgesContext = createContext<ShellBadges | null>(null);
 
 /**
- * On a live backend the note is the execution mode (live/ModeIndicator.tsx): "connected" and
- * "carries out real writes" are separate facts, and a sandbox is never called live.
+ * On a live backend the execution mode is stated by the banner above every screen, so the sidebar
+ * shows only the mode's badge; the full note is one click away. The demo has no banner: there the
+ * note stays open.
  */
 function DataSourceNote() {
   const live = useLiveSession() !== null;
-  return live ? <ModeNote /> : <MockSourceNote />;
+  return live ? <LiveConnection /> : <MockSourceNote />;
+}
+
+/** One quiet line; the full note (backend, overlay, what an approval does) opens on request. */
+function LiveConnection() {
+  const session = useLiveSession()!;
+  return (
+    <details className="group px-1 text-[12px]">
+      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-1 text-mute hover:text-ink">
+        <ModeBadge mode={session.mode} />
+        <span className="group-open:hidden">Connection details</span>
+        <span className="hidden group-open:inline">Hide details</span>
+      </summary>
+      <div className="mt-2">
+        <ModeNote />
+      </div>
+    </details>
+  );
 }
 
 function MockSourceNote() {
@@ -138,7 +157,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             ? (work.data ?? 0)
             : 0;
   const badgeLabel = (target: Page) => (target === 'work' ? (badge(target) === 1 ? 'run that needs you' : 'runs that need you') : target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
-  const groups = ['Desk', 'Work', 'Quality'] as const;
+  const groups = ['Main', 'More'] as const;
   const nav = NAV.filter((item) => !item.liveOnly || session !== null);
   const bottom = session !== null ? LIVE_BOTTOM : BOTTOM;
   const inMore = nav.filter((item) => !bottom.includes(item.page));
@@ -152,7 +171,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
       </a>
 
       {/* Sidebar: large screens */}
-      <aside className="hidden w-[256px] shrink-0 flex-col border-r border-line bg-sunken/60 px-3.5 py-5 lg:flex">
+      <aside className="hidden w-[224px] shrink-0 flex-col border-r border-line bg-sunken/60 px-3 py-5 lg:flex">
         <a href={hrefFor('overview')} className="mb-6 flex items-center gap-3 rounded-xl px-2 py-1">
           <Mark />
           <span className="leading-tight">
@@ -160,10 +179,10 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             <span className="block text-xs font-medium text-accent">Executive Desk</span>
           </span>
         </a>
-        <nav aria-label="Main" className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+        <nav aria-label="Main" className="min-h-0 flex-1 space-y-5 overflow-y-auto">
           {groups.map((group) => (
-            <div key={group}>
-              <p className="eyebrow mb-1.5 px-3">{group}</p>
+            <div key={group} className={clsx(group === 'More' && 'border-t border-line pt-4')}>
+              {group === 'More' && <p className="eyebrow mb-1.5 px-3">More</p>}
               <div className="space-y-0.5">
                 {nav.filter((item) => item.group === group).map(({ page: target, label, icon: Icon }) => {
                   const active = target === page;
@@ -173,11 +192,12 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
                       href={hrefFor(target)}
                       aria-current={active ? 'page' : undefined}
                       className={clsx(
-                        'flex h-10 items-center gap-3 rounded-btn px-3 text-[13.5px] font-medium transition-colors duration-150',
-                        active ? 'bg-brand-500/30 text-ink shadow-[inset_2px_0_0_var(--accent)]' : 'text-soft hover:bg-white/[0.06] hover:text-ink',
+                        'flex items-center gap-3 rounded-btn px-3 font-medium transition-colors duration-150',
+                        group === 'Main' ? 'h-10 text-[13.5px]' : 'h-8 text-[12.5px]',
+                        active ? 'bg-brand-500/30 text-ink shadow-[inset_2px_0_0_var(--accent)]' : group === 'Main' ? 'text-soft hover:bg-white/[0.06] hover:text-ink' : 'text-mute hover:bg-white/[0.05] hover:text-ink',
                       )}
                     >
-                      <Icon aria-hidden className={clsx('h-[18px] w-[18px]', active ? 'text-accent' : 'text-mute')} />
+                      <Icon aria-hidden className={clsx(group === 'Main' ? 'h-[18px] w-[18px]' : 'h-4 w-4', active ? 'text-accent' : 'text-mute')} />
                       {label}
                       <Badge count={badge(target)} label={badgeLabel(target)} />
                     </a>

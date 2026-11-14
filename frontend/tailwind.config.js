@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-// Tokens of the "midnight and iris" theme. The values live in src/index.css; the brand scale is here.
+// Tokens of the "ink and burgundy" theme. The values live in src/index.css; the brand scale is here.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
@@ -21,13 +21,13 @@ export default {
         mute: 'rgb(var(--mute-rgb) / <alpha-value>)',
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
         brand: {
-          300: '#c7cdff',
-          400: '#8e99f5',
-          500: '#4f5bd5',
-          600: '#4450c4',
-          700: '#353e96',
-          800: '#232a66',
-          900: '#151a40',
+          300: '#f3c6d0',
+          400: '#d9788f',
+          500: '#8f1f3d',
+          600: '#7c1a35',
+          700: '#63152b',
+          800: '#45101f',
+          900: '#2a0a13',
         },
         ok: 'rgb(var(--ok-rgb) / <alpha-value>)',
         warn: 'rgb(var(--warn-rgb) / <alpha-value>)',

@@ -191,7 +191,7 @@ describe('work queue', () => {
   it('lists runs by what they need, with what needs the user first, and counts them in the navigation', async () => {
     serveRuns([INFO_RUN, DONE_RUN, HELD_RUN, TASK_RUN])
     renderApp('#/work')
-    await screen.findByRole('heading', { level: 1, name: 'Work queue' })
+    await screen.findByRole('heading', { level: 1, name: 'Automations' })
     const sections = await waitFor(() => {
       const found = ['Awaiting your approval', 'Needs your input', 'Completed and verified', 'No action needed'].map(name => screen.getByRole('region', { name }))
       return found
@@ -212,7 +212,7 @@ describe('work queue', () => {
 
     // Two runs need the user: the approval and the held meeting request. Finished work is not counted.
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
-    expect(within(within(nav).getByRole('link', { name: /Work queue/ })).getByLabelText('2 runs that need you')).toBeInTheDocument()
+    expect(within(within(nav).getByRole('link', { name: /Automations/ })).getByLabelText('2 runs that need you')).toBeInTheDocument()
   })
 
   it('filters by group and never claims a background worker', async () => {
@@ -262,7 +262,7 @@ describe('work queue', () => {
     // What needs the person comes before finished work.
     expect(unverified.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
-    expect(within(within(nav).getByRole('link', { name: /Work queue/ })).getByLabelText(/^1 runs? that needs? you$/)).toHaveTextContent('1')
+    expect(within(within(nav).getByRole('link', { name: /Automations/ })).getByLabelText(/^1 runs? that needs? you$/)).toHaveTextContent('1')
   })
 
   it('shows a failure to load as a failure, not as an empty queue', async () => {
@@ -290,7 +290,7 @@ describe('overview', () => {
     expect(links.map(a => a.getAttribute('href'))).toEqual(['#/work/8', '#/work/7'])
     expect(links[1]).toHaveTextContent('Review the proposed action and decide')
     expect(section).not.toHaveTextContent('Weekly digest') // finished and no-action runs are not pushed at the user
-    expect(within(section).getByRole('link', { name: /Work queue/ })).toHaveAttribute('href', '#/work')
+    expect(within(section).getByRole('link', { name: /Automations/ })).toHaveAttribute('href', '#/work')
   })
 
   it('says that mail is picked up on request when nothing has been picked up yet', async () => {
@@ -715,7 +715,7 @@ describe('run detail', () => {
     renderApp('#/work/999')
     expect(await screen.findByText('Run 999 does not exist for this account.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Try again|Retry/ })).not.toBeInTheDocument()
-    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Work queue' })).toHaveAttribute('href', '#/work')
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Automations' })).toHaveAttribute('href', '#/work')
   })
 })
 

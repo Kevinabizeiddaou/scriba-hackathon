@@ -220,7 +220,7 @@ export function LiveOverviewPage() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-5">
             {session.overlay === 'ok' && (
-              <Section title="Requests the secretary picked up" action={<a href={link('work')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Work queue <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+              <Section title="Requests the secretary picked up" action={<a href={link('work')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Automations <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
                 {worker.supported && worker.query.data && (
                   <div className="mb-3 border-b border-line pb-3">
                     <AgentActivity worker={worker.query.data.worker} timeZone={tz} />
@@ -260,7 +260,7 @@ export function LiveOverviewPage() {
               </Section>
             )}
 
-            <Section title="Waiting for you" action={<a href={link('approvals')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Approval center <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+            <Section title="Waiting for you" action={<a href={link('approvals')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Approvals <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
               {queue.isPending && <SkeletonRows rows={2} />}
               {queue.isError && <ErrorNote error={new Error(`The secretary's actions could not be loaded: ${getErrorMessage(queue.error)}`)} onRetry={() => void queue.refetch()} />}
               {counted && waiting.length === 0 && problems.length === 0 && <p className="text-[13px] text-soft">No proposal from the secretary is waiting for a decision, and nothing has failed.</p>}

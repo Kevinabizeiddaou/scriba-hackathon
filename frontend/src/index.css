@@ -10,42 +10,43 @@
 @tailwind utilities;
 
 /*
- * Scriba Executive Desk: "midnight and iris".
+ * Scriba Executive Desk: "ink and burgundy".
  *
- * A blue-black page, three cool surface levels, grey-blue text and one soft violet-blue accent.
- * The accent is kept away from the four status colours (green, amber, rose, cyan) so that a link
- * is never read as a state. Every text colour is above 4.5:1 on all three surfaces (the lowest,
- * muted text on a raised surface, is 5.5:1); white on the primary button is 5.5:1.
+ * A warm near-black page, three surface levels, warm grey text and Scriba's burgundy as the one
+ * accent. The accent (a dusty rose on dark) is kept away from the four status colours (green,
+ * amber, coral, cyan) so that a link is never read as a state. Every text colour is above 4.5:1
+ * on all three surfaces (the lowest, muted text on a raised surface, is 5.3:1); white on the
+ * primary button is 8:1.
  */
 :root {
   color-scheme: dark;
-  --bg: #0a0d14;
-  --surface: #121827;
-  --raised: #1a2132;
-  --sunken: #070a10;
-  --line: rgba(160, 175, 215, 0.11);
-  --line-strong: rgba(160, 175, 215, 0.22);
-  --ink: #eef1f8;
-  --soft: #b6bfd2;
-  --mute: #8e98af;
-  --accent: #a9b4ff;
+  --bg: #0b090c;
+  --surface: #141116;
+  --raised: #1d1920;
+  --sunken: #070608;
+  --line: rgba(226, 204, 214, 0.09);
+  --line-strong: rgba(226, 204, 214, 0.18);
+  --ink: #f4f0f2;
+  --soft: #c3bac0;
+  --mute: #9a9097;
+  --accent: #e7a1b4;
   --ok: #54d99a;
   --warn: #f5c451;
-  --danger: #fca5a5;
+  --danger: #ff8f73;
   --info: #67d8ef;
 
   /* The same colours as space-separated channels, for Tailwind opacity modifiers. */
-  --bg-rgb: 10 13 20;
-  --surface-rgb: 18 24 39;
-  --raised-rgb: 26 33 50;
-  --sunken-rgb: 7 10 16;
-  --ink-rgb: 238 241 248;
-  --soft-rgb: 182 191 210;
-  --mute-rgb: 142 152 175;
-  --accent-rgb: 169 180 255;
+  --bg-rgb: 11 9 12;
+  --surface-rgb: 20 17 22;
+  --raised-rgb: 29 25 32;
+  --sunken-rgb: 7 6 8;
+  --ink-rgb: 244 240 242;
+  --soft-rgb: 195 186 192;
+  --mute-rgb: 154 144 151;
+  --accent-rgb: 231 161 180;
   --ok-rgb: 84 217 154;
   --warn-rgb: 245 196 81;
-  --danger-rgb: 252 165 165;
+  --danger-rgb: 255 143 115;
   --info-rgb: 103 216 239;
 }
 
@@ -59,8 +60,8 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1100px 520px at 10% -12%, rgba(79, 91, 213, 0.2), transparent 62%),
-      radial-gradient(900px 460px at 100% -6%, rgba(103, 216, 239, 0.07), transparent 60%),
+      radial-gradient(1100px 520px at 10% -12%, rgba(143, 31, 61, 0.2), transparent 62%),
+      radial-gradient(900px 460px at 100% -6%, rgba(231, 161, 180, 0.05), transparent 60%),
       var(--bg);
     background-attachment: fixed;
     color: var(--ink);
@@ -72,7 +73,7 @@
   }
 
   ::selection {
-    background: rgba(169, 180, 255, 0.32);
+    background: rgba(231, 161, 180, 0.3);
   }
 
   :focus-visible {
@@ -155,7 +156,7 @@
     transform: scale(0.975);
   }
   .btn-primary {
-    @apply bg-brand-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_14px_rgba(79,91,213,0.3)] hover:bg-[#5d69e0] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_6px_20px_rgba(79,91,213,0.42)] active:bg-brand-600 disabled:hover:bg-brand-500;
+    @apply bg-brand-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_14px_rgba(143,31,61,0.3)] hover:bg-[#5d69e0] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_6px_20px_rgba(143,31,61,0.42)] active:bg-brand-600 disabled:hover:bg-brand-500;
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
   }
   .btn-secondary {
@@ -241,7 +242,7 @@ body::before {
   top: -22vh;
   width: 56vw;
   height: 56vh;
-  background: radial-gradient(closest-side, rgba(79, 91, 213, 0.26), transparent);
+  background: radial-gradient(closest-side, rgba(143, 31, 61, 0.26), transparent);
   animation: drift-a 38s ease-in-out infinite alternate;
 }
 body::after {
@@ -249,7 +250,7 @@ body::after {
   bottom: -26vh;
   width: 50vw;
   height: 54vh;
-  background: radial-gradient(closest-side, rgba(103, 216, 239, 0.1), transparent);
+  background: radial-gradient(closest-side, rgba(231, 161, 180, 0.08), transparent);
   animation: drift-b 46s ease-in-out infinite alternate;
 }
 @keyframes drift-a {
@@ -321,10 +322,10 @@ body::after {
 .scene-sheet {
   height: 100%;
   border-radius: 18px;
-  border: 1px solid rgba(170, 185, 235, 0.22);
-  background: linear-gradient(160deg, rgba(34, 43, 66, 0.96), rgba(18, 24, 39, 0.96));
+  border: 1px solid rgba(226, 204, 214, 0.2);
+  background: linear-gradient(160deg, rgba(38, 32, 41, 0.96), rgba(20, 17, 22, 0.96));
   box-shadow:
-    inset 0 1px 0 rgba(220, 228, 255, 0.1),
+    inset 0 1px 0 rgba(255, 236, 242, 0.1),
     0 30px 50px rgba(2, 4, 10, 0.55);
   padding: 18px;
   animation: scene-float 7s ease-in-out infinite;
@@ -336,9 +337,9 @@ body::after {
   animation-delay: -4.6s;
   border-color: rgb(var(--accent-rgb) / 0.45);
   box-shadow:
-    inset 0 1px 0 rgba(220, 228, 255, 0.14),
+    inset 0 1px 0 rgba(255, 236, 242, 0.14),
     0 30px 50px rgba(2, 4, 10, 0.55),
-    0 0 44px rgba(79, 91, 213, 0.35);
+    0 0 44px rgba(143, 31, 61, 0.35);
 }
 @keyframes scene-float {
   0%,
@@ -352,7 +353,7 @@ body::after {
 .scene-bar {
   height: 8px;
   border-radius: 999px;
-  background: rgba(182, 191, 210, 0.3);
+  background: rgba(195, 186, 192, 0.3);
 }
 .scene-floor {
   position: absolute;
@@ -362,7 +363,7 @@ body::after {
   height: 90px;
   margin-left: -180px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(79, 91, 213, 0.35), transparent);
+  background: radial-gradient(closest-side, rgba(143, 31, 61, 0.35), transparent);
   filter: blur(18px);
 }
 
@@ -401,5 +402,188 @@ body::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * The workflow graph (live/WorkflowGraph.tsx): stages as raised slabs on a chain. Depth comes
+ * from light and shadow, not from tilting text. The only motion is the link into the stage the
+ * secretary is working in.
+ */
+.flow {
+  overflow-x: auto;
+  padding: 6px 2px 4px;
+  scrollbar-width: thin;
+}
+.flow-track {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.flow-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.flow-step-ahead .flow-node {
+  opacity: 0.72;
+}
+.flow-text {
+  min-width: 0;
+  padding-top: 3px;
+}
+.flow-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  color: var(--mute);
+  background: linear-gradient(160deg, rgb(var(--raised-rgb)) 0%, rgb(var(--surface-rgb)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 1px 0 rgba(0, 0, 0, 0.5),
+    0 5px 0 -1px rgba(0, 0, 0, 0.42),
+    0 14px 22px -10px rgba(0, 0, 0, 0.7);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms ease-out,
+    border-color 220ms ease-out;
+}
+.flow-node-done {
+  color: var(--accent);
+  border-color: rgb(var(--accent-rgb) / 0.32);
+  background: linear-gradient(160deg, rgba(143, 31, 61, 0.42) 0%, rgba(69, 16, 31, 0.5) 100%);
+}
+.flow-node-live,
+.flow-node-warn,
+.flow-node-ok,
+.flow-node-danger {
+  transform: translateY(-3px);
+}
+.flow-node-live {
+  color: #fff;
+  border-color: rgb(var(--accent-rgb) / 0.7);
+  background: linear-gradient(160deg, #a52a4c 0%, #63152b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 6px 0 -1px rgba(42, 10, 19, 0.9),
+    0 18px 28px -10px rgba(143, 31, 61, 0.75),
+    0 0 0 5px rgb(var(--accent-rgb) / 0.1);
+}
+.flow-node-warn {
+  color: var(--warn);
+  border-color: rgb(var(--warn-rgb) / 0.6);
+  background: linear-gradient(160deg, rgba(245, 196, 81, 0.2) 0%, rgba(245, 196, 81, 0.07) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 0 -1px rgba(0, 0, 0, 0.5),
+    0 18px 26px -12px rgba(245, 196, 81, 0.45),
+    0 0 0 5px rgb(var(--warn-rgb) / 0.08);
+}
+.flow-node-ok {
+  color: var(--ok);
+  border-color: rgb(var(--ok-rgb) / 0.55);
+  background: linear-gradient(160deg, rgba(84, 217, 154, 0.2) 0%, rgba(84, 217, 154, 0.06) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 0 -1px rgba(0, 0, 0, 0.5),
+    0 18px 26px -12px rgba(84, 217, 154, 0.4);
+}
+.flow-node-danger {
+  color: var(--danger);
+  border-color: rgb(var(--danger-rgb) / 0.6);
+  background: linear-gradient(160deg, rgba(255, 143, 115, 0.2) 0%, rgba(255, 143, 115, 0.06) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 0 -1px rgba(0, 0, 0, 0.5),
+    0 18px 26px -12px rgba(255, 143, 115, 0.4);
+}
+/* The link from the stage before: vertical on a phone. */
+.flow-link {
+  position: absolute;
+  left: 21px;
+  top: -18px;
+  height: 18px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+.flow-link-on {
+  background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.35), rgb(var(--accent-rgb) / 0.75));
+}
+.flow-link-skip {
+  background: repeating-linear-gradient(180deg, var(--line-strong) 0 3px, transparent 3px 6px);
+}
+.flow-spin {
+  animation: flow-spin 1.6s linear infinite;
+}
+@keyframes flow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes flow-run {
+  to {
+    background-position: 24px 0;
+  }
+}
+@media (min-width: 640px) {
+  .flow-track {
+    flex-direction: row;
+    gap: 0;
+    min-width: min-content;
+  }
+  .flow-step {
+    flex: 1 1 0;
+    min-width: 124px;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 0 6px;
+    text-align: center;
+  }
+  .flow-text {
+    padding-top: 0;
+  }
+  .flow-text .flex {
+    justify-content: center;
+    text-align: left;
+  }
+  .flow-link {
+    left: calc(-50% + 28px);
+    top: 21px;
+    height: 2px;
+    width: calc(100% - 56px);
+  }
+  .flow-link-on {
+    background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.35), rgb(var(--accent-rgb) / 0.75));
+  }
+  .flow-link-skip {
+    background: repeating-linear-gradient(90deg, var(--line-strong) 0 4px, transparent 4px 8px);
+  }
+  .flow-link-live {
+    background-image: repeating-linear-gradient(90deg, rgb(var(--accent-rgb) / 0.9) 0 8px, rgb(var(--accent-rgb) / 0.2) 8px 12px);
+    background-size: 24px 2px;
+    animation: flow-run 0.9s linear infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-spin,
+  .flow-link-live {
+    animation: none;
+  }
+  .flow-node {
+    transition: none;
   }
 }

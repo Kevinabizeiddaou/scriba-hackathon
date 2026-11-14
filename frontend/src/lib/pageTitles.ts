@@ -1,13 +1,13 @@
 import type { Page } from './router';
 
 export const PAGE_TITLES: Record<Page, string> = {
-  overview: 'Overview',
+  overview: 'Home',
   inbox: 'Inbox',
   calendar: 'Calendar',
   tasks: 'Tasks and follow-ups',
-  work: 'Work queue',
-  chat: 'Secretary chat',
-  approvals: 'Approval center',
+  work: 'Automations',
+  chat: 'Chat',
+  approvals: 'Approvals',
   activity: 'Activity',
   evaluation: 'Evaluation',
 };

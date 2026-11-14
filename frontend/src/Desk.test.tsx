@@ -48,17 +48,8 @@ describe('workspace shell', () => {
     await open('');
     expect(await screen.findByRole('heading', { level: 1, name: /Good morning, Layla/ })).toBeInTheDocument();
     const nav = screen.getAllByRole('navigation', { name: 'Main' })[0];
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent!.replace(/\d+$/, ''))).toEqual([
-      'Overview',
-      'Inbox',
-      'Calendar',
-      'Tasks and follow-ups',
-      'Secretary chat',
-      'Approval center',
-      'Activity',
-      'Evaluation',
-    ]);
-    expect(within(nav).getByRole('link', { name: /Overview/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent!.replace(/\d+$/, ''))).toEqual(['Home', 'Inbox', 'Calendar', 'Chat', 'Approvals', 'Tasks and follow-ups', 'Activity', 'Evaluation']);
+    expect(within(nav).getByRole('link', { name: /Home/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText(/Scripted agent and fictional people\. No real email is sent and no calendar is changed/)).toBeInTheDocument();
     await waitFor(() => expect(within(nav).getByLabelText('4 approvals waiting')).toBeInTheDocument());
     expect(within(nav).getByLabelText('4 new requests')).toBeInTheDocument();
@@ -74,10 +65,10 @@ describe('workspace shell', () => {
     const user = userEvent.setup();
     await open('#/overview');
     const bottom = screen.getAllByRole('navigation', { name: 'Main' })[1];
-    expect(within(bottom).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Overview', 'Inbox', 'Calendar', 'Approvals']);
+    expect(within(bottom).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Home', 'Inbox', 'Calendar', 'Chat']);
     await user.click(within(bottom).getByRole('button', { name: /More/ }));
     const menu = screen.getByRole('dialog', { name: 'More destinations' });
-    expect(within(menu).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Tasks and follow-ups', 'Secretary chat', 'Activity', 'Evaluation']);
+    expect(within(menu).getAllByRole('link').map((a) => a.textContent!.replace(/\d+/g, ''))).toEqual(['Approvals', 'Tasks and follow-ups', 'Activity', 'Evaluation']);
   });
 });
 

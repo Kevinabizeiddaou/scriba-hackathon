@@ -37,7 +37,9 @@ import {
   type StepState,
 } from './deskRuns'
 import { emailKey, parseSender } from './mappers'
-import { ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, SandboxTag, StepTally } from './RunParts'
+import { ExecutionStep, FollowUpItem, RunStatus, RunTimeline, SandboxTag, StepTally } from './RunParts'
+import { RunDeliverables } from './RunDeliverables'
+import { WorkflowGraph, stageNotes } from './WorkflowGraph'
 import { applyTaskUpdate, commandTextOf, dismissTaskUpdate, resolveUnresolved, runKindOf, taskUpdatesOf, unresolvedOf } from './deskContract'
 import { FOLLOW_UP_ORDER, LIFECYCLE_REASON, effectsOf, progressOf, stageInfo, stageOfRun } from './runLifecycle'
 import { RunPlan } from './PlanView'
@@ -275,7 +277,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
   const back = (
     <a href={hrefFor('work')} className="tap inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
       <ArrowLeft aria-hidden className="h-4 w-4" />
-      Work queue
+      Automations
     </a>
   )
 
@@ -386,7 +388,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
                 {stageInfo(stage)!.blurb}
                 {data.lifecycle?.reason ? ` ${LIFECYCLE_REASON[data.lifecycle.reason] ?? `Reason reported: ${data.lifecycle.reason.replace(/_/g, ' ')}.`}` : ''}
               </p>
-              <RunProgress steps={progress} timeZone={tz} />
+              <WorkflowGraph steps={progress} timeZone={tz} notes={stageNotes(data)} />
               {data.lifecycle?.compensation && (
                 <p role="alert" className="rounded-lg border border-danger/30 bg-danger/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-danger">{data.lifecycle.compensation.message} The secretary never undoes an action that ran.</p>
               )}
@@ -398,6 +400,8 @@ export function LiveRunDetail({ runId }: { runId: number }) {
               )}
             </section>
           )}
+
+          <RunDeliverables run={data} onChanged={afterStep} />
 
           {plan && <RunPlan plan={plan} actions={data.actions} simulated={data.simulated === true} />}
 

@@ -9,9 +9,9 @@ Seed 7, week of 2026-11-16. **26 passed, 0 failed, 1 not run.** A case that coul
 | Case | Result | What was observed |
 | --- | --- | --- |
 | the same seed gives the same initial office | pass | office specification 890a911e74c74890 twice; the sandbox world as built from it: 1f74da2c66f545e8 and 1f74da2c66f545e8 |
-| replaying a complete day reproduces it | pass | 105 log entries each; fingerprints 020e195fdaf79843 and 020e195fdaf79843 |
+| replaying a complete day reproduces it | pass | 105 log entries each; fingerprints 031ff5310ca278c3 and 031ff5310ca278c3 |
 | the verdicts are the same on replay | pass | 14 verdicts; differing: none |
-| another seed: the same office, other arrival seconds and counterpart choices | pass | world 1f74da2c66f545e8 (same); replay df0cfee8a77f4ae8 (different, as expected); verdicts that changed with the seed: none |
+| another seed: the same office, other arrival seconds and counterpart choices | pass | world 1f74da2c66f545e8 (same); replay fd61f20e7a81174d (different, as expected); verdicts that changed with the seed: none |
 
 ## Repeats, duplicates, missing things
 

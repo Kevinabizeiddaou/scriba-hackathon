@@ -32,6 +32,8 @@ had moved while it was being put together, so a second branch,
 | 7 | Lab acceptance report and tools | `agent3/autonomy-quality` `dbc6b5f` | none |
 | 8 | Workbook changes on a copy, overlay 0.5.1 | `agent1/automation-integration` `dee5583` | six files, below |
 
+| 9 | `agent1/integration` again: its own merge of an earlier `main`, results and pull request text | `3ecdca7` | five files, below |
+
 Pull request 16 (deploy notes) was merged into `main` separately, by its
 author; it is in the tree and was not part of this work.
 
@@ -59,6 +61,12 @@ Every one was two additions at the same place; both are kept.
 | `backend/desk_overlay/routes.py`, `workflow.py` | The unresolved-requests route and method, and the three file-change routes and their methods |
 | `frontend/src/api/desk.ts` | `unresolved` and `fileChanges` on a run; `kind` declared once |
 | `docs/BACKEND_CONTRACT.md`, `AUTOMATION_INTEGRATION.md` | Section 13 stays the integrated engine. Files, workbook changes and the desktop bridge is section 14: changing a workbook is 14.5, the limits 14.6 |
+
+Row 9 changed no backend code in this tree. Its conflicts: the version stays
+`0.5.1`; the typed client keeps `attachments`, `files` and `fileChanges`
+(that branch has no files code); the generated scenario evidence is the one
+measured here; and in `runLifecycle.ts` that branch's newer wording of five
+held reasons is taken, which is the only non-document change it brought.
 
 Compatibility decision: the two 0.5.0 branches combine as `0.5.0`, and the
 workbook commit makes the combined backend report `0.5.1`.
@@ -179,11 +187,12 @@ the largest group is a time written in the message that the rules do not read.
 ### Office simulation (Agent 4)
 
 `python -m officesim run all`, seed 7. The first column was measured on the
-final tree and is identical to the first round. **The second column and the
-robustness figures are from the first round** (`main` at `3f42ca3`, before
-the workbook commit): on the final tree those two passes did not run, because
-their sandbox server did not start within the simulator's 90 seconds on a
-machine that was running other servers at the time. They were not repeated.
+final tree and is identical to the first round, and so is the robustness
+pass (26 passed, 0 failed, 1 not run). **The second column is from the first
+round** (`main` at `3f42ca3`, before the workbook commit): on the final tree
+that pass stopped at its fourth day, because its sandbox server did not start
+within the simulator's 90 seconds on a machine that was running other servers
+at the time. It was not repeated.
 Summaries: `hackathon/office-simulation/evidence/history/integration-final/`.
 Agent 4's evidence and recording are unchanged.
 

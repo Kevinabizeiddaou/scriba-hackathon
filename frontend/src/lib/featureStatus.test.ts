@@ -22,11 +22,18 @@ describe('feature status', () => {
     for (const feature of FEATURES.filter((f) => f.status === 'waiting')) expect(feature.backend, feature.name).toMatch(/^None/);
   });
 
-  it('does not claim agent results or follow-up tracking, which do not exist', () => {
-    const status = (name: RegExp) => FEATURES.find((f) => name.test(f.name))!.status;
-    expect(status(/Results against the real agent/)).toBe('waiting');
-    expect(status(/Follow-up tracking/)).toBe('waiting');
-    expect(status(/Summaries and extracted action items/)).toBe('waiting');
+  it('does not claim agent results, which do not exist, and ties follow-up tracking to the backend that has it', () => {
+    const feature = (name: RegExp) => FEATURES.find((f) => name.test(f.name))!;
+    expect(feature(/Results against the real agent/).status).toBe('waiting');
+    expect(feature(/Summaries and extracted action items/).status).toBe('waiting');
+    // Follow-up tracking exists from Desk overlay 0.3. The entry has to say so, and that an older backend has none.
+    const followUps = feature(/Follow-up tracking/);
+    expect(followUps.status).toBe('connected');
+    expect(followUps.backend).toMatch(/GET \/desk\/follow-ups.*overlay 0\.3/);
+    expect(followUps.needs).toMatch(/older backend/);
+    // A rules-only run on the sandbox routes is its own entry and is never the agent's result.
+    expect(feature(/Scripted-model evaluation/).backend).toContain('/desk/eval/v1');
+    expect(feature(/Results against the real agent/).backend).toMatch(/no model has been run/);
     expect(renderFeatureStatus()).toContain('nothing here measures the agent');
   });
 

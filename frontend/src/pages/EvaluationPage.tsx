@@ -1,3 +1,4 @@
+import { EvaluationResultPanel } from '../components/EvaluationResult';
 import clsx from 'clsx';
 import { ChevronDown, FlaskConical, Info, Play, Save, Square, Upload } from 'lucide-react';
 import { Fragment, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
@@ -155,9 +156,9 @@ function SelfTestPanel({ report }: { report: SelfTestReport }) {
 }
 
 const RESULT_KINDS: { name: string; what: string; state: string; exists: boolean }[] = [
-  { name: 'Mock and reference', what: 'The harness run against scripted reference answers. It proves the scorer and runner, not the agent.', state: 'Available: run the harness self-test on this page.', exists: true },
-  { name: 'Seeded integration', what: 'The Desk overlay and this frontend exercised on Scriba with seeded data and no model. It proves the plumbing, not the agent.', state: 'Recorded in docs/frontend/LIVE_INTEGRATION.md. Not an agent result, so it has no pass rate here.', exists: true },
-  { name: 'Real-model sandbox', what: 'The twenty cases run by the real agent against sandbox mailboxes and calendars.', state: 'None yet. The backend has no sandbox evaluation route; the smallest safe one is specified in docs/frontend/LIVE_INTEGRATION.md.', exists: false },
+  { name: 'Mock evaluation', what: 'The harness run against scripted reference answers. It proves the scorer and runner, not the agent.', state: 'Available: run the harness self-test on this page.', exists: true },
+  { name: 'Scripted-model evaluation', what: 'The twenty cases run by the real workflow of a backend, in a sandbox, with no model: its planner is rules alone. Real code, real safeguards, but not the agent of the product.', state: 'Produced with npm run eval against a backend with sandbox evaluation routes (Desk overlay 0.3). Import the report file to read it here; it is shown in its own panel and never in the headline numbers.', exists: true },
+  { name: 'Real-model evaluation', what: 'The twenty cases run by the model-driven agent against sandbox mailboxes and calendars.', state: 'None yet. No model has been run through the sandbox routes.', exists: false },
   { name: 'Live provider', what: 'The agent acting on real Gmail, Outlook and calendars.', state: 'None, and the suite never produces one: it does not send real mail or change a real calendar.', exists: false },
 ];
 
@@ -197,7 +198,7 @@ export function EvaluationPage() {
   const live = api.info.dataSource === 'live' && !onScriba;
   const timeZone = api.info.principal.timezone;
 
-  const { liveReport, selfTest, snapshots, progress, error, notice } = useEvaluationSession();
+  const { liveReport, scriptedReport, selfTest, snapshots, progress, error, notice } = useEvaluationSession();
   const [openCase, setOpenCase] = useState<string | null>(null);
   const [category, setCategory] = useState<string>('all');
   const [snapshotDay, setSnapshotDay] = useState<SnapshotDay>('friday');
@@ -426,6 +427,8 @@ export function EvaluationPage() {
             ))}
           </div>
         </section>
+
+        {scriptedReport && <EvaluationResultPanel report={scriptedReport} timeZone={timeZone} />}
 
         {selfTest && <SelfTestPanel report={selfTest} />}
 

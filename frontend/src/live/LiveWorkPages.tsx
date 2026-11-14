@@ -32,6 +32,29 @@ export function QueueCoverage({ queue }: { queue: WorkQueue }) {
 function PolicyNote() {
   const { policy, overlay } = useRequiredLiveSession()
   if (policy.externalWritesEnabled) return null
+  if (policy.executionMode === 'sandbox') {
+    return (
+      <div className="rounded-lg border border-warn/30 bg-warn/[0.06] px-3 py-2 text-[12.5px] leading-[19px] text-soft" data-testid="policy-note">
+        <p>
+          <span className="font-semibold text-warn">Sandbox. </span>
+          Approving a mail or calendar action here applies it to an isolated stand-in for your mailbox and calendar. Nothing real is sent or changed, and a result is never a real success.
+        </p>
+        {policy.readinessChecks.length > 0 && (
+          <details className="mt-1.5">
+            <summary className="tap cursor-pointer font-medium text-accent">Why real sending is off ({policy.readinessChecks.filter(check => !check.ok).length} of {policy.readinessChecks.length} checks not passed)</summary>
+            <ul className="mt-1.5 space-y-1" aria-label="Readiness checks for real sending">
+              {policy.readinessChecks.map(check => (
+                <li key={check.id} className="flex gap-2">
+                  <span className={check.ok ? 'font-semibold text-ok' : 'font-semibold text-warn'}>{check.ok ? 'Passed' : 'Not passed'}</span>
+                  <span className="min-w-0">{check.detail}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
+    )
+  }
   return (
     <p className="rounded-lg border border-line bg-white/[0.03] px-3 py-2 text-[12.5px] text-soft" data-testid="policy-note">
       <span className="font-semibold text-ink">Sending and calendar changes are switched off. </span>

@@ -7,7 +7,7 @@
  * availability finding. Everything else is fixed elsewhere or waited out. The card offers the
  * way the contract names and no other.
  */
-import type { DeskHoldCode } from '../api/desk'
+import type { DeskAnyHoldCode } from '../api/desk'
 import { asRecord, readList } from './describeAction'
 import type { ChatToolCall } from './scribaApi'
 
@@ -22,6 +22,10 @@ export type HoldResolution =
   | 'open_thread'
   /** A read or a check failed: nothing to decide yet. */
   | 'try_later'
+  /** The execution gate refused it: nothing ran, and the card stays as it is. */
+  | 'gate_closed'
+  /** The provider did not confirm: look at the mailbox or calendar before any retry. */
+  | 'check_first'
 
 export interface HoldExplanation {
   title: string
@@ -29,13 +33,25 @@ export interface HoldExplanation {
   resolution: HoldResolution
 }
 
-/**
- * `reply_target_missing` is emitted by backend/desk_overlay/safeguards.py but is not in the
- * contract's list or in DeskHoldCode. It is handled here and reported to the backend owner.
- */
-export type KnownHoldCode = DeskHoldCode | 'reply_target_missing'
+/** Every code the typed client declares: the safeguards of section 7 and the execution gate of section 8. */
+export type KnownHoldCode = DeskAnyHoldCode
 
 const HOLDS: Record<KnownHoldCode, HoldExplanation> = {
+  external_writes_disabled: {
+    title: 'Sending mail and changing calendars are switched off on this backend',
+    detail: 'Your approval was received, but the server refused to carry it out: nothing was sent and nothing was changed. The action stays here and can be approved again once the backend reports that external writes are ready.',
+    resolution: 'gate_closed',
+  },
+  outcome_unknown: {
+    title: 'The provider did not confirm, so it is not known whether this happened',
+    detail: 'It may have gone through. Look in the mailbox or calendar before doing anything. In a sandbox a retry reads the result back first and does not repeat it.',
+    resolution: 'check_first',
+  },
+  sandbox_world_gone: {
+    title: 'This action was prepared in a sandbox that no longer exists',
+    detail: 'It cannot run. Nothing was sent. Cancel it; the secretary will propose it again if the request comes up again.',
+    resolution: 'try_later',
+  },
   reply_target_missing: {
     title: 'The reply does not say which message it answers',
     detail: 'Without the message it answers, the Desk cannot check that the reply goes to the right thread. Ask the secretary to draft it again from the message.',
@@ -78,12 +94,42 @@ const HOLDS: Record<KnownHoldCode, HoldExplanation> = {
   },
 }
 
+/**
+ * Codes the revised contract adds (agent1/autonomous-engine, 0282558) that the typed client does
+ * not declare yet. It cannot be approved past.
+ */
+const REVISED_HOLDS: Record<string, HoldExplanation> = {
+  proposal_changed: {
+    title: 'This action is no longer what was proposed',
+    detail: 'The stored action differs from the one the secretary proposed, and no edit of yours is on record. Nothing ran. Do not approve it as it is: cancel it, and the request can be picked up again.',
+    resolution: 'gate_closed',
+  },
+}
+
+/**
+ * Failure codes that need more than the raw word. `interrupted` is set by the worker's recovery
+ * (contract section 8, "Recovery after an interruption"): only in a sandbox, and only after the
+ * world was read back and the effect was not there.
+ */
+const FAILURES: Record<string, { title: string; detail: string }> = {
+  interrupted: {
+    title: 'The backend stopped while this action was being carried out',
+    detail: 'The sandbox was read back afterwards and the effect is not there, so it did not happen. It was not run again by itself.',
+  },
+}
+
+/** The explanation for a failed card's code, or null when the raw error is all there is to say. */
+export function explainFailure(code: string | null | undefined): { title: string; detail: string } | null {
+  return (code && FAILURES[code]) || null
+}
+
 /** The explanation for a hold code, or null for a code this version of the Desk does not know. */
 export function explainHold(code: string | null | undefined): HoldExplanation | null {
-  return (code && HOLDS[code as KnownHoldCode]) || null
+  return (code && (HOLDS[code as KnownHoldCode] ?? REVISED_HOLDS[code])) || null
 }
 
 export const HOLD_CODES = Object.keys(HOLDS) as KnownHoldCode[]
+export const REVISED_HOLD_CODES = Object.keys(REVISED_HOLDS)
 
 /** The addresses the backend could not verify on this card (`output.unverified_recipients`). */
 export function unverifiedRecipients(toolCall: Pick<ChatToolCall, 'output'>): string[] {

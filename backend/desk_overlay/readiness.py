@@ -34,7 +34,7 @@ EXTERNAL_WRITE_TOOLS = frozenset({
     "cancel_calendar_event",
 })
 # Tools that only write the user's own Scriba records.
-INTERNAL_WRITE_TOOLS = frozenset({"create_task", "create_reminder"})
+INTERNAL_WRITE_TOOLS = frozenset({"create_task", "create_reminder", "create_document", "create_spreadsheet"})
 
 ENV_SWITCH = "DESK_EXTERNAL_WRITES"
 ENV_AUTHORIZED_BY = "DESK_EXTERNAL_WRITES_AUTHORIZED_BY"

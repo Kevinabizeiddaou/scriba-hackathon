@@ -37,6 +37,7 @@ from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
+from .memory import Memory
 from .service import DeskService, NotFound
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -94,6 +95,7 @@ class DeskWorkflow:
         # intents. With it off, the rules and Scriba's extraction do.
         self.model_understanding = False
         self.commands = Commands(self)
+        self.memory = Memory(self)
         self._locks: Dict[str, Any] = {}
         self._locks_guard = threading.Lock()
 
@@ -116,6 +118,17 @@ class DeskWorkflow:
         world_for = getattr(self.gateway, "world_for", None)
         world = world_for(user) if callable(world_for) else None
         return bool(world is not None and world.evaluation)
+
+    def runs_in_scope(self, user: Any, limit: int = 50) -> List[Dict[str, Any]]:
+        """The user's runs in the world now in force (their real accounts, or
+        one sandbox world). Work done in one world is never read as history
+        in another."""
+        world = self._world_id(user)
+        try:
+            runs = self.gateway.list_runs(user, 200, include_evaluation=self._is_evaluation(user))
+        except TypeError:
+            runs = self.gateway.list_runs(user, 200)
+        return [run for run in runs if run["meta"].get("sandbox") == world][:limit]
 
     def _record(self, user: Any, run: Dict[str, Any], kind: str, data: Dict[str, Any]) -> None:
         lifecycle.record(self.gateway, user, run, kind, data, at=self.service.now(user).isoformat())
@@ -298,6 +311,25 @@ class DeskWorkflow:
             # Mail is data. Text that addresses the assistant is not obeyed,
             # and nothing is proposed on the strength of a message carrying it.
             return self._hand_over_untrusted(plan, source="rules")
+
+        try:
+            earlier = self.memory.earlier_same_request(ctx, user, item, self.thread_context(user, item, detail))
+        except Exception:
+            earlier = None                  # history unreadable: handle the message on its own
+        if earlier is not None:
+            # The same sender already asked for this in this conversation and
+            # the Desk has it. A second copy must not become a second action.
+            plan["flags"].append("duplicate")
+            reason = "already_in_progress" if earlier["open"] else "already_handled"
+            plan["held"] = {
+                "reason": reason, "slots": [], "calendars": [],
+                "target": {"runId": earlier["runId"], "messageId": earlier["messageId"], "stage": earlier["stage"]},
+                "message": "This repeats a request the same sender already made in this conversation, "
+                           + ("which is being handled." if earlier["open"] else "which was handled.")
+                           + " Nothing new is proposed."}
+            plan["decisions"].append({"decision": "none", "reason": reason, "earlierRunId": earlier["runId"],
+                                      "explanation": "The request repeats one already taken in."})
+            return plan
 
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
@@ -1245,7 +1277,7 @@ class DeskWorkflow:
         now = self.service.now(user)
         found: List[Dict[str, Any]] = []
         nudges: Dict[str, Dict[str, Any]] = {}
-        for run in self.gateway.list_runs(user, limit):
+        for run in self.runs_in_scope(user, limit):
             if refresh:
                 try:
                     with self._lock(run["meta"]["key"]):

@@ -260,6 +260,16 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id, dismiss=True))
 
+    @router.get("/memory")
+    def desk_memory(request: Request, thread: Optional[str] = None,
+                    sender: Optional[str] = None) -> Dict[str, Any]:
+        """What the Desk knows right now, read from records: meetings, open
+        tasks, replies awaited, cards pending, what was decided and done.
+        ``thread`` and ``sender`` narrow it. Reads only."""
+        user = gateway.current_user(request)
+        return workflow.memory.snapshot(request, user, thread_id=thread,
+                                        sender=(sender or "").strip().lower() or None)
+
     @router.get("/sandbox")
     def desk_sandbox(request: Request) -> Dict[str, Any]:
         """The caller's isolated provider world and everything done in it."""

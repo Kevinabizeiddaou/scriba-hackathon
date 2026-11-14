@@ -37,7 +37,7 @@ EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
 OPEN = ("pending", "needs_info", "draft", "awaiting_approval")
 RUNNING = ("approved", "executing")
-ALREADY_DONE_REASONS = ("already_scheduled", "task_exists")
+ALREADY_DONE_REASONS = ("already_scheduled", "task_exists", "already_in_progress", "already_handled")
 CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found", "intent_unclear",
                    "details_missing")
 

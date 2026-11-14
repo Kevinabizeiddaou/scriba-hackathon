@@ -505,10 +505,6 @@ export interface DeskAction {
   retry?: DeskActionRetry | null
   /** The fields the person changed in the approve request. `input` stays as proposed. */
   edited?: string[]
-  /** On a reminder (`purpose: "nudge"`): the follow-up it chases (0.4). */
-  followUpId?: string | null
-  /** The existing event a calendar change is about, as it was when proposed (0.4). */
-  target?: { id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' } | null
   /** The action as it ran, or will run: `input` with the person's edit applied. */
   effectiveInput?: Record<string, unknown>
   /** The provider did not confirm: it may or may not have happened. Check before retrying. */
@@ -721,17 +717,6 @@ export interface DeskFollowUp {
   toolCallId?: number
   /** True for an awaited reply Scriba tracked before the Desk (not opened by a Desk run). */
   external?: boolean
-  // ── overlay 0.4 ("Follow-ups as records") ───────────────────────────────
-  kind?: 'reply' | string
-  /** `desk`: opened by a Desk run. `external`: tracked by Scriba before the Desk. */
-  source?: 'desk' | 'external'
-  waitingOnName?: string | null
-  /** Reminders already sent for it, counted from executed cards. */
-  nudges?: number
-  /** A reminder for it waits for approval. */
-  nudgePending?: boolean
-  lastNudgeAt?: string | null
-  reason?: string | null
 }
 
 /**
@@ -1035,8 +1020,6 @@ export interface DeskRun {
   attachments?: DeskAttachment[]
   /** Files the Desk generated in this run (0.5). */
   files?: DeskFile[]
-  /** `command` (0.4): the run was started from a chat instruction; `email.email_id`, `thread_id` and `from_addr` are then null. */
-  kind?: 'email' | 'command'
   /**
    * 0.5: requests the Desk identified in the message and could not act on. While one is not
    * `resolved` the run is not complete (`lifecycle.reason: 'unresolved_requests'`), and `next`

@@ -58,8 +58,13 @@ reaches the final image.
    Never reuse Scriba production's `SESSION_SECRET_KEY` or `ENCRYPTION_KEY`. The full list
    of Scriba's settings is `env.template` in the Scriba checkout.
 4. **Domain.** Under the service's Settings, Networking, generate a public domain. That
-   host replaces `RAILWAY_API_HOST` in `vercel.json`. The image listens on Railway's
-   `PORT`, and Railway checks `/health` before switching traffic to a new deploy.
+   host is the `/api` destination in `vercel.json`. The image listens on Railway's
+   `PORT` (8080 by default; enter that port when generating the domain), and Railway
+   checks `/health` before switching traffic to a new deploy.
+
+**The live deployment:** API `https://scriba-hackathon-production.up.railway.app`,
+Desk `https://scriba-hackaton.vercel.app` (that spelling, without the second "h", is
+`DESK` in every variable above).
 
 **Background jobs.** Scriba starts its own schedulers in this process: daily briefs,
 Gmail sync, automation triggers and others. `RUN_SCHEDULERS=false` turns them all off
@@ -86,8 +91,8 @@ docker build -f backend/Dockerfile.railway --build-context scriba-source=<export
 
 1. Import this repository in Vercel. Leave the root directory as the repository root:
    `vercel.json` sets the install command, build command and output.
-2. In `vercel.json`, replace `RAILWAY_API_HOST` with the Railway service's public host
-   (for example `scriba-desk-api.up.railway.app`), commit, and deploy.
+2. The `/api` rewrite in `vercel.json` points at the Railway service's public host. If
+   the Railway domain ever changes, change it there, commit, and Vercel redeploys.
 
 The build runs `npm run build` (typecheck, then Vite). The Docker-only guard covers
 only the dev and preview servers, so it does not affect Vercel.

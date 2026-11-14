@@ -1,0 +1,213 @@
+# Continuous integration: every push to main and every pull request.
+#
+#   secret-scan    scripts/check-no-secrets.mjs over the files Git tracks
+#   frontend       typecheck, unit tests, production build (Node 22, as in the image)
+#   images         compose file is valid; the frontend dev and production images build
+#   backend        the whole backend suite in the api image, then the API smoke test against the
+#                  running seeded api, in normal and demo mode (the docker compose setup itself)
+#   hosted-image   backend/Dockerfile.railway builds, starts against a throwaway Postgres and
+#                  passes the anonymous smoke checks
+#
+# backend and hosted-image need Scriba, a private repository: the SCRIBA_GITHUB_TOKEN secret is a
+# fine-grained token with Contents: read-only on ScribaAssist/Scriba. Pull requests from forks get
+# no secrets, so those two jobs are skipped there. This repository is public and so are its
+# Actions logs: nothing below prints Scriba's code (pytest runs with --tb=line, and no container
+# log is dumped).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node scripts/check-no-secrets.mjs
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # Some UI tests assert local clock times written for UTC+2 (the team's zone).
+      TZ: Asia/Beirut
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test -- --maxWorkers=50%
+      - run: npx vite build
+
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compose file is valid
+        run: docker compose config --quiet
+      - name: Frontend dev image
+        run: docker compose build desk
+      - name: Frontend production image (nginx)
+        run: docker compose --profile prod build desk-prod
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The same layout as on a laptop: this repository, and Scriba beside it.
+    defaults:
+      run:
+        working-directory: desk
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: desk
+      - id: scriba
+        name: Scriba revision and token
+        env:
+          TOKEN: ${{ secrets.SCRIBA_GITHUB_TOKEN }}
+          FORK: ${{ github.event.pull_request.head.repo.fork == true }}
+        run: |
+          echo "revision=$(tr -d '[:space:]' < backend/SCRIBA_REVISION)" >> "$GITHUB_OUTPUT"
+          if [ -n "$TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$FORK" = "true" ]; then
+            echo "::warning::Pull request from a fork: no access to Scriba, the backend checks are skipped."
+            echo "available=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "::error::The SCRIBA_GITHUB_TOKEN secret is not set. It needs Contents: read-only on ScribaAssist/Scriba (see README, CI)."
+          exit 1
+      - uses: actions/checkout@v5
+        if: steps.scriba.outputs.available == 'true'
+        with:
+          repository: ScribaAssist/Scriba
+          ref: ${{ steps.scriba.outputs.revision }}
+          token: ${{ secrets.SCRIBA_GITHUB_TOKEN }}
+          path: scriba
+          # The checkout is mounted into the containers: leave no token in its .git/config.
+          persist-credentials: false
+      - name: Build the api and test images
+        if: steps.scriba.outputs.available == 'true'
+        run: docker compose --profile test build api backend-tests
+      - name: Backend tests (unit, route, and the overlay on the real Scriba app)
+        if: steps.scriba.outputs.available == 'true'
+        run: >
+          docker compose --profile test run --rm backend-tests
+          sh -c "python /desk/dev/check_scriba.py && python -m pytest /desk/tests -q -p no:cacheprovider --tb=line"
+      - name: Seeded sign-in user
+        if: steps.scriba.outputs.available == 'true'
+        run: |
+          # A test user of Scriba's seeded backend (in-memory, local only), from its seed file.
+          line=$(grep -m1 -E '^\s*users:' ../scriba/Gmail/e2e/seeded_server.py)
+          email=$(echo "$line" | awk '{print $2}')
+          password=$(echo "$line" | awk '{print $4}')
+          echo "::add-mask::$password"
+          { echo "SMOKE_EMAIL=$email"; echo "SMOKE_PASSWORD=$password"; } >> "$GITHUB_ENV"
+      - name: Smoke test against the running api
+        if: steps.scriba.outputs.available == 'true'
+        run: |
+          docker compose up -d --wait api
+          docker compose --profile test run --rm smoke --desk
+      - name: Smoke test in demo mode
+        if: steps.scriba.outputs.available == 'true'
+        env:
+          DESK_DEMO: "on"
+        run: |
+          docker compose up -d --wait api
+          docker compose --profile test run --rm smoke --desk-demo
+      - name: Stop
+        if: always() && steps.scriba.outputs.available == 'true'
+        run: docker compose down
+
+  hosted-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: desk
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: desk
+      - id: scriba
+        name: Scriba revision and token
+        env:
+          TOKEN: ${{ secrets.SCRIBA_GITHUB_TOKEN }}
+          FORK: ${{ github.event.pull_request.head.repo.fork == true }}
+        run: |
+          # The image's own pin must match the one the local api and backend tests use.
+          pinned=$(tr -d '[:space:]' < backend/SCRIBA_REVISION)
+          railway=$(sed -nE 's/^ARG SCRIBA_REF=([0-9a-f]+).*/\1/p' backend/Dockerfile.railway)
+          if [ "$pinned" != "$railway" ]; then
+            echo "::error file=backend/Dockerfile.railway::SCRIBA_REF ($railway) differs from backend/SCRIBA_REVISION ($pinned)."
+            exit 1
+          fi
+          echo "revision=$pinned" >> "$GITHUB_OUTPUT"
+          if [ -n "$TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$FORK" = "true" ]; then
+            echo "::warning::Pull request from a fork: no access to Scriba, the hosted image is not built."
+            echo "available=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "::error::The SCRIBA_GITHUB_TOKEN secret is not set. It needs Contents: read-only on ScribaAssist/Scriba (see README, CI)."
+          exit 1
+      - uses: actions/checkout@v5
+        if: steps.scriba.outputs.available == 'true'
+        with:
+          repository: ScribaAssist/Scriba
+          ref: ${{ steps.scriba.outputs.revision }}
+          token: ${{ secrets.SCRIBA_GITHUB_TOKEN }}
+          path: scriba
+          persist-credentials: false
+      - name: Build the hosted API image
+        if: steps.scriba.outputs.available == 'true'
+        # The local checkout stands in for the image's token-based fetch stage.
+        run: docker build -f backend/Dockerfile.railway --build-context scriba-source=../scriba -t desk-api:ci .
+      - name: Start it against a throwaway Postgres
+        if: steps.scriba.outputs.available == 'true'
+        run: |
+          docker network create ci
+          docker run -d --name pg --network ci -e POSTGRES_USER=ci -e POSTGRES_PASSWORD=ci -e POSTGRES_DB=ci postgres:16-alpine
+          until docker exec pg pg_isready -U ci >/dev/null 2>&1; do sleep 1; done
+          # Fresh secrets for this run only; the database is thrown away with the runner.
+          docker run -d --name api --network ci -p 127.0.0.1:8000:8000 \
+            -e DATABASE_URL='postgresql://ci:ci@pg:5432/ci?sslmode=disable' \
+            -e SESSION_SECRET_KEY="$(openssl rand -hex 32)" \
+            -e ENCRYPTION_KEY="$(python3 -c 'import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())')" \
+            -e ALLOWED_ORIGINS=http://localhost:5173 \
+            -e APP_FRONTEND_URL=http://localhost:5173 \
+            desk-api:ci
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then exit 0; fi
+            if [ "$(docker inspect -f '{{.State.Running}}' api)" != true ]; then break; fi
+            sleep 2
+          done
+          echo "::error::The hosted API image did not become healthy."
+          docker logs api 2>&1 | grep -E '"level": "(ERROR|CRITICAL)"|Error:' | cut -c1-300 | tail -20
+          exit 1
+      - uses: actions/setup-node@v5
+        if: steps.scriba.outputs.available == 'true'
+        with:
+          node-version: 22
+      - name: Anonymous smoke checks against the hosted image
+        if: steps.scriba.outputs.available == 'true'
+        run: node scripts/smoke.mjs --base http://127.0.0.1:8000 --desk

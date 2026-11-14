@@ -195,6 +195,16 @@ export const LIFECYCLE_REASON: Record<string, string> = {
   reply_needs_author: 'The message needs a reply that only you can write. The secretary proposes none by itself.',
   untrusted_instructions: 'The message contains text addressed to an assistant, so nothing was proposed from it.',
   unresolved_requests: 'The message asked for more than one thing and not every request could be acted on. What is left is listed below; the run is not complete until you take it over.',
+  // Files and websites (overlay 0.5.1 and 0.6).
+  file_change_suggested: 'A change to a workbook is ready and waits for you to apply it. Nothing was changed yet.',
+  file_change_failed: 'A change to a workbook could not be made. Nothing was kept and the original is unchanged.',
+  file_change_not_verified: 'A changed workbook was written and the file store did not confirm it. It is not counted as done.',
+  browser_running: 'The secretary is on a website for this request.',
+  browser_failed: 'The website errand stopped before it brought back what it went for. The steps below say where.',
+  browser_interrupted: 'The website errand was interrupted. It can be taken up again from its record.',
+  browser_outcome_unknown: 'A submission to the website got no answer, and it was not sent again. Check the site.',
+  workbook_not_mapped: 'The report was fetched, but its columns are not the workbook\'s, so no change was suggested.',
+  site_not_authorised: 'The message asks for something from a website you have not authorised. Nothing was opened.',
 }
 
 // ── held reasons added by overlay 0.3 ───────────────────────────────────────

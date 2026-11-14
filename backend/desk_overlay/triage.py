@@ -47,7 +47,7 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
     ``priority`` and ``reasons``.
     """
     subject = str(item.get("subject") or "")
-    text = str(item.get("snippet") or item.get("text") or "")
+    text = str(item.get("body") or item.get("snippet") or item.get("text") or "")
     reasons: List[str] = [str(reason) for reason in (verdict.get("reasons") or [])]
     classification = str(verdict.get("classification") or "")
     has_deadline = bool(_DEADLINE_RE.search(f"{subject}\n{text}"))

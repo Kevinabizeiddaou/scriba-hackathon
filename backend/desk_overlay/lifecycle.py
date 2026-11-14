@@ -1,0 +1,200 @@
+"""The life of a Desk run, and the evidence for it. Pure apart from ``record``.
+
+A run moves through these stages:
+
+    RECEIVED -> CLASSIFIED -> CONTEXT_GATHERING -> PLANNING
+        -> AWAITING_APPROVAL -> EXECUTING -> VERIFYING -> COMPLETED
+
+and can end, or rest, in one of:
+
+    AWAITING_REPLY        a reply went out and an answer is awaited
+    NEEDS_CLARIFICATION   the request cannot be acted on as written
+    ESCALATED             handed to the person; the Desk proposes nothing
+    PARTIALLY_COMPLETED   some actions took effect and some did not
+    FAILED, CANCELLED
+
+Nothing here is inferred from a wish. The first four stages are events the
+workflow records when it does the work. Everything after is derived from the
+state of the run's action cards in Scriba and from recorded events: a human
+decision, an execution, a verification, a follow-up. Each event carries its
+own time and keeps its kind, so an agent decision is never confused with a
+tool read, a proposed write, an approval, an execution or a verification.
+"""
+from __future__ import annotations
+
+from typing import Any, Dict, List, Mapping, Optional
+
+STAGES = ("RECEIVED", "CLASSIFIED", "CONTEXT_GATHERING", "PLANNING", "AWAITING_APPROVAL",
+          "EXECUTING", "VERIFYING", "COMPLETED", "AWAITING_REPLY", "NEEDS_CLARIFICATION",
+          "ESCALATED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
+FINAL_STAGES = ("COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
+
+# Kinds of evidence. One event is exactly one of these.
+KINDS = ("stage", "decision", "read", "proposal", "approval", "execution", "verification",
+         "human", "followup", "usage", "error")
+
+EXECUTED = ("executed",)
+PARTIAL = ("partially_executed",)
+OPEN = ("pending", "needs_info", "draft", "awaiting_approval")
+RUNNING = ("approved", "executing")
+CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found")
+
+_SUMMARIES = {
+    "RECEIVED": "Request received.",
+    "CLASSIFIED": "Request classified.",
+    "CONTEXT_GATHERING": "Context gathered.",
+    "PLANNING": "Plan made.",
+}
+
+
+def event(kind: str, data: Mapping[str, Any], at: str) -> Dict[str, Any]:
+    if kind not in KINDS:
+        raise ValueError(f"unknown evidence kind: {kind}")
+    return {"v": 1, "kind": kind, "at": at, "data": dict(data)}
+
+
+def summary_of(item: Mapping[str, Any]) -> str:
+    """One line a person can read. Never contains message text."""
+    kind, data = item.get("kind"), item.get("data") or {}
+    if kind == "stage":
+        return _SUMMARIES.get(str(data.get("stage")), f"Stage: {data.get('stage')}.")
+    if kind == "decision":
+        return str(data.get("explanation") or f"Decided: {data.get('decision')}.")
+    if kind == "read":
+        state = "read" if data.get("ok", True) else f"could not be read ({data.get('error')})"
+        return f"{data.get('tool')}: {state}."
+    if kind == "proposal":
+        return f"Proposed {data.get('tool')} for approval."
+    if kind == "approval":
+        verb = "approved" if data.get("decision") == "approve" else "rejected"
+        held = " It was held." if data.get("result") == "held" else ""
+        return f"{data.get('by')} {verb} {data.get('tool')}.{held}"
+    if kind == "execution":
+        return f"{data.get('tool')}: {data.get('status')}."
+    if kind == "verification":
+        return (f"{data.get('tool')}: verified ({data.get('method')})." if data.get("verified")
+                else f"{data.get('tool')}: not verified ({data.get('reason')}).")
+    if kind == "human":
+        return f"{data.get('by')} chose to {data.get('action')} {data.get('tool') or ''}".strip() + "."
+    if kind == "followup":
+        return f"Follow-up {data.get('state')}."
+    if kind == "usage":
+        return f"Model call: {data.get('model')}."
+    return str(data.get("message") or "An error was recorded.")
+
+
+def record(gateway: Any, user: Any, run: Mapping[str, Any], kind: str, data: Mapping[str, Any],
+           *, at: str) -> Dict[str, Any]:
+    """Append one piece of evidence to the run. Append-only."""
+    item = event(kind, data, at)
+    gateway.record_event(user, run, item, summary_of(item))
+    return item
+
+
+def follow_ups(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Each follow-up of the run in its latest state."""
+    latest: Dict[str, Dict[str, Any]] = {}
+    for item in events:
+        if item.get("kind") != "followup":
+            continue
+        data = dict(item.get("data") or {})
+        key = str(data.get("id") or "")
+        if not key:
+            continue
+        merged = {**latest.get(key, {}), **{k: v for k, v in data.items() if v is not None}}
+        merged["updatedAt"] = item.get("at")
+        latest[key] = merged
+    return list(latest.values())
+
+
+def usage_of(events: List[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Model usage recorded on the run, summed per model. None when no model
+    call was recorded: that is "unknown", not zero."""
+    calls = [item.get("data") or {} for item in events if item.get("kind") == "usage"]
+    if not calls:
+        return None
+    models: Dict[str, Dict[str, Any]] = {}
+    cost: Optional[float] = 0.0
+    for call in calls:
+        name = str(call.get("model") or "unknown")
+        entry = models.setdefault(name, {"model": name, "calls": 0, "inputTokens": 0,
+                                         "outputTokens": 0, "cachedInputTokens": None})
+        entry["calls"] += 1
+        for key, source in (("inputTokens", "inputTokens"), ("outputTokens", "outputTokens")):
+            if call.get(source) is None:
+                entry[key] = None
+            elif entry[key] is not None:
+                entry[key] += int(call[source])
+        if call.get("cachedInputTokens") is not None:
+            entry["cachedInputTokens"] = (entry["cachedInputTokens"] or 0) + int(call["cachedInputTokens"])
+        if call.get("costUsd") is None:
+            cost = None            # one unpriced call: the run has no total
+        elif cost is not None:
+            cost += float(call["costUsd"])
+    return {"models": list(models.values()),
+            "estimatedCostUsd": round(cost, 6) if cost is not None else None,
+            "priceSource": next((c.get("priceSource") for c in calls if c.get("priceSource")), None)}
+
+
+def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
+           events: List[Mapping[str, Any]], *, pending_next: bool = False) -> Dict[str, Any]:
+    """Where the run stands now.
+
+    ``actions`` are the run's action views (``status``, ``outcomeUnknown``,
+    ``verified``). ``pending_next`` is true when a step may still be proposed
+    (the confirmation reply after a booking).
+    """
+    statuses = [str(action.get("status") or "") for action in actions]
+    waiting_on = [f for f in follow_ups(events) if f.get("state") in ("waiting", "overdue")]
+    held = meta.get("held") if isinstance(meta.get("held"), Mapping) else None
+    unknown = any(action.get("outcomeUnknown") for action in actions)
+    reason: Optional[str] = None
+
+    if not actions:
+        if held:
+            reason = str(held.get("reason") or "")
+            stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
+        elif meta.get("draft_request"):
+            stage, reason = "ESCALATED", "reply_needs_author"
+        else:
+            stage, reason = "COMPLETED", "no_action_needed"
+    elif any(status in OPEN for status in statuses):
+        stage = "AWAITING_APPROVAL"
+    elif any(status in RUNNING for status in statuses):
+        stage = "EXECUTING"
+    else:
+        done = [a for a in actions if a.get("status") in EXECUTED]
+        partial = [a for a in actions if a.get("status") in PARTIAL]
+        failed = [a for a in actions if a.get("status") == "failed"]
+        if unknown:
+            stage, reason = "VERIFYING", "outcome_unknown"
+        elif partial or (done and failed):
+            stage = "PARTIALLY_COMPLETED"
+        elif failed:
+            stage = "FAILED"
+        elif not done:
+            stage = "CANCELLED"
+        elif pending_next:
+            stage, reason = "EXECUTING", "next_step_pending"
+        elif any(not a.get("verified") for a in done):
+            stage, reason = "VERIFYING", "not_yet_verified"
+        elif waiting_on:
+            stage = "AWAITING_REPLY"
+        else:
+            stage = "COMPLETED"
+
+    compensation = None
+    if stage == "PARTIALLY_COMPLETED":
+        # The Desk never undoes an executed action on its own.
+        compensation = {
+            "policy": "escalate",
+            "message": "Some of this work took effect and some did not. Nothing is undone "
+                       "automatically: retry the step that failed, or finish it yourself.",
+        }
+    return {"stage": stage, "reason": reason, "final": stage in FINAL_STAGES,
+            "outcomeUnknown": unknown, "compensation": compensation}
+
+
+def timeline(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    return [{"at": item.get("at"), "kind": item.get("kind"), "summary": summary_of(item),
+             "data": item.get("data") or {}} for item in events]

@@ -142,12 +142,20 @@ def test_a_conflict_on_either_calendar_means_no_event_is_proposed(world):
     data["outlook_busy"] = [Busy(at(f"{TUE}T10:30"), at(f"{TUE}T11:30"), "outlook",
                                  "exec@contoso.example", "Board call")]
     run = intake(client, "m1").json()
-    assert run["actions"] == [] and run["state"] == "no_action_proposed"
+    assert "create_calendar_event" not in [a["tool_name"] for a in run["actions"]]
     assert run["held"]["reason"] == "calendar_conflict"
     assert run["held"]["conflicts"][0]["title"] == "Board call"
     assert run["held"]["conflicts"][0]["provider"] == "outlook"
     assert run["held"]["slots"], "verified free times are offered instead"
-    assert run["next"] == ["draft_reply"]
+    # What IS proposed: a reply, for approval, offering only verified free times.
+    [reply] = run["actions"]
+    assert reply["tool_name"] == "send_email" and reply["purpose"] == "offer_times"
+    assert reply["status"] == "awaiting_approval" and reply["input"]["to"] == "sofia@client.example"
+    assert reply["input"]["thread_id"] == "T-m1" and reply["input"]["email_id"] == "m1"
+    free = {(slot["start"], slot["end"]) for slot in run["held"]["slots"]}
+    assert reply["proposedSlots"] and all((s["start"], s["end"]) in free for s in reply["proposedSlots"])
+    assert f"{TUE}T10:30" not in str(reply["proposedSlots"]) and f"{TUE}T11:00" not in str(reply["proposedSlots"])
+    assert run["state"] == "awaiting_approval" and run["next"] == []
 
 
 def test_an_unreadable_calendar_means_no_event_is_proposed(world):
@@ -166,17 +174,29 @@ def test_no_event_is_guessed_when_the_time_cannot_be_extracted(world):
     gateway, client = world
     gateway.world(EXEC)["emails"]["gmail"] = [MEETING]       # no meeting_plan: the model gave nothing
     run = intake(client, "m1").json()
+    assert run["held"]["reason"] == "time_not_understood"
+    assert [a["tool_name"] for a in run["actions"]] == ["send_email"]     # never an event
+    assert run["actions"][0]["purpose"] == "clarify" and run["actions"][0]["proposedSlots"]
+
+
+def test_with_no_time_and_an_unreadable_calendar_nothing_at_all_is_proposed(world):
+    gateway, client = world
+    gateway.world(EXEC)["emails"]["gmail"] = [MEETING]
+    gateway.world(EXEC)["outlook_error"] = "reconnect_required"
+    run = intake(client, "m1").json()
+    # No verified time exists, so there is nothing true to offer.
     assert run["actions"] == [] and run["held"]["reason"] == "time_not_understood"
+    assert run["lifecycle"]["stage"] == "NEEDS_CLARIFICATION"
 
 
-def test_a_reschedule_request_is_not_auto_proposed(world):
+def test_a_reschedule_request_for_a_meeting_that_cannot_be_found_changes_nothing(world):
     gateway, client = world
     gateway.world(EXEC)["emails"]["gmail"] = [
         email("m2", "Our call", "Can we reschedule our meeting to Thursday?", thread="T-m2")]
-    gateway.world(EXEC)["meeting_plan"] = PLAN
+    gateway.world(EXEC)["meeting_plan"] = PLAN        # a "create" answer must not turn this into a booking
     run = intake(client, "m2").json()
-    assert run["actions"] == [] and run["held"]["reason"] == "change_request"
-    assert ("extract_meeting", EXEC, "m2") not in gateway.calls
+    assert run["actions"] == [] and run["held"]["reason"] == "event_not_found"
+    assert run["lifecycle"]["stage"] == "NEEDS_CLARIFICATION"
 
 
 def test_the_confirmation_reply_is_proposed_only_after_the_event_is_executed(world):
@@ -200,7 +220,8 @@ def test_the_confirmation_reply_is_proposed_only_after_the_event_is_executed(wor
     assert reply["input"]["email_id"] == "m1" and reply["input"]["thread_id"] == "T-m1"
     assert reply["input"]["provider_account_id"] == "exec@gmail.example"
     assert reply["input"]["subject"] == "Re: Intro call next week?"
-    assert f"{TUE}T11:00:00+00:00" in reply["input"]["body"]
+    assert "Tuesday 17 November, 11:00 to 11:30 (UTC)" in reply["input"]["body"]
+    assert reply["purpose"] == "confirm"
 
     # Advancing again does not propose a second reply.
     again = advance(client, run["runId"]).json()

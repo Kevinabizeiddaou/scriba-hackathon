@@ -219,7 +219,7 @@ def run_desk_tool(service: DeskService, ctx: Any, user: DeskUser, name: str,
                                   timezone=(data.get("timezone") or None))
     if name == "find_free_slots":
         zone_name, _, _, _ = service.working_context(user, data.get("timezone") or None, None, None)
-        now = service.clock()
+        now = service.now(user)
         start = str(data.get("start") or "").strip() or now.isoformat()
         end = str(data.get("end") or "").strip()
         if not end:

@@ -43,6 +43,10 @@ class FakeGateway:
         self.acting_as: Optional[str] = None
         self.runs: Dict[int, Dict[str, Any]] = {}
         self.cards: List[Dict[str, Any]] = []
+        self.events: Dict[int, List[Dict[str, Any]]] = {}
+        self.receipts: Dict[tuple, Dict[str, Any]] = {}
+        self.production = False
+        self.model_calls: List[Dict[str, Any]] = []
 
     def add_user(self, user_id: int, address: str, *, google: Optional[List[str]] = None,
                  outlook: Optional[str] = None, gmail_mail: bool = False, outlook_mail: bool = False,
@@ -92,13 +96,73 @@ class FakeGateway:
     def scriba_commit(self) -> Optional[str]:
         return "test"
 
+    def is_production(self) -> bool:
+        return self.production
+
+    def model_configured(self) -> bool:
+        return False
+
+    def session_email(self, request: Any) -> Optional[str]:
+        from desk_overlay.gateway import acting_user
+
+        acting = acting_user()
+        if acting is not None:
+            return acting.email
+        headers = getattr(request, "headers", None)
+        return headers.get("x-test-user") if headers is not None else self.acting_as
+
+    def provider_status_for(self, user: DeskUser) -> Dict[str, Any]:
+        return self.users[user.email]["status"]
+
+    def acting_status(self) -> Optional[Dict[str, Any]]:
+        from desk_overlay.gateway import acting_user
+
+        acting = acting_user()
+        return self.users[acting.email]["status"] if acting is not None else None
+
+    def enrolled_users(self, addresses: List[str]) -> List[DeskUser]:
+        return [self.users[a]["user"] for a in addresses if a in self.users]
+
+    # Scriba's receipt ledger: UNIQUE (user_id, action_key), the same outcomes.
+    def claim_receipt(self, user_id: int, key: str, kind: str) -> Dict[str, Any]:
+        row = self.receipts.get((int(user_id), key))
+        if row is None:
+            row = {"id": len(self.receipts) + 1, "status": "pending", "object_id": None,
+                   "updated_at": dt.datetime.now(UTC)}
+            self.receipts[(int(user_id), key)] = row
+            return {"claimed": True, "receipt": dict(row)}
+        if row["status"] == "succeeded":
+            return {"claimed": False, "receipt": dict(row)}
+        if row["status"] == "failed":
+            row.update(status="pending", updated_at=dt.datetime.now(UTC))
+            return {"claimed": True, "receipt": dict(row)}
+        return {"claimed": False, "unknown": True, "receipt": dict(row)}
+
+    def finish_receipt(self, receipt_id: Any, status: str, object_id: Optional[str] = None) -> None:
+        for row in self.receipts.values():
+            if row["id"] == receipt_id:
+                row.update(status=status, object_id=object_id or row["object_id"],
+                           updated_at=dt.datetime.now(UTC))
+
+    def calendar_events(self, user: DeskUser, start: dt.datetime, end: dt.datetime) -> List[Dict[str, Any]]:
+        world = self.users[user.email]
+        if world.get("events_error"):
+            raise RuntimeError("calendar unavailable")
+        return list(world.get("events", []))
+
     def user_for_email(self, address: str) -> Optional[DeskUser]:
         world = self.users.get(str(address or "").strip().lower())
         return world["user"] if world else None
 
     def provider_status(self, request: Any) -> Dict[str, Any]:
         # A chat tool has no request: the session user is ambient there, and
-        # tests name it with ``acting_as``.
+        # tests name it with ``acting_as``. A worker names its user itself.
+        from desk_overlay.gateway import acting_user
+
+        acting = acting_user()
+        if acting is not None:
+            self.calls.append(("provider_status_for", acting.email))
+            return self.users[acting.email]["status"]
         headers = getattr(request, "headers", None)
         address = headers["x-test-user"] if headers is not None else self.acting_as
         return self.users[address]["status"]
@@ -136,11 +200,27 @@ class FakeGateway:
         return {"classification": "informational", "priority": "low", "reasons": ["no_question_or_request"]}
 
     # ── workflow runs (a stand-in for Scriba's chat conversations and cards) ─
-    def list_runs(self, user: DeskUser, limit: int = 50) -> List[Dict[str, Any]]:
-        return [run for run in self.runs.values() if run["user_id"] == user.id][:limit]
+    def list_runs(self, user: DeskUser, limit: int = 50,
+                  include_evaluation: bool = False) -> List[Dict[str, Any]]:
+        rows = [run for run in self.runs.values() if run["user_id"] == user.id
+                and (include_evaluation or not run["meta"].get("evaluation"))]
+        return sorted(rows, key=lambda run: run["id"], reverse=True)[:limit]
 
     def find_run(self, user: DeskUser, key: str) -> Optional[Dict[str, Any]]:
-        return next((run for run in self.list_runs(user, 500) if run["meta"]["key"] == key), None)
+        return next((run for run in self.list_runs(user, 500, include_evaluation=True)
+                     if run["meta"]["key"] == key), None)
+
+    def record_event(self, user: DeskUser, run: Dict[str, Any], item: Dict[str, Any],
+                     summary: str) -> None:
+        owned = self.runs.get(int(run["id"]))
+        assert owned and owned["user_id"] == user.id, "an event may only be written to the user's own run"
+        self.events.setdefault(int(run["id"]), []).append({**item, "summary": summary})
+
+    def run_events(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
+        owned = self.runs.get(int(run["id"]))
+        if not owned or owned["user_id"] != user.id:
+            return []
+        return list(self.events.get(int(run["id"]), []))
 
     def get_run(self, user: DeskUser, run_id: int) -> Optional[Dict[str, Any]]:
         run = self.runs.get(int(run_id))

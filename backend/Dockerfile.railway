@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+#
+# The hosted API: Scriba's real application with the Desk overlay mounted (desk_overlay.asgi:app).
+# Railway builds it from the repository root (railway.json points here). See docs/DEPLOY.md.
+#
+# Scriba's code is not in this repository. The first stage fetches it from GitHub at a pinned
+# commit, using a read-only token passed as a build variable. Only the fetched source reaches the
+# final image: the token stays in the discarded fetch stage.
+#
+# Build arguments (on Railway: service variables with the same names):
+#   SCRIBA_GITHUB_TOKEN  read access to ScribaAssist/Scriba (fine-grained, Contents: read-only)
+#   SCRIBA_REF           Scriba commit to build; defaults to the commit the overlay is tested with
+#
+# Local build without a token, from an export of a Scriba checkout (git archive):
+#   docker build -f backend/Dockerfile.railway --build-context scriba-source=<export dir> .
+# A build context named scriba-source replaces the fetch stage of the same name.
+
+ARG SCRIBA_REF=3ae3a2aa0c2dd2398f5a2e6b0d3ce1eaeeb0fdf7
+
+FROM alpine:3.21 AS scriba-fetch
+ARG SCRIBA_REF
+ARG SCRIBA_GITHUB_TOKEN
+WORKDIR /src
+RUN apk add --no-cache git
+RUN if [ -z "$SCRIBA_GITHUB_TOKEN" ]; then \
+      echo "SCRIBA_GITHUB_TOKEN is not set: it needs read access to ScribaAssist/Scriba." >&2; exit 1; \
+    fi \
+    && git init -q . \
+    && git fetch -q --depth 1 "https://x-access-token:${SCRIBA_GITHUB_TOKEN}@github.com/ScribaAssist/Scriba.git" "$SCRIBA_REF" \
+    && git checkout -q FETCH_HEAD \
+    && rm -rf .git
+
+# The repository root as a stage of its own, so a local export can stand in for it.
+FROM scratch AS scriba-source
+COPY --from=scriba-fetch /src/ /
+
+FROM python:3.12-slim
+ARG SCRIBA_REF
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Every pinned requirement ships a prebuilt wheel for CPython 3.12 on linux/amd64, so no compiler
+# is installed (--only-binary makes a missing wheel fail loudly instead of compiling).
+COPY --from=scriba-source /Gmail/requirements.txt /tmp/scriba-requirements.txt
+RUN pip install --only-binary=:all: -r /tmp/scriba-requirements.txt
+
+# Scriba's API code (its Gmail/ directory) at /app, as in Scriba's own image, and the overlay
+# beside it. Scriba's web frontend is not built: the Desk is the frontend, served by Vercel.
+WORKDIR /app
+COPY --from=scriba-source /Gmail/ /app/
+COPY backend/desk_overlay/ /desk/desk_overlay/
+RUN mkdir -p app/templates app/static/dist data
+
+ENV PYTHONPATH=/app:/desk \
+    APP_MODULE=desk_overlay.asgi:app \
+    SCRIBA_COMMIT=${SCRIBA_REF}
+
+EXPOSE 8000
+CMD ["sh", "-c", "exec uvicorn \"$APP_MODULE\" --host 0.0.0.0 --port \"${PORT:-8000}\""]

@@ -101,6 +101,9 @@ class SandboxWorld:
         self.label = label
         # An evaluation world belongs to one case and is hidden from the product screens.
         self.evaluation = bool(evaluation)
+        # Whether writes to the person's OWN records (tasks, reminders) run
+        # without an approval in this world. Mail and calendar writes never do.
+        self.auto_internal_writes = False
         self.owner_email = owner_email.strip().lower()
         self.principal_email = (principal_email or owner_email).strip().lower()
         self.principal_name = principal_name
@@ -718,6 +721,33 @@ class RoutedGateway:
         if world is None:
             return self.inner.upcoming_reminders(user, limit)
         return [dict(r) for r in world.reminders if r.get("status") == "scheduled"][:limit]
+
+    # ── replies the person was already waiting for ──────────────────────────
+    def waiting_follow_ups(self, user: Any) -> List[Dict[str, Any]]:
+        """Follow-ups that exist outside any Desk run (a world can be seeded
+        with them). A real Scriba backend has none: there they live on runs."""
+        world = self.world_for(user)
+        if world is None:
+            return []
+        return [dict(f) for f in world.follow_ups if f.get("status") == "waiting"]
+
+    def close_waiting_follow_up(self, user: Any, follow_id: str) -> bool:
+        world = self.world_for(user)
+        if world is None:
+            return False
+        with world._lock:
+            for follow in world.follow_ups:
+                if follow.get("id") == follow_id and follow.get("status") == "waiting":
+                    follow["status"] = "closed"
+                    world.oplog.append({"seq": len(world.oplog) + 1, "at": world.now().isoformat(),
+                                        "op": "followup.close", "status": "executed",
+                                        "object_id": follow_id, "error": None, "simulated": True})
+                    return True
+        return False
+
+    def auto_internal_writes(self, user: Any) -> bool:
+        world = self.world_for(user)
+        return bool(world is not None and world.auto_internal_writes)
 
     # ── verification ────────────────────────────────────────────────────────
     def verify_effect(self, user: Any, op: str, object_id: Optional[str],

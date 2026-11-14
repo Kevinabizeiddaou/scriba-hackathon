@@ -297,6 +297,21 @@ class ScribaGateway:
                 email_id=email_id, thread_id=thread_id, provider=provider, user_message="",
             )
 
+    def approve_card(self, user: DeskUser, tool_call_id: Any,
+                     idempotency_key: Optional[str] = None) -> Dict[str, Any]:
+        """Scriba's own approve, as its route calls it: the atomic claim, the
+        re-validation and the execution engine (behind the Desk's gate)."""
+        from app import chat_service
+
+        return chat_service.approve_tool_call(
+            account_email=user.email, tool_call_id=int(tool_call_id), payload_overrides=None,
+            idempotency_key=idempotency_key, outlook_db_user_id=user.id)
+
+    def cancel_card(self, user: DeskUser, tool_call_id: Any) -> Dict[str, Any]:
+        from app import chat_service
+
+        return chat_service.cancel_tool_call(account_email=user.email, tool_call_id=int(tool_call_id))
+
     def run_cards(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
         from app import chat_repository
 

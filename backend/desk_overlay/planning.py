@@ -85,6 +85,12 @@ def deadline_from(text: str, now: dt.datetime) -> Optional[dt.datetime]:
             day = now.date() + dt.timedelta(days=(4 - now.weekday()) % 7)
         else:
             weekday = _BY_WEEKDAY.search(lowered)
+            if not weekday and re.search(r"\b(?:deadline|due)\b", lowered):
+                # "the deadline for the board pack is Friday": a deadline is
+                # named and exactly one weekday appears in the text.
+                named = {m.group(2).lower() for m in _ANY_WEEKDAY.finditer(lowered)}
+                if len(named) == 1:
+                    weekday = re.search(r"(" + next(iter(named)) + r")", lowered)
             if weekday:
                 target = _WEEKDAYS.index(weekday.group(1).lower())
                 ahead = (target - now.weekday()) % 7

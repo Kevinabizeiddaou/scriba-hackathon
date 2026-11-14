@@ -245,6 +245,19 @@ class FakeGateway:
         self.cards.append(card)
         return card
 
+    def approve_card(self, user: DeskUser, tool_call_id: Any,
+                     idempotency_key: Optional[str] = None) -> Dict[str, Any]:
+        card = next(c for c in self.cards if c["id"] == int(tool_call_id) and c["user_id"] == user.id)
+        if card["status"] in ("awaiting_approval", "needs_info"):
+            self.settle(card["id"], "executed")
+        return {"tool_call": dict(card)}
+
+    def cancel_card(self, user: DeskUser, tool_call_id: Any) -> Dict[str, Any]:
+        card = next(c for c in self.cards if c["id"] == int(tool_call_id) and c["user_id"] == user.id)
+        if card["status"] in ("awaiting_approval", "needs_info"):
+            card["status"] = "cancelled"
+        return {"tool_call": dict(card)}
+
     def run_cards(self, user: DeskUser, run: Dict[str, Any]) -> List[Dict[str, Any]]:
         return [card for card in self.cards if card["run_id"] == run["id"] and card["user_id"] == user.id]
 

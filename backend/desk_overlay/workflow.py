@@ -87,12 +87,14 @@ class DeskWorkflow:
         # An optional model-driven planner (``agent.DeskAgent``). It may refine
         # a plan; every proposal it makes passes the same checks as below.
         self.agent = agent
-        self._locks: Dict[str, threading.Lock] = {}
+        self._locks: Dict[str, Any] = {}
         self._locks_guard = threading.Lock()
 
-    def _lock(self, key: str) -> threading.Lock:
+    def _lock(self, key: str) -> Any:
+        # Re-entrant: an approval made while a run is being opened (a task the
+        # policy approves at once) comes back into ``advance`` on this thread.
         with self._locks_guard:
-            return self._locks.setdefault(key, threading.Lock())
+            return self._locks.setdefault(key, threading.RLock())
 
     def _namespace(self, user: Any) -> str:
         namespace = getattr(self.gateway, "key_namespace", None)
@@ -195,8 +197,13 @@ class DeskWorkflow:
             "meetingIntent": triage.get("meeting_intent"), "flags": plan.get("flags") or []})
         self._record(user, run, "stage", {"stage": "CONTEXT_GATHERING",
                                           "threadMessages": (detail.get("thread") or {}).get("count")})
+        self._record(user, run, "read", {"tool": "email.read_thread", "ok": True,
+                                         "threadId": meta["thread_id"],
+                                         "count": (detail.get("thread") or {}).get("count")})
         for read in plan["reads"]:
             self._record(user, run, "read", read)
+        for closed in plan.get("closed_follow_ups") or []:
+            self._record(user, run, "followup", closed)
         self._record(user, run, "stage", {"stage": "PLANNING", "planner": plan["planner"]})
         for usage in plan.get("usage") or []:
             self._record(user, run, "usage", usage)
@@ -216,7 +223,32 @@ class DeskWorkflow:
             "purpose": proposal.get("purpose"), "reason": proposal.get("reason"),
             "proposedSlots": proposal.get("proposedSlots"),
             "status": (card or {}).get("status")})
+        self._auto_approve_internal(user, run, proposal["tool_name"], card)
         return card
+
+    def _auto_approve_internal(self, user: Any, run: Dict[str, Any], tool_name: str,
+                               card: Optional[Dict[str, Any]]) -> None:
+        """Where the policy says so, a write to the person's OWN records (a
+        task, a reminder) is approved by the Desk at once. This is a fixed rule
+        in code for two named tools; a model cannot invoke it, and it never
+        applies to mail or a calendar."""
+        from .readiness import INTERNAL_WRITE_TOOLS
+
+        policy = getattr(self.gateway, "auto_internal_writes", None)
+        if tool_name not in INTERNAL_WRITE_TOOLS or not callable(policy) or not policy(user):
+            return
+        if not card or card.get("status") != "awaiting_approval":
+            return
+        self._record(user, run, "decision", {
+            "decision": "auto_approve_internal", "toolCallId": card.get("id"), "tool": tool_name,
+            "explanation": "This only writes your own records, and this Desk is set to do that "
+                           "without asking."})
+        try:
+            self.gateway.approve_card(user, card.get("id"),
+                                      idempotency_key=f"desk-auto:{run['meta'].get('key')}:{card.get('id')}")
+        except Exception as exc:
+            self._record(user, run, "error", {"message": "The automatic approval failed.",
+                                              "code": type(exc).__name__, "toolCallId": card.get("id")})
 
     # ── planning ────────────────────────────────────────────────────────────
     def _plan(self, ctx: Any, user: Any, item: Dict[str, Any], detail: Dict[str, Any]) -> Dict[str, Any]:
@@ -230,7 +262,10 @@ class DeskWorkflow:
             for entry in calendar.get("calendars") or []:
                 plan["reads"].append({"tool": "calendar.find_free_slots", "provider": entry.get("provider"),
                                       "account": entry.get("account"), "ok": bool(entry.get("ok")),
-                                      "error": entry.get("error")})
+                                      "error": entry.get("error"),
+                                      "timeMin": (calendar.get("range") or {}).get("start"),
+                                      "timeMax": (calendar.get("range") or {}).get("end"),
+                                      "durationMinutes": calendar.get("duration_minutes")})
 
         if planning.injection_suspected(item.get("subject"), text):
             # Mail is data. Text that addresses the assistant is not obeyed,
@@ -245,6 +280,7 @@ class DeskWorkflow:
                                                      "so it was handed to you."})
             return plan
 
+        self._close_awaited(user, item, plan)
         if triage["category"] == "action_item":
             self._plan_task(ctx, user, item, plan)
         elif triage["category"] == "meeting_request":
@@ -265,6 +301,26 @@ class DeskWorkflow:
                                           "explanation": "The model could not be used; the plan above "
                                                          "is rule-based."})
         return plan
+
+    def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
+        """This message may be the answer someone was being waited on for."""
+        waiting = getattr(self.gateway, "waiting_follow_ups", None)
+        if not callable(waiting):
+            return
+        sender = sender_address(str(item.get("from_addr") or ""))
+        for follow in waiting(user):
+            awaited = follow.get("waitingOn") or {}
+            address = str(awaited.get("email") if isinstance(awaited, dict) else awaited or "").lower()
+            if str(follow.get("threadId") or "") == str(item.get("threadId") or "") and address == sender:
+                if self.gateway.close_waiting_follow_up(user, follow["id"]):
+                    plan.setdefault("closed_follow_ups", []).append({
+                        "id": follow["id"], "state": "satisfied", "external": True,
+                        "satisfiedBy": item.get("id"), "waitingOn": address,
+                        "threadId": follow.get("threadId")})
+                    plan["decisions"].append({
+                        "decision": "close_follow_up", "reason": "answer_received",
+                        "explanation": "This is the answer you were waiting for, so that "
+                                       "follow-up was closed."})
 
     def _plan_task(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         title = str(item.get("subject") or "Follow up on email").strip()[:160]
@@ -410,7 +466,8 @@ class DeskWorkflow:
         for entry in check["calendars"]:
             plan["reads"].append({"tool": "calendar.check_availability", "provider": entry.get("provider"),
                                   "account": entry.get("account"), "ok": bool(entry.get("ok")),
-                                  "error": entry.get("error")})
+                                  "error": entry.get("error"), "timeMin": check["slot"]["start"],
+                                  "timeMax": check["slot"]["end"]})
         if check["free"] is not True:
             conflict = check["free"] is False
             self._hold(
@@ -469,7 +526,9 @@ class DeskWorkflow:
         try:
             events = self.gateway.calendar_events(user, now - dt.timedelta(days=1),
                                                   now + dt.timedelta(days=EVENT_SEARCH_DAYS))
-            plan["reads"].append({"tool": "calendar.list_events", "ok": True, "count": len(events)})
+            plan["reads"].append({"tool": "calendar.list_events", "ok": True, "count": len(events),
+                                  "timeMin": (now - dt.timedelta(days=1)).isoformat(),
+                                  "timeMax": (now + dt.timedelta(days=EVENT_SEARCH_DAYS)).isoformat()})
         except Exception:
             plan["reads"].append({"tool": "calendar.list_events", "ok": False, "error": "unavailable"})
             self._hold(plan, user, item, calendar, "calendar_lookup_failed",
@@ -547,7 +606,8 @@ class DeskWorkflow:
         for entry in check["calendars"]:
             plan["reads"].append({"tool": "calendar.check_availability", "provider": entry.get("provider"),
                                   "account": entry.get("account"), "ok": bool(entry.get("ok")),
-                                  "error": entry.get("error")})
+                                  "error": entry.get("error"), "timeMin": check["slot"]["start"],
+                                  "timeMax": check["slot"]["end"]})
         if check["free"] is not True:
             conflict = check["free"] is False
             self._hold(plan, user, item, calendar,

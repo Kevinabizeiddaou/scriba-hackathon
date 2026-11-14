@@ -175,6 +175,7 @@ def sandbox_desk(*, env=None):
         desk = {"client": client, "store": store, "registry": registry, "gate": gate, "prefix": prefix,
                 "engine": engine, "providers": providers, "plan": plan, "sign_in": sign_in,
                 "workflow": workflow, "routed": routed, "users": users, "audit": audit, "model": model,
+                "router_desk": router.desk,
                 "world": lambda address=ALICE: registry.default_for(address)}
         yield desk
         # Whatever the test did, no real provider path may have been reached.

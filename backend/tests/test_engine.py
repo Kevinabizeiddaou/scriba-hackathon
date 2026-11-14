@@ -277,7 +277,10 @@ def test_a_reschedule_moves_the_original_event_and_proposes_no_second_one(desk):
     assert card["input"]["end"] == "2026-11-19T15:00:00+00:00"          # the meeting keeps its length
     assert "create_calendar_event" not in str(run["actions"])
     reads = [i["data"] for i in run["timeline"] if i["kind"] == "read"]
-    assert {"tool": "calendar.list_events", "ok": True, "count": 1} in reads
+    listed = next(r for r in reads if r["tool"] == "calendar.list_events")
+    assert listed["ok"] is True and listed["count"] == 1
+    assert listed["timeMin"] == "2026-11-15T06:00:00+00:00" and listed["timeMax"] == "2026-12-31T06:00:00+00:00"
+    assert reads[0] == {"tool": "email.read_thread", "ok": True, "threadId": "T-r1", "count": 1}
     assert {(r.get("provider"), r["ok"]) for r in reads if r["tool"] == "calendar.check_availability"} == {
         ("google", True), ("outlook", True)}
 

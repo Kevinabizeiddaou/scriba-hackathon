@@ -35,7 +35,7 @@ from .claims import MemoryClaims
 from .desktop import DesktopBridge, DesktopUnavailable
 from .sandbox import RoutedGateway, WorldRegistry
 from .service import DeskService, NotFound
-from .workflow import DeskWorkflow, IntakeBusy
+from .workflow import Conflict, DeskWorkflow, IntakeBusy, InvalidRequest
 
 DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing",
                      "intake", "intake_sweep", "runs", "run_state", "run_lifecycle", "follow_ups",
@@ -83,6 +83,15 @@ class DesktopJobBody(BaseModel):
     confirm: bool = False
 
 
+class FileChangeBody(BaseModel):
+    """A change to a workbook of this run. Operations are ``update_cell``
+    {sheet, cell, value}, ``append_row`` {sheet, values} and ``upsert_row``
+    {sheet, key, values}. Nothing is changed until it is applied."""
+
+    fileId: str = Field(min_length=1, max_length=200)
+    operations: list = Field(min_length=1, max_length=50)
+
+
 class SweepBody(BaseModel):
     provider: str = Field(default="all", pattern="^(all|gmail|outlook)$")
     limit: int = Field(default=25, ge=1, le=50)
@@ -113,8 +122,10 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
     def guarded(call: Any) -> Dict[str, Any]:
         try:
             return call()
-        except InvalidAvailabilityRequest as exc:
+        except (InvalidAvailabilityRequest, InvalidRequest) as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+        except Conflict as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
         except NotFound as exc:
             raise HTTPException(status_code=404, detail=str(exc))
         except IntakeBusy as exc:
@@ -285,6 +296,25 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         """The person takes over the requests the Desk identified and could not act on."""
         user = gateway.current_user(request)
         return guarded(lambda: workflow.resolve_unresolved(request, user, run_id))
+
+    @router.post("/runs/{run_id}/file-changes")
+    def desk_file_change_suggest(request: Request, run_id: int, body: FileChangeBody) -> Dict[str, Any]:
+        """Suggest a change to a workbook that came with this run's message
+        or that the run made. Records the suggestion; changes nothing."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.suggest_file_change(request, user, run_id, body.fileId, body.operations))
+
+    @router.post("/runs/{run_id}/file-changes/{change_id}/apply")
+    def desk_file_change_apply(request: Request, run_id: int, change_id: str) -> Dict[str, Any]:
+        """Apply it: Scriba's Excel skills run on a copy; the result is kept
+        as a new file. The original is never changed."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.apply_file_change(request, user, run_id, change_id))
+
+    @router.post("/runs/{run_id}/file-changes/{change_id}/dismiss")
+    def desk_file_change_dismiss(request: Request, run_id: int, change_id: str) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.apply_file_change(request, user, run_id, change_id, dismiss=True))
 
     @router.get("/memory")
     def desk_memory(request: Request, thread: Optional[str] = None,

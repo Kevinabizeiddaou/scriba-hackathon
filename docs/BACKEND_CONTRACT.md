@@ -1135,7 +1135,7 @@ They are specified in section 6 ("The lifecycle of an action") and section 8.
 - French, Arabic and other non-English mail is handed over, not read.
 - A holding reply is recognised by its wording. It is not asked of a model.
 - The rules still read one meeting request per message.
-## 14. Overlay 0.5: files and the desktop bridge (Tested in a sandbox; no real mailbox or device)
+## 14. Overlay 0.5 and 0.5.1: files, workbook changes and the desktop bridge (Tested in a sandbox; no real mailbox or device)
 
 Typed in `frontend/src/api/desk.ts` (`DeskAttachment`, `DeskFile`,
 `DeskDesktopStatus`, `DeskDesktopJob`, ...). Nothing here generates or parses a
@@ -1149,6 +1149,7 @@ generators are Scriba's (see `docs/handoff/SCRIBA_REUSE_MATRIX.md`).
 | Attachments of mail in a **sandbox world** | Read, analysed, reviewed. Tested |
 | Attachments of a **real mailbox** | **Not read.** `health.files.attachments` is `false`; a run has `attachments: []`; nothing is claimed |
 | Generated Word document, generated workbook | Scriba's own `create_document` / `create_spreadsheet`. In a sandbox the file is kept in the world |
+| Changing an existing workbook (0.5.1) | Scriba's own `xlsx.*` skills on a copy; the result is a new file. Tested in a sandbox. See 14.5 |
 | Generated presentation, PDF, CSV | **Not available**: Scriba has no generator for them |
 | A **real paired computer** | Adapter written and tested against Scriba's function shapes. **No device executed anything**: on this backend Scriba reports the subsystem off, and its tables need Postgres |
 | The fake device in a sandbox world | Everything it returns has `simulated: true` |
@@ -1275,11 +1276,120 @@ recorded task. Running it again is a new job that the person asks for.
 `{attachments, generate, read, simulated}`. `health.capabilities` gains
 `files` and `desktop_bridge`.
 
-### 14.5 Limits of 0.5
+### 14.5 Changing a workbook (overlay 0.5.1)
+
+A change to an `.xlsx` workbook that belongs to a run: one that came with its
+message, one the run generated, or the result of an earlier change. Typed as
+`DeskFileChange`, `DeskWorkbookOperation` and `DeskWorkbookStep`.
+
+**No cell is written by Desk code.** The operations are carried out by Scriba's
+own Excel skills (`xlsx.update_cell`, `xlsx.append_row`, `xlsx.upsert_row`),
+which back the file up, write, read the written cells back, check that every
+sheet and formula is still there, and restore the backup if not. The Desk runs
+them on a COPY in a temporary folder that is the only folder they may touch
+and that is removed afterwards.
+
+**Who decides what to change.** The caller. The Desk's rules do not read a
+message and work out which cells to change, and no model does either: a change
+exists only because a person (or a client acting for them) sent the
+operations. The Desk checks that they are well formed, shows them, and applies
+them when the person says so.
+
+| Route | Effect |
+| --- | --- |
+| `POST /desk/runs/{id}/file-changes` body `{fileId, operations[]}` | Records a suggestion. **Changes nothing.** Returns the run. 400 for operations that are not well formed or a file that is not a workbook (the body's `detail` says which operation and why); 404 for a file that is not part of this run, or a run that is not the caller's. The same suggestion sent twice is one suggestion |
+| `POST /desk/runs/{id}/file-changes/{changeId}/apply` | The person applies it. Returns the run. Safe to repeat: an applied change is not applied again. 409 for a change that is `failed`, `unverified` or `dismissed` (suggest it again) |
+| `POST /desk/runs/{id}/file-changes/{changeId}/dismiss` | Sets aside a change that is `suggested`, `failed` or `unverified`. 409 for one that is `applied` |
+
+Operations (at most 50 at once):
+
+```json
+[{"op": "update_cell", "sheet": "Budget", "cell": "C3", "value": 520},
+ {"op": "append_row", "sheet": "Budget", "values": {"Department": "HR", "Planned": 300, "Actual": 310}},
+ {"op": "upsert_row", "sheet": "Budget", "key": "Department", "values": {"Department": "Sales", "Actual": 1100}}]
+```
+
+A value is data: text, a number, true, false or empty. **A value that starts
+like a formula is refused** (`=`, `@`, or `+`/`-` followed by a letter or a
+bracket); a negative number is a number. `append_row` and `upsert_row` name
+columns by their header; a totals row stays last and its range grows.
+
+What applying does, in order, and where it can stop:
+
+1. The change is bound to the exact file (its SHA-256) and the exact
+   operations that were shown. If either differs: `failed`,
+   `error: "change_no_longer_matches"`.
+2. Scriba's skills run on the copy, one operation after another. **All or
+   nothing**: if one fails or cannot verify its own write, nothing is kept:
+   `failed`, `error: "operation_failed"`, `failedAt` is the 1-based operation,
+   `steps[]` shows what each one reported, later operations never ran.
+3. The result is reopened with Scriba's reader and compared with the original:
+   same sheets in the same order, no formula lost, exactly the rows the
+   operations account for, and something changed. If not: `failed`,
+   `error: "result_not_verified"`, `verification.reason` says which.
+4. The result is kept as a **new file** named `<name> (updated).xlsx`, and
+   read back from the store: it must be the verified bytes. Then, and only
+   then: `applied`, `verified: true`, `verification.method:
+   "workbook_reopened"`. A store that fails: `failed`
+   (`file_store_failed`). A store that does not confirm, or a kept file that
+   differs: `unverified` (`file_store_did_not_confirm`, `kept_file_differs`).
+
+**The original file is never changed**, in any of these outcomes.
+
+| `state` | Meaning | `verified` |
+| --- | --- | --- |
+| `suggested` | Recorded; nothing changed. `apply` gives the path to POST | false |
+| `applied` | A changed copy exists as `resultFileId`, verified as above | **true** |
+| `unverified` | The store did not confirm. A copy may or may not exist. Not success | false |
+| `failed` | Nothing was kept. `error`, `message`, `failedAt` | false |
+| `dismissed` | Set aside by the person. `dismissedFrom` says what it was. Not success | false |
+
+On the run: `fileChanges[]` holds each change in its latest state; `next`
+contains `"apply_file_change"` while one is `suggested`; the result of an
+applied change is also listed in `files[]` with `changeId` set and
+`toolCallId: null`, and downloads from `download.path` like any other file.
+The timeline carries one `file` event per transition (evidence kind `file`,
+in `DeskRevisedEvidenceKind`).
+
+A run that would otherwise read `COMPLETED` does not while a change is open:
+
+| A change is | `lifecycle.stage` | `lifecycle.reason` |
+| --- | --- | --- |
+| `failed` | `ESCALATED` | `file_change_failed` |
+| `unverified` | `VERIFYING` | `file_change_not_verified` |
+| `suggested` | `ESCALATED` | `file_change_suggested` |
+
+An applied change, from a real response (trimmed):
+
+```json
+{"id": "fc-1-1", "state": "applied", "sourceFileId": "att-f1-1", "filename": "budget.xlsx",
+ "resultFileId": "file-w-alice-1", "resultFilename": "budget (updated).xlsx", "verified": true,
+ "verification": {"ok": true, "reason": null, "sheets": 2, "rowsAdded": 1, "formulas": 2,
+                  "method": "workbook_reopened", "verified": true},
+ "steps": [{"index": 1, "op": "update_cell", "sheet": "Budget", "status": "succeeded", "verified": true,
+            "cell": "C3", "oldValue": 5200, "formulasKept": 2, "cellsChecked": 1, "error": null},
+           {"index": 2, "op": "append_row", "sheet": "Budget", "status": "succeeded", "verified": true,
+            "row": 4, "formulasKept": 2, "cellsChecked": 5, "error": null},
+           {"index": 3, "op": "upsert_row", "sheet": "Budget", "status": "succeeded", "verified": true,
+            "row": 2, "matched": true, "oldValues": {"Department": "Sales", "Actual": "1040"},
+            "formulasKept": 2, "cellsChecked": 2, "error": null}],
+ "failedAt": null, "error": null, "message": null, "dismissedFrom": null,
+ "by": "alice@example.com", "simulated": true, "apply": null}
+```
+
+Limits of this part: only `.xlsx`; only the three operations above (no
+formatting, no new sheet, no deleted row, no formula); a workbook with features
+Scriba's skills would drop on save is refused by the skills and the change
+fails; the old values in `steps[]` are as Scriba's skill reports them (a
+number can come back as text); on a backend with no sandbox world there is no
+file of a run to change, so nothing can be suggested there; the changed copy
+is not attached to a reply.
+
+### 14.6 Limits of 0.5
 
 - A desktop job is not yet a step of a Desk run's plan: it is started and
   followed through the routes above.
-- Editing an existing workbook (Scriba's `xlsx.*` skills) is not integrated.
+- A change to a workbook is never proposed by the Desk itself: the caller sends the operations (14.5).
 - A review is an extract by rule. No model summarises a file.
 - The reply after a review is a fixed text. The person edits or rejects it.
 - Attachments are not sent with a reply.

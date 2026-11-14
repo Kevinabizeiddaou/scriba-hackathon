@@ -1,6 +1,6 @@
 {
   "format": "executive-desk.evaluation-report/1",
-  "id": "report-20261114133548",
+  "id": "report-20261114142148",
   "label": "integration-final rules-only sandbox",
   "harnessVersion": "1.0.0",
   "contractVersion": "1.1.0",
@@ -16,8 +16,8 @@
     "contractVersion": "1.1.0",
     "sandbox": true
   },
-  "startedAt": "2026-11-14T13:35:48.070Z",
-  "finishedAt": "2026-11-14T13:36:22.472Z",
+  "startedAt": "2026-11-14T14:21:48.604Z",
+  "finishedAt": "2026-11-14T14:22:32.449Z",
   "results": [
     {
       "caseId": "EVAL-015",
@@ -213,16 +213,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:48.071Z",
-        "finishedAt": "2026-11-14T13:35:48.599Z",
-        "wallClockMs": 528,
-        "agentReportedMs": 500
+        "startedAt": "2026-11-14T14:21:48.638Z",
+        "finishedAt": "2026-11-14T14:21:49.566Z",
+        "wallClockMs": 928,
+        "agentReportedMs": 735
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-dc029b6300314b69",
+        "id": "evalrun-63939da54d7c4173",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -272,8 +272,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-dc029b6300314b69-a1",
-            "runId": "evalrun-dc029b6300314b69",
+            "id": "evalrun-63939da54d7c4173-a1",
+            "runId": "evalrun-63939da54d7c4173",
             "sequence": 1,
             "simulated": true
           },
@@ -297,8 +297,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-dc029b6300314b69-a2",
-            "runId": "evalrun-dc029b6300314b69",
+            "id": "evalrun-63939da54d7c4173-a2",
+            "runId": "evalrun-63939da54d7c4173",
             "sequence": 2,
             "simulated": true
           },
@@ -321,8 +321,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-dc029b6300314b69-a3",
-            "runId": "evalrun-dc029b6300314b69",
+            "id": "evalrun-63939da54d7c4173-a3",
+            "runId": "evalrun-63939da54d7c4173",
             "sequence": 3,
             "simulated": true
           }
@@ -330,12 +330,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 500,
+        "durationMs": 735,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-3227877afac0",
+          "world": "case-7288ca67e41c",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -554,16 +554,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:48.601Z",
-        "finishedAt": "2026-11-14T13:35:49.121Z",
-        "wallClockMs": 520,
+        "startedAt": "2026-11-14T14:21:49.583Z",
+        "finishedAt": "2026-11-14T14:21:50.127Z",
+        "wallClockMs": 544,
         "agentReportedMs": 514
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-0386b912de5140fe",
+        "id": "evalrun-373ae059cd0545f3",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -611,8 +611,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-0386b912de5140fe-a1",
-            "runId": "evalrun-0386b912de5140fe",
+            "id": "evalrun-373ae059cd0545f3-a1",
+            "runId": "evalrun-373ae059cd0545f3",
             "sequence": 1,
             "simulated": true
           }
@@ -625,7 +625,7 @@
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-61f8e4ad738d",
+          "world": "case-b49e758354d2",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -842,16 +842,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:49.121Z",
-        "finishedAt": "2026-11-14T13:35:49.649Z",
-        "wallClockMs": 528,
-        "agentReportedMs": 514
+        "startedAt": "2026-11-14T14:21:50.127Z",
+        "finishedAt": "2026-11-14T14:21:50.780Z",
+        "wallClockMs": 653,
+        "agentReportedMs": 639
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-12786866d9b046a1",
+        "id": "evalrun-85d40783b6c646ac",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -899,8 +899,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-12786866d9b046a1-a1",
-            "runId": "evalrun-12786866d9b046a1",
+            "id": "evalrun-85d40783b6c646ac-a1",
+            "runId": "evalrun-85d40783b6c646ac",
             "sequence": 1,
             "simulated": true
           },
@@ -924,8 +924,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-12786866d9b046a1-a2",
-            "runId": "evalrun-12786866d9b046a1",
+            "id": "evalrun-85d40783b6c646ac-a2",
+            "runId": "evalrun-85d40783b6c646ac",
             "sequence": 2,
             "simulated": true
           },
@@ -947,8 +947,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-12786866d9b046a1-a3",
-            "runId": "evalrun-12786866d9b046a1",
+            "id": "evalrun-85d40783b6c646ac-a3",
+            "runId": "evalrun-85d40783b6c646ac",
             "sequence": 3,
             "simulated": true
           }
@@ -956,12 +956,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 514,
+        "durationMs": 639,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-b57a860a5471",
+          "world": "case-368e14c5ea26",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -1193,16 +1193,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:49.649Z",
-        "finishedAt": "2026-11-14T13:35:50.165Z",
-        "wallClockMs": 516,
-        "agentReportedMs": 516
+        "startedAt": "2026-11-14T14:21:50.783Z",
+        "finishedAt": "2026-11-14T14:21:51.393Z",
+        "wallClockMs": 610,
+        "agentReportedMs": 593
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-a33d15b68dde4831",
+        "id": "evalrun-e8ca44acdde841d0",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -1250,8 +1250,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-a33d15b68dde4831-a1",
-            "runId": "evalrun-a33d15b68dde4831",
+            "id": "evalrun-e8ca44acdde841d0-a1",
+            "runId": "evalrun-e8ca44acdde841d0",
             "sequence": 1,
             "simulated": true
           }
@@ -1259,12 +1259,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 516,
+        "durationMs": 593,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-44b3493d5eaf",
+          "world": "case-d38f87ea295c",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -1472,16 +1472,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:50.166Z",
-        "finishedAt": "2026-11-14T13:35:50.694Z",
-        "wallClockMs": 528,
-        "agentReportedMs": 530
+        "startedAt": "2026-11-14T14:21:51.398Z",
+        "finishedAt": "2026-11-14T14:21:51.950Z",
+        "wallClockMs": 552,
+        "agentReportedMs": 532
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-0687f5217b074e39",
+        "id": "evalrun-ad4edb1ef4014a26",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -1529,8 +1529,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-0687f5217b074e39-a1",
-            "runId": "evalrun-0687f5217b074e39",
+            "id": "evalrun-ad4edb1ef4014a26-a1",
+            "runId": "evalrun-ad4edb1ef4014a26",
             "sequence": 1,
             "simulated": true
           },
@@ -1551,12 +1551,12 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 0,
+            "durationMs": 15,
             "approvalId": null,
-            "idempotencyKey": "desk:a152990d07d194374c61328f6c37b8fd:332",
+            "idempotencyKey": "desk:56f768c0c4ab3b2e440d32898b90f4d6:412",
             "error": null,
-            "id": "evalrun-0687f5217b074e39-a2",
-            "runId": "evalrun-0687f5217b074e39",
+            "id": "evalrun-ad4edb1ef4014a26-a2",
+            "runId": "evalrun-ad4edb1ef4014a26",
             "sequence": 2,
             "simulated": true
           }
@@ -1564,12 +1564,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 530,
+        "durationMs": 532,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-97ebe3d6bf4a",
+          "world": "case-e37239a20535",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -1768,16 +1768,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:50.696Z",
-        "finishedAt": "2026-11-14T13:35:51.223Z",
-        "wallClockMs": 527,
-        "agentReportedMs": 531
+        "startedAt": "2026-11-14T14:21:51.954Z",
+        "finishedAt": "2026-11-14T14:21:52.500Z",
+        "wallClockMs": 546,
+        "agentReportedMs": 530
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-e711db5af7cc479f",
+        "id": "evalrun-3e456b4d39d94d7f",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -1825,8 +1825,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-e711db5af7cc479f-a1",
-            "runId": "evalrun-e711db5af7cc479f",
+            "id": "evalrun-3e456b4d39d94d7f-a1",
+            "runId": "evalrun-3e456b4d39d94d7f",
             "sequence": 1,
             "simulated": true
           }
@@ -1834,12 +1834,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 531,
+        "durationMs": 530,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-f6728a317d59",
+          "world": "case-30cac3635bee",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -2085,16 +2085,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:51.224Z",
-        "finishedAt": "2026-11-14T13:35:54.809Z",
-        "wallClockMs": 3585,
-        "agentReportedMs": 3578
+        "startedAt": "2026-11-14T14:21:52.501Z",
+        "finishedAt": "2026-11-14T14:21:56.148Z",
+        "wallClockMs": 3647,
+        "agentReportedMs": 3625
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-60427b5d9f594b21",
+        "id": "evalrun-dbd831a25c294b9b",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -2147,8 +2147,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-60427b5d9f594b21-a1",
-            "runId": "evalrun-60427b5d9f594b21",
+            "id": "evalrun-dbd831a25c294b9b-a1",
+            "runId": "evalrun-dbd831a25c294b9b",
             "sequence": 1,
             "simulated": true
           },
@@ -2172,8 +2172,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-60427b5d9f594b21-a2",
-            "runId": "evalrun-60427b5d9f594b21",
+            "id": "evalrun-dbd831a25c294b9b-a2",
+            "runId": "evalrun-dbd831a25c294b9b",
             "sequence": 2,
             "simulated": true
           },
@@ -2196,8 +2196,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-60427b5d9f594b21-a3",
-            "runId": "evalrun-60427b5d9f594b21",
+            "id": "evalrun-dbd831a25c294b9b-a3",
+            "runId": "evalrun-dbd831a25c294b9b",
             "sequence": 3,
             "simulated": true
           },
@@ -2221,16 +2221,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-9d32422540c7-1"
+              "eventId": "evt-case-c34c9df13aa7-1"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-360",
-            "idempotencyKey": "desk:cd5a0e9924db330e43315decd5118664:360",
+            "approvalId": "apr-440",
+            "idempotencyKey": "desk:5e917a96ab6bdf34cbbfbc7f0f6573e2:440",
             "error": null,
-            "id": "evalrun-60427b5d9f594b21-a4",
-            "runId": "evalrun-60427b5d9f594b21",
+            "id": "evalrun-dbd831a25c294b9b-a4",
+            "runId": "evalrun-dbd831a25c294b9b",
             "sequence": 4,
             "simulated": true
           },
@@ -2256,23 +2256,23 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2016,
-            "approvalId": "apr-365",
-            "idempotencyKey": "desk:cd5a0e9924db330e43315decd5118664:365",
+            "durationMs": 2000,
+            "approvalId": "apr-445",
+            "idempotencyKey": "desk:5e917a96ab6bdf34cbbfbc7f0f6573e2:445",
             "error": null,
-            "id": "evalrun-60427b5d9f594b21-a5",
-            "runId": "evalrun-60427b5d9f594b21",
+            "id": "evalrun-dbd831a25c294b9b-a5",
+            "runId": "evalrun-dbd831a25c294b9b",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-360",
-          "apr-365"
+          "apr-440",
+          "apr-445"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3578,
+        "durationMs": 3625,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -2290,7 +2290,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-9d32422540c7",
+          "world": "case-c34c9df13aa7",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -2304,8 +2304,8 @@
       },
       "approvals": [
         {
-          "id": "apr-360",
-          "runId": "evalrun-60427b5d9f594b21",
+          "id": "apr-440",
+          "runId": "evalrun-dbd831a25c294b9b",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Intro call next week?\"",
@@ -2345,8 +2345,8 @@
           }
         },
         {
-          "id": "apr-365",
-          "runId": "evalrun-60427b5d9f594b21",
+          "id": "apr-445",
+          "runId": "evalrun-dbd831a25c294b9b",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Intro call next week?\" to sofia.marchetti@lumen-events.example",
@@ -2619,16 +2619,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:54.811Z",
-        "finishedAt": "2026-11-14T13:35:57.882Z",
-        "wallClockMs": 3071,
-        "agentReportedMs": 3062
+        "startedAt": "2026-11-14T14:21:56.153Z",
+        "finishedAt": "2026-11-14T14:21:59.317Z",
+        "wallClockMs": 3164,
+        "agentReportedMs": 3125
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-d64ddce796484d23",
+        "id": "evalrun-109e19824d884048",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -2681,8 +2681,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d64ddce796484d23-a1",
-            "runId": "evalrun-d64ddce796484d23",
+            "id": "evalrun-109e19824d884048-a1",
+            "runId": "evalrun-109e19824d884048",
             "sequence": 1,
             "simulated": true
           },
@@ -2706,8 +2706,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d64ddce796484d23-a2",
-            "runId": "evalrun-d64ddce796484d23",
+            "id": "evalrun-109e19824d884048-a2",
+            "runId": "evalrun-109e19824d884048",
             "sequence": 2,
             "simulated": true
           },
@@ -2730,8 +2730,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d64ddce796484d23-a3",
-            "runId": "evalrun-d64ddce796484d23",
+            "id": "evalrun-109e19824d884048-a3",
+            "runId": "evalrun-109e19824d884048",
             "sequence": 3,
             "simulated": true
           },
@@ -2770,22 +2770,22 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2014,
-            "approvalId": "apr-384",
-            "idempotencyKey": "desk:b5f44a0964ad313f4fc5edfc0ab35008:384",
+            "durationMs": 2000,
+            "approvalId": "apr-464",
+            "idempotencyKey": "desk:a83e736569d476f2aa95daeb0d0795b2:464",
             "error": null,
-            "id": "evalrun-d64ddce796484d23-a4",
-            "runId": "evalrun-d64ddce796484d23",
+            "id": "evalrun-109e19824d884048-a4",
+            "runId": "evalrun-109e19824d884048",
             "sequence": 4,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-384"
+          "apr-464"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3062,
+        "durationMs": 3125,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -2797,7 +2797,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-e4a5e70ec954",
+          "world": "case-993e39112e80",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -2811,8 +2811,8 @@
       },
       "approvals": [
         {
-          "id": "apr-384",
-          "runId": "evalrun-d64ddce796484d23",
+          "id": "apr-464",
+          "runId": "evalrun-109e19824d884048",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Revised contract walkthrough\" to daniel.reyes@altamira.example",
@@ -3092,16 +3092,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:35:57.883Z",
-        "finishedAt": "2026-11-14T13:36:01.478Z",
-        "wallClockMs": 3595,
-        "agentReportedMs": 3594
+        "startedAt": "2026-11-14T14:21:59.326Z",
+        "finishedAt": "2026-11-14T14:22:03.998Z",
+        "wallClockMs": 4672,
+        "agentReportedMs": 4625
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-f2a7dd24c6f34f77",
+        "id": "evalrun-bc1fbc520d2e47c7",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -3154,8 +3154,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f2a7dd24c6f34f77-a1",
-            "runId": "evalrun-f2a7dd24c6f34f77",
+            "id": "evalrun-bc1fbc520d2e47c7-a1",
+            "runId": "evalrun-bc1fbc520d2e47c7",
             "sequence": 1,
             "simulated": true
           },
@@ -3179,8 +3179,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f2a7dd24c6f34f77-a2",
-            "runId": "evalrun-f2a7dd24c6f34f77",
+            "id": "evalrun-bc1fbc520d2e47c7-a2",
+            "runId": "evalrun-bc1fbc520d2e47c7",
             "sequence": 2,
             "simulated": true
           },
@@ -3203,8 +3203,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f2a7dd24c6f34f77-a3",
-            "runId": "evalrun-f2a7dd24c6f34f77",
+            "id": "evalrun-bc1fbc520d2e47c7-a3",
+            "runId": "evalrun-bc1fbc520d2e47c7",
             "sequence": 3,
             "simulated": true
           },
@@ -3228,16 +3228,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-d256a8808b55-1"
+              "eventId": "evt-case-59b1c206612d-1"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-403",
-            "idempotencyKey": "desk:15421296399f42ecae80c68f3764612e:403",
+            "approvalId": "apr-483",
+            "idempotencyKey": "desk:04c54d664f4f45eb4ab0fe4a5ec0460d:483",
             "error": null,
-            "id": "evalrun-f2a7dd24c6f34f77-a4",
-            "runId": "evalrun-f2a7dd24c6f34f77",
+            "id": "evalrun-bc1fbc520d2e47c7-a4",
+            "runId": "evalrun-bc1fbc520d2e47c7",
             "sequence": 4,
             "simulated": true
           },
@@ -3263,23 +3263,23 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2015,
-            "approvalId": "apr-408",
-            "idempotencyKey": "desk:15421296399f42ecae80c68f3764612e:408",
+            "durationMs": 2078,
+            "approvalId": "apr-488",
+            "idempotencyKey": "desk:04c54d664f4f45eb4ab0fe4a5ec0460d:488",
             "error": null,
-            "id": "evalrun-f2a7dd24c6f34f77-a5",
-            "runId": "evalrun-f2a7dd24c6f34f77",
+            "id": "evalrun-bc1fbc520d2e47c7-a5",
+            "runId": "evalrun-bc1fbc520d2e47c7",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-403",
-          "apr-408"
+          "apr-483",
+          "apr-488"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3594,
+        "durationMs": 4625,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -3297,7 +3297,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-d256a8808b55",
+          "world": "case-59b1c206612d",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -3311,8 +3311,8 @@
       },
       "approvals": [
         {
-          "id": "apr-403",
-          "runId": "evalrun-f2a7dd24c6f34f77",
+          "id": "apr-483",
+          "runId": "evalrun-bc1fbc520d2e47c7",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Pilot results\"",
@@ -3352,8 +3352,8 @@
           }
         },
         {
-          "id": "apr-408",
-          "runId": "evalrun-f2a7dd24c6f34f77",
+          "id": "apr-488",
+          "runId": "evalrun-bc1fbc520d2e47c7",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Pilot results\" to priya.nair@hudson-analytics.example",
@@ -3637,16 +3637,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:01.479Z",
-        "finishedAt": "2026-11-14T13:36:05.048Z",
-        "wallClockMs": 3569,
-        "agentReportedMs": 3562
+        "startedAt": "2026-11-14T14:22:04.000Z",
+        "finishedAt": "2026-11-14T14:22:08.379Z",
+        "wallClockMs": 4379,
+        "agentReportedMs": 3734
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-d6357d0f84bb4ec4",
+        "id": "evalrun-cc5948bd1a5c4e07",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -3699,8 +3699,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a1",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a1",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 1,
             "simulated": true
           },
@@ -3724,8 +3724,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a2",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a2",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 2,
             "simulated": true
           },
@@ -3747,8 +3747,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a3",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a3",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 3,
             "simulated": true
           },
@@ -3771,8 +3771,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a4",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a4",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 4,
             "simulated": true
           },
@@ -3801,11 +3801,11 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-427",
-            "idempotencyKey": "desk:e24be5067aca75d8ad6a669d1a9040be:427",
+            "approvalId": "apr-507",
+            "idempotencyKey": "desk:ee054c01c7d78cbefc895fbafb9bc3ff:507",
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a5",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a5",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 5,
             "simulated": true
           },
@@ -3832,22 +3832,22 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 2014,
-            "approvalId": "apr-432",
-            "idempotencyKey": "desk:e24be5067aca75d8ad6a669d1a9040be:432",
+            "approvalId": "apr-512",
+            "idempotencyKey": "desk:ee054c01c7d78cbefc895fbafb9bc3ff:512",
             "error": null,
-            "id": "evalrun-d6357d0f84bb4ec4-a6",
-            "runId": "evalrun-d6357d0f84bb4ec4",
+            "id": "evalrun-cc5948bd1a5c4e07-a6",
+            "runId": "evalrun-cc5948bd1a5c4e07",
             "sequence": 6,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-427",
-          "apr-432"
+          "apr-507",
+          "apr-512"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3562,
+        "durationMs": 3734,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -3865,7 +3865,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-ef98195ae032",
+          "world": "case-5afa8d0abb3d",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -3879,8 +3879,8 @@
       },
       "approvals": [
         {
-          "id": "apr-427",
-          "runId": "evalrun-d6357d0f84bb4ec4",
+          "id": "apr-507",
+          "runId": "evalrun-cc5948bd1a5c4e07",
           "requestId": null,
           "conversationId": null,
           "title": "Move \"Customer call: Brightwell Foods\"",
@@ -3937,8 +3937,8 @@
           }
         },
         {
-          "id": "apr-432",
-          "runId": "evalrun-d6357d0f84bb4ec4",
+          "id": "apr-512",
+          "runId": "evalrun-cc5948bd1a5c4e07",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Move Thursday's call?\" to maya.okafor@brightwell.example",
@@ -4180,16 +4180,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:05.048Z",
-        "finishedAt": "2026-11-14T13:36:08.641Z",
-        "wallClockMs": 3593,
-        "agentReportedMs": 3577
+        "startedAt": "2026-11-14T14:22:08.382Z",
+        "finishedAt": "2026-11-14T14:22:15.187Z",
+        "wallClockMs": 6805,
+        "agentReportedMs": 6719
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-6afe52a415b7481c",
+        "id": "evalrun-1cfa35cc1bfb4657",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -4237,8 +4237,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6afe52a415b7481c-a1",
-            "runId": "evalrun-6afe52a415b7481c",
+            "id": "evalrun-1cfa35cc1bfb4657-a1",
+            "runId": "evalrun-1cfa35cc1bfb4657",
             "sequence": 1,
             "simulated": true
           },
@@ -4262,8 +4262,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6afe52a415b7481c-a2",
-            "runId": "evalrun-6afe52a415b7481c",
+            "id": "evalrun-1cfa35cc1bfb4657-a2",
+            "runId": "evalrun-1cfa35cc1bfb4657",
             "sequence": 2,
             "simulated": true
           },
@@ -4285,8 +4285,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6afe52a415b7481c-a3",
-            "runId": "evalrun-6afe52a415b7481c",
+            "id": "evalrun-1cfa35cc1bfb4657-a3",
+            "runId": "evalrun-1cfa35cc1bfb4657",
             "sequence": 3,
             "simulated": true
           },
@@ -4308,11 +4308,11 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-450",
-            "idempotencyKey": "desk:189ea0b6fe82351e5f87658168b185a9:450",
+            "approvalId": "apr-530",
+            "idempotencyKey": "desk:f5c20a2767de1f997238a875cd9e4352:530",
             "error": null,
-            "id": "evalrun-6afe52a415b7481c-a4",
-            "runId": "evalrun-6afe52a415b7481c",
+            "id": "evalrun-1cfa35cc1bfb4657-a4",
+            "runId": "evalrun-1cfa35cc1bfb4657",
             "sequence": 4,
             "simulated": true
           },
@@ -4339,22 +4339,22 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 2014,
-            "approvalId": "apr-455",
-            "idempotencyKey": "desk:189ea0b6fe82351e5f87658168b185a9:455",
+            "approvalId": "apr-535",
+            "idempotencyKey": "desk:f5c20a2767de1f997238a875cd9e4352:535",
             "error": null,
-            "id": "evalrun-6afe52a415b7481c-a5",
-            "runId": "evalrun-6afe52a415b7481c",
+            "id": "evalrun-1cfa35cc1bfb4657-a5",
+            "runId": "evalrun-1cfa35cc1bfb4657",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-450",
-          "apr-455"
+          "apr-530",
+          "apr-535"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3577,
+        "durationMs": 6719,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -4372,7 +4372,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-1d7a4c82c90d",
+          "world": "case-8951f00819f0",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -4386,8 +4386,8 @@
       },
       "approvals": [
         {
-          "id": "apr-450",
-          "runId": "evalrun-6afe52a415b7481c",
+          "id": "apr-530",
+          "runId": "evalrun-1cfa35cc1bfb4657",
           "requestId": null,
           "conversationId": null,
           "title": "Cancel \"Vendor review: Altamira Freight\"",
@@ -4431,8 +4431,8 @@
           }
         },
         {
-          "id": "apr-455",
-          "runId": "evalrun-6afe52a415b7481c",
+          "id": "apr-535",
+          "runId": "evalrun-1cfa35cc1bfb4657",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Need to cancel today\" to daniel.reyes@altamira.example",
@@ -4669,16 +4669,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:08.641Z",
-        "finishedAt": "2026-11-14T13:36:09.165Z",
-        "wallClockMs": 524,
-        "agentReportedMs": 516
+        "startedAt": "2026-11-14T14:22:15.188Z",
+        "finishedAt": "2026-11-14T14:22:15.874Z",
+        "wallClockMs": 686,
+        "agentReportedMs": 562
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-06162300468c4f8c",
+        "id": "evalrun-4df5879473a04d97",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -4726,8 +4726,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-06162300468c4f8c-a1",
-            "runId": "evalrun-06162300468c4f8c",
+            "id": "evalrun-4df5879473a04d97-a1",
+            "runId": "evalrun-4df5879473a04d97",
             "sequence": 1,
             "simulated": true
           },
@@ -4750,10 +4750,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:dd3cc741269fe339a0948db327de49f0:470",
+            "idempotencyKey": "desk:370df5422a6d96e8e8360a6e1c5b3093:550",
             "error": null,
-            "id": "evalrun-06162300468c4f8c-a2",
-            "runId": "evalrun-06162300468c4f8c",
+            "id": "evalrun-4df5879473a04d97-a2",
+            "runId": "evalrun-4df5879473a04d97",
             "sequence": 2,
             "simulated": true
           }
@@ -4761,12 +4761,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 516,
+        "durationMs": 562,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-8ff3a11661f9",
+          "world": "case-53fdce88d81f",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -4987,16 +4987,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:09.165Z",
-        "finishedAt": "2026-11-14T13:36:09.682Z",
-        "wallClockMs": 517,
-        "agentReportedMs": 515
+        "startedAt": "2026-11-14T14:22:15.875Z",
+        "finishedAt": "2026-11-14T14:22:16.543Z",
+        "wallClockMs": 668,
+        "agentReportedMs": 656
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-be6e811dd8b44513",
+        "id": "evalrun-38cc1fe8457f4a86",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5045,10 +5045,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:0e0b998b47725c65c002c09d141f5a6c:484",
+            "idempotencyKey": "desk:91667803c5d6873cc545b6ebd4d49a89:564",
             "error": null,
-            "id": "evalrun-be6e811dd8b44513-a1",
-            "runId": "evalrun-be6e811dd8b44513",
+            "id": "evalrun-38cc1fe8457f4a86-a1",
+            "runId": "evalrun-38cc1fe8457f4a86",
             "sequence": 1,
             "simulated": true
           }
@@ -5056,12 +5056,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 515,
+        "durationMs": 656,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-09f74873c501",
+          "world": "case-dbc5e5865187",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -5277,16 +5277,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:09.683Z",
-        "finishedAt": "2026-11-14T13:36:10.201Z",
-        "wallClockMs": 518,
-        "agentReportedMs": 514
+        "startedAt": "2026-11-14T14:22:16.544Z",
+        "finishedAt": "2026-11-14T14:22:17.097Z",
+        "wallClockMs": 553,
+        "agentReportedMs": 530
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-67fb444a8b554248",
+        "id": "evalrun-1f8fddba66ff4f5e",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5334,8 +5334,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-67fb444a8b554248-a1",
-            "runId": "evalrun-67fb444a8b554248",
+            "id": "evalrun-1f8fddba66ff4f5e-a1",
+            "runId": "evalrun-1f8fddba66ff4f5e",
             "sequence": 1,
             "simulated": true
           },
@@ -5356,8 +5356,8 @@
             "approvalId": null,
             "idempotencyKey": "task:task-nda",
             "error": null,
-            "id": "evalrun-67fb444a8b554248-a2",
-            "runId": "evalrun-67fb444a8b554248",
+            "id": "evalrun-1f8fddba66ff4f5e-a2",
+            "runId": "evalrun-1f8fddba66ff4f5e",
             "sequence": 2,
             "simulated": true
           }
@@ -5365,12 +5365,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 514,
+        "durationMs": 530,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-b61f1c6ddb55",
+          "world": "case-57d17e53c6f1",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -5626,16 +5626,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:10.201Z",
-        "finishedAt": "2026-11-14T13:36:13.268Z",
-        "wallClockMs": 3067,
-        "agentReportedMs": 3046
+        "startedAt": "2026-11-14T14:22:17.098Z",
+        "finishedAt": "2026-11-14T14:22:20.353Z",
+        "wallClockMs": 3255,
+        "agentReportedMs": 3219
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-6f618e42bb0f4a5c",
+        "id": "evalrun-0c25d3938b5640f7",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5689,21 +5689,21 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 2000,
-            "approvalId": "apr-512",
-            "idempotencyKey": "desk:2a1b9c35d63c32860c03235f7954d581:512",
+            "approvalId": "apr-592",
+            "idempotencyKey": "desk:4e8c269fd2a247953f163c5c59fc94b0:592",
             "error": null,
-            "id": "evalrun-6f618e42bb0f4a5c-a1",
-            "runId": "evalrun-6f618e42bb0f4a5c",
+            "id": "evalrun-0c25d3938b5640f7-a1",
+            "runId": "evalrun-0c25d3938b5640f7",
             "sequence": 1,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-512"
+          "apr-592"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3046,
+        "durationMs": 3219,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -5715,7 +5715,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-678022a64275",
+          "world": "case-10c58c62a28a",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -5729,8 +5729,8 @@
       },
       "approvals": [
         {
-          "id": "apr-512",
-          "runId": "evalrun-6f618e42bb0f4a5c",
+          "id": "apr-592",
+          "runId": "evalrun-0c25d3938b5640f7",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Revised fuel-surcharge terms\" to peter.vogel@altamira.example",
@@ -5967,16 +5967,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:13.269Z",
-        "finishedAt": "2026-11-14T13:36:13.782Z",
-        "wallClockMs": 513,
-        "agentReportedMs": 500
+        "startedAt": "2026-11-14T14:22:20.363Z",
+        "finishedAt": "2026-11-14T14:22:20.683Z",
+        "wallClockMs": 320,
+        "agentReportedMs": 155
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-a737484c94f34b26",
+        "id": "evalrun-75d52148bfd240f8",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -6024,8 +6024,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-a737484c94f34b26-a1",
-            "runId": "evalrun-a737484c94f34b26",
+            "id": "evalrun-75d52148bfd240f8-a1",
+            "runId": "evalrun-75d52148bfd240f8",
             "sequence": 1,
             "simulated": true
           },
@@ -6046,8 +6046,8 @@
             "approvalId": null,
             "idempotencyKey": "followup:fu-insurance",
             "error": null,
-            "id": "evalrun-a737484c94f34b26-a2",
-            "runId": "evalrun-a737484c94f34b26",
+            "id": "evalrun-75d52148bfd240f8-a2",
+            "runId": "evalrun-75d52148bfd240f8",
             "sequence": 2,
             "simulated": true
           }
@@ -6055,12 +6055,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 500,
+        "durationMs": 155,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-d34dc14b4856",
+          "world": "case-b8cb83ea6267",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -6316,16 +6316,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:13.782Z",
-        "finishedAt": "2026-11-14T13:36:17.366Z",
-        "wallClockMs": 3584,
-        "agentReportedMs": 3577
+        "startedAt": "2026-11-14T14:22:20.684Z",
+        "finishedAt": "2026-11-14T14:22:26.717Z",
+        "wallClockMs": 6033,
+        "agentReportedMs": 5765
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-c150b8ec789b48f9",
+        "id": "evalrun-8e7c35da1ae3438c",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -6378,8 +6378,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a1",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a1",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 1,
             "simulated": true
           },
@@ -6403,8 +6403,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a2",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a2",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 2,
             "simulated": true
           },
@@ -6427,8 +6427,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a3",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a3",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 3,
             "simulated": true
           },
@@ -6451,10 +6451,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:4f9f15234fe1393420f09f442cbee676:545",
+            "idempotencyKey": "desk:8871d8396008df236cea70197dc173b5:625",
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a4",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a4",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 4,
             "simulated": true
           },
@@ -6478,16 +6478,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-759b59a294d5-2"
+              "eventId": "evt-case-de8bca7feffd-2"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-543",
-            "idempotencyKey": "desk:4f9f15234fe1393420f09f442cbee676:543",
+            "approvalId": "apr-623",
+            "idempotencyKey": "desk:8871d8396008df236cea70197dc173b5:623",
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a5",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a5",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 5,
             "simulated": true
           },
@@ -6513,23 +6513,23 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2000,
-            "approvalId": "apr-554",
-            "idempotencyKey": "desk:4f9f15234fe1393420f09f442cbee676:554",
+            "durationMs": 2046,
+            "approvalId": "apr-634",
+            "idempotencyKey": "desk:8871d8396008df236cea70197dc173b5:634",
             "error": null,
-            "id": "evalrun-c150b8ec789b48f9-a6",
-            "runId": "evalrun-c150b8ec789b48f9",
+            "id": "evalrun-8e7c35da1ae3438c-a6",
+            "runId": "evalrun-8e7c35da1ae3438c",
             "sequence": 6,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-543",
-          "apr-554"
+          "apr-623",
+          "apr-634"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3577,
+        "durationMs": 5765,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -6547,7 +6547,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-759b59a294d5",
+          "world": "case-de8bca7feffd",
           "isolationViolations": 0,
           "operations": 3
         },
@@ -6561,8 +6561,8 @@
       },
       "approvals": [
         {
-          "id": "apr-543",
-          "runId": "evalrun-c150b8ec789b48f9",
+          "id": "apr-623",
+          "runId": "evalrun-8e7c35da1ae3438c",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Holiday delivery windows: 45 minutes on Wednesday?\"",
@@ -6602,8 +6602,8 @@
           }
         },
         {
-          "id": "apr-554",
-          "runId": "evalrun-c150b8ec789b48f9",
+          "id": "apr-634",
+          "runId": "evalrun-8e7c35da1ae3438c",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Holiday delivery windows: 45 minutes on Wednesday?\" to maya.okafor@brightwell.example",
@@ -6895,16 +6895,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:17.367Z",
-        "finishedAt": "2026-11-14T13:36:20.928Z",
-        "wallClockMs": 3561,
-        "agentReportedMs": 3563
+        "startedAt": "2026-11-14T14:22:26.724Z",
+        "finishedAt": "2026-11-14T14:22:30.423Z",
+        "wallClockMs": 3699,
+        "agentReportedMs": 3672
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-771269fb70f34be2",
+        "id": "evalrun-d704a3e807d44642",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -6958,8 +6958,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-771269fb70f34be2-a1",
-            "runId": "evalrun-771269fb70f34be2",
+            "id": "evalrun-d704a3e807d44642-a1",
+            "runId": "evalrun-d704a3e807d44642",
             "sequence": 1,
             "simulated": true
           },
@@ -6982,8 +6982,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-771269fb70f34be2-a2",
-            "runId": "evalrun-771269fb70f34be2",
+            "id": "evalrun-d704a3e807d44642-a2",
+            "runId": "evalrun-d704a3e807d44642",
             "sequence": 2,
             "simulated": true
           },
@@ -7012,11 +7012,11 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-569",
-            "idempotencyKey": "desk:1f4254a4cf637fa6cdc57495fa5db6e5:569",
+            "approvalId": "apr-649",
+            "idempotencyKey": "desk:8cf677a2d1387ab45598f524e2b66910:649",
             "error": null,
-            "id": "evalrun-771269fb70f34be2-a3",
-            "runId": "evalrun-771269fb70f34be2",
+            "id": "evalrun-d704a3e807d44642-a3",
+            "runId": "evalrun-d704a3e807d44642",
             "sequence": 3,
             "simulated": true
           },
@@ -7038,10 +7038,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:1f4254a4cf637fa6cdc57495fa5db6e5:576",
+            "idempotencyKey": "desk:8cf677a2d1387ab45598f524e2b66910:656",
             "error": null,
-            "id": "evalrun-771269fb70f34be2-a4",
-            "runId": "evalrun-771269fb70f34be2",
+            "id": "evalrun-d704a3e807d44642-a4",
+            "runId": "evalrun-d704a3e807d44642",
             "sequence": 4,
             "simulated": true
           },
@@ -7067,23 +7067,23 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2016,
-            "approvalId": "apr-574",
-            "idempotencyKey": "desk:1f4254a4cf637fa6cdc57495fa5db6e5:574",
+            "durationMs": 2000,
+            "approvalId": "apr-654",
+            "idempotencyKey": "desk:8cf677a2d1387ab45598f524e2b66910:654",
             "error": null,
-            "id": "evalrun-771269fb70f34be2-a5",
-            "runId": "evalrun-771269fb70f34be2",
+            "id": "evalrun-d704a3e807d44642-a5",
+            "runId": "evalrun-d704a3e807d44642",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-569",
-          "apr-574"
+          "apr-649",
+          "apr-654"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3563,
+        "durationMs": 3672,
         "usage": null,
         "error": null,
         "humanInterventions": [
@@ -7101,7 +7101,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-83b6a8910445",
+          "world": "case-f28e49d1dba9",
           "isolationViolations": 0,
           "operations": 3
         },
@@ -7115,8 +7115,8 @@
       },
       "approvals": [
         {
-          "id": "apr-569",
-          "runId": "evalrun-771269fb70f34be2",
+          "id": "apr-649",
+          "runId": "evalrun-d704a3e807d44642",
           "requestId": null,
           "conversationId": null,
           "title": "Move \"1:1 with Omar\"",
@@ -7173,8 +7173,8 @@
           }
         },
         {
-          "id": "apr-574",
-          "runId": "evalrun-771269fb70f34be2",
+          "id": "apr-654",
+          "runId": "evalrun-d704a3e807d44642",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Update: 1:1 with Omar\" to omar.saab@cedarvale.example",
@@ -7411,16 +7411,16 @@
         }
       ],
       "timing": {
-        "startedAt": "2026-11-14T13:36:20.928Z",
-        "finishedAt": "2026-11-14T13:36:21.956Z",
-        "wallClockMs": 1028,
-        "agentReportedMs": 1014
+        "startedAt": "2026-11-14T14:22:30.425Z",
+        "finishedAt": "2026-11-14T14:22:31.553Z",
+        "wallClockMs": 1128,
+        "agentReportedMs": 1109
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-1f75fff0cc6d4ed2",
+        "id": "evalrun-322f487301284cb8",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -7473,8 +7473,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-1f75fff0cc6d4ed2-a1",
-            "runId": "evalrun-1f75fff0cc6d4ed2",
+            "id": "evalrun-322f487301284cb8-a1",
+            "runId": "evalrun-322f487301284cb8",
             "sequence": 1,
             "simulated": true
           },
@@ -7498,8 +7498,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-1f75fff0cc6d4ed2-a2",
-            "runId": "evalrun-1f75fff0cc6d4ed2",
+            "id": "evalrun-322f487301284cb8-a2",
+            "runId": "evalrun-322f487301284cb8",
             "sequence": 2,
             "simulated": true
           },
@@ -7522,8 +7522,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-1f75fff0cc6d4ed2-a3",
-            "runId": "evalrun-1f75fff0cc6d4ed2",
+            "id": "evalrun-322f487301284cb8-a3",
+            "runId": "evalrun-322f487301284cb8",
             "sequence": 3,
             "simulated": true
           },
@@ -7551,26 +7551,26 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-598",
-            "idempotencyKey": "desk:5a84fa20822644265e92d2a0a8da9d16:598",
+            "approvalId": "apr-678",
+            "idempotencyKey": "desk:0ba21a7a84f827dea2401fd4b712fea9:678",
             "error": {
               "code": "internal_error",
               "message": "The invitation wasn't created: Google Calendar returned an error. Try again, or reconnect Google Calendar if it keeps failing.",
               "source": "tool",
               "retryable": true
             },
-            "id": "evalrun-1f75fff0cc6d4ed2-a4",
-            "runId": "evalrun-1f75fff0cc6d4ed2",
+            "id": "evalrun-322f487301284cb8-a4",
+            "runId": "evalrun-322f487301284cb8",
             "sequence": 4,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-598"
+          "apr-678"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 1014,
+        "durationMs": 1109,
         "usage": null,
         "error": {
           "code": "internal_error",
@@ -7587,7 +7587,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-17c431b4a55e",
+          "world": "case-ad287995e8c8",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -7601,8 +7601,8 @@
       },
       "approvals": [
         {
-          "id": "apr-598",
-          "runId": "evalrun-1f75fff0cc6d4ed2",
+          "id": "apr-678",
+          "runId": "evalrun-322f487301284cb8",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Signing prep\"",
@@ -7841,16 +7841,16 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T13:36:21.957Z",
-        "finishedAt": "2026-11-14T13:36:22.472Z",
-        "wallClockMs": 515,
-        "agentReportedMs": 500
+        "startedAt": "2026-11-14T14:22:31.554Z",
+        "finishedAt": "2026-11-14T14:22:32.442Z",
+        "wallClockMs": 888,
+        "agentReportedMs": 844
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-a3a6308966aa4289",
+        "id": "evalrun-f3701d42e7654805",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -7900,8 +7900,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-a3a6308966aa4289-a1",
-            "runId": "evalrun-a3a6308966aa4289",
+            "id": "evalrun-f3701d42e7654805-a1",
+            "runId": "evalrun-f3701d42e7654805",
             "sequence": 1,
             "simulated": true
           },
@@ -7925,8 +7925,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-a3a6308966aa4289-a2",
-            "runId": "evalrun-a3a6308966aa4289",
+            "id": "evalrun-f3701d42e7654805-a2",
+            "runId": "evalrun-f3701d42e7654805",
             "sequence": 2,
             "simulated": true
           }
@@ -7934,12 +7934,12 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 500,
+        "durationMs": 844,
         "usage": null,
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-2cff891693f7",
+          "world": "case-4f041dac8229",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -7968,9 +7968,9 @@
     "unexpectedApprovals": 0,
     "passRate": 0.85,
     "latency": {
-      "medianMs": 528,
-      "p95Ms": 3593.1,
-      "meanMs": 1719.35
+      "medianMs": 908,
+      "p95Ms": 6071.6,
+      "meanMs": 2186.5
     },
     "casesWithUsage": 0,
     "totalInputTokens": null,

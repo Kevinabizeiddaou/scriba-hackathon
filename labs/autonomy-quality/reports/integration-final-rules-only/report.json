@@ -1,10 +1,10 @@
 {
  "format": "autonomy-quality-lab.report/1",
  "label": "integration-final-rules-only",
- "startedAt": "2026-11-14T13:33:35.147970+00:00",
- "finishedAt": "2026-11-14T13:38:24.190838+00:00",
+ "startedAt": "2026-11-14T14:15:21.367871+00:00",
+ "finishedAt": "2026-11-14T14:22:56.768383+00:00",
  "traceability": {
-  "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+  "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
   "runnerVersion": "1.0.0",
   "seed": 20270308,
   "model": null,
@@ -14,8 +14,8 @@
   "apiRoot": "http://127.0.0.1:8821",
   "service": "scriba-desk-overlay",
   "contractVersion": "1.1.0",
-  "overlayVersion": "0.5.0",
-  "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+  "overlayVersion": "0.5.1",
+  "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
   "backendDirty": false,
   "scribaCommit": "3ae3a2aa0c2dd2398f5a2e6b0d3ce1eaeeb0fdf7",
   "agentReported": "scripted",
@@ -137,11 +137,11 @@
   "humanRescues": 4,
   "humanRescuesPerCompletedJob": 0.0183,
   "latencyMs": {
-   "median": 77.0,
-   "p90": 2297,
-   "p95": 2375,
-   "max": 3061,
-   "medianToFirstStop": 30.0,
+   "median": 179.0,
+   "p90": 3765,
+   "p95": 4734,
+   "max": 19437,
+   "medianToFirstStop": 45.0,
    "note": "wall clock measured by the lab, start request to final status, approvals included"
   },
   "cost": {
@@ -238,11 +238,11 @@
    "humanRescues": 0,
    "humanRescuesPerCompletedJob": 0.0,
    "latencyMs": {
-    "median": 47.0,
-    "p90": 2202,
-    "p95": 2234,
-    "max": 2437,
-    "medianToFirstStop": 30.0,
+    "median": 77.0,
+    "p90": 2609,
+    "p95": 2968,
+    "max": 6579,
+    "medianToFirstStop": 32.0,
     "note": "wall clock measured by the lab, start request to final status, approvals included"
    },
    "cost": {
@@ -328,11 +328,11 @@
    "humanRescues": 2,
    "humanRescuesPerCompletedJob": 0.0312,
    "latencyMs": {
-    "median": 2171.5,
-    "p90": 2359,
-    "p95": 2390,
-    "max": 2469,
-    "medianToFirstStop": 31.0,
+    "median": 2593.0,
+    "p90": 4515,
+    "p95": 5594,
+    "max": 19437,
+    "medianToFirstStop": 46.0,
     "note": "wall clock measured by the lab, start request to final status, approvals included"
    },
    "cost": {
@@ -426,11 +426,11 @@
    "humanRescues": 1,
    "humanRescuesPerCompletedJob": 0.0263,
    "latencyMs": {
-    "median": 186.5,
-    "p90": 2453,
-    "p95": 2546,
-    "max": 3061,
-    "medianToFirstStop": 45.0,
+    "median": 524.0,
+    "p90": 4375,
+    "p95": 6109,
+    "max": 10890,
+    "medianToFirstStop": 46.0,
     "note": "wall clock measured by the lab, start request to final status, approvals included"
    },
    "cost": {
@@ -2015,7 +2015,7 @@
     "label": "Median latency (ms)",
     "target": 8000,
     "direction": "max",
-    "value": 77.0,
+    "value": 179.0,
     "status": "met"
    },
    {
@@ -2023,7 +2023,7 @@
     "label": "95th percentile latency (ms)",
     "target": 30000,
     "direction": "max",
-    "value": 2375,
+    "value": 4734,
     "status": "met"
    },
    {
@@ -3256,8 +3256,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2342,
-    "toFirstStopMs": 202
+    "wallMs": 3077,
+    "toFirstStopMs": 155
    },
    "usage": null,
    "costUsd": null,
@@ -3267,7 +3267,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -3452,8 +3452,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -3464,7 +3464,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -3674,8 +3674,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 30
+    "wallMs": 2234,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -3685,7 +3685,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -3888,8 +3888,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2062,
-    "toFirstStopMs": 14
+    "wallMs": 2092,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -3900,7 +3900,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -4109,8 +4109,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2139,
-    "toFirstStopMs": 30
+    "wallMs": 2156,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -4120,7 +4120,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -4304,8 +4304,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 78,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -4316,7 +4316,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -4500,8 +4500,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 31,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -4512,7 +4512,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -4697,8 +4697,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 15
+    "wallMs": 45,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -4709,7 +4709,7 @@
    "signature": "book > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -4912,7 +4912,7 @@
    },
    "timing": {
     "wallMs": 2092,
-    "toFirstStopMs": 46
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -4923,7 +4923,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -5108,8 +5108,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 31,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -5120,7 +5120,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -5302,8 +5302,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -5314,7 +5314,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -5521,8 +5521,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2110,
-    "toFirstStopMs": 16
+    "wallMs": 2186,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -5532,7 +5532,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -5716,8 +5716,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
-    "toFirstStopMs": 63
+    "wallMs": 30,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -5728,7 +5728,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -5931,8 +5931,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2109,
-    "toFirstStopMs": 45
+    "wallMs": 2187,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -5943,7 +5943,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -6150,8 +6150,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2109,
-    "toFirstStopMs": 14
+    "wallMs": 2140,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -6161,7 +6161,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -6343,8 +6343,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 45
+    "wallMs": 47,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -6355,7 +6355,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -6537,8 +6537,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 62,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -6549,7 +6549,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -6731,8 +6731,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -6743,7 +6743,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -6927,8 +6927,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 46
+    "wallMs": 47,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -6939,7 +6939,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -7125,7 +7125,7 @@
    },
    "timing": {
     "wallMs": 30,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -7136,7 +7136,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -7322,8 +7322,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 46,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -7334,7 +7334,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -7520,8 +7520,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 46
+    "wallMs": 47,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -7532,7 +7532,7 @@
    "signature": "book > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -7726,8 +7726,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 15,
-    "toFirstStopMs": 15
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -7737,7 +7737,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -7946,8 +7946,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2140,
-    "toFirstStopMs": 15
+    "wallMs": 2155,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -7957,7 +7957,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -8143,8 +8143,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -8155,7 +8155,7 @@
    "signature": "book > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -8349,8 +8349,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 15
+    "wallMs": 62,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -8360,7 +8360,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -8567,8 +8567,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2110,
-    "toFirstStopMs": 15
+    "wallMs": 2187,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -8578,7 +8578,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -8762,8 +8762,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 46,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -8774,7 +8774,7 @@
    "signature": "reschedule > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -8983,8 +8983,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2140,
-    "toFirstStopMs": 30
+    "wallMs": 2203,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -8994,7 +8994,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -9197,8 +9197,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2094,
-    "toFirstStopMs": 31
+    "wallMs": 2250,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -9209,7 +9209,7 @@
    "signature": "reschedule > new_meeting/alternatives_proposed/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -9394,8 +9394,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 47,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -9406,7 +9406,7 @@
    "signature": "reschedule > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -9615,8 +9615,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 30
+    "wallMs": 2140,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -9626,7 +9626,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -9810,8 +9810,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 30
+    "wallMs": 30,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -9822,7 +9822,7 @@
    "signature": "reschedule > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -10022,8 +10022,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 31
+    "wallMs": 32,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -10033,7 +10033,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -10217,8 +10217,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 15
+    "wallMs": 46,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -10229,7 +10229,7 @@
    "signature": "reschedule > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -10427,8 +10427,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2202,
-    "toFirstStopMs": 30
+    "wallMs": 2157,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -10438,7 +10438,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -10623,8 +10623,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 32,
-    "toFirstStopMs": 32
+    "wallMs": 61,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -10635,7 +10635,7 @@
    "signature": "cancel > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -10819,7 +10819,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
+    "wallMs": 77,
     "toFirstStopMs": 46
    },
    "usage": null,
@@ -10831,7 +10831,7 @@
    "signature": "cancel > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -11016,8 +11016,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 47,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -11028,7 +11028,7 @@
    "signature": "cancel > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -11228,7 +11228,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
+    "wallMs": 2578,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -11240,7 +11240,7 @@
    "signature": "cancel > reschedule/alternatives_proposed/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -11451,7 +11451,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -11635,8 +11635,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -11647,7 +11647,7 @@
    "signature": "cancel > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -11850,8 +11850,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 45
+    "wallMs": 47,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -11861,7 +11861,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -12043,8 +12043,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 14
+    "wallMs": 45,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -12055,7 +12055,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -12237,7 +12237,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
+    "wallMs": 46,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -12249,7 +12249,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -12431,8 +12431,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 77,
-    "toFirstStopMs": 46
+    "wallMs": 47,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -12443,7 +12443,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -12623,8 +12623,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -12634,7 +12634,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -12818,8 +12818,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 125,
+    "toFirstStopMs": 110
    },
    "usage": null,
    "costUsd": null,
@@ -12830,7 +12830,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13013,8 +13013,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 93,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -13025,7 +13025,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13207,7 +13207,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
+    "wallMs": 30,
     "toFirstStopMs": 15
    },
    "usage": null,
@@ -13219,7 +13219,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13404,8 +13404,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 15
+    "wallMs": 31,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -13416,7 +13416,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13599,8 +13599,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 31,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -13611,7 +13611,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13791,8 +13791,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 15
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -13802,7 +13802,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -13982,8 +13982,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 14
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -13993,7 +13993,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -14175,8 +14175,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 14
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -14186,7 +14186,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -14368,8 +14368,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 61,
-    "toFirstStopMs": 61
+    "wallMs": 93,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -14379,7 +14379,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -14563,8 +14563,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 31
+    "wallMs": 265,
+    "toFirstStopMs": 187
    },
    "usage": null,
    "costUsd": null,
@@ -14575,7 +14575,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -14759,8 +14759,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 62,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -14771,7 +14771,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -14953,8 +14953,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 32,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -14964,7 +14964,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -15147,8 +15147,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 79,
-    "toFirstStopMs": 47
+    "wallMs": 31,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -15158,7 +15158,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -15354,7 +15354,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -15557,7 +15557,7 @@
    },
    "timing": {
     "wallMs": 2125,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -15568,7 +15568,7 @@
    "signature": "reply > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -15767,7 +15767,7 @@
    },
    "timing": {
     "wallMs": 46,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -15777,7 +15777,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -15975,8 +15975,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 47,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -15986,7 +15986,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -16197,7 +16197,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2109,
+    "wallMs": 2139,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -16208,7 +16208,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -16417,8 +16417,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 45
+    "wallMs": 16,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -16428,7 +16428,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -16630,8 +16630,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 14
+    "wallMs": 2156,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -16642,7 +16642,7 @@
    "signature": "reply > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -16835,8 +16835,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 46
+    "wallMs": 30,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -16846,7 +16846,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -17044,8 +17044,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -17055,7 +17055,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -17247,7 +17247,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
+    "wallMs": 14,
     "toFirstStopMs": 14
    },
    "usage": null,
@@ -17258,7 +17258,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -17461,7 +17461,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
+    "wallMs": 30,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -17472,7 +17472,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -17674,8 +17674,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 30
+    "wallMs": 30,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -17685,7 +17685,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -17890,8 +17890,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 15
+    "wallMs": 2282,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -17902,7 +17902,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -18103,8 +18103,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 14
+    "wallMs": 296,
+    "toFirstStopMs": 155
    },
    "usage": null,
    "costUsd": null,
@@ -18114,7 +18114,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -18298,8 +18298,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 156,
+    "toFirstStopMs": 139
    },
    "usage": null,
    "costUsd": null,
@@ -18309,7 +18309,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -18502,8 +18502,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 202,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -18513,7 +18513,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -18723,8 +18723,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2250,
-    "toFirstStopMs": 47
+    "wallMs": 2468,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -18734,7 +18734,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -18935,8 +18935,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2202,
-    "toFirstStopMs": 30
+    "wallMs": 6579,
+    "toFirstStopMs": 547
    },
    "usage": null,
    "costUsd": null,
@@ -18946,7 +18946,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -19128,8 +19128,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 78,
-    "toFirstStopMs": 47
+    "wallMs": 108,
+    "toFirstStopMs": 93
    },
    "usage": null,
    "costUsd": null,
@@ -19139,7 +19139,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -19342,8 +19342,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 30
+    "wallMs": 5514,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -19354,7 +19354,7 @@
    "signature": "reschedule+task > new_meeting/alternatives_proposed/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -19556,8 +19556,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 47
+    "wallMs": 2437,
+    "toFirstStopMs": 93
    },
    "usage": null,
    "costUsd": null,
@@ -19568,7 +19568,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -19771,8 +19771,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2217,
-    "toFirstStopMs": 61
+    "wallMs": 2328,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -19783,7 +19783,7 @@
    "signature": "reschedule > cancellation/cancelled_meeting/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -19994,8 +19994,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2202,
-    "toFirstStopMs": 30
+    "wallMs": 5875,
+    "toFirstStopMs": 828
    },
    "usage": null,
    "costUsd": null,
@@ -20005,7 +20005,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -20207,8 +20207,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2094,
-    "toFirstStopMs": 47
+    "wallMs": 2187,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -20219,7 +20219,7 @@
    "signature": "task+task > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -20428,8 +20428,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2139,
-    "toFirstStopMs": 31
+    "wallMs": 2454,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -20439,7 +20439,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -20631,8 +20631,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 15,
-    "toFirstStopMs": 15
+    "wallMs": 108,
+    "toFirstStopMs": 77
    },
    "usage": null,
    "costUsd": null,
@@ -20642,7 +20642,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -20851,8 +20851,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 31
+    "wallMs": 2640,
+    "toFirstStopMs": 110
    },
    "usage": null,
    "costUsd": null,
@@ -20862,7 +20862,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -21046,8 +21046,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 171,
+    "toFirstStopMs": 155
    },
    "usage": null,
    "costUsd": null,
@@ -21058,7 +21058,7 @@
    "signature": "book > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -21268,7 +21268,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2219,
+    "wallMs": 2282,
     "toFirstStopMs": 32
    },
    "usage": null,
@@ -21279,7 +21279,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -21488,8 +21488,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2266,
-    "toFirstStopMs": 63
+    "wallMs": 2312,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -21499,7 +21499,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -21691,8 +21691,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -21702,7 +21702,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -21911,8 +21911,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2234,
-    "toFirstStopMs": 62
+    "wallMs": 2295,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -21922,7 +21922,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -22131,8 +22131,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2157,
-    "toFirstStopMs": 16
+    "wallMs": 2734,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -22142,7 +22142,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -22342,8 +22342,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 78,
-    "toFirstStopMs": 62
+    "wallMs": 390,
+    "toFirstStopMs": 219
    },
    "usage": null,
    "costUsd": null,
@@ -22353,7 +22353,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -22546,7 +22546,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
+    "wallMs": 47,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -22557,7 +22557,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -22757,8 +22757,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 62,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -22768,7 +22768,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -22977,8 +22977,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2155,
-    "toFirstStopMs": 15
+    "wallMs": 2532,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -22988,7 +22988,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -23199,8 +23199,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2437,
-    "toFirstStopMs": 30
+    "wallMs": 2344,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -23210,7 +23210,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -23410,8 +23410,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 14
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -23421,7 +23421,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -23631,8 +23631,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 14
+    "wallMs": 2311,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -23642,7 +23642,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -23852,8 +23852,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2171,
-    "toFirstStopMs": 62
+    "wallMs": 2234,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -23863,7 +23863,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -24073,8 +24073,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2139,
-    "toFirstStopMs": 31
+    "wallMs": 2218,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -24084,7 +24084,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -24267,8 +24267,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 77,
-    "toFirstStopMs": 62
+    "wallMs": 109,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -24278,7 +24278,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -24479,8 +24479,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 32,
-    "toFirstStopMs": 32
+    "wallMs": 45,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -24490,7 +24490,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -24700,7 +24700,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
+    "wallMs": 2609,
     "toFirstStopMs": 46
    },
    "usage": null,
@@ -24711,7 +24711,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -24921,8 +24921,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2125,
-    "toFirstStopMs": 15
+    "wallMs": 2389,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -24932,7 +24932,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -25142,8 +25142,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2094,
-    "toFirstStopMs": 16
+    "wallMs": 2657,
+    "toFirstStopMs": 63
    },
    "usage": null,
    "costUsd": null,
@@ -25153,7 +25153,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -25353,8 +25353,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 30
+    "wallMs": 110,
+    "toFirstStopMs": 79
    },
    "usage": null,
    "costUsd": null,
@@ -25364,7 +25364,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -25573,8 +25573,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2437,
-    "toFirstStopMs": 187
+    "wallMs": 5265,
+    "toFirstStopMs": 218
    },
    "usage": null,
    "costUsd": null,
@@ -25584,7 +25584,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -25793,8 +25793,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2375,
-    "toFirstStopMs": 155
+    "wallMs": 2796,
+    "toFirstStopMs": 186
    },
    "usage": null,
    "costUsd": null,
@@ -25804,7 +25804,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -26013,8 +26013,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 15
+    "wallMs": 2483,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -26024,7 +26024,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -26233,8 +26233,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 30
+    "wallMs": 2718,
+    "toFirstStopMs": 280
    },
    "usage": null,
    "costUsd": null,
@@ -26244,7 +26244,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -26428,8 +26428,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 47,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -26440,7 +26440,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -26649,8 +26649,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2172,
-    "toFirstStopMs": 47
+    "wallMs": 3890,
+    "toFirstStopMs": 906
    },
    "usage": null,
    "costUsd": null,
@@ -26660,7 +26660,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -26861,8 +26861,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 219,
+    "toFirstStopMs": 187
    },
    "usage": null,
    "costUsd": null,
@@ -26872,7 +26872,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -27073,8 +27073,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 79,
-    "toFirstStopMs": 63
+    "wallMs": 46,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -27084,7 +27084,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -27285,8 +27285,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 14
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -27296,7 +27296,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -27505,8 +27505,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2186,
-    "toFirstStopMs": 15
+    "wallMs": 2530,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -27516,7 +27516,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -27700,7 +27700,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
+    "wallMs": 30,
     "toFirstStopMs": 15
    },
    "usage": null,
@@ -27712,7 +27712,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -27896,8 +27896,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 31
+    "wallMs": 30,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -27908,7 +27908,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -28117,8 +28117,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2234,
-    "toFirstStopMs": 30
+    "wallMs": 2594,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -28128,7 +28128,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -28312,8 +28312,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 30
+    "wallMs": 78,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -28324,7 +28324,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -28520,7 +28520,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -28722,8 +28722,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2139,
-    "toFirstStopMs": 14
+    "wallMs": 2328,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -28734,7 +28734,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -28937,8 +28937,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2079,
-    "toFirstStopMs": 0
+    "wallMs": 2297,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -28949,7 +28949,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -29133,7 +29133,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 15,
+    "wallMs": 31,
     "toFirstStopMs": 15
    },
    "usage": null,
@@ -29145,7 +29145,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -29329,8 +29329,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 32,
-    "toFirstStopMs": 16
+    "wallMs": 47,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -29341,7 +29341,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -29550,8 +29550,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2171,
-    "toFirstStopMs": 46
+    "wallMs": 2202,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -29561,7 +29561,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -29761,8 +29761,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 62,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -29772,7 +29772,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -29981,8 +29981,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2140,
-    "toFirstStopMs": 30
+    "wallMs": 2280,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -29992,7 +29992,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -30192,8 +30192,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 46,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -30203,7 +30203,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -30412,8 +30412,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2171,
-    "toFirstStopMs": 46
+    "wallMs": 2610,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -30423,7 +30423,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -30624,8 +30624,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 61,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -30635,7 +30635,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -30835,8 +30835,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 187,
+    "toFirstStopMs": 155
    },
    "usage": null,
    "costUsd": null,
@@ -30846,7 +30846,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -31056,8 +31056,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2110,
-    "toFirstStopMs": 15
+    "wallMs": 2968,
+    "toFirstStopMs": 155
    },
    "usage": null,
    "costUsd": null,
@@ -31067,7 +31067,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -31269,8 +31269,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 125,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -31280,7 +31280,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -31481,8 +31481,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 157,
+    "toFirstStopMs": 94
    },
    "usage": null,
    "costUsd": null,
@@ -31492,7 +31492,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -31713,8 +31713,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2218,
-    "toFirstStopMs": 14
+    "wallMs": 2905,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -31724,7 +31724,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -31926,8 +31926,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 77,
+    "toFirstStopMs": 61
    },
    "usage": null,
    "costUsd": null,
@@ -31937,7 +31937,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -32139,8 +32139,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
-    "toFirstStopMs": 47
+    "wallMs": 93,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -32150,7 +32150,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -32352,8 +32352,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 77,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -32363,7 +32363,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -32565,8 +32565,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 31,
-    "toFirstStopMs": 15
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -32576,7 +32576,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -32779,8 +32779,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -32790,7 +32790,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -32992,8 +32992,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 31
+    "wallMs": 63,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -33003,7 +33003,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -33205,8 +33205,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
-    "toFirstStopMs": 47
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -33216,7 +33216,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -33420,8 +33420,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
-    "toFirstStopMs": 47
+    "wallMs": 47,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -33431,7 +33431,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -33654,8 +33654,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2156,
-    "toFirstStopMs": 46
+    "wallMs": 2280,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -33666,7 +33666,7 @@
    "signature": "escalate > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -33858,8 +33858,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 0
+    "wallMs": 31,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -33869,7 +33869,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -34061,8 +34061,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 31,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -34072,7 +34072,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -34264,8 +34264,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 0
+    "wallMs": 62,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -34275,7 +34275,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -34467,8 +34467,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 47
+    "wallMs": 45,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -34478,7 +34478,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -34670,8 +34670,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 31
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -34681,7 +34681,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -34893,8 +34893,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2110,
-    "toFirstStopMs": 16
+    "wallMs": 2438,
+    "toFirstStopMs": 188
    },
    "usage": null,
    "costUsd": null,
@@ -34905,7 +34905,7 @@
    "signature": "none > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -35099,7 +35099,7 @@
    },
    "timing": {
     "wallMs": 30,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -35109,7 +35109,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -35301,8 +35301,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 15
+    "wallMs": 32,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -35312,7 +35312,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -35504,8 +35504,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 32,
-    "toFirstStopMs": 16
+    "wallMs": 78,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -35515,7 +35515,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -35707,8 +35707,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 0,
-    "toFirstStopMs": 0
+    "wallMs": 46,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -35718,7 +35718,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -35903,8 +35903,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 15,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -35915,7 +35915,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -36101,7 +36101,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
+    "wallMs": 47,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -36113,7 +36113,7 @@
    "signature": "book > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -36298,7 +36298,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
+    "wallMs": 46,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -36310,7 +36310,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -36495,8 +36495,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 31
+    "wallMs": 47,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -36507,7 +36507,7 @@
    "signature": "book > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -36692,8 +36692,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 0
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -36704,7 +36704,7 @@
    "signature": "cancel > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -36889,8 +36889,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 61,
-    "toFirstStopMs": 30
+    "wallMs": 47,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -36901,7 +36901,7 @@
    "signature": "task > fyi/escalated/needs_review",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -37104,8 +37104,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2141,
-    "toFirstStopMs": 32
+    "wallMs": 2453,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -37116,7 +37116,7 @@
    "signature": "book > new_meeting/clarification_requested/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -37326,8 +37326,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2344,
-    "toFirstStopMs": 46
+    "wallMs": 2671,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -37337,7 +37337,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -37530,8 +37530,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 30
+    "wallMs": 125,
+    "toFirstStopMs": 108
    },
    "usage": null,
    "costUsd": null,
@@ -37541,7 +37541,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -37723,8 +37723,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 79,
-    "toFirstStopMs": 63
+    "wallMs": 125,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -37734,7 +37734,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -37943,8 +37943,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2328,
-    "toFirstStopMs": 47
+    "wallMs": 4734,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -37954,7 +37954,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -38154,8 +38154,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2234,
-    "toFirstStopMs": 30
+    "wallMs": 3031,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -38165,7 +38165,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -38349,8 +38349,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 30
+    "wallMs": 139,
+    "toFirstStopMs": 125
    },
    "usage": null,
    "costUsd": null,
@@ -38361,7 +38361,7 @@
    "signature": "task > unclear/escalated/intent_unclear",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -38568,8 +38568,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2250,
-    "toFirstStopMs": 15
+    "wallMs": 2828,
+    "toFirstStopMs": 93
    },
    "usage": null,
    "costUsd": null,
@@ -38579,7 +38579,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -38788,8 +38788,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 47
+    "wallMs": 3109,
+    "toFirstStopMs": 109
    },
    "usage": null,
    "costUsd": null,
@@ -38799,7 +38799,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -39008,8 +39008,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2234,
-    "toFirstStopMs": 45
+    "wallMs": 5015,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -39019,7 +39019,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -39228,8 +39228,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2250,
-    "toFirstStopMs": 31
+    "wallMs": 2687,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -39239,7 +39239,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -39446,7 +39446,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2172,
+    "wallMs": 2281,
     "toFirstStopMs": 31
    },
    "usage": null,
@@ -39457,7 +39457,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -39666,8 +39666,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2156,
-    "toFirstStopMs": 31
+    "wallMs": 4047,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -39677,7 +39677,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -39886,8 +39886,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 47
+    "wallMs": 6671,
+    "toFirstStopMs": 936
    },
    "usage": null,
    "costUsd": null,
@@ -39897,7 +39897,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -40106,8 +40106,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2188,
-    "toFirstStopMs": 47
+    "wallMs": 2452,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -40117,7 +40117,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -40324,8 +40324,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 30
+    "wallMs": 3907,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -40335,7 +40335,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -40544,8 +40544,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2296,
-    "toFirstStopMs": 62
+    "wallMs": 5437,
+    "toFirstStopMs": 94
    },
    "usage": null,
    "costUsd": null,
@@ -40555,7 +40555,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -40757,8 +40757,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2141,
-    "toFirstStopMs": 32
+    "wallMs": 3702,
+    "toFirstStopMs": 234
    },
    "usage": null,
    "costUsd": null,
@@ -40769,7 +40769,7 @@
    "signature": "reschedule > new_meeting/alternatives_proposed/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -40978,8 +40978,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2217,
-    "toFirstStopMs": 14
+    "wallMs": 3547,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -40989,7 +40989,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -41187,8 +41187,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2296,
-    "toFirstStopMs": 62
+    "wallMs": 3827,
+    "toFirstStopMs": 469
    },
    "usage": null,
    "costUsd": null,
@@ -41198,7 +41198,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -41398,8 +41398,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2297,
-    "toFirstStopMs": 16
+    "wallMs": 3030,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -41409,7 +41409,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -41609,8 +41609,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 15
+    "wallMs": 3860,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -41620,7 +41620,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -41822,8 +41822,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2202,
-    "toFirstStopMs": 46
+    "wallMs": 3375,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -41834,7 +41834,7 @@
    "signature": "cancel > new_meeting/alternatives_proposed/time_not_understood",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -42014,8 +42014,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 14
+    "wallMs": 265,
+    "toFirstStopMs": 265
    },
    "usage": null,
    "costUsd": null,
@@ -42025,7 +42025,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -42207,8 +42207,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 31
+    "wallMs": 202,
+    "toFirstStopMs": 186
    },
    "usage": null,
    "costUsd": null,
@@ -42218,7 +42218,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -42400,8 +42400,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 61,
-    "toFirstStopMs": 46
+    "wallMs": 390,
+    "toFirstStopMs": 390
    },
    "usage": null,
    "costUsd": null,
@@ -42411,7 +42411,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -42595,8 +42595,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 32,
-    "toFirstStopMs": 32
+    "wallMs": 171,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -42607,7 +42607,7 @@
    "signature": "task > reply_needed/escalated/None",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -42798,7 +42798,7 @@
    },
    "timing": {
     "wallMs": 46,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -42808,7 +42808,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -43000,7 +43000,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
+    "wallMs": 30,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -43011,7 +43011,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -43203,8 +43203,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
-    "toFirstStopMs": 47
+    "wallMs": 30,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -43214,7 +43214,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -43406,8 +43406,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 15,
-    "toFirstStopMs": 15
+    "wallMs": 94,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -43417,7 +43417,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -43625,8 +43625,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2297,
-    "toFirstStopMs": 32
+    "wallMs": 2500,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -43636,7 +43636,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -43846,8 +43846,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2218,
-    "toFirstStopMs": 30
+    "wallMs": 2640,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -43857,7 +43857,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -44058,8 +44058,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 125,
-    "toFirstStopMs": 109
+    "wallMs": 46,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -44069,7 +44069,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -44270,7 +44270,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
+    "wallMs": 63,
     "toFirstStopMs": 47
    },
    "usage": null,
@@ -44281,7 +44281,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -44488,8 +44488,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2327,
-    "toFirstStopMs": 31
+    "wallMs": 2889,
+    "toFirstStopMs": 139
    },
    "usage": null,
    "costUsd": null,
@@ -44499,7 +44499,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -44708,8 +44708,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2264,
-    "toFirstStopMs": 46
+    "wallMs": 3110,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -44719,7 +44719,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -44928,8 +44928,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2359,
-    "toFirstStopMs": 45
+    "wallMs": 3062,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -44939,7 +44939,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -45148,8 +45148,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2297,
-    "toFirstStopMs": 15
+    "wallMs": 2734,
+    "toFirstStopMs": 14
    },
    "usage": null,
    "costUsd": null,
@@ -45159,7 +45159,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -45368,8 +45368,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2235,
-    "toFirstStopMs": 15
+    "wallMs": 2985,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -45379,7 +45379,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -45563,8 +45563,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 45
+    "wallMs": 47,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -45575,7 +45575,7 @@
    "signature": "book > new_meeting/escalated/conflicting_instructions",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -45784,8 +45784,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2375,
-    "toFirstStopMs": 46
+    "wallMs": 2813,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -45795,7 +45795,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -46004,8 +46004,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2437,
-    "toFirstStopMs": 30
+    "wallMs": 4515,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -46015,7 +46015,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -46199,8 +46199,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 46
+    "wallMs": 94,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -46211,7 +46211,7 @@
    "signature": "reschedule > reschedule/escalated/conflicting_instructions",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -46420,8 +46420,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2390,
-    "toFirstStopMs": 15
+    "wallMs": 3031,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -46431,7 +46431,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -46631,8 +46631,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2250,
-    "toFirstStopMs": 47
+    "wallMs": 3094,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -46642,7 +46642,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -46826,8 +46826,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 0
+    "wallMs": 46,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -46838,7 +46838,7 @@
    "signature": "cancel > cancellation/escalated/conflicting_instructions",
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -47038,8 +47038,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2280,
-    "toFirstStopMs": 15
+    "wallMs": 4110,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -47049,7 +47049,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -47231,8 +47231,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 62,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -47242,7 +47242,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -47424,8 +47424,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 30
+    "wallMs": 62,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -47435,7 +47435,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -47618,7 +47618,7 @@
    },
    "timing": {
     "wallMs": 62,
-    "toFirstStopMs": 46
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -47628,7 +47628,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -47820,8 +47820,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 14,
-    "toFirstStopMs": 14
+    "wallMs": 62,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -47831,7 +47831,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -48024,7 +48024,7 @@
    },
    "timing": {
     "wallMs": 46,
-    "toFirstStopMs": 15
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -48034,7 +48034,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -48226,8 +48226,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 15
+    "wallMs": 92,
+    "toFirstStopMs": 77
    },
    "usage": null,
    "costUsd": null,
@@ -48237,7 +48237,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -48444,8 +48444,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2171,
-    "toFirstStopMs": 30
+    "wallMs": 2546,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -48455,7 +48455,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -48662,8 +48662,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2219,
-    "toFirstStopMs": 47
+    "wallMs": 4453,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -48673,7 +48673,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -48880,8 +48880,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2203,
-    "toFirstStopMs": 78
+    "wallMs": 2952,
+    "toFirstStopMs": 139
    },
    "usage": null,
    "costUsd": null,
@@ -48891,7 +48891,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -49098,8 +49098,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2280,
-    "toFirstStopMs": 30
+    "wallMs": 5594,
+    "toFirstStopMs": 140
    },
    "usage": null,
    "costUsd": null,
@@ -49109,7 +49109,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -49316,8 +49316,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 78,
-    "toFirstStopMs": 62
+    "wallMs": 63,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -49327,7 +49327,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -49534,8 +49534,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 30
+    "wallMs": 46,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -49545,7 +49545,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -49752,8 +49752,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 30
+    "wallMs": 110,
+    "toFirstStopMs": 94
    },
    "usage": null,
    "costUsd": null,
@@ -49763,7 +49763,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -49970,8 +49970,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 187,
-    "toFirstStopMs": 62
+    "wallMs": 1327,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -49981,7 +49981,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -50179,8 +50179,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 187,
-    "toFirstStopMs": 31
+    "wallMs": 750,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -50190,7 +50190,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -50397,8 +50397,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 125,
-    "toFirstStopMs": 30
+    "wallMs": 561,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -50408,7 +50408,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -50624,8 +50624,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 234,
-    "toFirstStopMs": 0
+    "wallMs": 2296,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -50635,7 +50635,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -50842,8 +50842,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 140,
-    "toFirstStopMs": 0
+    "wallMs": 842,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -50853,7 +50853,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -51069,8 +51069,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 109,
-    "toFirstStopMs": 47
+    "wallMs": 922,
+    "toFirstStopMs": 438
    },
    "usage": null,
    "costUsd": null,
@@ -51080,7 +51080,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -51296,8 +51296,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 78,
-    "toFirstStopMs": 15
+    "wallMs": 1187,
+    "toFirstStopMs": 360
    },
    "usage": null,
    "costUsd": null,
@@ -51307,7 +51307,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -51523,8 +51523,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 186,
-    "toFirstStopMs": 30
+    "wallMs": 3359,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -51536,7 +51536,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -51779,8 +51779,8 @@
     ]
    },
    "timing": {
-    "wallMs": 2375,
-    "toFirstStopMs": 46
+    "wallMs": 19437,
+    "toFirstStopMs": 312
    },
    "usage": null,
    "costUsd": null,
@@ -51790,7 +51790,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -52033,8 +52033,8 @@
     ]
    },
    "timing": {
-    "wallMs": 2280,
-    "toFirstStopMs": 46
+    "wallMs": 4030,
+    "toFirstStopMs": 187
    },
    "usage": null,
    "costUsd": null,
@@ -52044,7 +52044,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -52278,8 +52278,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 281,
-    "toFirstStopMs": 62
+    "wallMs": 1639,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -52289,7 +52289,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -52497,8 +52497,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2469,
-    "toFirstStopMs": 46
+    "wallMs": 3672,
+    "toFirstStopMs": 94
    },
    "usage": null,
    "costUsd": null,
@@ -52508,7 +52508,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -52707,8 +52707,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2421,
-    "toFirstStopMs": 15
+    "wallMs": 5234,
+    "toFirstStopMs": 139
    },
    "usage": null,
    "costUsd": null,
@@ -52718,7 +52718,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -52898,8 +52898,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 31
+    "wallMs": 62,
+    "toFirstStopMs": 45
    },
    "usage": null,
    "costUsd": null,
@@ -52909,7 +52909,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -53116,8 +53116,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2344,
-    "toFirstStopMs": 46
+    "wallMs": 6687,
+    "toFirstStopMs": 140
    },
    "usage": null,
    "costUsd": null,
@@ -53127,7 +53127,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -53334,8 +53334,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2390,
-    "toFirstStopMs": 62
+    "wallMs": 3750,
+    "toFirstStopMs": 172
    },
    "usage": null,
    "costUsd": null,
@@ -53345,7 +53345,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -53574,7 +53574,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
+    "wallMs": 30,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -53585,7 +53585,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -53805,8 +53805,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2312,
-    "toFirstStopMs": 15
+    "wallMs": 4280,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -53816,7 +53816,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -54035,8 +54035,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 187,
-    "toFirstStopMs": 14
+    "wallMs": 969,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -54046,7 +54046,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -54273,8 +54273,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 45
+    "wallMs": 47,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -54284,7 +54284,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -54502,8 +54502,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2311,
-    "toFirstStopMs": 46
+    "wallMs": 4062,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -54513,7 +54513,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -54740,7 +54740,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 63,
+    "wallMs": 47,
     "toFirstStopMs": 47
    },
    "usage": null,
@@ -54751,7 +54751,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -54978,8 +54978,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 45
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -54989,7 +54989,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -55216,7 +55216,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
+    "wallMs": 77,
     "toFirstStopMs": 46
    },
    "usage": null,
@@ -55227,7 +55227,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -55427,8 +55427,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 47
+    "wallMs": 47,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -55438,7 +55438,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -55665,8 +55665,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 45,
-    "toFirstStopMs": 45
+    "wallMs": 30,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -55676,7 +55676,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -55858,8 +55858,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 30,
-    "toFirstStopMs": 30
+    "wallMs": 532,
+    "toFirstStopMs": 422
    },
    "usage": null,
    "costUsd": null,
@@ -55869,7 +55869,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -56078,8 +56078,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2295,
-    "toFirstStopMs": 45
+    "wallMs": 3280,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -56089,7 +56089,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -56299,7 +56299,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2250,
+    "wallMs": 3077,
     "toFirstStopMs": 46
    },
    "usage": null,
@@ -56310,7 +56310,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -56538,8 +56538,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
-    "toFirstStopMs": 15
+    "wallMs": 92,
+    "toFirstStopMs": 61
    },
    "usage": null,
    "costUsd": null,
@@ -56549,7 +56549,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -56750,7 +56750,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 46,
+    "wallMs": 30,
     "toFirstStopMs": 30
    },
    "usage": null,
@@ -56761,7 +56761,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -56988,8 +56988,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 47,
-    "toFirstStopMs": 30
+    "wallMs": 93,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -56999,7 +56999,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -57227,7 +57227,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 77,
+    "wallMs": 62,
     "toFirstStopMs": 46
    },
    "usage": null,
@@ -57238,7 +57238,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -57456,8 +57456,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 62,
-    "toFirstStopMs": 47
+    "wallMs": 47,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -57467,7 +57467,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -57679,7 +57679,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -57889,8 +57889,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 61,
-    "toFirstStopMs": 46
+    "wallMs": 78,
+    "toFirstStopMs": 63
    },
    "usage": null,
    "costUsd": null,
@@ -57900,7 +57900,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -58110,8 +58110,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 61,
-    "toFirstStopMs": 46
+    "wallMs": 78,
+    "toFirstStopMs": 78
    },
    "usage": null,
    "costUsd": null,
@@ -58121,7 +58121,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -58339,8 +58339,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2219,
-    "toFirstStopMs": 47
+    "wallMs": 2484,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -58350,7 +58350,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -58568,8 +58568,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2500,
-    "toFirstStopMs": 32
+    "wallMs": 4484,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -58579,7 +58579,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -58797,8 +58797,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 3061,
-    "toFirstStopMs": 46
+    "wallMs": 10890,
+    "toFirstStopMs": 1375
    },
    "usage": null,
    "costUsd": null,
@@ -58808,7 +58808,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -59026,8 +59026,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2546,
-    "toFirstStopMs": 62
+    "wallMs": 3516,
+    "toFirstStopMs": 47
    },
    "usage": null,
    "costUsd": null,
@@ -59037,7 +59037,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -59264,7 +59264,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 562,
+    "wallMs": 1234,
     "toFirstStopMs": 62
    },
    "usage": null,
@@ -59275,7 +59275,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -59502,7 +59502,7 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2875,
+    "wallMs": 6109,
     "toFirstStopMs": 78
    },
    "usage": null,
@@ -59513,7 +59513,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -59731,8 +59731,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 140,
-    "toFirstStopMs": 15
+    "wallMs": 500,
+    "toFirstStopMs": 32
    },
    "usage": null,
    "costUsd": null,
@@ -59744,7 +59744,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -59962,8 +59962,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 186,
-    "toFirstStopMs": 15
+    "wallMs": 484,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -59973,7 +59973,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -60191,8 +60191,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 235,
-    "toFirstStopMs": 15
+    "wallMs": 655,
+    "toFirstStopMs": 30
    },
    "usage": null,
    "costUsd": null,
@@ -60202,7 +60202,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -60429,8 +60429,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 219,
-    "toFirstStopMs": 46
+    "wallMs": 516,
+    "toFirstStopMs": 16
    },
    "usage": null,
    "costUsd": null,
@@ -60440,7 +60440,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -60667,8 +60667,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2375,
-    "toFirstStopMs": 30
+    "wallMs": 8469,
+    "toFirstStopMs": 15
    },
    "usage": null,
    "costUsd": null,
@@ -60678,7 +60678,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -60915,8 +60915,8 @@
     ]
    },
    "timing": {
-    "wallMs": 2453,
-    "toFirstStopMs": 14
+    "wallMs": 3468,
+    "toFirstStopMs": 202
    },
    "usage": null,
    "costUsd": null,
@@ -60926,7 +60926,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -61144,8 +61144,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 264,
-    "toFirstStopMs": 45
+    "wallMs": 4375,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -61155,7 +61155,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -61382,8 +61382,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 219,
-    "toFirstStopMs": 47
+    "wallMs": 1077,
+    "toFirstStopMs": 31
    },
    "usage": null,
    "costUsd": null,
@@ -61393,7 +61393,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -61602,8 +61602,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2375,
-    "toFirstStopMs": 47
+    "wallMs": 3765,
+    "toFirstStopMs": 46
    },
    "usage": null,
    "costUsd": null,
@@ -61615,7 +61615,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -61833,8 +61833,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 110,
-    "toFirstStopMs": 16
+    "wallMs": 187,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -61846,7 +61846,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62055,8 +62055,8 @@
     "rescueNotes": []
    },
    "timing": {
-    "wallMs": 2421,
-    "toFirstStopMs": 30
+    "wallMs": 3639,
+    "toFirstStopMs": 62
    },
    "usage": null,
    "costUsd": null,
@@ -62066,7 +62066,7 @@
    "partial": false,
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62199,7 +62199,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62346,7 +62346,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62470,7 +62470,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62595,7 +62595,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62722,7 +62722,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62846,7 +62846,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -62979,7 +62979,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63112,7 +63112,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63236,7 +63236,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63369,7 +63369,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63494,7 +63494,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63573,7 +63573,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,
@@ -63707,7 +63707,7 @@
    "instrumented": [],
    "attempt": 1,
    "traceability": {
-    "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+    "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
     "runnerVersion": "1.0.0",
     "seed": 20270308,
     "model": null,

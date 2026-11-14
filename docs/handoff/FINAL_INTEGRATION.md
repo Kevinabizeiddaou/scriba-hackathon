@@ -22,8 +22,20 @@ workstream, in this order:
 | 4 | Office simulation (pull request 8) | `agent4/office-simulation` `76ae367` | none |
 | 5 | Autonomy Quality Lab (pull request 9) | `agent3/autonomy-quality` `f23beb2` | none |
 
-Not merged: pull request 16 (`docs/deploy-model`), which was not part of this
-integration.
+That was pull request 17, merged into `main` as `3f42ca3`. Three branches
+had moved while it was being put together, so a second branch,
+`integration/final-2`, was cut from `main` at `3f42ca3`:
+
+| # | Workstream | Branch at | Conflicts |
+| --- | --- | --- | --- |
+| 6 | Integration report and real-model evidence of `agent1/integration` (documents and one dev script) | `94ac3de` | none |
+| 7 | Lab acceptance report and tools | `agent3/autonomy-quality` `dbc6b5f` | none |
+| 8 | Workbook changes on a copy, overlay 0.5.1 | `agent1/automation-integration` `dee5583` | six files, below |
+
+| 9 | `agent1/integration` again: its own merge of an earlier `main`, results and pull request text | `3ecdca7` | five files, below |
+
+Pull request 16 (deploy notes) was merged into `main` separately, by its
+author; it is in the tree and was not part of this work.
 
 ### The conflicts of `agent1/integration`, and what was decided
 
@@ -39,8 +51,25 @@ Both sides were read for each. Nothing was resolved by taking a whole file.
 | `backend/tests/integration/test_scenarios_with_scriba.py` | The integration side (it passes the replay result to the measurement) |
 | `docs/handoff/EVAL_BACKEND_SCENARIOS.md`, `eval-backend-scenarios.json` | Generated files: the three-set layout of `agent1/integration`, then regenerated on the combined tree |
 
-Compatibility decision: both branches called themselves overlay 0.5.0 and the
-combined backend still reports `0.5.0`. No client reads a version above that.
+### The conflicts of the workbook commit (`dee5583`), second round
+
+Every one was two additions at the same place; both are kept.
+
+| File | Decision |
+| --- | --- |
+| `backend/desk_overlay/lifecycle.py` | A run with an unresolved request is not complete, and neither is one with a workbook change that is suggested, failed or unverified. Both checks run |
+| `backend/desk_overlay/routes.py`, `workflow.py` | The unresolved-requests route and method, and the three file-change routes and their methods |
+| `frontend/src/api/desk.ts` | `unresolved` and `fileChanges` on a run; `kind` declared once |
+| `docs/BACKEND_CONTRACT.md`, `AUTOMATION_INTEGRATION.md` | Section 13 stays the integrated engine. Files, workbook changes and the desktop bridge is section 14: changing a workbook is 14.5, the limits 14.6 |
+
+Row 9 changed no backend code in this tree. Its conflicts: the version stays
+`0.5.1`; the typed client keeps `attachments`, `files` and `fileChanges`
+(that branch has no files code); the generated scenario evidence is the one
+measured here; and in `runLifecycle.ts` that branch's newer wording of five
+held reasons is taken, which is the only non-document change it brought.
+
+Compatibility decision: the two 0.5.0 branches combine as `0.5.0`, and the
+workbook commit makes the combined backend report `0.5.1`.
 
 There is one app shell, one engine, one worker, one approval path (Scriba's
 cards and approve route behind the Desk's execution gate) and one store per
@@ -54,7 +83,7 @@ Windows 11, Python 3.11, Node 22, Scriba read-only at `3ae3a2aa`.
 | What | Result |
 | --- | --- |
 | Backend unit and route tests | 595 passed |
-| Backend integration tests, on Scriba's real application | 305 passed, 56 skipped (the skipped ones are real-model parameters) |
+| Backend integration tests, on Scriba's real application | 330 passed, 56 skipped (the skipped ones are real-model parameters). 24 of them are the workbook tests |
 | Frontend type check | clean |
 | Frontend tests | 519 passed of 519, 28 files |
 | Frontend production build | builds |
@@ -62,25 +91,28 @@ Windows 11, Python 3.11, Node 22, Scriba read-only at `3ae3a2aa`.
 | API smoke test, demo mode, over HTTP | 33 passed of 33 |
 | Typed client against the backend (`test_typed_client_with_scriba.py`) | passes: every field the backend sends is declared |
 | Office simulation's own tests | 68 passed |
-| Lab's own tests and oracle self-test | 41 passed; 36 of 36 planted defects rejected |
+| Lab's own tests and oracle self-test | 44 passed; 36 of 36 planted defects rejected |
 
 One note on the integration suite: `test_figures_are_computed_over_every_row_of_a_large_sheet_without_holding_it`
 runs a 60,000-row workbook through Scriba's table query, which has a
 25-second budget. On a machine that is also running other servers the query
 can pass the budget; the column is then reported as "not measured" (the
-designed behaviour: never a partial total) and the test fails. It passes on a
-quiet machine and passed in the count above.
+designed behaviour: never a partial total) and the test fails. That happened
+here: in the full run it failed while a Docker stack of this same application
+was running (329 passed, 1 failed); run again with the stack stopped, the
+file and workbook tests passed, 36 of 36. It also passes in CI.
 
 ## 3. The workflows, over HTTP
 
 `scripts/e2e-sandbox.mjs` against `backend/dev/seeded_desk_server.py --demo`.
-It plays only a sender and the person at the approval gate. All four sections
-pass, repeatedly, on the same server:
+It plays only a sender and the person at the approval gate. All five sections
+pass on the final tree, and repeatedly on the same server:
 
 | Section | What was observed |
 | --- | --- |
 | Meeting request with a second request | The worker opened the run with no client call. Plan: `create_calendar_event`, `create_task`, and `send_email` depending on the booking. Nothing ran before approval. After three approvals each action was `VERIFIED` by `sandbox_readback`, the event was in the sandbox calendar, the run `COMPLETED` |
 | Mail with a workbook | `q4-budget.xlsx` read by Scriba's reader; a review document proposed, approved, generated by Scriba's `create_document`, **reopened** and `VERIFIED` (`file_reopened`); downloaded (37,298 bytes, a real `.docx`, served as an attachment); only then a reply proposed, approved and sent in the sandbox; the original attachment unchanged |
+| A change to that workbook | Suggested: nothing changes, and the run is not complete (`file_change_suggested`). A value that starts like a formula is refused (400). Applied: Scriba's Excel skills run on a copy, the result is reopened and `verified` (`workbook_reopened`) and kept as a new file; the original attachment has the same hash as when it was read |
 | Follow-up tracking | A request with no time: a reply offering times is approved and sent; the run rests in `WAITING_FOR_RESPONSE` with a follow-up `waiting`, never `COMPLETED`; when the sender's answer arrives in the thread the follow-up becomes `satisfied` |
 | Desktop gate | The sandbox's fake device is listed as `simulated`. A job without `confirm` is refused (400, `confirmation_required`). A confirmed job is `ACCEPTED`: queued, not final, not verified, and it stays so while no device reports. It can be cancelled |
 
@@ -154,7 +186,13 @@ the largest group is a time written in the message that the rules do not read.
 
 ### Office simulation (Agent 4)
 
-`python -m officesim run all`, seed 7, against the combined backend.
+`python -m officesim run all`, seed 7. The first column was measured on the
+final tree and is identical to the first round, and so is the robustness
+pass (26 passed, 0 failed, 1 not run). **The second column is from the first
+round** (`main` at `3f42ca3`, before the workbook commit): on the final tree
+that pass stopped at its fourth day, because its sandbox server did not start
+within the simulator's 90 seconds on a machine that was running other servers
+at the time. It was not repeated.
 Summaries: `hackathon/office-simulation/evidence/history/integration-final/`.
 Agent 4's evidence and recording are unchanged.
 
@@ -179,7 +217,7 @@ proposals are stopped by the person, not by the Desk.
 
 | | State |
 | --- | --- |
-| A real model on the combined tree | **Not measured.** The key file earlier measurements used (`backend/.env.model.local`, ignored by Git) is not on the machine that ran this integration. The 56 skipped integration tests and the lab's and simulator's model cases are the same gap. Earlier real-model pages describe earlier commits |
+| A real model on the combined tree | **Not measured.** The key file (`backend/.env.model.local`, ignored by Git) is not on the machine that ran this integration. The nearest real-model measurement is of `agent1/integration` at `bd4f0cc`, by that branch's author, in [INTEGRATION_0_5.md](INTEGRATION_0_5.md): 19 of 20 and 17 of 20 on the two suites, and 52 of 56 backend scenarios, with `gpt-6-luna`. That engine is in this tree, but the files, workbook and desktop code were not in the tree it was measured on, so those are not results of this commit |
 | A live Google or Microsoft account | Not measured, by design. External writes are disabled in code |
 | A real paired computer | Not measured. No device ran a job |
 | Docker images, the hosted image, the Vercel preview | Checked by CI on the pull request, and locally where noted in the pull request |

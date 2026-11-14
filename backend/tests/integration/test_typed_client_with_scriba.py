@@ -181,3 +181,28 @@ def test_files_on_a_run_and_the_desktop_bridge_are_declared_too():
     assert members("DeskDesktopJobState") == set(desktop.STATES)
     for route in ("/desk/desktop", "/desk/desktop/jobs", "/desk/files/"):
         assert route in CLIENT, route
+
+
+def test_a_workbook_change_is_declared_too():
+    from .test_workbooks_with_scriba import OPS, apply as apply_change, opened, suggest
+
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run, file_id = opened(desk)
+        change = suggest(desk, run, file_id, OPS).json()["fileChanges"][0]
+        done = apply_change(desk, change).json()
+        problems = [f"DeskRun.{k}" for k in undeclared(done, "DeskRun")]
+        for item in done["fileChanges"]:
+            problems += [f"DeskFileChange.{k}" for k in undeclared(item, "DeskFileChange")]
+            for step in item["steps"]:
+                problems += [f"DeskWorkbookStep.{k}" for k in undeclared(step, "DeskWorkbookStep")]
+        for item in done["files"]:
+            problems += [f"DeskFile.{k}" for k in undeclared(item, "DeskFile")]
+        assert sorted(set(problems)) == []
+        kinds = {i["kind"] for i in done["timeline"]}
+        assert kinds <= members("DeskEvidenceKind") | members("DeskRevisedEvidenceKind")
+        assert "'apply_file_change'" in CLIENT and "/file-changes" in CLIENT
+        states = set(re.findall(r"'(\w+)'", re.search(r"state: ('suggested' \| 'applied'.*)", CLIENT).group(1)))
+        assert {"suggested", "applied", "unverified", "failed", "dismissed"} == states
+        for op in ("update_cell", "append_row", "upsert_row"):
+            assert f"op: '{op}'" in CLIENT

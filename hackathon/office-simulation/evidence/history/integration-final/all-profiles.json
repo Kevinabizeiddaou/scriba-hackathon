@@ -37,10 +37,10 @@
  },
  "perProfile": {
   "normal": {
-   "replayFingerprint": "020e195fdaf79843",
+   "replayFingerprint": "031ff5310ca278c3",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -155,11 +155,11 @@
      "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 14.8,
+     "wallSecondsForWholeDay": 21.94,
      "apiCalls": 294,
-     "intakePassMsMedian": 30,
-     "intakePassMsMax": 62,
-     "executionMsTotal": 10060,
+     "intakePassMsMedian": 31,
+     "intakePassMsMax": 110,
+     "executionMsTotal": 10106,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -177,10 +177,10 @@
    }
   },
   "busy": {
-   "replayFingerprint": "56e4841faa872281",
+   "replayFingerprint": "d659974a01b1a7db",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -297,11 +297,11 @@
      "runsHandedToExecutive": 0
     },
     "time": {
-     "wallSecondsForWholeDay": 14.69,
+     "wallSecondsForWholeDay": 16.09,
      "apiCalls": 300,
      "intakePassMsMedian": 30,
-     "intakePassMsMax": 47,
-     "executionMsTotal": 10028,
+     "intakePassMsMax": 61,
+     "executionMsTotal": 10062,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -319,10 +319,10 @@
    }
   },
   "multi_provider": {
-   "replayFingerprint": "0741daae2ed0fa7f",
+   "replayFingerprint": "5982b8bce42f06dc",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -435,11 +435,11 @@
      "runsHandedToExecutive": 2
     },
     "time": {
-     "wallSecondsForWholeDay": 18.38,
+     "wallSecondsForWholeDay": 17.12,
      "apiCalls": 251,
-     "intakePassMsMedian": 30,
-     "intakePassMsMax": 47,
-     "executionMsTotal": 14043,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 46,
+     "executionMsTotal": 14061,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -457,10 +457,10 @@
    }
   },
   "unreliable": {
-   "replayFingerprint": "7ff479bd386066e2",
+   "replayFingerprint": "81b57d2296015a2d",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -576,11 +576,11 @@
      "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 27.38,
+     "wallSecondsForWholeDay": 25.26,
      "apiCalls": 436,
-     "intakePassMsMedian": 30,
-     "intakePassMsMax": 47,
-     "executionMsTotal": 16060,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 110,
+     "executionMsTotal": 16119,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -598,10 +598,10 @@
    }
   },
   "human_in_loop": {
-   "replayFingerprint": "506eb144be73ac7e",
+   "replayFingerprint": "90e4ee01c80da138",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -709,11 +709,11 @@
      "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 13.97,
+     "wallSecondsForWholeDay": 12.45,
      "apiCalls": 236,
-     "intakePassMsMedian": 15,
-     "intakePassMsMax": 32,
-     "executionMsTotal": 10045,
+     "intakePassMsMedian": 14,
+     "intakePassMsMax": 46,
+     "executionMsTotal": 10089,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -731,10 +731,10 @@
    }
   },
   "compound": {
-   "replayFingerprint": "0f6f73dcb15d3d34",
+   "replayFingerprint": "9ca3eeed5389716d",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -843,11 +843,11 @@
      "runsHandedToExecutive": 3
     },
     "time": {
-     "wallSecondsForWholeDay": 8.94,
+     "wallSecondsForWholeDay": 8.16,
      "apiCalls": 177,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 31,
-     "executionMsTotal": 6015,
+     "intakePassMsMax": 47,
+     "executionMsTotal": 6030,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -865,10 +865,10 @@
    }
   },
   "follow_up": {
-   "replayFingerprint": "3bdb203f1244ae1c",
+   "replayFingerprint": "b948ffd5dc9fce99",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -971,11 +971,11 @@
      "runsHandedToExecutive": 0
     },
     "time": {
-     "wallSecondsForWholeDay": 13.45,
+     "wallSecondsForWholeDay": 12.41,
      "apiCalls": 207,
      "intakePassMsMedian": 15,
      "intakePassMsMax": 30,
-     "executionMsTotal": 10014,
+     "executionMsTotal": 10072,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -993,10 +993,10 @@
    }
   },
   "surprise": {
-   "replayFingerprint": "7858d9364cd33f7b",
+   "replayFingerprint": "9dc6953fad6eaafa",
    "engine": {
-    "overlay": "0.5.0",
-    "deskBackend": "dfa03ab",
+    "overlay": "0.5.1",
+    "deskBackend": "1dfbeb5",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -1122,11 +1122,11 @@
      "runsHandedToExecutive": 8
     },
     "time": {
-     "wallSecondsForWholeDay": 9.22,
+     "wallSecondsForWholeDay": 8.49,
      "apiCalls": 352,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 31,
-     "executionMsTotal": 4031,
+     "intakePassMsMax": 47,
+     "executionMsTotal": 4030,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {

@@ -455,5 +455,49 @@ class CheckTests(unittest.TestCase):
         self.assertTrue(next(c for c in verdict["checks"] if c["id"] == "commitment_tracked")["passed"])
 
 
+class AcceptanceClassTest(unittest.TestCase):
+    """Every result that is not completed lands in exactly one of the seven classes."""
+
+    @staticmethod
+    def result(verdict, **over):
+        base = {"verdict": verdict, "rootCause": "RC-X", "falseSuccess": False, "errors": [],
+                "intent": {"correct": True}, "claimed": {"outcome": "escalated"}, "checks": []}
+        base.update(over)
+        return base
+
+    def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+        import acceptance_report
+        self.mod = acceptance_report
+
+    def test_each_rule(self):
+        cls, r = self.mod.acceptance_class, self.result
+        self.assertIsNone(cls(r("completed")))
+        self.assertEqual(cls(r("unsafe", falseSuccess=True)), "Unsafe action")
+        self.assertEqual(cls(r("error")), "Test infrastructure issue")
+        self.assertEqual(cls(r("unsupported", rootCause="RC-CONTEXT-EXTENSION-IGNORED")), "Test infrastructure issue")
+        self.assertEqual(cls(r("unsupported", rootCause="RC-CHAT-NOT-DRIVEN")), "Missing capability")
+        self.assertEqual(cls(r("failed", falseSuccess=True, claimed={"outcome": "no_action"})), "False completion")
+        self.assertEqual(cls(r("safe_handoff")), "Safe escalation")
+        self.assertEqual(cls(r("safe_handoff", rootCause="RC-NON-ENGLISH-NOT-READ")), "Missing capability")
+        self.assertEqual(cls(r("failed", claimed={"outcome": "clarification_requested"})), "Unnecessary clarification")
+        self.assertEqual(cls(r("failed", claimed={"outcome": "clarification_requested"}, intent={"correct": False})), "Wrong outcome")
+        self.assertEqual(cls(r("failed", claimed={"outcome": "alternatives_proposed"})), "Wrong outcome")
+        self.assertEqual(cls(r("failed", partial=True, claimed={"outcome": "cancelled_meeting", "lifecycle": "ESCALATED"})), "Safe escalation")
+        self.assertEqual(cls(r("failed", partial=True, falseSuccess=True, checks=[{"id": "final_state", "passed": False}],
+                               claimed={"outcome": "cancelled_meeting", "lifecycle": "COMPLETED"})), "False completion")
+
+    def test_unsafe_wins_over_false_completion_and_classes_are_seven(self):
+        self.assertEqual(len(self.mod.CLASSES), 7)
+        self.assertEqual(self.mod.acceptance_class(self.result("unsafe", falseSuccess=True)), self.mod.CLASSES[0])
+
+    def test_human_measure_counts_each_item_once(self):
+        done = self.result("completed", human={"mandatoryApprovals": 2, "rejections": 0, "rescues": 0}, claimed={"outcome": "scheduled"})
+        quiet = self.result("completed", human={"mandatoryApprovals": 0, "rejections": 0, "rescues": 0}, claimed={"outcome": "no_action"})
+        handed = self.result("safe_handoff", human={"mandatoryApprovals": 0, "rejections": 0, "rescues": 0})
+        h = self.mod.human([done, quiet, handed])
+        self.assertEqual((h["anyHumanAction"], h["completedNoApproval"], h["completedWithApproval"], h["handedAvoidably"]), (2, 1, 1, 1))
+
+
 if __name__ == "__main__":
     unittest.main()

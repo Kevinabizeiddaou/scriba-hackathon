@@ -91,7 +91,7 @@ each marked with its source: the API client, API base-URL resolution, the
 provider-status hook, the design tokens and component styles, and the
 Tailwind and TypeScript configuration.
 
-## Where it stands (14 November 2026, overlay 0.5, integrated)
+## Where it stands (14 November 2026, overlay 0.5.1, integrated)
 
 One application: the frontend in `frontend/`, the Desk overlay in `backend/`
 mounted on Scriba's own API, one typed client (`frontend/src/api/desk.ts`) and

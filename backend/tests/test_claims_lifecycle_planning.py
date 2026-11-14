@@ -298,8 +298,8 @@ def test_one_written_day_and_one_written_time_are_read(text, start, minutes):
     "Could we meet Tuesday at 3?",                             # 3 in the morning or the afternoon?
     "Tuesday at 10:00 or Wednesday at 10:00, whichever suits.",  # a choice, not a request
     "Tuesday at 10:00 or at 15:00?",
-    "Could we meet Tuesday at 10:00 EST?",                     # somebody else's hour
-    "Tuesday at 10:00 my time would be ideal.",
+    "Could we meet Tuesday at 10:00 IST?",                     # India, Israel or Ireland?
+    "Tuesday at 10:00 my time would be ideal.",                # somebody else's hour, zone unknown
     "We met on 3 November at 10:00 last year.",                # resolves to a future date: see below
     "",
 ])

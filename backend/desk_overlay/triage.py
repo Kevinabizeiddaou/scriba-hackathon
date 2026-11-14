@@ -10,6 +10,8 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Mapping
 
+from . import reading
+
 # The outcome a message needs. One per message.
 CATEGORIES = ("meeting_request", "needs_reply", "action_item", "informational", "automated")
 OUTCOMES = {
@@ -52,14 +54,24 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
     classification = str(verdict.get("classification") or "")
     has_deadline = bool(_DEADLINE_RE.search(f"{subject}\n{text}"))
 
+    # The Desk's own reading of the text. Scriba's classifier asks whether a
+    # reply is needed; a cancellation stated as news, or a request to meet
+    # that never says "meeting", is still scheduling work.
+    signal = reading.meeting_signal(subject, text)
+    asks_action = reading.action_signal(text)
+    if signal and "meeting_request" not in reasons:
+        reasons.append(f"desk_meeting_{signal}")
+    if asks_action:
+        reasons.append("desk_action_requested")
+
     if classification == "automated/promotional":
         category = "automated"
-    elif "meeting_request" in reasons:
+    elif "meeting_request" in reasons or signal:
         category = "meeting_request"
+    elif asks_action or (has_deadline and classification != "requires_reply"):
+        category = "action_item"
     elif classification == "requires_reply":
         category = "needs_reply"
-    elif has_deadline:
-        category = "action_item"
     else:
         category = "informational"
 
@@ -79,7 +91,7 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
         "reasons": reasons,
     }
     if category == "meeting_request":
-        record["meeting_intent"] = meeting_intent(subject, text)
+        record["meeting_intent"] = signal or meeting_intent(subject, text)
     return record
 
 

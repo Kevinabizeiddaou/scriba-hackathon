@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Optional
 
-from . import lifecycle, planning
+from . import lifecycle, planning, reading
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .service import DeskService, NotFound
@@ -183,6 +183,8 @@ class DeskWorkflow:
         meta["held"] = plan["held"]
         if plan.get("flags"):
             meta["flags"] = plan["flags"]
+        if plan.get("requester_timezone"):
+            meta["requester_timezone"] = plan["requester_timezone"]
         run = self.gateway.open_run(
             user, title=f"Desk: {str(item.get('subject') or 'incoming email')[:80]}", meta=meta,
             summary=_summary(meta, plan["proposals"]))
@@ -193,7 +195,8 @@ class DeskWorkflow:
             "threadId": meta["thread_id"], "receivedAt": meta["received_at"]})
         self._record(user, run, "stage", {
             "stage": "CLASSIFIED", "category": triage["category"], "outcome": triage["outcome"],
-            "priority": triage.get("priority"), "reasons": triage.get("reasons") or [],
+            "priority": plan.get("priority") or triage.get("priority"),
+            "reasons": triage.get("reasons") or [],
             "meetingIntent": triage.get("meeting_intent"), "flags": plan.get("flags") or []})
         self._record(user, run, "stage", {"stage": "CONTEXT_GATHERING",
                                           "threadMessages": (detail.get("thread") or {}).get("count")})
@@ -353,6 +356,12 @@ class DeskWorkflow:
             due = None
         if due is not None:
             task["due_at"] = due.isoformat()
+        pressing = reading.urgency(f"{item.get('subject')} {item.get('body') or item.get('snippet') or ''}",
+                                   due, self.service.now(user).astimezone(due.tzinfo) if due else
+                                   self.service.now(user))
+        if pressing:
+            task["priority"] = "high"          # Scriba's task priorities stop at high
+            plan["priority"] = pressing
         plan["proposals"].append({"tool_name": "create_task", "tool_input": task, "purpose": "record_task",
                                   "reason": "The message names something to do"
                                             + (f", due {due.isoformat()}." if due else
@@ -427,9 +436,10 @@ class DeskWorkflow:
         if not extracted and not has_model:
             # No model in this process. A time that is written out in full is
             # read by rule; anything less exact is left unread, never guessed.
-            written = planning.explicit_request(
-                " ".join(str(part or "") for part in (item.get("body") or item.get("snippet"),)),
-                self.service.now(user).astimezone(resolve_zone(zone_name)))
+            written = reading.explicit_request(
+                str(item.get("body") or item.get("snippet") or ""),
+                self.service.now(user).astimezone(resolve_zone(zone_name)),
+                change=intent in ("reschedule", "cancel"))
             plan["reads"].append({"tool": "rules.extract_time", "ok": bool(written),
                                   "error": None if written else "no_single_written_time"})
             if written:
@@ -468,6 +478,8 @@ class DeskWorkflow:
                                   "account": entry.get("account"), "ok": bool(entry.get("ok")),
                                   "error": entry.get("error"), "timeMin": check["slot"]["start"],
                                   "timeMax": check["slot"]["end"]})
+        if check["free"] is False and self._already_scheduled(user, item, check, plan):
+            return
         if check["free"] is not True:
             conflict = check["free"] is False
             self._hold(
@@ -491,6 +503,9 @@ class DeskWorkflow:
         # The meeting goes on the calendar of the account the request reached:
         # the invitation then comes from the address the sender wrote to. It is
         # named on the card, never left for Scriba to choose between calendars.
+        requester_zone = str(extracted.get("requester_timezone") or "").strip()
+        if requester_zone and requester_zone != zone_name:
+            plan["requester_timezone"] = requester_zone
         if str(item.get("provider")) == "outlook":
             event_input["calendar_provider"] = "outlook"
         else:
@@ -504,6 +519,39 @@ class DeskWorkflow:
         plan["decisions"].append({"decision": "propose", "reason": "time_free",
                                   "explanation": "The requested time is free, so the meeting is "
                                                  "proposed for your approval."})
+
+    def _already_scheduled(self, user: Any, item: Dict[str, Any], check: Dict[str, Any],
+                           plan: Dict[str, Any]) -> bool:
+        """The "conflict" is this very meeting: the sender is already on an
+        event at exactly the requested time. A request that is sent again must
+        not be answered with alternatives, and never booked twice."""
+        sender = sender_address(str(item.get("from_addr") or ""))
+        zone = resolve_zone(check["timezone"])
+        try:
+            start = parse_instant(check["slot"]["start"], zone)
+            end = parse_instant(check["slot"]["end"], zone)
+            events = self.gateway.calendar_events(user, start - dt.timedelta(minutes=1),
+                                                  end + dt.timedelta(minutes=1))
+        except Exception:
+            return False
+        for event in events:
+            people = {str(a).lower() for a in (event.get("attendees") or [])}
+            try:
+                same = parse_instant(str(event.get("start")), zone) == start
+            except InvalidAvailabilityRequest:
+                same = False
+            if sender and sender in people and same:
+                plan["flags"].append("duplicate")
+                plan["held"] = {
+                    "reason": "already_scheduled", "slots": [], "calendars": check["calendars"],
+                    "target": {key: event.get(key) for key in ("id", "title", "start", "end", "provider")},
+                    "message": "This meeting is already on your calendar with this sender at that "
+                               "time. Nothing more is proposed."}
+                plan["decisions"].append({"decision": "none", "reason": "already_scheduled",
+                                          "explanation": "The request repeats a meeting that is "
+                                                         "already booked."})
+                return True
+        return False
 
     @staticmethod
     def _window(start: str, extracted: Dict[str, Any], zone_name: str, duration: int) -> Optional[tuple]:
@@ -715,7 +763,8 @@ class DeskWorkflow:
                         title=title, timezone=str(data.get("timezone") or ""),
                         start=str(planned.get("start") or data.get("start")),
                         end=str(planned.get("end") or data.get("end")),
-                        moved=changed["tool_name"] == "update_calendar_event")
+                        moved=changed["tool_name"] == "update_calendar_event",
+                        other_timezone=meta.get("requester_timezone"))
                 item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
                         "subject": meta.get("subject"), "threadId": meta.get("thread_id"),
                         "provider_account_id": meta.get("provider_account_id"), "id": meta.get("email_id")}

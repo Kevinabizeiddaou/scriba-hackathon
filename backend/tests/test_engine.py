@@ -725,3 +725,85 @@ def test_without_a_model_a_reschedule_to_a_written_time_moves_the_original(desk)
     [card] = run["actions"]
     assert card["tool_name"] == "update_calendar_event" and card["input"]["event_id"] == event["id"]
     assert card["input"]["start"] == "2026-11-19T14:00:00+00:00"
+
+
+# ── what the first evaluation run taught: general cases, in other words ─────
+
+def test_a_request_sent_again_for_a_meeting_already_booked_is_recognised(desk):
+    desk.world().add_event(provider="google", title="Intro call", start=TUE10[0], end=TUE10[1],
+                           attendees=["sofia@client.example"])
+    meeting_mail(desk, body="Resending in case this was missed: could we meet Tuesday at 10:00 for 30 minutes?")
+    desk.plan(book_plan())
+    run = desk.intake("m1").json()
+    assert run["actions"] == [] and run["held"]["reason"] == "already_scheduled"
+    assert run["flags"] == ["duplicate"] and run["held"]["target"]["title"] == "Intro call"
+    assert len(desk.world().events) == 1
+
+
+def test_a_conflict_with_somebody_elses_meeting_is_still_a_conflict(desk):
+    desk.world().add_event(provider="google", title="Board call", start=TUE10[0], end=TUE10[1],
+                           attendees=["chair@board.example"])
+    meeting_mail(desk)
+    desk.plan(book_plan())
+    run = desk.intake("m1").json()
+    assert run["held"]["reason"] == "calendar_conflict" and run["flags"] == []
+
+
+def test_a_cancellation_written_as_news_is_still_acted_on(desk):
+    desk.gateway.model_available = False
+    event = review(desk, start="2026-11-16T15:00:00+00:00", end="2026-11-16T16:00:00+00:00", title="Vendor review")
+    desk.world().deliver(message_id="c9", from_addr=SOFIA, subject="Today",
+                         body="Apologies for the short notice. I have to cancel today's 15:00 vendor review.")
+    run = desk.intake("c9").json()
+    assert run["category"] == "meeting_request"
+    assert [a["tool_name"] for a in run["actions"]] == ["cancel_calendar_event"]
+    assert run["actions"][0]["input"]["event_id"] == event["id"]
+
+
+def test_a_request_that_never_says_meeting_is_still_scheduling(desk):
+    desk.gateway.model_available = False
+    desk.world().deliver(message_id="q1", from_addr=SOFIA, subject="Pilot results",
+                         body="Could we take 45 minutes on Thursday 19 November at 13:00 to go over the pilot?")
+    run = desk.intake("q1").json()
+    [event] = run["actions"]
+    assert event["tool_name"] == "create_calendar_event"
+    assert event["input"]["start"] == "2026-11-19T13:00:00+00:00"
+    assert event["input"]["end"] == "2026-11-19T13:45:00+00:00"
+
+
+def test_a_time_in_another_zone_is_booked_at_the_right_instant_and_confirmed_in_both(desk):
+    desk.gateway.model_available = False
+    desk.world().preferences["timezone"] = "Asia/Beirut"
+    desk.world().deliver(message_id="z1", from_addr=SOFIA, subject="Pilot results", thread_id="T-z1",
+                         body="Could we do Wednesday 18 November at 10:00am ET for 30 minutes?")
+    run = desk.intake("z1").json()
+    [event] = run["actions"]
+    assert event["input"]["start"] == "2026-11-18T17:00:00+02:00"       # 10:00 in New York
+    assert event["input"]["end"] == "2026-11-18T17:30:00+02:00"
+    desk.gateway.settle(event["toolCallId"], "executed")
+    reply = desk.post(f"/runs/{run['runId']}/advance").json()["actions"][1]
+    assert "17:00 to 17:30 (Asia/Beirut)" in reply["input"]["body"]
+    assert "10:00 to 10:30 (America/New_York)" in reply["input"]["body"]
+
+
+def test_moving_a_meeting_reads_the_new_time_and_keeps_the_length(desk):
+    desk.gateway.model_available = False
+    event = review(desk, start="2026-11-19T10:00:00+00:00", end="2026-11-19T11:00:00+00:00", title="Customer call")
+    move_mail(desk, subject="Customer call",
+              body="Something came up. Could we move our 10:00 customer call to Friday 20 November at 11:00 instead?")
+    run = desk.intake("r1").json()
+    [card] = run["actions"]
+    assert card["tool_name"] == "update_calendar_event" and card["input"]["event_id"] == event["id"]
+    assert card["input"]["start"] == "2026-11-20T11:00:00+00:00"
+    assert card["input"]["end"] == "2026-11-20T12:00:00+00:00"
+
+
+def test_a_decision_needed_today_is_an_urgent_task_due_today(desk):
+    desk.world().deliver(message_id="d1", from_addr="Omar <omar@client.example>", subject="Driver cover",
+                         body="Four drivers are out from tomorrow. I need your decision today to book agency cover.")
+    run = desk.intake("d1").json()
+    [task] = run["actions"]
+    assert task["tool_name"] == "create_task" and task["input"]["due_at"] == "2026-11-16T17:00:00+00:00"
+    assert task["input"]["priority"] == "high"
+    classified = next(i["data"] for i in run["timeline"] if i["data"].get("stage") == "CLASSIFIED")
+    assert classified["priority"] == "urgent" and classified["category"] == "action_item"

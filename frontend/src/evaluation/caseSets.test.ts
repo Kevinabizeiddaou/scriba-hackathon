@@ -187,7 +187,11 @@ describe('command line', () => {
     expect(all.stdout).toMatch(/Tasks and reminders\s+3 of 3 scripted runs as expected/);
     expect(all.stdout).not.toMatch(/\d%/); // counts only: a scripted target has no pass rate
 
-    expect(run(['--target', 'mock', '--suite', 'everything'])).toMatchObject({ code: 2, stderr: expect.stringContaining('--suite must be one of: desk, scheduling, all') });
+    const holdout = run(['--target', 'mock', '--suite', 'holdout', '--only', 'EVAL-026-H1', '--out', out, '--print-json']);
+    expect(holdout.code).toBe(0);
+    expect(JSON.parse(holdout.stdout)).toMatchObject({ caseSet: { id: 'desk-holdout-v1', caseCount: 20 }, results: [{ caseId: 'EVAL-026-H1', verdict: 'pass' }] });
+
+    expect(run(['--target', 'mock', '--suite', 'everything'])).toMatchObject({ code: 2, stderr: expect.stringContaining('--suite must be one of: desk, scheduling, holdout, all') });
     expect(run(['--target', 'mock', '--suite', 'desk', '--cases', 'x.json'])).toMatchObject({ code: 2, stderr: expect.stringContaining('Use --suite or --cases, not both') });
   }, 90_000);
 

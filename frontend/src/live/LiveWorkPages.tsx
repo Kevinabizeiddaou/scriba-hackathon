@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getErrorMessage } from '../api/client'
 import { Button, EmptyState, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui'
+import { useRunQueue } from './LiveWorkQueuePage'
 import { useRequiredLiveSession } from './session'
 import { ToolCallCard } from './ToolCallCard'
 import { RECENT_CONVERSATIONS, WORK_QUEUE_KEY, WORK_STAGES, isWorkItem, loadWorkQueue, needsIntervention, needsUser, stageOf, workQueueRefetchInterval, type ActionCard, type WorkQueue, type WorkStage } from './workQueue'
@@ -42,12 +43,24 @@ function PolicyNote() {
   )
 }
 
+/** Which Desk run each action card belongs to, from the run queue. Empty while it loads or without the overlay. */
+function useRunOfCard(): Map<number, { runId: number; subject: string | null }> {
+  const session = useRequiredLiveSession()
+  const runs = useRunQueue(session.overlay === 'ok')
+  const map = new Map<number, { runId: number; subject: string | null }>()
+  for (const entry of runs.data?.entries ?? []) {
+    for (const action of entry.run?.actions ?? []) map.set(action.toolCallId, { runId: entry.row.runId, subject: entry.run!.email.subject ?? entry.row.subject })
+  }
+  return map
+}
+
 function CardList({ cards }: { cards: ActionCard[] }) {
+  const runOf = useRunOfCard()
   return (
     <ul className="space-y-3">
       {cards.map(card => (
         <li key={card.toolCall.id}>
-          <ToolCallCard toolCall={card.toolCall} reason={card.assistantText} conversation={card.conversation} />
+          <ToolCallCard toolCall={card.toolCall} reason={card.assistantText} conversation={card.conversation} run={runOf.get(card.toolCall.id)} />
         </li>
       ))}
     </ul>

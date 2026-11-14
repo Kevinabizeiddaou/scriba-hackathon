@@ -2,6 +2,7 @@ import { DESK_AREAS, type CaseCategory, type CaseSetInfo, type DeskArea, type Ev
 import { CASES_01_10 } from './cases-01-10';
 import { CASES_11_20 } from './cases-11-20';
 import { CASES_21_32 } from './cases-21-32';
+import { HOLDOUT_CASES, HOLDOUT_CASE_SET } from './holdout';
 
 /**
  * The twenty scheduling cases the harness started with, in id order. Eight of them are part of
@@ -76,6 +77,7 @@ export const AREA_LABEL: Record<DeskArea, string> = {
 export const SUITES = {
   desk: { caseSet: DESK_CASE_SET, cases: DESK_SUITE, description: 'The main suite: 20 cases across inbox, email, scheduling, tasks, follow-ups, workflows and safety.' },
   scheduling: { caseSet: SYNTHETIC_CASE_SET, cases: EVALUATION_CASES, description: 'The 20 scheduling cases, as a regression set.' },
+  holdout: { caseSet: HOLDOUT_CASE_SET, cases: HOLDOUT_CASES, description: 'One reworded variation of each desk case, with the official expectations. Not published with the cases.' },
   all: { caseSet: { id: 'all-synthetic-v1', provenance: 'synthetic', caseCount: ALL_CASES.length } as CaseSetInfo, cases: ALL_CASES, description: 'Every synthetic case, each once.' },
 } satisfies Record<string, { caseSet: CaseSetInfo; cases: EvaluationCase[]; description: string }>;
 
@@ -102,3 +104,5 @@ export const CASE_CATEGORIES: { id: CaseCategory; label: string }[] = [
 export function categoryLabel(id: CaseCategory): string {
   return CASE_CATEGORIES.find((c) => c.id === id)?.label ?? id;
 }
+
+export { HOLDOUT_CASES, HOLDOUT_CASE_SET, baseCaseId, isHoldoutId } from './holdout';

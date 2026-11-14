@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { CalendarDays, FlaskConical, History, Inbox, LayoutDashboard, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, X, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ClipboardList, FlaskConical, History, Inbox, LayoutDashboard, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, X, type LucideIcon } from 'lucide-react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getApi, getWorkspace } from '../harness';
 import { hrefFor, type Page } from '../lib/router';
@@ -14,6 +14,8 @@ interface NavItem {
   short: string;
   icon: LucideIcon;
   group: 'Desk' | 'Work' | 'Quality';
+  /** Shown only on a live backend: the screen has no demo counterpart. */
+  liveOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -21,6 +23,7 @@ const NAV: NavItem[] = [
   { page: 'inbox', label: 'Inbox', short: 'Inbox', icon: Inbox, group: 'Desk' },
   { page: 'calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays, group: 'Desk' },
   { page: 'tasks', label: 'Tasks and follow-ups', short: 'Tasks', icon: ListTodo, group: 'Desk' },
+  { page: 'work', label: 'Work queue', short: 'Work', icon: ClipboardList, group: 'Work', liveOnly: true },
   { page: 'chat', label: 'Secretary chat', short: 'Chat', icon: MessageSquareText, group: 'Work' },
   { page: 'approvals', label: 'Approval center', short: 'Approvals', icon: ShieldCheck, group: 'Work' },
   { page: 'activity', label: 'Activity', short: 'Activity', icon: History, group: 'Work' },
@@ -28,6 +31,8 @@ const NAV: NavItem[] = [
 ];
 /** The four destinations that fit in the phone's bottom bar. The rest are behind "More". */
 const BOTTOM: Page[] = ['overview', 'inbox', 'calendar', 'approvals'];
+/** On a live backend the work queue takes the calendar's place: it is where the day's work is. */
+const LIVE_BOTTOM: Page[] = ['overview', 'work', 'inbox', 'approvals'];
 
 function Mark() {
   return (
@@ -57,6 +62,8 @@ export interface ShellBadges {
   approvals: number | null;
   /** Actions that failed or only partly ran. */
   problems: number | null;
+  /** Desk runs that need the user: an approval, an input, or a look at a failure. */
+  work?: number | null;
 }
 export const ShellBadgesContext = createContext<ShellBadges | null>(null);
 
@@ -140,7 +147,9 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
     liveBadges
       ? target === 'approvals'
         ? (liveBadges.approvals ?? 0)
-        : target === 'activity'
+        : target === 'work'
+          ? (liveBadges.work ?? 0)
+          : target === 'activity'
           ? (liveBadges.problems ?? 0)
           : 0
       : target === 'inbox'
@@ -150,9 +159,11 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
           : target === 'tasks'
             ? (work.data ?? 0)
             : 0;
-  const badgeLabel = (target: Page) => (target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
+  const badgeLabel = (target: Page) => (target === 'work' ? 'runs that need you' : target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
   const groups = ['Desk', 'Work', 'Quality'] as const;
-  const inMore = NAV.filter((item) => !BOTTOM.includes(item.page));
+  const nav = NAV.filter((item) => !item.liveOnly || session !== null);
+  const bottom = session !== null ? LIVE_BOTTOM : BOTTOM;
+  const inMore = nav.filter((item) => !bottom.includes(item.page));
   const moreActive = inMore.some((item) => item.page === page);
   const moreCount = inMore.reduce((sum, item) => sum + badge(item.page), 0);
 
@@ -176,7 +187,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             <div key={group}>
               <p className="eyebrow mb-1.5 px-3">{group}</p>
               <div className="space-y-0.5">
-                {NAV.filter((item) => item.group === group).map(({ page: target, label, icon: Icon }) => {
+                {nav.filter((item) => item.group === group).map(({ page: target, label, icon: Icon }) => {
                   const active = target === page;
                   return (
                     <a
@@ -266,7 +277,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
 
         {/* Bottom navigation: small screens */}
         <nav aria-label="Main" className="relative z-40 grid grid-cols-5 border-t border-line bg-sunken/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-          {NAV.filter((item) => BOTTOM.includes(item.page)).map(({ page: target, short, icon: Icon }) => {
+          {bottom.map((target) => nav.find((item) => item.page === target)!).map(({ page: target, short, icon: Icon }) => {
             const active = target === page && !moreOpen;
             const count = badge(target);
             return (

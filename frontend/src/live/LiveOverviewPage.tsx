@@ -13,6 +13,8 @@ import { hrefFor, type Page } from '../lib/router'
 import { fmtDayTime, fmtTime, isInstant } from '../lib/time'
 import { describeAction } from './describeAction'
 import { useWorkQueue, QueueCoverage } from './LiveWorkPages'
+import { QUEUE_GROUPS, groupOf, nextStepOf } from './deskRuns'
+import { useRunQueue } from './LiveWorkQueuePage'
 import { emailKey, parseSender, toAccounts, toMailProvider, toPriority } from './mappers'
 import { useRequiredLiveSession } from './session'
 import { WORK_STAGES, isWorkItem, needsIntervention, needsUser, stageOf } from './workQueue'
@@ -95,6 +97,8 @@ export function LiveOverviewPage() {
   const inbox = useQuery<DeskInbox>({ queryKey: ['desk', 'inbox'], queryFn: () => session.workspace.inbox() })
   const connections = useQuery({ queryKey: ['desk', 'connections'], queryFn: () => session.workspace.connections() })
   const queue = useWorkQueue()
+  const runs = useRunQueue(session.overlay === 'ok')
+  const runsForUser = (runs.data?.entries ?? []).filter(entry => entry.run && ['decision', 'input', 'problem', 'unknown'].includes(groupOf(entry.run)))
 
   useEffect(() => {
     session.desk.setTimeZone(briefing.data?.timezone)
@@ -106,6 +110,7 @@ export function LiveOverviewPage() {
     void inbox.refetch()
     void connections.refetch()
     void queue.refetch()
+    void runs.refetch()
   }
 
   const work = (queue.data?.cards ?? []).filter(isWorkItem)
@@ -159,6 +164,31 @@ export function LiveOverviewPage() {
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-5">
+            {session.overlay === 'ok' && (
+              <Section title="Requests the secretary picked up" action={<a href={link('work')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Work queue <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+                {runs.isPending && <SkeletonRows rows={2} />}
+                {runs.isError && <ErrorNote error={new Error(`The work queue could not be loaded: ${getErrorMessage(runs.error)}`)} onRetry={() => void runs.refetch()} />}
+                {runs.data && runsForUser.length === 0 && (
+                  <p className="text-[13px] text-soft">
+                    {runs.data.entries.length === 0 ? 'Nothing has been picked up yet. New mail is picked up when you check for new work in the work queue.' : 'No picked-up request needs you right now.'}
+                  </p>
+                )}
+                <ul className="space-y-2">
+                  {runsForUser.slice(0, 5).map(({ row, run }) => (
+                    <li key={row.runId}>
+                      <a href={link('work', String(row.runId))} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13.5px] font-semibold text-ink">{run!.email.subject || 'No subject'}</span>
+                          <span className="block truncate text-[12px] text-soft">{nextStepOf(run!).label}</span>
+                        </span>
+                        <Pill tone={QUEUE_GROUPS[groupOf(run!)].tone}>{QUEUE_GROUPS[groupOf(run!)].label}</Pill>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+
             <Section title="Waiting for you" action={<a href={link('approvals')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Approval center <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
               {queue.isPending && <SkeletonRows rows={2} />}
               {queue.isError && <ErrorNote error={new Error(`The secretary's actions could not be loaded: ${getErrorMessage(queue.error)}`)} onRetry={() => void queue.refetch()} />}

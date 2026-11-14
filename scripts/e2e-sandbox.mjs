@@ -13,6 +13,9 @@
  *                verification -> completed run -> follow-up tracking
  *   2. file      mail with a workbook -> Scriba's reader -> review document -> reopened and
  *                verified -> downloaded -> reply proposed -> approved -> simulated send
+ *   2a. workbook  a change to that workbook: suggested (nothing changes), applied by Scriba's Excel
+ *                skills on a copy, reopened and verified; the original is untouched
+ *   2b. follow-up times offered -> reply awaited -> the answer arrives -> the wait is closed
  *   3. desktop   the bridge on the sandbox's fake device: refused without confirm, a queued job
  *                is never shown as done or verified, and it can be cancelled. No computer runs
  *                anything here; a job running to a verified result is covered by the backend
@@ -183,6 +186,36 @@ async function main() {
     say(`run stage ${run.lifecycle.stage}; follow-ups: ${(run.followUps || []).map(f => f.state).join(', ') || 'none'}`)
     const original = await call(`/desk/files/${encodeURIComponent(attachment.id)}`, { raw: true })
     expect(original.response.status === 200 && original.bytes.length === attachment.sizeBytes, 'the original attachment changed size or cannot be read')
+  })
+
+  await section('2a. a change to the workbook: suggested -> nothing changed -> applied on a copy -> reopened and verified', async () => {
+    const row = (await call('/desk/runs?limit=200')).json.runs.find(candidate => /Q4 budget figures/i.test(candidate.subject || ''))
+    expect(row, 'the demo world\'s "Q4 budget figures" message has no run')
+    let run = await getRun(row.runId)
+    const attachment = (run.attachments || [])[0]
+    const value = 5000 + (Date.now() % 1000)          // another value on each walk, so a repeat is a new change
+    const suggested = await call(`/desk/runs/${run.runId}/file-changes`, { method: 'POST', body: {
+      fileId: attachment.id, operations: [{ op: 'update_cell', sheet: 'Budget', cell: 'D6', value }] } })
+    expect(suggested.response.status === 200, `suggesting a change gave HTTP ${suggested.response.status}`)
+    run = suggested.json
+    const change = (run.fileChanges || []).find(candidate => candidate.state === 'suggested')
+    expect(change, 'the suggestion is not on the run')
+    say(`suggested ${change.id}: ${change.operations.map(o => `${o.op} ${o.sheet}!${o.cell} = ${o.value}`).join('; ')}; run stage ${run.lifecycle.stage} (${run.lifecycle.reason}); next: ${run.next.join(', ')}`)
+    expect(run.lifecycle.stage !== 'COMPLETED' && run.next.includes('apply_file_change'), 'a run with a suggested change is called complete')
+    expect(!change.resultFileId && !change.verified, 'a suggested change already has a result')
+    const formula = await call(`/desk/runs/${run.runId}/file-changes`, { method: 'POST', body: {
+      fileId: attachment.id, operations: [{ op: 'update_cell', sheet: 'Budget', cell: 'D6', value: '=1+1' }] } })
+    expect(formula.response.status === 400, `a value that starts like a formula gave HTTP ${formula.response.status}`)
+    run = (await call(change.apply.path, { method: 'POST' })).json
+    const applied = (run.fileChanges || []).find(candidate => candidate.id === change.id)
+    say(`applied: state ${applied.state}, verified ${applied.verified} by ${applied.verification?.method}, result "${applied.resultFilename}", simulated ${applied.simulated}; step: ${JSON.stringify((applied.steps || []).map(s => ({ cell: s.cell, old: s.oldValue, verified: s.verified })))}`)
+    expect(applied.state === 'applied' && applied.verified === true && applied.verification?.method === 'workbook_reopened', `the change is ${applied.state}`)
+    expect(applied.resultFileId && applied.resultFileId !== attachment.id, 'the result is not a new file')
+    const result = await call(`/desk/files/${encodeURIComponent(applied.resultFileId)}`, { raw: true })
+    expect(result.response.status === 200 && result.bytes[0] === 0x50 && result.bytes[1] === 0x4b, 'the changed copy cannot be downloaded as a workbook')
+    const original = await call(`/desk/files/${encodeURIComponent(attachment.id)}`, { raw: true })
+    expect(original.response.headers.get('x-desk-file-sha256') === attachment.sha256, 'the original attachment was changed')
+    say(`the changed copy downloads (${result.bytes.length} bytes); the original attachment has the same sha256 as when it was read; run stage ${run.lifecycle.stage}`)
   })
 
   await section('2b. follow-up tracking: times offered -> reply awaited -> the answer arrives -> the wait is closed', async () => {

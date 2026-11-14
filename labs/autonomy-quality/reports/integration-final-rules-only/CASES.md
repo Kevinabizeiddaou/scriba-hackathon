@@ -2,7 +2,7 @@
 
 These are results of the RULES-ONLY engine in an isolated sandbox. They say nothing about a model.
 
-Traceability: backend `5f8e5181626d` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
+Traceability: backend `1dfbeb5a1dc7` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
 
 Every case that did not end `completed`, in the order it ran. The complete trace of every case, completed ones included, is in `traces.jsonl.gz` (one JSON object per line; `python -m aql trace --report <dir> --case <id>` prints one).
 

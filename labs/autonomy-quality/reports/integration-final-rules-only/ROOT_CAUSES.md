@@ -2,7 +2,7 @@
 
 These are results of the RULES-ONLY engine in an isolated sandbox. They say nothing about a model.
 
-Traceability: backend `5f8e5181626d` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
+Traceability: backend `1dfbeb5a1dc7` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
 
 Failures are grouped by cause. Each group has one minimal reproduction; the other affected cases are listed by id and each has a trace file.
 

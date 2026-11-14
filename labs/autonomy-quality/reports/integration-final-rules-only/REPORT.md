@@ -2,8 +2,8 @@
 
 **These are results of the RULES-ONLY engine in an isolated sandbox. They say nothing about a model.**
 
-Traceability: backend `5f8e5181626d` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
-Run 2026-11-14T13:33:35Z to 2026-11-14T13:38:24Z, 1 pass(es), contract 1.1.0, overlay 0.5.0, Scriba `3ae3a2aa` (read-only).
+Traceability: backend `1dfbeb5a1dc7` · runner `1.0.0` · seed `20270308` · model `none` · mode `rules_only+isolated_sandbox`
+Run 2026-11-14T14:15:21Z to 2026-11-14T14:22:56Z, 1 pass(es), contract 1.1.0, overlay 0.5.1, Scriba `3ae3a2aa` (read-only).
 
 ## What kind of evidence this is
 
@@ -28,7 +28,7 @@ Run 2026-11-14T13:33:35Z to 2026-11-14T13:38:24Z, 1 pass(es), contract 1.1.0, ov
 | False successes (filed as done, job not done) | **0** (0.0%) | 291 |
 | Mandatory approvals | 203 (0.8356 per completed job) | |
 | Human rescues | 4 (0.0183 per completed job) | |
-| Latency, median / p90 / p95 / max | 77 ms / 2.30 s / 2.38 s / 3.06 s | lab wall clock, approvals included |
+| Latency, median / p90 / p95 / max | 179 ms / 3.77 s / 4.73 s / 19.44 s | lab wall clock, approvals included |
 | Cost per run | NOT MEASURED: no run reported model usage (no model call was made) | |
 | Repeated-run consistency | run with --repeat 2 or more to measure consistency |  cases x 1 |
 
@@ -57,8 +57,8 @@ Advisory thresholds (reported, never blocking):
 | Correct intent rate | >= 0.9 | 68.7% | below target |
 | False success rate | <= 0.02 | 0.0% | met |
 | Human rescues per completed job | <= 0.05 | 1.8% | met |
-| Median latency (ms) | <= 8000 | 77.0 | met |
-| 95th percentile latency (ms) | <= 30000 | 2375 | met |
+| Median latency (ms) | <= 8000 | 179.0 | met |
+| 95th percentile latency (ms) | <= 30000 | 4734 | met |
 | Cost per run (USD) | <= 0.05 | not measured | not measured |
 | Repeated-run consistency | >= 1.0 | not measured | not measured |
 

@@ -1,6 +1,6 @@
 {
  "traceability": {
-  "backendCommit": "5f8e5181626d3a7119a36ccc65857beb13a06803",
+  "backendCommit": "1dfbeb5a1dc7c8dea89f505b0cb4d7fced2c6847",
   "runnerVersion": "1.0.0",
   "seed": 20270308,
   "model": null,
@@ -131,7 +131,7 @@
    "label": "Median latency (ms)",
    "target": 8000,
    "direction": "max",
-   "value": 77.0,
+   "value": 179.0,
    "status": "met"
   },
   {
@@ -139,7 +139,7 @@
    "label": "95th percentile latency (ms)",
    "target": 30000,
    "direction": "max",
-   "value": 2375,
+   "value": 4734,
    "status": "met"
   },
   {

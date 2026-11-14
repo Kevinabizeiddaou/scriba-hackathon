@@ -254,6 +254,11 @@ export interface JiraFeature {
   area: string
   label: string
   state: 'ready' | 'api' | 'planned' | 'excluded'
+  /** The scope group it depends on (for example `projects_read`), or null. */
+  needs: string | null
+  write: boolean
+  route: string | null
+  jira: string | null
   note: string | null
   granted: boolean
   missingScopes: string[]

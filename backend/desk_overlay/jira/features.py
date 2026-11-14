@@ -63,6 +63,12 @@ _ROWS: Tuple[Tuple[str, str, str, str, Optional[str], str, str, str], ...] = (
     ("dashboards", "Search", "My dashboards", API, "core_read", "GET /desk/jira/dashboards", "GET /dashboard",
      "Names and links only: Jira returns a gadget's settings, not its data."),
 
+    # ── projects ────────────────────────────────────────────────────────────
+    ("projects", "Projects", "Projects I can see", READY, "projects_read", "GET /desk/jira/projects",
+     "GET /project/search", "Feeds the project picker when creating an issue."),
+    ("project_detail", "Projects", "A project: lead, issue types and components", READY, "projects_read",
+     "GET /desk/jira/projects/{key}", "GET /project/{key}, GET /project/{key}/components", ""),
+
     # ── one issue ───────────────────────────────────────────────────────────
     ("issue_view", "Issue", "Read an issue: fields, description, people", READY, "core_read",
      "GET /desk/jira/issues/{key}", "GET /issue/{key}", ""),
@@ -126,7 +132,7 @@ _ROWS: Tuple[Tuple[str, str, str, str, Optional[str], str, str, str], ...] = (
      "GET /desk/jira/projects/{key}/releases", "GET /project/{key}/version", ""),
     ("release_manage", "Releases", "Create and release a version", READY, "project_admin", "action release_version",
      "POST, PUT /version", ""),
-    ("components", "Releases", "Components", API, "core_read", "GET /desk/jira/projects/{key}",
+    ("components", "Releases", "Components", API, "projects_read", "GET /desk/jira/projects/{key}",
      "GET /project/{key}/components", ""),
 
     # ── service management ──────────────────────────────────────────────────

@@ -144,6 +144,25 @@ describe('connected', () => {
     expect(rejectJiraProposal).not.toHaveBeenCalled()
   })
 
+  it('coverage says when project reads lack the project scope, and names it', async () => {
+    vi.mocked(fetchJiraStatus).mockResolvedValue(connected({
+      scopes: [{ id: 'projects_read', label: 'Read projects: the list, details, issue types and components', product: 'jira', write: false, optional: false, granted: false, missing: ['read:project:jira'] }],
+    }))
+    vi.mocked(fetchJiraFeatures).mockResolvedValue({
+      features: [
+        { id: 'projects', area: 'Projects', label: 'Projects I can see', state: 'ready', needs: 'projects_read', write: false, route: 'GET /desk/jira/projects', jira: 'GET /project/search', note: null, granted: false, missingScopes: ['read:project:jira'] },
+        { id: 'my_open', area: 'My work', label: 'Assigned to me', state: 'ready', needs: 'core_read', write: false, route: null, jira: null, note: null, granted: true, missingScopes: [] },
+      ],
+      summary: { ready: 2, api: 0, planned: 0, excluded: 0 }, connected: true,
+    })
+    show('coverage')
+    const projects = await screen.findByRole('region', { name: 'Projects' })
+    expect(within(projects).getByText('Projects I can see')).toBeInTheDocument()
+    expect(within(projects).getByText('Scope missing')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'My work' })).queryByText('Scope missing')).toBeNull()
+    expect(screen.getByText('read:project:jira')).toBeInTheDocument()
+  })
+
   it('a held change says it is held, and an unconfirmed one is not shown as done', async () => {
     vi.mocked(fetchJiraProposals).mockResolvedValue({
       proposals: [

@@ -73,7 +73,12 @@ class ScopeGroup:
 
 
 SCOPE_GROUPS: Tuple[ScopeGroup, ...] = (
-    ScopeGroup("core_read", "Read issues, projects, filters and comments", [["read:jira-work"]]),
+    ScopeGroup("core_read", "Read issues, filters and comments", [["read:jira-work"]]),
+    # Project reads (the list, one project, its issue types and components)
+    # ask for the granular scope on their own, so a connection says plainly
+    # whether it may list projects instead of failing on the call.
+    ScopeGroup("projects_read", "Read projects: the list, details, issue types and components",
+               [["read:project:jira"]]),
     ScopeGroup("users", "Find people to assign and mention", [["read:jira-user"]]),
     ScopeGroup("core_write", "Create and change issues, comment, log time", [["write:jira-work"]], write=True),
     ScopeGroup("offline", "Stay connected without signing in again", [["offline_access"]]),
@@ -105,7 +110,7 @@ GROUP_BY_ID: Dict[str, ScopeGroup] = {group.id: group for group in SCOPE_GROUPS}
 def recommended_scopes(*, software: bool = True, servicedesk: bool = False, admin: bool = False,
                        webhooks: bool = False) -> List[str]:
     """The value for Scriba's ``JIRA_SCOPES`` (space separated), in a stable order."""
-    wanted = ["core_read", "users", "core_write", "offline"]
+    wanted = ["core_read", "projects_read", "users", "core_write", "offline"]
     if software:
         wanted += ["software_read", "software_board_config", "software_write"]
     if admin:

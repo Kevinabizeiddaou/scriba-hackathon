@@ -203,6 +203,7 @@ class JiraService:
     # ── projects ────────────────────────────────────────────────────────────
     def projects(self, user: Any, *, query: Optional[str], start_at: int, limit: int) -> Dict[str, Any]:
         session = self.session(user)
+        self._need(session, "projects_read")
         page = session.client.search_projects(query=query, start_at=start_at, max_results=limit)
         rows = [models.project_view(raw, site_url=session.site_url) for raw in (page.get("values") or [])]
         return {"projects": rows, "page": models.page_of(rows, start_at=start_at, total=page.get("total"),
@@ -210,6 +211,7 @@ class JiraService:
 
     def project(self, user: Any, key: str) -> Dict[str, Any]:
         session = self.session(user)
+        self._need(session, "projects_read")
         key = jql.project_key(key)
         raw = session.client.get_project(key)
         types = session.client.create_meta_types(key).get("issueTypes") or []

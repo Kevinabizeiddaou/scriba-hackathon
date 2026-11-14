@@ -504,8 +504,7 @@ Everything above this line is generated from the report files. These notes are A
 
 - The integration branch is `agent1/integration`. It moved eight times in the hour the lab was measuring it. This report is
   pinned to **`bd4f0cc`**. Earlier heads the lab measured in full are rows in section 5: `6fd4df0` (the first
-  integration commit) and `2567c6a`. A later head is not covered by any figure here; see the addendum at the end if
-  there is one.
+  integration commit) and `2567c6a`. The head at the time of writing, `94ac3de`, is covered by the addendum at the end.
 - **`main` does not have this engine.** `main`'s backend is still the one of `db86a54` (the first merge of the two
   engine branches, plus hosting files). On that engine the lab measures 15 runs filed as done with the job not done,
   including all three findings the lead named. Everything good in this report is true of `agent1/integration`, not of
@@ -617,3 +616,13 @@ $PY tools/reproductions.py --report reports/engine-<sha>-rules-only-seed20270308
 ```
 
 The held-out rewordings in `tools/holdout_probe.py` are now published too. A later measurement needs new ones.
+
+### Addendum: `94ac3de`, the head of `agent1/integration` when this report was written
+
+`94ac3de` adds documents, a demo script (`backend/dev/demo_path.py`) and a one-line change to the model runner
+(`backend/eval/run_configured_model.py`). `backend/desk_overlay/`, `backend/tests/` and `frontend/` are identical to
+`bd4f0cc` (`git diff --quiet bd4f0cc 94ac3de -- backend/desk_overlay backend/tests frontend`). The lab still ran it:
+one full pass of the 291 items on the default seed and the 26 held-out rewordings, on a detached checkout of
+`94ac3de`. **Every verdict and every root cause is the same as on `bd4f0cc`**: 218 done, 54 handed over, 19 failed,
+0 unsafe, 0 false completions, 7 of 7 gates; held-out 13 of 26 done with the same three regressions. Those two runs
+were compared and not kept; the figures above stand for both commits.

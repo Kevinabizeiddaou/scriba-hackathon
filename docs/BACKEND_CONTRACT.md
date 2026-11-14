@@ -308,12 +308,12 @@ makes the run `partial`**, and such an action is not `verified`.
 
 | `stage` | Meaning |
 | --- | --- |
-| `RECEIVED`, `CLASSIFIED`, `CONTEXT_GATHERING`, `PLANNING` | Recorded as the run is opened; they appear in `timeline`, never as a resting stage |
+| `RECEIVED`, `UNDERSTANDING`, `INVESTIGATING`, `PLANNING` | Recorded as the run is opened; they appear in `timeline`, never as a resting stage |
 | `AWAITING_APPROVAL` | A card waits for the person (including a held card) |
 | `EXECUTING` | A card is running, or a step executed and the next one is about to be proposed |
 | `VERIFYING` | Executed but not yet verified, or `outcomeUnknown`: the provider did not confirm and it may or may not have happened |
 | `COMPLETED` | Everything proposed took effect and was verified, or nothing was needed |
-| `AWAITING_REPLY` | A reply went out and its follow-up is `waiting` or `overdue` |
+| `WAITING_FOR_RESPONSE` | A reply went out and its follow-up is `waiting` or `overdue` |
 | `NEEDS_CLARIFICATION` | Cannot be acted on as written (`time_not_understood`, `event_not_found`, `event_ambiguous`) and nothing could be proposed |
 | `ESCALATED` | Handed to the person; the Desk proposes nothing |
 | `PARTIALLY_COMPLETED` | Some actions took effect and some did not. `compensation.policy` is `escalate`: the Desk never undoes an executed action by itself |

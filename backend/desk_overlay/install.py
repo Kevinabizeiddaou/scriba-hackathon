@@ -72,6 +72,10 @@ def install(app: Any, gateway: Optional[Any] = None, *, chat_scope: Optional[boo
     # Once an approved step has executed, propose what follows it at once.
     gate.on_settled = lambda user, run: workflow.advance(AppContext(app), user, run["id"])
     desk["worker"] = IntakeWorker(app, routed, workflow, env=env, registry=registry)
+    desk["worker"].recover = gate.recover_stale
+    # One structured model call reads a message's intents, when asked for and
+    # when a model is really configured (never with a placeholder key).
+    workflow.model_understanding = str(env.get("DESK_UNDERSTANDING") or "").strip().lower() == "model"
     app.include_router(router)
 
     if str(env.get("DESK_EVAL_SANDBOX") or "").strip().lower() in ("1", "true", "on"):

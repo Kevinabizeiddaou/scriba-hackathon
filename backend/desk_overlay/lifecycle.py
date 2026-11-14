@@ -2,12 +2,12 @@
 
 A run moves through these stages:
 
-    RECEIVED -> CLASSIFIED -> CONTEXT_GATHERING -> PLANNING
+    RECEIVED -> UNDERSTANDING -> INVESTIGATING -> PLANNING
         -> AWAITING_APPROVAL -> EXECUTING -> VERIFYING -> COMPLETED
 
 and can end, or rest, in one of:
 
-    AWAITING_REPLY        a reply went out and an answer is awaited
+    WAITING_FOR_RESPONSE        a reply went out and an answer is awaited
     NEEDS_CLARIFICATION   the request cannot be acted on as written
     ESCALATED             handed to the person; the Desk proposes nothing
     PARTIALLY_COMPLETED   some actions took effect and some did not
@@ -24,25 +24,26 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional
 
-STAGES = ("RECEIVED", "CLASSIFIED", "CONTEXT_GATHERING", "PLANNING", "AWAITING_APPROVAL",
-          "EXECUTING", "VERIFYING", "COMPLETED", "AWAITING_REPLY", "NEEDS_CLARIFICATION",
-          "ESCALATED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
+STAGES = ("RECEIVED", "UNDERSTANDING", "INVESTIGATING", "PLANNING", "AWAITING_APPROVAL",
+          "EXECUTING", "VERIFYING", "COMPLETED", "WAITING_FOR_RESPONSE", "NEEDS_CLARIFICATION",
+          "HELD", "ESCALATED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
 FINAL_STAGES = ("COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
 
 # Kinds of evidence. One event is exactly one of these.
-KINDS = ("stage", "decision", "read", "proposal", "approval", "execution", "verification",
+KINDS = ("stage", "plan", "decision", "read", "proposal", "approval", "execution", "verification",
          "human", "followup", "usage", "error")
 
 EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
 OPEN = ("pending", "needs_info", "draft", "awaiting_approval")
 RUNNING = ("approved", "executing")
-CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found")
+CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found", "intent_unclear",
+                   "details_missing")
 
 _SUMMARIES = {
     "RECEIVED": "Request received.",
-    "CLASSIFIED": "Request classified.",
-    "CONTEXT_GATHERING": "Context gathered.",
+    "UNDERSTANDING": "Request classified.",
+    "INVESTIGATING": "Context gathered.",
     "PLANNING": "Plan made.",
 }
 
@@ -58,6 +59,9 @@ def summary_of(item: Mapping[str, Any]) -> str:
     kind, data = item.get("kind"), item.get("data") or {}
     if kind == "stage":
         return _SUMMARIES.get(str(data.get("stage")), f"Stage: {data.get('stage')}.")
+    if kind == "plan":
+        steps = len(data.get("steps") or [])
+        return f"Plan written: {steps} step{'s' if steps != 1 else ''}, {data.get('approvals', 0)} to approve."
     if kind == "decision":
         return str(data.get("explanation") or f"Decided: {data.get('decision')}.")
     if kind == "read":
@@ -159,7 +163,12 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
         else:
             stage, reason = "COMPLETED", "no_action_needed"
     elif any(status in OPEN for status in statuses):
-        stage = "AWAITING_APPROVAL"
+        open_actions = [a for a in actions if a.get("status") in OPEN]
+        if all(a.get("held") for a in open_actions):
+            # Every open action is held by a guard: nothing can be approved as it stands.
+            stage, reason = "HELD", str(open_actions[0].get("errorCode") or "held")
+        else:
+            stage = "AWAITING_APPROVAL"
     elif any(status in RUNNING for status in statuses):
         stage = "EXECUTING"
     else:
@@ -176,10 +185,14 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
             stage = "CANCELLED"
         elif pending_next:
             stage, reason = "EXECUTING", "next_step_pending"
+        elif any((a.get("verification") or {}).get("verified") is False for a in done):
+            # It executed and the provider state does not show it. That is not
+            # "done": it is handed to the person.
+            stage, reason = "ESCALATED", "verification_failed"
         elif any(not a.get("verified") for a in done):
             stage, reason = "VERIFYING", "not_yet_verified"
         elif waiting_on:
-            stage = "AWAITING_REPLY"
+            stage = "WAITING_FOR_RESPONSE"
         else:
             stage = "COMPLETED"
 

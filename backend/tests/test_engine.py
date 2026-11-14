@@ -100,7 +100,7 @@ def test_a_meeting_request_goes_through_every_stage_with_evidence(desk):
     assert run["lifecycle"]["stage"] == "AWAITING_APPROVAL" and run["state"] == "awaiting_approval"
     assert run["simulated"] is True and run["trigger"] == "manual"
     stages = [item["data"]["stage"] for item in run["timeline"] if item["kind"] == "stage"]
-    assert stages == ["RECEIVED", "CLASSIFIED", "CONTEXT_GATHERING", "PLANNING"]
+    assert stages == ["RECEIVED", "UNDERSTANDING", "INVESTIGATING", "PLANNING"]
     assert all(item["at"] == NOW.isoformat() for item in run["timeline"])     # the world's clock
     received = run["timeline"][0]["data"]
     assert received == {"stage": "RECEIVED", "trigger": "manual", "provider": "gmail",
@@ -198,7 +198,7 @@ def offered(desk):
 
 def test_a_sent_offer_opens_a_follow_up_and_waits_for_the_answer(desk):
     run = offered(desk)
-    assert run["lifecycle"]["stage"] == "AWAITING_REPLY"
+    assert run["lifecycle"]["stage"] == "WAITING_FOR_RESPONSE"
     [follow] = run["followUps"]
     assert follow["state"] == "waiting" and follow["waitingOn"] == "sofia@client.example"
     assert follow["threadId"] == "T-m1" and follow["dueAt"] == "2026-11-18T06:00:00+00:00"
@@ -805,5 +805,5 @@ def test_a_decision_needed_today_is_an_urgent_task_due_today(desk):
     [task] = run["actions"]
     assert task["tool_name"] == "create_task" and task["input"]["due_at"] == "2026-11-16T17:00:00+00:00"
     assert task["input"]["priority"] == "high"
-    classified = next(i["data"] for i in run["timeline"] if i["data"].get("stage") == "CLASSIFIED")
+    classified = next(i["data"] for i in run["timeline"] if i["data"].get("stage") == "UNDERSTANDING")
     assert classified["priority"] == "urgent" and classified["category"] == "action_item"

@@ -43,7 +43,9 @@ from .sandbox import (OP_CANCEL_EVENT, OP_CREATE_EVENT, OP_CREATE_REMINDER, OP_C
 
 logger = logging.getLogger(__name__)
 
+STALE_SECONDS = 300
 HELD_CODE = "external_writes_disabled"
+CHANGED_CODE = "proposal_changed"
 UNKNOWN_CODE = "outcome_unknown"
 RETRY_CONFIRM_FLAG = "desk_retry_after_unknown_confirmed"
 TOOL_OPS = {
@@ -190,6 +192,15 @@ class ExecutionGate:
                     "Sending mail and changing calendars is switched off on this Desk, so this "
                     "action was not executed. Nothing was sent or changed.")
 
+            changed = gate._binding_changed(user, run, row)
+            if changed:
+                gate._record(user, run, "approval", {
+                    "toolCallId": row.get("id"), "tool": tool, "decision": "approve",
+                    "by": user.email, "result": "held", "code": CHANGED_CODE}, world)
+                return hold(ctx, tool_call_id, CHANGED_CODE,
+                            "This action is no longer what was proposed and no change by you is "
+                            "recorded, so it was not executed. Nothing was sent or changed.")
+
             output = row.get("output_payload") if isinstance(row.get("output_payload"), dict) else {}
             if str(row.get("status") or "") == "failed" and output.get(UNKNOWN_CODE):
                 settled = gate._reconcile(ctx, tool, overrides, hold)
@@ -204,11 +215,24 @@ class ExecutionGate:
                 gate._record(user, run, "human", {
                     "toolCallId": row.get("id"), "tool": tool, "action": "retry", "by": user.email}, world)
 
+            call, call_kwargs = saved[kind], kwargs
+            approved = output.get("approved_overrides") if isinstance(output.get("approved_overrides"), dict) else {}
+            if kind == "retry" and approved and not row.get("assistant_action_id"):
+                # The person edited this action when they approved it, and that
+                # attempt failed. Scriba's retry would run the card as first
+                # proposed, without the edit. What was approved is what runs.
+                call = saved["approve"]
+                call_kwargs = {"account_email": kwargs.get("account_email"),
+                               "tool_call_id": kwargs.get("tool_call_id"),
+                               "payload_overrides": dict(approved),
+                               "outlook_db_user_id": kwargs.get("outlook_db_user_id")}
+                overrides = dict(approved)
+
             started = time.monotonic()
             token = _call.set(ctx)
             try:
                 with gate.registry.using(world):
-                    result = saved[kind](**kwargs)
+                    result = call(**call_kwargs)
             except Exception as exc:
                 gate._record(user, run, "execution", {
                     "toolCallId": row.get("id"), "tool": tool, "status": "failed",
@@ -217,6 +241,7 @@ class ExecutionGate:
                 raise
             finally:
                 _call.reset(token)
+            gate._record_edit(ctx, tool, overrides, result)
             return gate._after(ctx, tool, result, int((time.monotonic() - started) * 1000))
 
         def approve_tool_call(**kwargs: Any) -> Any:
@@ -417,6 +442,103 @@ class ExecutionGate:
             setattr(module, name, original)
         self._wires, self._saved = [], {}
 
+    # ── recovery: an action left in flight by a process that died ───────────
+    def recover_stale(self, user: DeskUser, run: Dict[str, Any], *, older_than_seconds: int = STALE_SECONDS) -> int:
+        """Settle cards left ``approved`` or ``executing`` by a process that
+        stopped mid-action. Whether the action happened is not known, and it
+        is never run again from here:
+
+        - in a sandbox the world is read back. The effect is there: the card
+          becomes ``executed`` (``reconciled``). It is not: the card becomes
+          ``failed`` and can be retried, because nothing happened;
+        - on a real provider there is no read-back: the card becomes
+          ``failed`` with ``outcome_unknown``, and a retry asks the person
+          to check first.
+        """
+        from app import chat_service
+
+        repo = chat_service.repo
+        now, settled = self.clock(), 0
+        try:
+            world = self.world_for_run(user, run)
+        except LookupError:
+            world = None
+        for card in self.gateway.run_cards(user, run):
+            if card.get("status") not in ("approved", "executing"):
+                continue
+            touched = _when(card.get("updated_at") or card.get("created_at"))
+            reference = world.now() if world is not None else now
+            if touched is None or (reference - touched).total_seconds() < older_than_seconds:
+                continue
+            tool, data = str(card.get("tool_name") or ""), card.get("input") or {}
+            found = _find_effect(world, tool, data) if world is not None else None
+            if found:
+                repo.update_tool_call(card["id"], user_id=user.id, status="executed", error=None,
+                                      output_payload_patch={"reconciled": True, "recovered": True,
+                                                            "message": "This action had taken effect before "
+                                                                       "the interruption. It was not run again."})
+                self._record(user, run, "verification", {
+                    "toolCallId": card["id"], "tool": tool, "verified": True, "method": "sandbox_readback",
+                    "reconciled": True, "recovered": True, "objectId": found}, world)
+            elif world is not None:
+                repo.update_tool_call(card["id"], user_id=user.id, status="failed", error="interrupted",
+                                      output_payload_patch={"error_code": "interrupted", "recovered": True,
+                                                            "message": "This action was interrupted before it "
+                                                                       "took effect. It can be retried."})
+                self._record(user, run, "execution", {"toolCallId": card["id"], "tool": tool,
+                                                      "status": "failed", "error": "interrupted",
+                                                      "recovered": True}, world)
+            else:
+                repo.update_tool_call(card["id"], user_id=user.id, status="failed", error=UNKNOWN_CODE,
+                                      output_payload_patch={UNKNOWN_CODE: True, "error_code": UNKNOWN_CODE,
+                                                            "recovered": True,
+                                                            "message": "This action was interrupted. It may or may "
+                                                                       "not have happened. Check before trying again."})
+                self._record(user, run, "execution", {"toolCallId": card["id"], "tool": tool,
+                                                      "status": "unknown", "recovered": True}, world)
+            settled += 1
+        return settled
+
+    # ── an approval is bound to the action that was proposed ────────────────
+    def _bindings(self, user: DeskUser, run: Optional[Dict[str, Any]], card_id: Any) -> List[str]:
+        """The digests this card may have: as proposed, and as edited by the
+        person in an approve request that was recorded."""
+        if run is None:
+            return []
+        found = []
+        for item in self.gateway.run_events(user, run):
+            data = item.get("data") or {}
+            if data.get("toolCallId") == card_id and data.get("binding") \
+                    and item.get("kind") in ("proposal", "human"):
+                found.append(str(data["binding"]))
+        return found
+
+    def _binding_changed(self, user: DeskUser, run: Optional[Dict[str, Any]], row: Mapping[str, Any]) -> bool:
+        from .workflow import _binding
+
+        try:
+            allowed = self._bindings(user, run, row.get("id"))
+        except Exception:
+            logger.exception("desk approval binding could not be read")
+            return True                      # unknown is not "unchanged"
+        if not allowed:
+            return False                     # not a card the Desk proposed (a chat card)
+        return _binding(str(row.get("tool_name") or ""), row.get("input_payload") or {}) not in allowed
+
+    def _record_edit(self, ctx: Dict[str, Any], tool: str, overrides: Dict[str, Any], result: Any) -> None:
+        """The person changed the action in this approve request: record what,
+        and bind the approval to the action as it now stands."""
+        from .workflow import MATERIAL_FIELDS, _binding
+
+        edited = sorted(key for key in overrides if key in MATERIAL_FIELDS)
+        if not edited or ctx.get("run") is None:
+            return
+        card = (result or {}).get("tool_call") or {}
+        self._record(ctx["user"], ctx["run"], "human", {
+            "toolCallId": card.get("id") or ctx["row"].get("id"), "tool": tool, "action": "edit",
+            "by": ctx["user"].email, "fields": edited,
+            "binding": _binding(tool, card.get("input") or {})}, ctx.get("world"))
+
     # ── after Scriba's approve or retry returned ────────────────────────────
     def _after(self, ctx: Dict[str, Any], tool: str, result: Any, duration_ms: int) -> Any:
         user, run, world, repo = ctx["user"], ctx["run"], ctx.get("world"), ctx["repo"]
@@ -518,6 +640,12 @@ class ExecutionGate:
             "method": "sandbox_readback" if world is not None else "user_confirmed",
             "reason": "effect_not_found"}, world)
         return None
+
+
+def _when(value: Any) -> Optional[dt.datetime]:
+    from .sandbox import parse_time
+
+    return parse_time(value)
 
 
 def _expected(tool: str, data: Mapping[str, Any]) -> Dict[str, Any]:

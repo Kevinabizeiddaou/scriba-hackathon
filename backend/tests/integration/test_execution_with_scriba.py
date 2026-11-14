@@ -710,3 +710,128 @@ def test_the_executor_itself_refuses_a_real_write_if_the_approve_gate_were_passe
         finally:
             execution._call.reset(token)
         assert desk["engine"].calls == []
+
+
+# ── an approval is bound to the action that was proposed ────────────────────
+
+def test_an_action_changed_behind_the_approval_is_not_executed():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        card_id = run["actions"][0]["toolCallId"]
+        # Something other than the person rewrites the stored card: a new attendee.
+        desk["store"].rows[card_id]["input_payload"]["attendees"] = ["sofia@client.example", "mallory@evil.example"]
+        held = approve(desk, run["actions"][0])
+        assert held["status"] == "needs_info" and held["output"]["error_code"] == "proposal_changed"
+        assert desk["world"]().events == {}
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert view["lifecycle"]["stage"] == "HELD" and view["lifecycle"]["reason"] == "proposal_changed"
+        assert view["actions"][0]["decisions"][-1]["code"] == "proposal_changed"
+
+
+@pytest.mark.parametrize("field,value", [("start", "2026-03-06T10:00:00+00:00"), ("title", "Something else")])
+def test_a_changed_time_or_title_breaks_the_binding_too(field, value):
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        desk["store"].rows[run["actions"][0]["toolCallId"]]["input_payload"][field] = value
+        assert approve(desk, run["actions"][0])["output"]["error_code"] == "proposal_changed"
+        assert desk["world"]().events == {}
+
+
+def test_an_edit_the_person_makes_while_approving_is_recorded_and_honoured():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        world.add_fault(OP_CREATE_EVENT, mode="fail_times", times=1)
+        run = meeting(desk)
+        action = run["actions"][0]
+        # The person retitles the meeting in the approve request; the first attempt fails.
+        first = approve(desk, action, payload_overrides={"title": "Intro call with Sofia"})
+        assert first["status"] == "failed"
+        view = get(desk, f"/runs/{run['runId']}").json()
+        edits = [i["data"] for i in view["timeline"] if i["kind"] == "human" and i["data"].get("action") == "edit"]
+        assert edits and edits[0]["fields"] == ["title"] and edits[0]["by"] == ALICE
+        # The stored card now differs from the proposal, by the person's own recorded edit: not held.
+        retried = desk["client"].post(f"/chat/tool-calls/{action['toolCallId']}/retry", headers=ORIGIN).json()
+        assert retried["tool_call"]["status"] == "executed", retried
+        assert [e["title"] for e in world.events.values()] == ["Intro call with Sofia"]
+        done = get(desk, f"/runs/{run['runId']}").json()
+        assert done["actions"][0]["attempts"] == 2
+
+
+def test_external_writes_held_puts_the_run_in_the_held_stage():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        desk["registry"].remove("w-alice")
+        approve(desk, run["actions"][0])
+        view = desk["client"].get(f"{desk['prefix']}/desk/runs/{run['runId']}").json()
+        assert view["lifecycle"]["stage"] == "HELD" and view["actions"][0]["held"] is True
+
+
+# ── recovery after an interruption ──────────────────────────────────────────
+
+def stuck(desk, run, minutes=10):
+    """A process died after claiming the card: it is left ``executing``."""
+    row = desk["store"].rows[run["actions"][0]["toolCallId"]]
+    row["status"] = "executing"
+    row["updated_at"] = (NOW - dt.timedelta(minutes=minutes)).isoformat()
+    return row
+
+
+def user_and_run(desk, run):
+    from desk_overlay.gateway import DeskUser
+
+    user = DeskUser(id=1, email=ALICE)
+    return user, desk["routed"].get_run(user, run["runId"])
+
+
+def test_an_interrupted_action_that_did_happen_is_closed_without_running_again():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        stuck(desk, run)
+        desk["world"]().add_event(provider="google", title="Intro call", start=THU10[0], end=THU10[1],
+                                  attendees=["sofia@client.example"])       # it landed before the crash
+        assert desk["gate"].recover_stale(*user_and_run(desk, run)) == 1
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert view["actions"][0]["status"] == "executed" and view["actions"][0]["verified"] is True
+        assert view["actions"][0]["verification"]["recovered"] is True
+        assert len(desk["world"]().events) == 1 and desk["world"]().oplog == []     # nothing was executed again
+
+
+def test_an_interrupted_action_that_did_not_happen_can_be_retried():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        stuck(desk, run)
+        assert desk["gate"].recover_stale(*user_and_run(desk, run)) == 1
+        view = get(desk, f"/runs/{run['runId']}").json()
+        assert view["actions"][0]["status"] == "failed" and view["actions"][0]["errorCode"] == "interrupted"
+        assert view["actions"][0]["outcomeUnknown"] is False        # the read-back showed nothing happened
+        retried = desk["client"].post(f"/chat/tool-calls/{run['actions'][0]['toolCallId']}/retry", headers=ORIGIN)
+        assert retried.json()["tool_call"]["status"] == "executed" and len(desk["world"]().events) == 1
+
+
+def test_an_action_still_in_flight_is_left_alone():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        stuck(desk, run, minutes=1)
+        assert desk["gate"].recover_stale(*user_and_run(desk, run)) == 0
+        assert desk["store"].rows[run["actions"][0]["toolCallId"]]["status"] == "executing"
+
+
+def test_with_no_sandbox_an_interrupted_action_is_unknown_and_never_assumed():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        row = stuck(desk, run)
+        row["updated_at"] = (dt.datetime.now(UTC) - dt.timedelta(minutes=10)).isoformat()
+        user, desk_run = user_and_run(desk, run)
+        desk_run["meta"]["sandbox"] = None
+        desk["registry"].remove("w-alice")
+        assert desk["gate"].recover_stale(user, desk_run) == 1
+        row = desk["store"].rows[run["actions"][0]["toolCallId"]]
+        assert row["status"] == "failed" and row["output_payload"]["outcome_unknown"] is True

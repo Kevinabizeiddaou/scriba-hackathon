@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Optional
 
-from . import lifecycle, planning, reading
+from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .service import DeskService, NotFound
@@ -87,6 +87,10 @@ class DeskWorkflow:
         # An optional model-driven planner (``agent.DeskAgent``). It may refine
         # a plan; every proposal it makes passes the same checks as below.
         self.agent = agent
+        # Off unless the process asks for it (DESK_UNDERSTANDING=model) and a
+        # model is really configured: one structured call reads the message's
+        # intents. With it off, the rules and Scriba's extraction do.
+        self.model_understanding = False
         self._locks: Dict[str, Any] = {}
         self._locks_guard = threading.Lock()
 
@@ -180,6 +184,8 @@ class DeskWorkflow:
             "draft_request": detail.get("draftRequest"),
         }
         plan = self._plan(ctx, user, item, detail)
+        found = plan.get("understanding") or understanding.from_rules(item)
+        typed = plans.build(meta=meta, understanding=found, plan=plan)
         meta["held"] = plan["held"]
         if plan.get("flags"):
             meta["flags"] = plan["flags"]
@@ -194,11 +200,14 @@ class DeskWorkflow:
             "account": meta["provider_account_id"], "messageId": meta["email_id"],
             "threadId": meta["thread_id"], "receivedAt": meta["received_at"]})
         self._record(user, run, "stage", {
-            "stage": "CLASSIFIED", "category": triage["category"], "outcome": triage["outcome"],
+            "stage": "UNDERSTANDING", "category": triage["category"], "outcome": triage["outcome"],
             "priority": plan.get("priority") or triage.get("priority"),
             "reasons": triage.get("reasons") or [],
-            "meetingIntent": triage.get("meeting_intent"), "flags": plan.get("flags") or []})
-        self._record(user, run, "stage", {"stage": "CONTEXT_GATHERING",
+            "meetingIntent": triage.get("meeting_intent"), "flags": plan.get("flags") or [],
+            "source": found.get("source"),
+            "intents": [{"type": i.get("type"), "confidence": i.get("confidence")}
+                        for i in found.get("intents") or []]})
+        self._record(user, run, "stage", {"stage": "INVESTIGATING",
                                           "threadMessages": (detail.get("thread") or {}).get("count")})
         self._record(user, run, "read", {"tool": "email.read_thread", "ok": True,
                                          "threadId": meta["thread_id"],
@@ -208,6 +217,7 @@ class DeskWorkflow:
         for closed in plan.get("closed_follow_ups") or []:
             self._record(user, run, "followup", closed)
         self._record(user, run, "stage", {"stage": "PLANNING", "planner": plan["planner"]})
+        self._record(user, run, "plan", typed)
         for usage in plan.get("usage") or []:
             self._record(user, run, "usage", usage)
         for decision in plan["decisions"]:
@@ -223,6 +233,8 @@ class DeskWorkflow:
             email_id=meta.get("email_id"), thread_id=meta.get("thread_id"), provider=meta.get("provider"))
         self._record(user, run, "proposal", {
             "toolCallId": (card or {}).get("id"), "tool": proposal["tool_name"],
+            "stepId": proposal.get("stepId"), "binding": _binding(proposal["tool_name"], (card or {}).get("input")
+                                                               or proposal["tool_input"]),
             "purpose": proposal.get("purpose"), "reason": proposal.get("reason"),
             "proposedSlots": proposal.get("proposedSlots"),
             "status": (card or {}).get("status")})
@@ -284,7 +296,11 @@ class DeskWorkflow:
             return plan
 
         self._close_awaited(user, item, plan)
-        if triage["category"] == "action_item":
+        found = self._understand(user, item, detail, plan)
+        plan["understanding"] = found
+        if found["source"] == "model" and triage["category"] != "automated":
+            self._plan_from_intents(ctx, user, item, calendar, plan, found)
+        elif triage["category"] == "action_item":
             self._plan_task(ctx, user, item, plan)
         elif triage["category"] == "meeting_request":
             self._plan_meeting(ctx, user, item, calendar, plan)
@@ -304,6 +320,92 @@ class DeskWorkflow:
                                           "explanation": "The model could not be used; the plan above "
                                                          "is rule-based."})
         return plan
+
+    def _understand(self, user: Any, item: Dict[str, Any], detail: Dict[str, Any],
+                    plan: Dict[str, Any]) -> Dict[str, Any]:
+        """The message's intents: from a model when one is configured and
+        asked for, otherwise from the rules. A model that answers nothing
+        usable leaves the rules' reading in place."""
+        rules = understanding.from_rules(item)
+        configured = getattr(self.gateway, "model_configured", None)
+        if not self.model_understanding or not callable(configured) or not configured():
+            return rules
+        try:
+            zone_name, _, _, _ = self.service.working_context(user, None, None, None)
+        except InvalidAvailabilityRequest:
+            return rules
+        now = self.service.now(user).astimezone(resolve_zone(zone_name))
+        with self.gateway.model_usage() as calls:
+            found = understanding.from_model(
+                self.gateway, item=item, thread=(detail.get("thread") or {}).get("messages") or [],
+                now=now, timezone=zone_name)
+        plan["usage"].extend(calls)
+        plan["reads"].append({"tool": "model.understand", "ok": bool(found and found["intents"]),
+                              "error": None if found and found["intents"] else "no_supported_intent",
+                              "dropped": len((found or {}).get("dropped") or [])})
+        if not found or not found["intents"]:
+            return {**rules, "dropped": (found or {}).get("dropped") or []}
+        plan["planner"] = "model+rules"
+        return found
+
+    def _plan_from_intents(self, ctx: Any, user: Any, item: Dict[str, Any],
+                           calendar: Optional[Dict[str, Any]], plan: Dict[str, Any],
+                           found: Dict[str, Any]) -> None:
+        """One message, several requests: each supported intent is planned by
+        the same checked code a single request goes through. The model says
+        WHAT is asked; it never decides that a time is free, who is on a
+        meeting, or that something may be sent."""
+        intents = found["intents"]
+        sure = [i for i in intents if (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE]
+        if not sure:
+            missing = sorted({m for i in intents for m in i.get("missing") or []})
+            plan["missing"] = missing
+            plan["held"] = {"reason": "intent_unclear", "slots": [], "calendars": [], "missing": missing,
+                            "message": "It is not clear enough what this message asks for, so nothing "
+                                       "is proposed. Read it and decide."}
+            plan["decisions"].append({"decision": "hold", "reason": "intent_unclear",
+                                      "explanation": "The request was not clear enough to act on."})
+            return
+        triage = item.get("triage") or {}
+        floor = triage.get("meeting_intent") if triage.get("category") == "meeting_request" else None
+        scheduled = False
+        for intent in sure:
+            kind, details = intent["type"], intent.get("details") or {}
+            if kind in understanding.SCHEDULING:
+                if scheduled:
+                    plan["decisions"].append({"decision": "none", "reason": "second_scheduling_request",
+                                              "explanation": "A second scheduling request in the same "
+                                                             "message was left for you."})
+                    continue
+                scheduled = True
+                wanted = {"new_meeting": "new", "reschedule": "reschedule", "cancellation": "cancel"}[kind]
+                # The rules' reading is the floor: a change request stays one.
+                if floor in ("reschedule", "cancel"):
+                    wanted = floor
+                self._plan_meeting(ctx, user, item, calendar, plan, intent=wanted,
+                                   extracted=understanding.extracted_from(intent))
+            elif kind == "task":
+                self._plan_task(ctx, user, item, plan, title=details.get("title"), due_at=details.get("due_at"))
+            elif kind == "reminder":
+                when = _moment(details.get("remind_at"))
+                if details.get("title") and when is not None and when > self.service.now(user):
+                    plan["proposals"].append({
+                        "tool_name": "create_reminder", "purpose": "record_task",
+                        "reason": "The message asks to be reminded.",
+                        "tool_input": {"title": str(details["title"])[:160], "remind_at": when.isoformat()}})
+                else:
+                    plan.setdefault("missing", []).append("reminder time")
+                    plan["decisions"].append({"decision": "hold", "reason": "details_missing",
+                                              "explanation": "A reminder was asked for with no time "
+                                                             "that could be read; none is proposed."})
+            elif kind in ("reply_needed", "information_request"):
+                plan["decisions"].append({
+                    "decision": "escalate", "reason": "reply_needs_author",
+                    "explanation": "This needs a reply in your words. A draft can be prepared for "
+                                   "you to review."})
+            else:
+                plan["decisions"].append({"decision": "none", "reason": kind,
+                                          "explanation": "No action is needed for this part."})
 
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         """This message may be the answer someone was being waited on for."""
@@ -325,8 +427,9 @@ class DeskWorkflow:
                         "explanation": "This is the answer you were waiting for, so that "
                                        "follow-up was closed."})
 
-    def _plan_task(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
-        title = str(item.get("subject") or "Follow up on email").strip()[:160]
+    def _plan_task(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                   title: Optional[str] = None, due_at: Optional[str] = None) -> None:
+        title = str(title or item.get("subject") or "Follow up on email").strip()[:160]
         try:
             open_tasks = self.gateway.open_tasks(ctx, user, 100)
             plan["reads"].append({"tool": "task.list", "ok": True, "count": len(open_tasks)})
@@ -354,6 +457,10 @@ class DeskWorkflow:
                                          self.service.now(user).astimezone(resolve_zone(zone_name)))
         except InvalidAvailabilityRequest:
             due = None
+        if due_at and _moment(due_at) is not None:
+            due = _moment(due_at)           # stated by the model, with its evidence checked
+        if due is None:
+            plan.setdefault("assumptions", []).append("No deadline is written in the message; the task has none.")
         if due is not None:
             task["due_at"] = due.isoformat()
         pressing = reading.urgency(f"{item.get('subject')} {item.get('body') or item.get('snippet') or ''}",
@@ -412,8 +519,10 @@ class DeskWorkflow:
                                           "explanation": "A reply offering verified free times is proposed."})
 
     def _plan_meeting(self, ctx: Any, user: Any, item: Dict[str, Any],
-                      calendar: Optional[Dict[str, Any]], plan: Dict[str, Any]) -> None:
-        intent = (item.get("triage") or {}).get("meeting_intent") or "new"
+                      calendar: Optional[Dict[str, Any]], plan: Dict[str, Any],
+                      intent: Optional[str] = None, extracted: Optional[Dict[str, Any]] = None) -> None:
+        pre_read = extracted is not None
+        intent = intent or (item.get("triage") or {}).get("meeting_intent") or "new"
         try:
             zone_name, _, _, duration = self.service.working_context(user, None, None, None)
         except InvalidAvailabilityRequest:
@@ -422,17 +531,20 @@ class DeskWorkflow:
             return
 
         usage_scope = getattr(self.gateway, "model_usage", None)
-        if callable(usage_scope):
+        configured = getattr(self.gateway, "model_configured", None)
+        has_model = bool(configured()) if callable(configured) else True
+        if pre_read:
+            pass                    # the model's understanding already read the request
+        elif callable(usage_scope):
             with usage_scope() as calls:
                 extracted = self.gateway.extract_meeting(user, item, zone_name)
             plan["usage"].extend(calls)
         else:
             extracted = self.gateway.extract_meeting(user, item, zone_name)
-        configured = getattr(self.gateway, "model_configured", None)
-        has_model = bool(configured()) if callable(configured) else True
-        plan["reads"].append({"tool": "model.extract_request", "ok": bool(extracted),
-                              "error": None if extracted else
-                              ("no_usable_answer" if has_model else "model_not_configured")})
+        if not pre_read:
+            plan["reads"].append({"tool": "model.extract_request", "ok": bool(extracted),
+                                  "error": None if extracted else
+                                  ("no_usable_answer" if has_model else "model_not_configured")})
         if not extracted and not has_model:
             # No model in this process. A time that is written out in full is
             # read by rule; anything less exact is left unread, never guessed.
@@ -445,8 +557,12 @@ class DeskWorkflow:
             if written:
                 extracted = {**written, "calendar_action": "create" if intent == "new" else intent}
                 plan["planner"] = "rules"
-        elif extracted:
+        elif extracted and not pre_read:
             plan["planner"] = "rules+model"
+        if extracted and not extracted.get("requested_end") and not extracted.get("duration_minutes") \
+                and intent == "new" and extracted.get("requested_start"):
+            plan.setdefault("assumptions", []).append(
+                f"The length was not stated; your default of {duration} minutes is used.")
         action = str((extracted or {}).get("calendar_action") or "").lower()
         # The rule-based intent is the floor. The model may recognise a change
         # the rules missed; it may not turn a change request into a new booking.
@@ -493,7 +609,16 @@ class DeskWorkflow:
             return
         # Attendees: the sender, taken from the message's From header. Names or
         # addresses that appear only in the message text are not added.
+        plan.setdefault("facts", []).append(
+            f"The requested time is free on every connected calendar ({len(check['calendars'])} read).")
+        if not check.get("within_working_hours"):
+            # Free, but outside the hours the executive works. Still proposed:
+            # the person decides, and is told.
+            plan["flags"].append("outside_working_hours")
+            plan["facts"].append("The requested time is outside your working hours.")
         sender = sender_address(str(item.get("from_addr") or ""))
+        plan.setdefault("assumptions", []).append(
+            "The only attendee is the sender; nobody named only in the text is invited.")
         event_input: Dict[str, Any] = {
             "title": str(extracted.get("summary") or item.get("subject") or "Meeting").strip()[:160],
             "start": check["slot"]["start"], "end": check["slot"]["end"], "timezone": zone_name,
@@ -514,7 +639,8 @@ class DeskWorkflow:
                 event_input["provider_account_id"] = item.get("provider_account_id")
         plan["proposals"].append({
             "tool_name": "create_calendar_event", "purpose": "book",
-            "reason": "The requested time is free on every connected calendar.",
+            "reason": "The requested time is free on every connected calendar."
+                      + (" It is outside your working hours." if "outside_working_hours" in plan["flags"] else ""),
             "tool_input": event_input})
         plan["decisions"].append({"decision": "propose", "reason": "time_free",
                                   "explanation": "The requested time is free, so the meeting is "
@@ -600,6 +726,8 @@ class DeskWorkflow:
         event = found["event"]
         target = {key: event.get(key) for key in ("id", "title", "start", "end", "provider",
                                                   "provider_account_id")}
+        plan.setdefault("facts", []).append(
+            f"The sender is on \"{event.get('title')}\", the only meeting this can be about.")
         if not event.get("is_organizer"):
             self._hold(plan, user, item, calendar, "not_organizer",
                        "You are not the organizer of this meeting, so it cannot be changed from "
@@ -737,43 +865,80 @@ class DeskWorkflow:
 
     # ── advancing after approval ────────────────────────────────────────────
     def advance(self, ctx: Any, user: Any, run_id: int) -> Dict[str, Any]:
-        """Propose what may only follow an executed step: the confirmation
-        reply, once the calendar change exists. Safe to repeat."""
+        """Propose what may only follow an executed step, and look after the
+        run's follow-ups. Safe to repeat.
+
+        The plan decides: a deferred step is proposed when every step it
+        depends on has taken effect, and is recorded as blocked, once, when
+        one of them failed or was rejected. A blocked step is never proposed.
+        """
         run = self._run(user, run_id)
         meta = run["meta"]
         with self._lock(meta["key"]):
             cards = self.gateway.run_cards(user, run)
-            purposes = self._purposes(user, run)
-            has_confirmation = any(c["tool_name"] == "send_email"
-                                   and purposes.get(c.get("id")) == "confirm" for c in cards)
-            changed = next((c for c in cards if c["tool_name"] in (
-                "create_calendar_event", "update_calendar_event", "cancel_calendar_event")
-                and c["status"] in _EFFECT), None)
-            recipient = sender_address(str(meta.get("from_addr") or ""))
-            if changed and not has_confirmation and recipient:
-                data, output = changed.get("input") or {}, changed.get("output") or {}
-                after = ((output.get("operation") or {}).get("after") or {})
-                planned = data.get("planned_change") or {}
-                title = str(data.get("title") or data.get("event_title") or after.get("title")
-                            or meta.get("subject") or "the meeting")
-                if changed["tool_name"] == "cancel_calendar_event":
-                    body = planning.cancellation_reply(title=title)
-                else:
-                    body = planning.confirmation_reply(
-                        title=title, timezone=str(data.get("timezone") or ""),
-                        start=str(planned.get("start") or data.get("start")),
-                        end=str(planned.get("end") or data.get("end")),
-                        moved=changed["tool_name"] == "update_calendar_event",
-                        other_timezone=meta.get("requester_timezone"))
-                item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
-                        "subject": meta.get("subject"), "threadId": meta.get("thread_id"),
-                        "provider_account_id": meta.get("provider_account_id"), "id": meta.get("email_id")}
-                self._propose(user, run, {
-                    "tool_name": "send_email", "purpose": "confirm",
-                    "reason": "The calendar change has taken effect, so the sender is told.",
-                    "tool_input": self._reply_input(item, body)})
+            events = self.gateway.run_events(user, run)
+            plan = _plan_of(events)
+            if plan is None:
+                self._advance_without_plan(user, run, cards, events)
+            else:
+                states = plans.step_states(plan, _cards_by_step(cards, events))
+                by_id = {step["id"]: step for step in states}
+                blocked = {(e.get("data") or {}).get("stepId") for e in events
+                           if e.get("kind") == "decision" and (e.get("data") or {}).get("decision") == "step_blocked"}
+                for step in states:
+                    if not step.get("deferred") or step.get("toolCallId") is not None:
+                        continue
+                    if step["state"] == "ready":
+                        source = next((c for c in cards if c.get("id") == by_id[step["dependsOn"][0]]["toolCallId"]), None)
+                        if source is not None:
+                            self._propose_confirmation(user, run, source, step["id"])
+                    elif step["state"] == "blocked" and step["id"] not in blocked:
+                        self._record(user, run, "decision", {
+                            "decision": "step_blocked", "stepId": step["id"], "tool": step["tool"],
+                            "dependsOn": step["dependsOn"],
+                            "explanation": "A step this one depends on did not take effect, so it "
+                                           "is not proposed."})
             self._track_follow_ups(ctx, user, run)
         return self.view(ctx, user, run_id)
+
+    def _advance_without_plan(self, user: Any, run: Dict[str, Any], cards: List[Dict[str, Any]],
+                              events: List[Dict[str, Any]]) -> None:
+        """Runs opened before plans were recorded."""
+        purposes = self._purposes(user, run, events)
+        if any(c["tool_name"] == "send_email" and purposes.get(c.get("id")) == "confirm" for c in cards):
+            return
+        changed = next((c for c in cards if c["tool_name"] in (
+            "create_calendar_event", "update_calendar_event", "cancel_calendar_event")
+            and c["status"] in _EFFECT), None)
+        if changed is not None:
+            self._propose_confirmation(user, run, changed, None)
+
+    def _propose_confirmation(self, user: Any, run: Dict[str, Any], changed: Dict[str, Any],
+                              step_id: Optional[str]) -> None:
+        meta = run["meta"]
+        if not sender_address(str(meta.get("from_addr") or "")):
+            return
+        data, output = changed.get("input") or {}, changed.get("output") or {}
+        after = ((output.get("operation") or {}).get("after") or {})
+        planned = data.get("planned_change") or {}
+        title = str(data.get("title") or data.get("event_title") or after.get("title")
+                    or meta.get("subject") or "the meeting")
+        if changed["tool_name"] == "cancel_calendar_event":
+            body = planning.cancellation_reply(title=title)
+        else:
+            body = planning.confirmation_reply(
+                title=title, timezone=str(data.get("timezone") or ""),
+                start=str(planned.get("start") or data.get("start")),
+                end=str(planned.get("end") or data.get("end")),
+                moved=changed["tool_name"] == "update_calendar_event",
+                other_timezone=meta.get("requester_timezone"))
+        item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
+                "subject": meta.get("subject"), "threadId": meta.get("thread_id"),
+                "provider_account_id": meta.get("provider_account_id"), "id": meta.get("email_id")}
+        self._propose(user, run, {
+            "tool_name": "send_email", "purpose": "confirm", "stepId": step_id,
+            "reason": "The calendar change has taken effect, so the sender is told.",
+            "tool_input": self._reply_input(item, body)})
 
     def _purposes(self, user: Any, run: Dict[str, Any],
                   events: Optional[List[Dict[str, Any]]] = None) -> Dict[Any, Optional[str]]:
@@ -911,7 +1076,14 @@ class DeskWorkflow:
         has_reply = any(a["tool_name"] == "send_email" for a in actions)
         has_confirmation = any(a["tool_name"] == "send_email" and a["purpose"] == "confirm" for a in actions)
         next_steps: List[str] = []
-        if changed and changed["status"] in _EFFECT and not has_confirmation:
+        plan = _plan_of(events)
+        steps = plans.step_states(plan, _cards_by_step(cards, events)) if plan is not None else []
+        if plan is not None:
+            ready = any(step.get("deferred") and step["toolCallId"] is None and step["state"] == "ready"
+                        for step in steps)
+        else:
+            ready = bool(changed and changed["status"] in _EFFECT and not has_confirmation)
+        if ready:
             next_steps.append("advance")          # POST /desk/runs/{id}/advance
         if meta.get("draft_request") and not has_reply and not (changed and changed["status"] in _EFFECT):
             next_steps.append("draft_reply")      # POST the draft_request to Scriba
@@ -942,6 +1114,7 @@ class DeskWorkflow:
             "followUps": follow,
         }
         if detail:
+            view["plan"] = {**plan, "steps": steps} if plan is not None else None
             view["actions"] = actions
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
@@ -971,6 +1144,51 @@ class DeskWorkflow:
             stage = self.view(ctx, user, run["id"], detail=False)["lifecycle"]["stage"]
             totals[stage] = totals.get(stage, 0) + 1
         return totals
+
+
+# The fields of an action that decide what happens in the world. An approval
+# is bound to them: see ``execution.py``.
+MATERIAL_FIELDS = ("to", "cc", "bcc", "attendees", "add_attendees", "remove_attendees", "subject", "body",
+                   "text", "title", "summary", "start", "end", "start_time", "end_time", "event_id",
+                   "thread_id", "remind_at", "due_at")
+_ADDRESS_FIELDS = ("to", "cc", "bcc", "attendees", "add_attendees", "remove_attendees")
+
+
+def _binding(tool_name: str, data: Any) -> str:
+    """A digest of what an action will do: who it reaches, what it says,
+    when, and which event or thread it touches."""
+    import json
+
+    from .safeguards import addresses_in
+
+    data = data if isinstance(data, dict) else {}
+    material: Dict[str, Any] = {"tool": tool_name}
+    for key in MATERIAL_FIELDS:
+        value = data.get(key)
+        if value in (None, "", [], {}):
+            continue
+        if key in _ADDRESS_FIELDS:
+            material[key] = sorted(addresses_in(value))
+        elif key in ("start", "end", "start_time", "end_time", "remind_at", "due_at"):
+            moment = _moment(value)
+            material[key] = moment.astimezone(dt.timezone.utc).isoformat() if moment else str(value)
+        else:
+            material[key] = " ".join(str(value).split())
+    return hashlib.sha256(json.dumps(material, sort_keys=True).encode("utf-8")).hexdigest()[:24]
+
+
+def _plan_of(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    return next((dict(e.get("data") or {}) for e in events if e.get("kind") == "plan"), None)
+
+
+def _cards_by_step(cards: List[Dict[str, Any]], events: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    by_id = {card.get("id"): card for card in cards}
+    found: Dict[str, Dict[str, Any]] = {}
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "proposal" and data.get("stepId") and data.get("toolCallId") in by_id:
+            found[str(data["stepId"])] = by_id[data["toolCallId"]]
+    return found
 
 
 def _moment(value: Any) -> Optional[dt.datetime]:
@@ -1029,6 +1247,8 @@ def _action_views(cards: List[Dict[str, Any]], events: List[Dict[str, Any]],
             slot.setdefault("decisions", []).append({**data, "at": item.get("at")})
         elif item.get("kind") == "execution":
             slot["execution"] = {**data, "at": item.get("at")}
+            if data.get("status") != "held":
+                slot["attempts"] = slot.get("attempts", 0) + 1
         elif item.get("kind") == "verification":
             slot["verification"] = {**data, "at": item.get("at")}
     return [_action_view(card, by_card.get(card.get("id"), {}), meta) for card in cards]
@@ -1054,6 +1274,11 @@ def _action_view(card: Dict[str, Any], evidence: Dict[str, Any], meta: Dict[str,
         "requiresApproval": True,
         "purpose": proposal.get("purpose"),
         "reason": proposal.get("reason"),
+        "stepId": proposal.get("stepId"),
+        # Held by a guard: it cannot be approved as it stands.
+        "held": bool(status == "needs_info" and output.get("blocked")),
+        # How many times execution was attempted (a retry is one more).
+        "attempts": int(evidence.get("attempts", 0)),
         "proposedSlots": proposal.get("proposedSlots"),
         "input": card.get("input") or {},
         "output": output,

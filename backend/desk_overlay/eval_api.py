@@ -283,7 +283,7 @@ class EvalRuns:
 def _classification(view: Mapping[str, Any]) -> str:
     category = view.get("category")
     intent = next((i["data"].get("meetingIntent") for i in view.get("timeline") or []
-                   if i.get("kind") == "stage" and i["data"].get("stage") == "CLASSIFIED"), None)
+                   if i.get("kind") == "stage" and i["data"].get("stage") == "UNDERSTANDING"), None)
     if any(f.get("external") and f.get("state") == "satisfied" for f in view.get("followUps") or []):
         return "follow_up"
     if category == "meeting_request":
@@ -445,7 +445,7 @@ def _outcome(view: Mapping[str, Any]) -> str:
     if actions and all(a.get("status") == "cancelled" for a in actions):
         return "declined"
     stage = (view.get("lifecycle") or {}).get("stage")
-    if actions or stage in ("ESCALATED", "NEEDS_CLARIFICATION", "VERIFYING", "FAILED"):
+    if actions or stage in ("ESCALATED", "NEEDS_CLARIFICATION", "VERIFYING", "FAILED", "HELD"):
         return "escalated"
     return "no_action"
 
@@ -563,7 +563,7 @@ def agent_run(record: Mapping[str, Any], view: Optional[Mapping[str, Any]]) -> D
         triage={"classification": _classification(view),
                 "priority": PRIORITY.get(str(next((i["data"].get("priority") for i in timeline
                                                    if i.get("kind") == "stage"
-                                                   and i["data"].get("stage") == "CLASSIFIED"), "low")), "normal"),
+                                                   and i["data"].get("stage") == "UNDERSTANDING"), "low")), "normal"),
                 "flags": flags,
                 "extracted": {"title": None, "attendees": [_person(view["email"].get("from_addr") and
                                                                    _sender(view["email"]["from_addr"]))],

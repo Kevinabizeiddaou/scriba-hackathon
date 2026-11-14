@@ -459,14 +459,14 @@ export interface DeskRunHeld {
 /** Where a run stands (overlay 0.3). Derived from the cards and the recorded evidence. */
 export type DeskLifecycleStage =
   | 'RECEIVED'
-  | 'CLASSIFIED'
-  | 'CONTEXT_GATHERING'
+  | 'UNDERSTANDING'
+  | 'INVESTIGATING'
   | 'PLANNING'
   | 'AWAITING_APPROVAL'
   | 'EXECUTING'
   | 'VERIFYING'
   | 'COMPLETED'
-  | 'AWAITING_REPLY'
+  | 'WAITING_FOR_RESPONSE'
   | 'NEEDS_CLARIFICATION'
   | 'ESCALATED'
   | 'PARTIALLY_COMPLETED'

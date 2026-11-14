@@ -78,6 +78,9 @@ class IntakeWorker:
         self._stop = threading.Event()
         self._tick_lock = threading.Lock()
         self._users: Dict[str, Dict[str, Any]] = {}
+        # Set by the process that has an execution gate: settles actions a
+        # stopped process left in flight. ``recover(user, run) -> int``.
+        self.recover: Optional[Callable[[Any, Dict[str, Any]], int]] = None
         self.state: Dict[str, Any] = {
             "running": False, "reason": "not_requested" if not self.requested else "not_started",
             "ticks": 0, "skippedTicks": 0, "lastTickAt": None, "lastTickMs": None,
@@ -223,6 +226,10 @@ class IntakeWorker:
         for run in self.gateway.list_runs(user, 50):
             try:
                 view = self.workflow.view(ctx, user, run["id"], detail=False)
+                if callable(self.recover) and (view["actionCounts"].get("executing")
+                                               or view["actionCounts"].get("approved")):
+                    self.state["recovered"] = self.state.get("recovered", 0) + int(self.recover(user, run))
+                    view = self.workflow.view(ctx, user, run["id"], detail=False)
                 waiting = any(f.get("state") in ("waiting", "overdue") for f in view["followUps"])
                 executed = view["actionCounts"].get("executed", 0) > 0
                 if "advance" in view["next"] or waiting or executed:
@@ -248,6 +255,7 @@ class IntakeWorker:
             **{key: self.state[key] for key in (
                 "ticks", "skippedTicks", "lastTickAt", "lastTickMs", "opened", "existing", "failed",
                 "deferred", "advanced", "lastError")},
+            "recovered": self.state.get("recovered", 0),
         }
         if user is not None:
             slot = self._users.get(user.email)

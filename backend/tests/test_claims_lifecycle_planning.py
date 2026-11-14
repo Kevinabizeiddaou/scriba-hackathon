@@ -126,7 +126,7 @@ def test_the_stage_follows_from_the_cards_and_the_evidence(meta, actions, events
 
 def test_a_sent_reply_that_awaits_an_answer_keeps_the_run_open():
     waiting = [lifecycle.event("followup", {"id": "f1", "state": "waiting"}, "t1")]
-    assert lifecycle.derive({}, [action("executed", True)], waiting)["stage"] == "AWAITING_REPLY"
+    assert lifecycle.derive({}, [action("executed", True)], waiting)["stage"] == "WAITING_FOR_RESPONSE"
     answered = waiting + [lifecycle.event("followup", {"id": "f1", "state": "satisfied"}, "t2")]
     assert lifecycle.derive({}, [action("executed", True)], answered)["stage"] == "COMPLETED"
 

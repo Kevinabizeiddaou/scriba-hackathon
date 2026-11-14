@@ -91,7 +91,7 @@ const TITLES: Record<string, { kind: ActionKind; title: string }> = {
 const SHOWN_INPUT = new Set([
   'to', 'cc', 'bcc', 'subject', 'body', 'text', 'draft_text', 'provider', 'provider_account_id', 'summary', 'title', 'description',
   'start', 'end', 'start_time', 'end_time', 'timezone', 'attendees', 'location', 'event_id', 'email_id', 'thread_id', 'message_id',
-  'remind_at', 'due_at', 'due', 'when', 'note', 'subject_auto', 'desk_availability_override',
+  'remind_at', 'due_at', 'due', 'when', 'note', 'subject_auto', 'desk_availability_override', 'event_title',
 ])
 
 function outcomeRows(output: Record<string, unknown>): OutcomeRow[] {
@@ -156,7 +156,8 @@ export function describeAction(toolCall: ChatToolCall): ActionDescription {
   const calendar = kind === 'calendar_create' || kind === 'calendar_update' || kind === 'calendar_cancel'
   const headline =
     kind === 'task' || kind === 'reminder' ? readString(input.title ?? input.note ?? input.text)
-      : calendar ? readString(input.summary ?? input.title ?? input.subject)
+      // A change or a cancellation is about an existing meeting: the Desk names it in `event_title`.
+      : calendar ? (kind !== 'calendar_create' && readString(input.event_title)) || readString(input.summary ?? input.title ?? input.subject)
         : readString(input.subject)
 
   const changes: { field: string; value: string }[] = []

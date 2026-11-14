@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-// Tokens follow Scriba's dark burgundy theme (values re-declared here; nothing is imported from Scriba).
+// Tokens of the "midnight and iris" theme. The values live in src/index.css; the brand scale is here.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
@@ -21,13 +21,13 @@ export default {
         mute: 'rgb(var(--mute-rgb) / <alpha-value>)',
         accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
         brand: {
-          300: '#e49080',
-          400: '#c0485a',
-          500: '#8b2040',
-          600: '#6b1830',
-          700: '#43101e',
-          800: '#2e1018',
-          900: '#1c0a10',
+          300: '#c7cdff',
+          400: '#8e99f5',
+          500: '#4f5bd5',
+          600: '#4450c4',
+          700: '#353e96',
+          800: '#232a66',
+          900: '#151a40',
         },
         ok: 'rgb(var(--ok-rgb) / <alpha-value>)',
         warn: 'rgb(var(--warn-rgb) / <alpha-value>)',
@@ -39,8 +39,8 @@ export default {
         btn: '10px',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(0,0,0,0.40), 0 4px 12px rgba(0,0,0,0.30)',
-        pop: '0 8px 28px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.40)',
+        card: '0 1px 2px rgba(2,4,10,0.45), 0 8px 24px rgba(2,4,10,0.28)',
+        pop: '0 12px 32px rgba(2,4,10,0.6), 0 2px 6px rgba(2,4,10,0.4)',
       },
       transitionTimingFunction: {
         out: 'cubic-bezier(0.25, 1, 0.5, 1)',

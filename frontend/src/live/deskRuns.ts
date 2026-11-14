@@ -21,13 +21,15 @@ import {
   type DeskAction,
   type DeskInbox,
   type DeskRun,
-  type DeskRunHeld,
+  type DeskHeldReason,
   type DeskSweep,
   type RunState,
   type TriageCategory,
   type TriagedEmail,
 } from '../api/desk'
 import type { MailProvider } from '../api/contract'
+import { explainHold } from './deskHolds'
+import { HELD_REASON_REVISED, HELD_REASON_V3, LIFECYCLE, LIFECYCLE_REASON, isKnownStage, stageOfRun } from './runLifecycle'
 import { stageOf, type WorkStage } from './workQueue'
 
 // ── the run list ────────────────────────────────────────────────────────────
@@ -45,6 +47,15 @@ export interface RunRow {
   fromAddr: string | null
   category: string | null
   createdAt: string | null
+  /** Overlay 0.3 puts where the run stands on the row. Null on an older backend. */
+  state: string | null
+  stage: string | null
+  heldReason: string | null
+  simulated: boolean
+  trigger: string | null
+  updatedAt: string | null
+  /** Follow-up states on the row, as the server lists them. */
+  followUps: string[]
 }
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null)
@@ -63,6 +74,13 @@ export function toRunRow(raw: unknown): RunRow | null {
     fromAddr: text(row.from_addr),
     category: text(row.category),
     createdAt: text(row.created_at),
+    state: text(row.state),
+    stage: text(row.lifecycle),
+    heldReason: row.held && typeof row.held === 'object' ? text((row.held as Record<string, unknown>).reason) : null,
+    simulated: row.simulated === true,
+    trigger: text(row.trigger),
+    updatedAt: text(row.updatedAt),
+    followUps: Array.isArray(row.followUps) ? row.followUps.map(item => (item && typeof item === 'object' ? text((item as Record<string, unknown>).state) : null)).filter((state): state is string => state !== null) : [],
   }
 }
 
@@ -141,17 +159,18 @@ export function isKnownState(state: string): state is RunState {
 
 /** Poll while something is executing; otherwise leave the list alone until asked. */
 export function runQueueRefetchInterval(queue: RunQueue | undefined): number | false {
-  return queue?.entries.some(entry => entry.run?.state === 'executing') ? 4_000 : false
+  return queue?.entries.some(entry => entry.run?.state === 'executing' || ['EXECUTING', 'VERIFYING'].includes(String(entry.run ? stageOfRun(entry.run) : entry.row.stage))) ? 4_000 : false
 }
 
 // ── where a run sits in the queue ───────────────────────────────────────────
 
-export type QueueGroup = 'decision' | 'input' | 'in_progress' | 'problem' | 'done' | 'no_action' | 'cancelled' | 'unknown'
+export type QueueGroup = 'decision' | 'input' | 'in_progress' | 'awaiting_reply' | 'problem' | 'done' | 'no_action' | 'cancelled' | 'unknown'
 
 export const QUEUE_GROUPS: Record<QueueGroup, { label: string; blurb: string; tone: 'neutral' | 'ok' | 'warn' | 'danger' | 'info' | 'accent' }> = {
   decision: { label: 'Awaiting your approval', blurb: 'The secretary has proposed an action and is waiting for your decision. Nothing has happened yet.', tone: 'warn' },
   input: { label: 'Needs your input', blurb: 'The secretary could not go further on its own: a time is taken or unverified, a detail is missing, or a reply has to be written.', tone: 'warn' },
-  in_progress: { label: 'In progress', blurb: 'An approved action is running.', tone: 'info' },
+  in_progress: { label: 'In progress', blurb: 'The secretary is working on it, or an approved action is running.', tone: 'info' },
+  awaiting_reply: { label: 'Awaiting a reply', blurb: 'A reply went out. The secretary is waiting for the other person and will propose a reminder if none comes.', tone: 'info' },
   problem: { label: 'Did not finish', blurb: 'An action failed, or only part of the work ran.', tone: 'danger' },
   unknown: { label: 'State not recognised', blurb: 'The backend reported a state this version of the Desk does not know. It is not treated as finished.', tone: 'danger' },
   done: { label: 'Completed', blurb: 'Every proposed action ran.', tone: 'ok' },
@@ -160,11 +179,48 @@ export const QUEUE_GROUPS: Record<QueueGroup, { label: string; blurb: string; to
 }
 
 /** The order the lists appear in: what needs the person first, finished work last. */
-export const QUEUE_ORDER: QueueGroup[] = ['decision', 'input', 'problem', 'unknown', 'in_progress', 'done', 'no_action', 'cancelled']
+export const QUEUE_ORDER: QueueGroup[] = ['decision', 'input', 'problem', 'unknown', 'in_progress', 'awaiting_reply', 'done', 'no_action', 'cancelled']
 
 const stagesOf = (run: DeskRun): WorkStage[] => run.actions.map(action => stageOf(action.status))
 
+/**
+ * Where a run sits when the backend reports its lifecycle stage (overlay 0.3). Null when it does
+ * not, so the caller falls back to the run state.
+ */
+/** The typed client's stages plus `HELD`, which the revised contract adds. */
+type DeskLifecycleStageName = keyof typeof LIFECYCLE
+
+function groupOfStage(run: DeskRun): QueueGroup | null {
+  const stage = stageOfRun(run)
+  if (stage === null) return null
+  if (!isKnownStage(stage)) return 'unknown'
+  switch (stage) {
+    case 'AWAITING_APPROVAL':
+      return stagesOf(run).includes('awaiting_approval') ? 'decision' : 'input'
+    case 'NEEDS_CLARIFICATION':
+    case 'ESCALATED':
+    case 'HELD' as DeskLifecycleStageName:
+      return 'input'
+    case 'VERIFYING':
+      // An outcome the provider did not confirm needs a person to look before anything is retried.
+      return run.lifecycle?.outcomeUnknown ? 'problem' : 'in_progress'
+    case 'PARTIALLY_COMPLETED':
+    case 'FAILED':
+      return 'problem'
+    case 'AWAITING_REPLY':
+      return 'awaiting_reply'
+    case 'COMPLETED':
+      return run.actions.length === 0 ? 'no_action' : 'done'
+    case 'CANCELLED':
+      return 'cancelled'
+    default:
+      return 'in_progress'
+  }
+}
+
 export function groupOf(run: DeskRun): QueueGroup {
+  const byStage = groupOfStage(run)
+  if (byStage) return byStage
   if (!isKnownState(run.state)) return 'unknown'
   switch (run.state) {
     case 'failed':
@@ -212,7 +268,8 @@ export const RUN_STATE_LABEL: Record<RunState, string> = {
   no_action_proposed: 'No action proposed',
 }
 
-export const HELD_REASON: Record<DeskRunHeld['reason'], { title: string; next: string }> = {
+export const HELD_REASON: Record<DeskHeldReason, { title: string; next: string }> = {
+  ...HELD_REASON_V3,
   calendar_conflict: {
     title: 'The requested time is already taken',
     next: 'Offer one of the verified free times in a reply. No event is proposed for the requested time.',
@@ -235,6 +292,12 @@ export const HELD_REASON: Record<DeskRunHeld['reason'], { title: string; next: s
   },
 }
 
+/** The wording for a held reason, including the ones the typed client does not declare yet. Null for a reason this version does not know. */
+export function heldReasonInfo(reason: string | null | undefined): { title: string; next: string } | null {
+  if (!reason) return null
+  return HELD_REASON[reason as DeskHeldReason] ?? HELD_REASON_REVISED[reason] ?? null
+}
+
 export interface NextStep {
   /** What the person can do now. `none` means nothing is asked of them. */
   kind: 'approve' | 'complete_card' | 'held' | 'draft_reply' | 'advance' | 'wait' | 'inspect_failure' | 'check_result' | 'none' | 'unknown'
@@ -248,9 +311,41 @@ export function nextStepOf(run: DeskRun): NextStep {
   if (group === 'unknown') {
     return { kind: 'unknown', label: `The backend reports "${run.state}"`, detail: 'This version of the Desk does not know that state. Open the actions below to see what Scriba has on record.' }
   }
+  const stage = stageOfRun(run)
+  if (stage === 'VERIFYING' && run.lifecycle?.outcomeUnknown) {
+    return { kind: 'inspect_failure', label: 'Check whether it happened before doing anything else', detail: 'The provider did not confirm an action, so it may or may not have taken effect. Look in the mailbox or calendar first. A retry in a sandbox reads the result back and does not repeat it; on a real provider it asks you to confirm you checked.' }
+  }
+  if (stage === 'VERIFYING') return { kind: 'wait', label: 'Nothing: the result is being verified', detail: 'An action ran and the secretary is confirming that it took effect.' }
+  if (stage === 'AWAITING_REPLY') {
+    const overdue = (run.followUps ?? []).some(followUp => followUp.state === 'overdue')
+    return overdue
+      ? { kind: 'approve', label: 'A reply is overdue: review the proposed reminder', detail: 'No answer came in two days. A reminder is proposed below; it is not sent unless you approve it.' }
+      : { kind: 'wait', label: 'Nothing: waiting for the other person to answer', detail: 'A reply went out. If no answer arrives in two days, a reminder is proposed for your approval.' }
+  }
+  if (stage === 'HELD') {
+    const reason = run.lifecycle?.reason
+    const known = explainHold(reason)
+    return {
+      kind: 'complete_card',
+      label: known?.title ?? 'Every proposed action is held by a safety check',
+      detail: `${known ? '' : reason ? `Reason reported: ${reason.replace(/_/g, ' ')}. ` : ''}The action card says what can be done. Nothing can be approved as it stands.`,
+    }
+  }
+  if (stage === 'NEEDS_CLARIFICATION' || stage === 'ESCALATED') {
+    const held = heldReasonInfo(run.held?.reason)
+    if (held) return { kind: 'held', label: held.title, detail: held.next }
+    if (run.next.includes('draft_reply')) return { kind: 'draft_reply', label: 'Write a reply draft', detail: 'The message needs a reply. A draft is stored in Scriba for you to review; nothing is sent.' }
+    return { kind: 'held', label: LIFECYCLE[stage].label, detail: (run.lifecycle?.reason && (LIFECYCLE_REASON[run.lifecycle.reason] ?? `Reason reported: ${run.lifecycle.reason.replace(/_/g, ' ')}.`)) || LIFECYCLE[stage].blurb }
+  }
   if (group === 'decision') {
     const waiting = stages.filter(stage => stage === 'awaiting_approval').length
-    return { kind: 'approve', label: waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`, detail: 'Nothing has been sent or changed. Each action runs only if you approve it.' }
+    // An earlier step of the same run may already have run: "nothing has changed" would then be false.
+    const ran = stages.filter(stage => stage === 'completed' || stage === 'partially_completed').length
+    return {
+      kind: 'approve',
+      label: waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`,
+      detail: ran > 0 ? `${ran} earlier action${ran === 1 ? ' of this run has' : 's of this run have'} already run. What is waiting now runs only if you approve it.` : 'Nothing has been sent or changed. Each action runs only if you approve it.',
+    }
   }
   if (run.state === 'awaiting_approval') {
     return { kind: 'complete_card', label: 'A proposed action is held for a detail', detail: 'A safety check or a missing field stopped it. The action card says which.' }
@@ -259,13 +354,13 @@ export function nextStepOf(run: DeskRun): NextStep {
     return { kind: 'advance', label: 'Propose the confirmation reply', detail: 'The calendar event exists. The reply to the sender has not been proposed yet; proposing it sends nothing until you approve it.' }
   }
   if (run.state === 'no_action_proposed' && run.held) {
-    const held = HELD_REASON[run.held.reason]
+    const held = heldReasonInfo(run.held.reason)
     return { kind: 'held', label: held?.title ?? 'The meeting request is held', detail: held?.next ?? run.held.message }
   }
   if (run.state === 'no_action_proposed' && run.next.includes('draft_reply')) {
     return { kind: 'draft_reply', label: 'Write a reply draft', detail: 'The message needs a reply. A draft is stored in Scriba for you to review; nothing is sent.' }
   }
-  if (group === 'in_progress') return { kind: 'wait', label: 'Nothing: an approved action is running', detail: 'This page reads the status again every few seconds.' }
+  if (group === 'in_progress') return { kind: 'wait', label: stage && stage !== 'EXECUTING' ? 'Nothing: the secretary is working on it' : 'Nothing: an approved action is running', detail: 'This page reads the status again every few seconds.' }
   if (group === 'problem') {
     return {
       kind: 'inspect_failure',
@@ -287,7 +382,7 @@ export function nextStepOf(run: DeskRun): NextStep {
 /** One line for the queue: what the run is proposing or why it stopped. */
 export function runHeadline(run: DeskRun): string {
   if (run.actions.length > 0) return run.actions.map(action => ACTION_LABEL[action.tool_name] ?? action.tool_name.replace(/_/g, ' ')).join(', then ')
-  if (run.held) return HELD_REASON[run.held.reason]?.title ?? run.held.message
+  if (run.held) return heldReasonInfo(run.held.reason)?.title ?? run.held.message
   if (run.next.includes('draft_reply')) return 'Needs a reply; no draft written yet'
   return 'Nothing to do'
 }

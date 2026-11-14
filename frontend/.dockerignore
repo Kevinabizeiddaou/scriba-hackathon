@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+.vite
+eval-results
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore

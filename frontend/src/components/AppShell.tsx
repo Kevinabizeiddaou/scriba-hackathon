@@ -36,7 +36,7 @@ const LIVE_BOTTOM: Page[] = ['overview', 'work', 'inbox', 'approvals'];
 
 function Mark() {
   return (
-    <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-brand-400 to-brand-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_16px_rgba(139,32,64,0.45)]">
+    <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-brand-400 to-brand-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_16px_rgba(79,91,213,0.4)]">
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16.5 8c-.7-1.800-2.400-3-4.500-3-2.600 0-4.500 1.500-4.500 3.600 0 4.600 9 2.400 9 7 0 2.100-1.900 3.400-4.500 3.400-2.200 0-3.900-1-4.700-2.700" />
       </svg>
@@ -88,7 +88,7 @@ function LiveSourceNote() {
               : 'Checking the Desk overlay…'}
       </p>
       <p className="mt-1 text-soft">
-        {session.policy.externalWritesEnabled ? 'Approvals you give are carried out for real.' : 'Sending and calendar changes are switched off. Tasks and reminders can be approved.'}
+        {session.policy.externalWritesEnabled ? 'Approvals you give are carried out for real.' : session.policy.executionMode === 'sandbox' ? 'Sandbox: approved mail and calendar actions run against a stand-in. Nothing real is sent or changed.' : 'Sending and calendar changes are switched off. Tasks and reminders can be approved.'}
       </p>
     </div>
   );

@@ -13,7 +13,7 @@ import { ArrowLeft, Ban, CalendarClock, Check, CircleDashed, CircleDot, FilePen,
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiClientError, getErrorMessage } from '../api/client'
-import { advanceDeskRun, fetchDeskRun, type CalendarRead, type DeskAction, type DeskRun } from '../api/desk'
+import { advanceDeskRun, closeDeskFollowUp, fetchDeskRun, type CalendarRead, type DeskAction, type DeskRun } from '../api/desk'
 import { Button, ErrorNote, PageHeader, Pill, SkeletonRows } from '../components/ui'
 import { SourceBadge } from '../components/workspace'
 import { getApi } from '../harness'
@@ -22,6 +22,7 @@ import { fmtDayTime, fmtRange, isInstant } from '../lib/time'
 import { providerLabel } from './describeAction'
 import {
   ACTION_LABEL,
+  heldReasonInfo,
   QUEUE_GROUPS,
   RUNS_KEY,
   RUN_STATE_LABEL,
@@ -36,6 +37,10 @@ import {
   type StepState,
 } from './deskRuns'
 import { emailKey, parseSender } from './mappers'
+import { ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, SandboxTag } from './RunParts'
+import { FOLLOW_UP_ORDER, LIFECYCLE_REASON, effectsOf, progressOf, stageInfo, stageOfRun } from './runLifecycle'
+import { RunPlan } from './PlanView'
+import { planOf } from './runPlan'
 import { createDraftFromRequest, fetchChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
 import { ToolCallCard } from './ToolCallCard'
@@ -79,11 +84,35 @@ function CalendarReads({ calendars }: { calendars: CalendarRead[] }) {
 function Held({ run }: { run: DeskRun }) {
   const tz = getApi().info.principal.timezone
   const held = run.held!
+  // `missing` is sent with intent_unclear and details_missing; the typed client does not declare it yet.
+  const rawMissing = (held as unknown as { missing?: unknown }).missing
+  const missing = Array.isArray(rawMissing) ? rawMissing.filter((item): item is string => typeof item === 'string') : []
   const range = (slot: { start: string; end: string }) => (isInstant(slot.start) && isInstant(slot.end) ? fmtRange(slot.start, slot.end, tz) : `${slot.start} to ${slot.end}`)
   return (
     <section aria-label="Why nothing was proposed" className="card space-y-3 border-warn/30 p-4 sm:p-5">
-      <h2 className="text-[14.5px] font-semibold text-ink">Why no meeting was proposed</h2>
+      <h2 className="text-[14.5px] font-semibold text-ink">{heldReasonInfo(held.reason)?.title ?? 'Why nothing was proposed'}</h2>
       <p className="text-[13px] leading-[20px] text-soft">{held.message}</p>
+      {missing.length > 0 && (
+        <p className="text-[12.5px] text-warn" data-testid="held-missing">
+          <span className="font-semibold">Not stated in the message: </span>{missing.join(', ')}. Nothing is filled in for you.
+        </p>
+      )}
+      {held.target && (
+        <p className="text-[12.5px] text-soft">
+          <span className="text-mute">The meeting this is about: </span>
+          <span className="text-ink">{held.target.title}</span> · <span className="tabular-nums">{range(held.target)}</span> · {providerLabel(held.target.provider)}
+        </p>
+      )}
+      {(held.candidates?.length ?? 0) > 0 && (
+        <div>
+          <p className="eyebrow mb-1">Meetings that match</p>
+          <ul className="space-y-1 text-[12.5px] text-soft" aria-label="Meetings that match">
+            {held.candidates!.map(candidate => (
+              <li key={candidate.id}><span className="text-ink">{candidate.title}</span> · <span className="tabular-nums">{range(candidate)}</span> · {providerLabel(candidate.provider)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {held.requested && (
         <p className="text-[12.5px] text-soft">
           <span className="text-mute">Requested time: </span>
@@ -102,13 +131,16 @@ function Held({ run }: { run: DeskRun }) {
           </ul>
         </div>
       )}
-      <div>
-        <p className="eyebrow mb-1">Calendars</p>
-        <CalendarReads calendars={held.calendars ?? []} />
-      </div>
+      {(held.calendars?.length ?? 0) > 0 && (
+        <div>
+          <p className="eyebrow mb-1">Calendars</p>
+          <CalendarReads calendars={held.calendars ?? []} />
+        </div>
+      )}
+      {(MEETING_TIME_REASONS.includes(held.reason) || (held.slots?.length ?? 0) > 0) && (
       <div>
         <p className="eyebrow mb-1">Times verified free on every calendar</p>
-        {held.slots.length > 0 ? (
+        {(held.slots?.length ?? 0) > 0 ? (
           <ul className="flex flex-wrap gap-1.5" aria-label="Verified free times">
             {held.slots.map(slot => (
               <li key={slot.start} className="rounded-full border border-ok/30 bg-ok/[0.07] px-2.5 py-1 text-[12px] tabular-nums text-ok">{range(slot)}</li>
@@ -118,11 +150,16 @@ function Held({ run }: { run: DeskRun }) {
           <p className="text-[12.5px] text-mute">None. No time is offered unless every connected calendar was read.</p>
         )}
       </div>
+      )}
     </section>
   )
 }
 
-function ActionSlot({ action, index, total }: { action: DeskAction; index: number; total: number }) {
+/** Held reasons that are about finding a time, where "no verified free time" is worth saying. */
+const MEETING_TIME_REASONS: string[] = ['calendar_conflict', 'availability_unknown', 'time_not_understood', 'change_request', 'invalid_preferences']
+
+function ActionSlot({ action, index, total, repeats }: { action: DeskAction; index: number; total: number; repeats: number }) {
+  const tz = getApi().info.principal.timezone
   const card = useQuery({ queryKey: runToolCallKey(action.toolCallId), queryFn: () => fetchChatToolCall(action.toolCallId) })
   const stage = WORK_STAGES[stageOf(action.status)]
   const label = ACTION_LABEL[action.tool_name] ?? action.tool_name.replace(/_/g, ' ')
@@ -132,7 +169,7 @@ function ActionSlot({ action, index, total }: { action: DeskAction; index: numbe
     <li aria-label={`Action ${index + 1} of ${total}: ${label}`}>
       <p className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-mute">
         <span className="font-semibold tabular-nums text-soft">Action {index + 1} of {total}</span>
-        {executed &&
+        {executed && !action.verification && !action.outcomeUnknown &&
           (action.verified ? (
             <span className="inline-flex items-center gap-1 text-ok">
               <ShieldCheck aria-hidden className="h-3.5 w-3.5" />
@@ -165,6 +202,7 @@ function ActionSlot({ action, index, total }: { action: DeskAction; index: numbe
           )}
         </div>
       )}
+      <ExecutionStep action={action} timeZone={tz} repeats={repeats} />
     </li>
   )
 }
@@ -177,7 +215,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
     queryKey: runKey(runId),
     queryFn: () => fetchDeskRun(runId),
     // Read again while an approved action is running; otherwise the page changes only when the user acts.
-    refetchInterval: query => (query.state.data?.state === 'executing' ? 3_000 : false),
+    refetchInterval: query => (query.state.data?.state === 'executing' || ['EXECUTING', 'VERIFYING'].includes(String(query.state.data ? stageOfRun(query.state.data) : '')) ? 3_000 : false),
   })
   const connections = useQuery({ queryKey: ['desk', 'connections'], queryFn: () => session.workspace.connections() })
 
@@ -187,6 +225,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
     void queryClient.invalidateQueries({ queryKey: WORK_QUEUE_KEY })
   }
   const advance = useMutation({ mutationFn: () => advanceDeskRun(runId), onSuccess: afterStep })
+  const closeFollowUp = useMutation({ mutationFn: (followUpId: string) => closeDeskFollowUp(runId, followUpId), onSuccess: afterStep })
   const draft = useMutation({ mutationFn: () => createDraftFromRequest(run.data!.draftRequest!) })
 
   // A different run is a different page: drop the result of a step taken on the previous one.
@@ -232,6 +271,12 @@ export function LiveRunDetail({ runId }: { runId: number }) {
   const mailbox = connections.data?.mailboxes.find(box => box.providerAccountId === data.email.provider_account_id && box.provider === data.email.provider)
   const breakdown = group === 'problem' ? partialBreakdown(data) : null
   const name = (action: DeskAction) => ACTION_LABEL[action.tool_name] ?? action.tool_name.replace(/_/g, ' ')
+  const stage = stageOfRun(data)
+  const progress = progressOf(data)
+  const effects = effectsOf(data.actions)
+  const plan = planOf(data)
+  const followUps = [...(data.followUps ?? [])].sort((a, b) => FOLLOW_UP_ORDER.indexOf(a.state) - FOLLOW_UP_ORDER.indexOf(b.state))
+  const TRIGGER: Record<string, string> = { manual: 'You, from the inbox', sweep: 'You, with "Check for new work"', worker: 'The background intake worker', evaluation: 'An evaluation run' }
 
   return (
     <div>
@@ -248,7 +293,8 @@ export function LiveRunDetail({ runId }: { runId: number }) {
             <div className="flex flex-wrap items-center gap-2">
               <p className="eyebrow">What this needs from you</p>
               <Pill tone={QUEUE_GROUPS[group].tone} spin={group === 'in_progress'}>{QUEUE_GROUPS[group].label}</Pill>
-              <span className="text-[12px] text-mute">Server state: {isKnownState(data.state) ? RUN_STATE_LABEL[data.state] : data.state}</span>
+              {data.simulated && <SandboxTag />}
+              <span className="text-[12px] text-mute">Server state: {isKnownState(data.state) ? RUN_STATE_LABEL[data.state] : data.state}{stage ? `, stage ${stage}` : ''}</span>
             </div>
             <h2 className="mt-2 text-[17px] font-semibold leading-6 text-ink">{next.label}</h2>
             <p className="mt-1 text-[13px] leading-[20px] text-soft">{next.detail}</p>
@@ -282,6 +328,31 @@ export function LiveRunDetail({ runId }: { runId: number }) {
             )}
           </section>
 
+          {progress && (
+            <section aria-label="Where this run stands" className="card space-y-3 p-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-[14.5px] font-semibold text-ink">Where this run stands</h2>
+                <RunStatus stage={stage} />
+              </div>
+              <p className="text-[12.5px] leading-[19px] text-soft">
+                {stageInfo(stage)!.blurb}
+                {data.lifecycle?.reason ? ` ${LIFECYCLE_REASON[data.lifecycle.reason] ?? `Reason reported: ${data.lifecycle.reason.replace(/_/g, ' ')}.`}` : ''}
+              </p>
+              <RunProgress steps={progress} timeZone={tz} />
+              {data.lifecycle?.compensation && (
+                <p role="alert" className="rounded-lg border border-danger/30 bg-danger/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-danger">{data.lifecycle.compensation.message} The secretary never undoes an action that ran.</p>
+              )}
+              {((data.flags ?? []) as string[]).includes('outside_working_hours') && (
+                <p className="rounded-lg border border-warn/30 bg-warn/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-warn">The requested time is free but outside your working hours. It is proposed as usual; the decision is yours.</p>
+              )}
+              {(data.flags ?? []).includes('prompt_injection_suspected') && (
+                <p role="alert" className="rounded-lg border border-warn/30 bg-warn/[0.07] px-3 py-2 text-[12.5px] leading-[19px] text-warn">This message contains text addressed to an assistant. It was treated as untrusted: nothing was proposed from it and it was not passed to a model.</p>
+              )}
+            </section>
+          )}
+
+          {plan && <RunPlan plan={plan} actions={data.actions} simulated={data.simulated === true} />}
+
           {breakdown && (
             <section aria-label="What ran and what did not" role="alert" className="card space-y-2 border-danger/35 p-4 sm:p-5">
               <h2 className="text-[14.5px] font-semibold text-danger">This run did not finish cleanly</h2>
@@ -304,14 +375,34 @@ export function LiveRunDetail({ runId }: { runId: number }) {
 
           {data.actions.length > 0 && (
             <section aria-label="Proposed actions" className="space-y-3">
-              <h2 className="eyebrow">Proposed actions ({data.actions.length})</h2>
+              <h2 className="eyebrow">Proposed actions ({effects.length})</h2>
               <ol className="space-y-4">
-                {data.actions.map((action, index) => <ActionSlot key={action.toolCallId} action={action} index={index} total={data.actions.length} />)}
+                {effects.map((effect, index) => <ActionSlot key={effect.key} action={effect.primary} index={index} total={effects.length} repeats={effect.duplicates.length} />)}
               </ol>
             </section>
           )}
 
-          <section aria-label="Timeline" className="card p-4 sm:p-5">
+          {followUps.length > 0 && (
+            <section aria-label="Follow-ups of this run" className="space-y-2">
+              <h2 className="eyebrow">Replies awaited ({followUps.length})</h2>
+              <ul className="space-y-2">
+                {followUps.map(followUp => (
+                  <FollowUpItem key={followUp.id} followUp={{ ...followUp, runId: undefined }} timeZone={tz} runSubject={data.email.subject} onClose={() => closeFollowUp.mutate(followUp.id)} closing={closeFollowUp.isPending && closeFollowUp.variables === followUp.id} />
+                ))}
+              </ul>
+              {closeFollowUp.isError && <p role="alert" className="text-[12.5px] text-danger">The follow-up could not be closed: {getErrorMessage(closeFollowUp.error)}. It is still open.</p>}
+            </section>
+          )}
+
+          {data.timeline && (
+            <section aria-label="Record of this run" className="card p-4 sm:p-5">
+              <h2 className="text-[14.5px] font-semibold text-ink">Record of this run</h2>
+              <p className="mb-4 mt-1 text-[12.5px] text-mute">Every event the server recorded, oldest first, in {tz}. One event is one fact: a read, a decision, a proposal, an approval, an execution and a verification are never merged.</p>
+              <RunTimeline items={data.timeline} timeZone={tz} />
+            </section>
+          )}
+
+          <section aria-label="Timeline" className={clsx('card p-4 sm:p-5', data.timeline && 'hidden')}>
             <h2 className="text-[14.5px] font-semibold text-ink">Timeline</h2>
             <p className="mt-1 text-[12.5px] text-mute">Only stages this backend reports. A stage is marked done when the server says so, never before.</p>
             <ol className="mt-4">
@@ -365,6 +456,22 @@ export function LiveRunDetail({ runId }: { runId: number }) {
                 <dt className="text-mute">Classified as</dt>
                 <dd className="text-ink">{categoryLabel(data.category)}</dd>
               </div>
+              {data.trigger && (
+                <div>
+                  <dt className="text-mute">Started by</dt>
+                  <dd className="text-ink">{TRIGGER[data.trigger] ?? data.trigger}</dd>
+                </div>
+              )}
+              {data.timeline && (
+                <div>
+                  <dt className="text-mute">Model use</dt>
+                  <dd className="text-ink" data-testid="run-usage">
+                    {data.usage
+                      ? `${data.usage.models.reduce((sum, model) => sum + model.calls, 0)} model call${data.usage.models.reduce((sum, model) => sum + model.calls, 0) === 1 ? '' : 's'}; ${data.usage.estimatedCostUsd === null ? 'cost not known (a call has no listed price)' : `estimated $${data.usage.estimatedCostUsd.toFixed(4)}`}`
+                      : 'No model call was recorded for this run.'}
+                  </dd>
+                </div>
+              )}
             </dl>
             <a href={hrefFor('inbox', emailKey(data.email.provider, data.email.email_id))} className="btn btn-secondary w-full">
               <MailOpen aria-hidden className="h-4 w-4" />
@@ -374,7 +481,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
           <section className="card space-y-1.5 p-4 text-[12.5px] text-soft">
             <h2 className="eyebrow">Safety</h2>
             <p className="flex gap-2"><Ban aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />The message is untrusted input. Only its sender, taken from the From header, can become a recipient or attendee.</p>
-            <p className="flex gap-2"><ShieldCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />Nothing runs without your approval, and {session.policy.externalWritesEnabled ? 'each approval is carried out for real.' : 'sending mail and changing calendars are switched off on this backend.'}</p>
+            <p className="flex gap-2"><ShieldCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />Nothing runs without your approval, and {session.policy.externalWritesEnabled ? 'each approval is carried out for real.' : session.policy.executionMode === 'sandbox' ? 'on this backend an approved mail or calendar action runs against an isolated stand-in: nothing real is sent or changed.' : 'sending mail and changing calendars are switched off on this backend.'}</p>
           </section>
         </aside>
       </div>

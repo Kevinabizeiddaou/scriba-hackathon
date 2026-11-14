@@ -10,6 +10,8 @@ import { PRIORITY, type Tone } from '../lib/labels';
 import { hrefFor, navigate } from '../lib/router';
 import { fmtDayTime } from '../lib/time';
 import { useWorkspace } from '../lib/useResource';
+import { LiveFollowUps, tracksFollowUps } from '../live/LiveFollowUps';
+import { useLiveSession } from '../live/session';
 
 type Tab = 'tasks' | 'reminders' | 'followups';
 const TABS: { id: Tab; label: string }[] = [
@@ -209,7 +211,11 @@ export function TasksPage({ tab: requested }: { tab: string | null }) {
   const reminders = [...(data.data?.reminders ?? [])].sort((a, b) => Number(b.status === 'scheduled') - Number(a.status === 'scheduled') || Date.parse(a.remindAt) - Date.parse(b.remindAt));
   const rank: Record<FollowUp['status'], number> = { overdue: 0, waiting: 1, replied: 2, closed: 3 };
   const followUps = [...(data.data?.followUps ?? [])].sort((a, b) => rank[a.status] - rank[b.status]);
-  const counts: Record<Tab, number> = { tasks: open.length, reminders: reminders.filter((r) => r.status === 'scheduled').length, followups: followUps.filter((f) => f.status === 'waiting' || f.status === 'overdue').length };
+  // On a backend that tracks awaited replies (overlay 0.3) the follow-ups come from it, not from the workspace model.
+  const session = useLiveSession();
+  const liveFollowUps = tracksFollowUps(session);
+  const [liveOpen, setLiveOpen] = useState<number | null>(null);
+  const counts: Record<Tab, number | null> = { tasks: open.length, reminders: reminders.filter((r) => r.status === 'scheduled').length, followups: liveFollowUps ? liveOpen : followUps.filter((f) => f.status === 'waiting' || f.status === 'overdue').length };
 
   return (
     <div>
@@ -228,7 +234,7 @@ export function TasksPage({ tab: requested }: { tab: string | null }) {
               className={clsx('tap inline-flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150', tab === id ? 'bg-brand-500/50 text-ink' : 'text-soft hover:text-ink')}
             >
               {label}
-              <span className={clsx('tabular-nums', tab === id ? 'text-accent' : 'text-mute')}>{counts[id]}</span>
+              <span className={clsx('tabular-nums', tab === id ? 'text-accent' : 'text-mute')}>{counts[id] ?? ''}</span>
             </button>
           ))}
         </div>
@@ -269,6 +275,8 @@ export function TasksPage({ tab: requested }: { tab: string | null }) {
                   {reminders.map((r) => <ReminderRow key={r.id} reminder={r} onError={setError} />)}
                 </ul>
               )
+            ) : liveFollowUps ? (
+              <LiveFollowUps onCount={setLiveOpen} />
             ) : data.data?.followUpsUnavailable ? (
               <EmptyState icon={MailQuestion} title="Follow-up tracking is not available yet">
                 {data.data.followUpsUnavailable.message}

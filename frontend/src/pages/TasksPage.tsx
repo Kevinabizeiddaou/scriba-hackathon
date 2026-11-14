@@ -241,6 +241,13 @@ export function TasksPage({ tab: requested }: { tab: string | null }) {
 
         <div id="tasks-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="max-w-3xl space-y-5">
           {error && <ErrorNote error={error} />}
+          {session?.mode.kind === 'sandbox' && tab !== 'followups' && (
+            <p role="status" className="rounded-xl border border-warn/30 bg-warn/[0.07] px-3.5 py-2.5 text-[13px] text-warn" data-testid="tasks-sandbox">
+              {tab === 'tasks'
+                ? 'Sandbox tasks: the open tasks of the sandbox world, including any the secretary recorded there after your approval. Scriba\'s own task list is not shown. A sandbox task is completed through a proposal in the work queue, not from this list.'
+                : 'Sandbox reminders: this backend has no route that lists the sandbox world\'s reminders, so none are listed here. A reminder the secretary set in the sandbox is on its run in the work queue and in the activity record.'}
+            </p>
+          )}
           <WorkspaceState error={data.error} onRetry={data.reload}>
             {data.loading ? (
               <SkeletonRows rows={4} />

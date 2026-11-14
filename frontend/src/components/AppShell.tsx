@@ -5,6 +5,7 @@ import { getApi, getWorkspace } from '../harness';
 import { hrefFor, type Page } from '../lib/router';
 import { fmtDayTime } from '../lib/time';
 import { useResource, useWorkspace } from '../lib/useResource';
+import { ModeBadge, ModeBanner, ModeNote } from '../live/ModeIndicator';
 import { useLiveSession } from '../live/session';
 import { nowMs } from './workspace';
 
@@ -67,36 +68,13 @@ export interface ShellBadges {
 }
 export const ShellBadgesContext = createContext<ShellBadges | null>(null);
 
-function LiveSourceNote() {
-  const session = useLiveSession()!;
-  const { info } = getApi();
-  const overlay = session.overlay;
-  return (
-    <div className="rounded-xl border border-ok/25 bg-ok/[0.06] px-3 py-2.5 text-[12px] leading-[17px]" data-testid="data-source">
-      <p className="flex items-center gap-1.5 font-semibold text-ok">
-        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ok" />
-        Live: Scriba
-      </p>
-      <p className="mt-1 break-all text-mute">{info.baseUrl}</p>
-      <p className={clsx('mt-1', overlay === 'ok' ? 'text-soft' : 'text-warn')}>
-        {overlay === 'ok'
-          ? `Desk overlay ${session.health?.version ?? ''}`.trim()
-          : overlay === 'missing'
-            ? 'No Desk overlay on this backend'
-            : overlay === 'error'
-              ? 'The Desk overlay could not be checked'
-              : 'Checking the Desk overlay…'}
-      </p>
-      <p className="mt-1 text-soft">
-        {session.policy.externalWritesEnabled ? 'Approvals you give are carried out for real.' : session.policy.executionMode === 'sandbox' ? 'Sandbox: approved mail and calendar actions run against a stand-in. Nothing real is sent or changed.' : 'Sending and calendar changes are switched off. Tasks and reminders can be approved.'}
-      </p>
-    </div>
-  );
-}
-
+/**
+ * On a live backend the note is the execution mode (live/ModeIndicator.tsx): "connected" and
+ * "carries out real writes" are separate facts, and a sandbox is never called live.
+ */
 function DataSourceNote() {
   const live = useLiveSession() !== null;
-  return live ? <LiveSourceNote /> : <MockSourceNote />;
+  return live ? <ModeNote /> : <MockSourceNote />;
 }
 
 function MockSourceNote() {
@@ -159,7 +137,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
           : target === 'tasks'
             ? (work.data ?? 0)
             : 0;
-  const badgeLabel = (target: Page) => (target === 'work' ? 'runs that need you' : target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
+  const badgeLabel = (target: Page) => (target === 'work' ? (badge(target) === 1 ? 'run that needs you' : 'runs that need you') : target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
   const groups = ['Desk', 'Work', 'Quality'] as const;
   const nav = NAV.filter((item) => !item.liveOnly || session !== null);
   const bottom = session !== null ? LIVE_BOTTOM : BOTTOM;
@@ -217,7 +195,10 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             </span>
             <span className="min-w-0 leading-tight">
               <span className="block truncate text-[13px] font-semibold text-ink">{info.principal.name}</span>
-              <span className="block truncate text-xs text-mute">{info.principal.timezone}</span>
+              <span className="block truncate text-xs text-mute" data-testid="principal-timezone" title={session && session.timeZoneSource === 'browser' ? "The backend has not named the executive's time zone yet, so times are in this browser's." : undefined}>
+                {info.principal.timezone}
+                {session && session.timeZoneSource === 'browser' ? ' (browser zone)' : ''}
+              </span>
             </span>
             {session && (
               <button type="button" onClick={() => void session.signOut()} aria-label="Sign out" title="Sign out" className="tap ml-auto inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-mute hover:bg-white/[0.08] hover:text-ink">
@@ -237,9 +218,10 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
               Scriba <span className="font-medium text-accent">Executive Desk</span>
             </span>
           </span>
-          <span className={clsx('pill', info.dataSource === 'simulated' ? 'bg-warn/[0.14] text-warn' : 'bg-ok/[0.13] text-ok')}>{info.dataSource === 'simulated' ? 'Mock data' : session ? 'Live: Scriba' : 'Live'}</span>
+          {session ? <ModeBadge mode={session.mode} /> : <span className={clsx('pill', info.dataSource === 'simulated' ? 'bg-warn/[0.14] text-warn' : 'bg-ok/[0.13] text-ok')}>{info.dataSource === 'simulated' ? 'Mock data' : 'Live'}</span>}
         </div>
 
+        {session && <ModeBanner />}
         <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto focus:outline-none">
           {children}
         </main>

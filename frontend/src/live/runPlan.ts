@@ -15,7 +15,8 @@
  *     "The call returned" is "ran", not "done";
  *   - a confidence is shown only when the server measured one. The rules do not, and that is said.
  */
-import type { DeskAction } from '../api/desk'
+import type { DeskAction, DeskRun } from '../api/desk'
+import { actionExtras } from './deskContract'
 
 type Tone = 'neutral' | 'ok' | 'warn' | 'danger' | 'info' | 'accent'
 
@@ -163,7 +164,7 @@ export const droppedReason = (why: string | null): string => (why ? DROPPED[why]
 
 // ── where a step stands ─────────────────────────────────────────────────────
 
-export type StepStanding = 'waiting' | 'ready' | 'blocked' | 'your_decision' | 'held' | 'running' | 'verified' | 'ran_unverified' | 'outcome_unknown' | 'partly' | 'failed' | 'cancelled' | 'unknown'
+export type StepStanding = 'waiting' | 'ready' | 'blocked' | 'your_decision' | 'held' | 'running' | 'verified' | 'ran_unverified' | 'verification_failed' | 'outcome_unknown' | 'partly' | 'interrupted' | 'failed' | 'cancelled' | 'unknown'
 
 export interface StepView extends PlanStep {
   standing: StepStanding
@@ -178,19 +179,44 @@ export interface StepView extends PlanStep {
 const STANDING: Record<Exclude<StepStanding, 'unknown'>, { label: string; tone: Tone; blurb: string }> = {
   waiting: { label: 'Waits for an earlier step', tone: 'neutral', blurb: 'It is proposed only after the step it depends on has taken effect.' },
   ready: { label: 'Ready to be proposed', tone: 'accent', blurb: 'Every step it depends on took effect. It has not been proposed yet, and proposing it sends nothing.' },
-  blocked: { label: 'Blocked: will not be proposed', tone: 'danger', blurb: 'A step it depends on failed or was rejected, so this one is never proposed.' },
+  blocked: { label: 'Blocked: will not be proposed', tone: 'danger', blurb: 'A step it depends on did not take effect, was rejected, or ran and could not be verified. This one is never proposed.' },
   your_decision: { label: 'Awaiting your approval', tone: 'warn', blurb: 'Proposed. Nothing has happened; it runs only if you approve it.' },
   held: { label: 'Held', tone: 'warn', blurb: 'Proposed, and held for a detail or by a safety check. The action card says why.' },
   running: { label: 'Running', tone: 'info', blurb: 'Approved and being carried out.' },
   verified: { label: 'Done and verified', tone: 'ok', blurb: 'It ran and the server has evidence that it took effect.' },
   ran_unverified: { label: 'Ran, not verified', tone: 'warn', blurb: 'The call returned, but there is no evidence yet that it took effect. It is not counted as done.' },
+  verification_failed: { label: 'Verification failed', tone: 'danger', blurb: 'The call returned, but the state read back does not show its effect. It is not done, and the steps that depend on it are blocked. Check it yourself.' },
+  interrupted: { label: 'Interrupted', tone: 'danger', blurb: 'The process stopped while this was running. The state was read back and the effect is not there. A retry carries the same identity.' },
   outcome_unknown: { label: 'Outcome unknown', tone: 'danger', blurb: 'The provider did not confirm. It may or may not have happened; check before any retry.' },
   partly: { label: 'Partly ran', tone: 'danger', blurb: 'Only part of it took effect. What ran is not undone.' },
   failed: { label: 'Failed', tone: 'danger', blurb: 'It did not take effect.' },
   cancelled: { label: 'Rejected or cancelled', tone: 'neutral', blurb: 'It was not carried out.' },
 }
 
-function standingOf(state: string, action: DeskAction | null, held: boolean): StepStanding {
+/** The server's explicit action state (overlay 0.3.1), when it sends one this client knows. */
+const BY_LIFECYCLE: Record<string, StepStanding> = {
+  PROPOSED: 'your_decision',
+  HELD: 'held',
+  APPROVED: 'running',
+  EXECUTING: 'running',
+  EXECUTED_UNVERIFIED: 'ran_unverified',
+  VERIFIED: 'verified',
+  VERIFICATION_FAILED: 'verification_failed',
+  PARTIALLY_EXECUTED: 'partly',
+  OUTCOME_UNKNOWN: 'outcome_unknown',
+  INTERRUPTED: 'interrupted',
+  FAILED: 'failed',
+  REJECTED: 'cancelled',
+}
+
+export function standingOf(state: string, action: DeskAction | null, held: boolean): StepStanding {
+  // The server's own state of the action wins over anything worked out from a status.
+  const lifecycle = action ? actionExtras(action).lifecycle : null
+  if (lifecycle) {
+    // "Verified" needs the evidence flag as well as the word.
+    if (lifecycle === 'VERIFIED') return action!.verified === true ? 'verified' : 'ran_unverified'
+    return BY_LIFECYCLE[lifecycle] ?? 'unknown'
+  }
   switch (state) {
     case 'waiting':
     case 'ready':
@@ -233,6 +259,80 @@ export function stepsOf(plan: RunPlanData, actions: DeskAction[]): StepView[] {
     const info = standing === 'unknown' ? { label: `State not recognised: ${step.state}`, tone: 'danger' as Tone, blurb: 'This version of the Desk does not know this step state. It is not treated as done.' } : STANDING[standing]
     return { ...step, standing, action, ...info }
   })
+}
+
+// ── how far a run has got ──────────────────────────────────────────────────
+
+export type TallyKind = 'verified' | 'unverified' | 'problem' | 'you' | 'running' | 'later' | 'blocked' | 'cancelled'
+
+const TALLY_OF: Record<StepStanding, TallyKind> = {
+  verified: 'verified',
+  ran_unverified: 'unverified',
+  verification_failed: 'problem',
+  outcome_unknown: 'problem',
+  partly: 'problem',
+  interrupted: 'problem',
+  failed: 'problem',
+  unknown: 'problem',
+  your_decision: 'you',
+  held: 'you',
+  running: 'running',
+  waiting: 'later',
+  ready: 'later',
+  blocked: 'blocked',
+  cancelled: 'cancelled',
+}
+
+export interface RunTally {
+  /** One entry per step (or per action, for a run without a plan), in order. */
+  steps: { kind: TallyKind; standing: StepStanding; label: string }[]
+  total: number
+  counts: Record<TallyKind, number>
+  /** "1 of 2 steps verified · 1 awaiting your decision". Says only what the server reported. */
+  summary: string
+  /** Every step ran and carries verification evidence. The only state drawn as complete. */
+  allVerified: boolean
+}
+
+const TALLY_WORDS: [TallyKind, (n: number) => string][] = [
+  ['unverified', n => `${n} ran, not verified`],
+  ['problem', n => `${n} did not finish cleanly`],
+  ['running', n => `${n} running`],
+  ['you', n => `${n} awaiting your decision`],
+  ['later', n => `${n} not proposed yet`],
+  ['blocked', n => `${n} blocked`],
+  ['cancelled', n => `${n} rejected or cancelled`],
+]
+
+/**
+ * How far a run has really got, step by step: the plan's steps joined to their action cards, or
+ * the action cards alone when the run has no plan. A step counts as verified only on the server's
+ * evidence, so "1 of 2 verified" is never rounded up to done and never down to "nothing happened".
+ */
+export function tallyOf(run: DeskRun): RunTally {
+  const plan = planOf(run)
+  const seen = new Set<number>()
+  const steps: RunTally['steps'] = []
+  if (plan) {
+    for (const step of stepsOf(plan, run.actions)) {
+      if (step.action) seen.add(step.action.toolCallId)
+      steps.push({ kind: TALLY_OF[step.standing], standing: step.standing, label: purposeLabel(step) })
+    }
+  }
+  // Actions that belong to no step (a run without a plan, or a card added later) still count.
+  const byEffect = new Map<string, DeskAction>()
+  for (const action of run.actions) if (!seen.has(action.toolCallId)) byEffect.set(action.idempotencyKey || `tool-call-${action.toolCallId}`, action)
+  const planned = new Set(plan ? stepsOf(plan, run.actions).map(step => step.action?.idempotencyKey).filter(Boolean) : [])
+  for (const [key, action] of byEffect) {
+    if (planned.has(key)) continue
+    const standing = standingOf(action.status, action, planFieldsOf(action).held)
+    steps.push({ kind: TALLY_OF[standing], standing, label: words(action.purpose ?? action.tool_name) })
+  }
+  const counts: Record<TallyKind, number> = { verified: 0, unverified: 0, problem: 0, you: 0, running: 0, later: 0, blocked: 0, cancelled: 0 }
+  for (const step of steps) counts[step.kind] += 1
+  const total = steps.length
+  const parts = [`${counts.verified} of ${total} step${total === 1 ? '' : 's'} verified`, ...TALLY_WORDS.filter(([kind]) => counts[kind] > 0).map(([kind, say]) => say(counts[kind]))]
+  return { steps, total, counts, summary: total === 0 ? 'No step is planned.' : parts.join(' · '), allVerified: total > 0 && counts.verified === total }
 }
 
 /** One line for the head of the plan: how much there is to do and how much of it is the person's to approve. */

@@ -3,6 +3,7 @@ import { AlarmClock, AlertTriangle, CalendarCheck, CalendarX, CalendarClock, Che
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getErrorMessage } from '../api/client'
+import type { DeskAction } from '../api/desk'
 import { Button, Pill } from '../components/ui'
 import { getApi } from '../harness'
 import { hrefFor } from '../lib/router'
@@ -11,7 +12,10 @@ import { AVAILABILITY_OVERRIDE_FLAG, asRecord, describeAction, heldByAvailabilit
 import { approveChatToolCall, cancelChatToolCall, retryChatToolCall, type ChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
 import { CONFIRMED_RECIPIENTS_FLAG, explainFailure, explainHold, unverifiedRecipients } from './deskHolds'
+import { actionExtras, editsOf } from './deskContract'
 import { RUNS_KEY } from './deskRuns'
+import { executedLabel } from './executionMode'
+import { EditedApproval, SandboxTag } from './RunParts'
 import { WORK_QUEUE_KEY, WORK_STAGES, stageOf } from './workQueue'
 import { approvalGate, toolEffect } from './writePolicy'
 
@@ -66,6 +70,12 @@ interface Props {
   conversation?: { id: number; title: string }
   /** The Desk run this action belongs to, when it came from an incoming message. */
   run?: { runId: number; subject: string | null }
+  /**
+   * The Desk's own view of this action, when it belongs to a Desk run: whether it is simulated,
+   * the evidence that it took effect, and what the person changed at approval. Scriba's record
+   * (`toolCall`) carries none of these.
+   */
+  action?: DeskAction
   compact?: boolean
 }
 
@@ -76,10 +86,17 @@ interface Props {
  * then re-read; the card never moves itself forward. Approvals that reach outside the Desk are
  * gated by the write policy (writePolicy.ts).
  */
-export function ToolCallCard({ toolCall, reason, conversation, run, compact = false }: Props) {
+export function ToolCallCard({ toolCall, reason, conversation, run, action, compact = false }: Props) {
   const session = useRequiredLiveSession()
   const queryClient = useQueryClient()
-  const description = describeAction(toolCall)
+  const tz = getApi().info.principal.timezone
+  const extras = action ? actionExtras(action) : null
+  // When the person edited the proposal at approval, the card shows the operation as approved;
+  // the original values are listed beside it (EditedApproval), never silently replaced.
+  const edited = action ? editsOf(action).length > 0 : false
+  const described = describeAction(edited ? { ...toolCall, input: extras!.effectiveInput! } : toolCall)
+  // A change or cancellation names its meeting in `target` (overlay 0.4) when the input does not.
+  const description = !described.headline && extras?.target?.title ? { ...described, headline: extras.target.title } : described
   const effect = toolEffect(toolCall.tool_name)
   const stage = WORK_STAGES[stageOf(toolCall.status)]
   const gate = approvalGate(toolCall.tool_name, session.policy)
@@ -96,6 +113,8 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
     // A task or reminder created here shows on the Tasks screen and the briefing.
     session.workspace.refresh()
     void queryClient.invalidateQueries({ queryKey: ['desk', 'briefing'] })
+    // In a sandbox, the world's own log and counts changed too.
+    void queryClient.invalidateQueries({ queryKey: ['desk', 'sandbox'] })
   }
   const approve = useMutation({
     mutationFn: () => {
@@ -123,8 +142,28 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
   const canApprove = gate.allowed && !incomplete && (!heldForAvailability || override) && (!heldForRecipients || recipientsConfirmed)
   const completeInChat = incomplete && (hold === null || hold.resolution === 'complete_in_chat')
   const unknownOutcome = description.outcome.some(row => row.state === 'unknown') || asRecord(toolCall.output).outcome_unknown === true
-  /** A mail or calendar action that this backend would run against a sandbox world, not a provider. */
-  const sandboxed = effect === 'external_write' && session.policy.executionMode === 'sandbox' && !session.policy.externalWritesEnabled
+  /**
+   * Simulated: the Desk says so on the action, or the session is in a sandbox, where every
+   * approval is applied to the isolated world. A sandbox wins over the readiness switches.
+   */
+  const sandboxed = action?.simulated === true || (action?.simulated !== false && session.mode.simulated && (effect === 'external_write' || effect === 'internal_write'))
+  const ran = status === 'executed' || status === 'partially_executed'
+  /** It ran in a sandbox. Only said when the Desk's record of the action says so. */
+  const ranInSandbox = ran && (action?.execution?.simulated === true || action?.simulated === true)
+  // Evidence that it took effect: the Desk's verification, or (for a card the Desk does not own) Scriba's action record.
+  const evidence = action ? action.verified === true : toolCall.assistant_action_id != null
+  const verificationFailed = extras?.lifecycle === 'VERIFICATION_FAILED'
+  const statusPill = status === 'executed'
+    ? verificationFailed
+      ? { tone: 'danger' as const, label: ranInSandbox ? 'Executed in sandbox, verification failed' : 'Executed, verification failed' }
+      : evidence
+        ? { tone: 'ok' as const, label: action ? executedLabel(ranInSandbox, true) : 'Executed' }
+        : { tone: 'warn' as const, label: `${executedLabel(ranInSandbox)}, not verified` }
+    : status === 'partially_executed' && ranInSandbox
+      ? { tone: 'danger' as const, label: 'Partly executed in sandbox' }
+      : { tone: stage.tone, label: stage.label }
+  // Scriba stamps its own record's clock; the Desk's evidence carries the time the action was decided or ran.
+  const stamp = action ? action.execution?.at ?? action.decisions?.[action.decisions.length - 1]?.at ?? action.proposedAt ?? null : toolCall.updated_at ?? null
 
   if (effect === 'read') {
     return (
@@ -152,7 +191,10 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
           <p className="eyebrow">{description.title}</p>
           <h3 className="mt-0.5 break-words text-[15px] font-semibold leading-[22px] text-ink">{description.headline || 'No title on the card'}</h3>
         </div>
-        <Pill tone={stage.tone} spin={status === 'approved' || status === 'executing'}>{stage.label}</Pill>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {sandboxed && <SandboxTag />}
+          <span data-testid="card-status"><Pill tone={statusPill.tone} spin={status === 'approved' || status === 'executing'}>{statusPill.label}</Pill></span>
+        </div>
       </header>
 
       <dl className="space-y-1.5 px-4 pb-1 pt-3 text-[13px]">
@@ -174,12 +216,18 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
           <Row label="Changes">
             <ul className="space-y-0.5">
               {description.changes.map(change => (
-                <li key={change.field}><span className="text-soft">{change.field}:</span> {change.value}</li>
+                <li key={change.field}><span className="text-soft">{change.field}:</span> <span className="tabular-nums">{isInstant(change.value) ? `${fmtDayTime(change.value, tz)} (${tz})` : change.value}</span></li>
               ))}
             </ul>
           </Row>
         )}
       </dl>
+
+      {action && !compact && (edited || (action.decisions ?? []).some(decision => (decision.edited?.length ?? 0) > 0)) && (
+        <div className="mx-4 mt-2">
+          <EditedApproval action={action} timeZone={tz} />
+        </div>
+      )}
 
       {description.body && !compact && (
         <p className="mx-4 mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-bg/60 px-3 py-2.5 text-[13px] leading-[20px] text-ink">{description.body}</p>
@@ -239,7 +287,7 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
 
       {description.outcome.length > 0 && (
         <div className="mx-4 mt-3">
-          <p className="eyebrow mb-1.5">What happened</p>
+          <p className="eyebrow mb-1.5">{ranInSandbox ? 'What happened in the sandbox (simulated)' : 'What happened'}</p>
           <ul className="space-y-1 text-[12.5px]">
             {description.outcome.map((row, index) => {
               const style = OUTCOME_STYLE[row.state]
@@ -247,13 +295,14 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
                 <li key={index} className="flex gap-2">
                   <style.icon aria-hidden className={clsx('mt-0.5 h-3.5 w-3.5 shrink-0', style.className)} />
                   <span className="min-w-0">
-                    <span className="font-semibold text-ink">{row.label}</span>
+                    <span className="font-semibold text-ink">{row.label}{ranInSandbox && row.state === 'ok' ? ' in the sandbox' : ''}</span>
                     {row.detail && <span className="block break-words text-soft">{row.detail}</span>}
                   </span>
                 </li>
               )
             })}
           </ul>
+          {ranInSandbox && <p className="mt-1.5 text-xs text-warn" data-testid="sandbox-outcome-note">Simulated. The provider named above is a stand-in: no real email or invitation went out and nobody was contacted.</p>}
         </div>
       )}
 
@@ -304,7 +353,7 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
               {conversation.title || 'Open the conversation'}
             </a>
           )}
-          {toolCall.updated_at && isInstant(toolCall.updated_at) && <span className="tabular-nums">Updated {fmtDayTime(toolCall.updated_at, getApi().info.principal.timezone)}</span>}
+          {stamp && isInstant(stamp) && <span className="tabular-nums">{action?.execution ? (ranInSandbox ? 'Executed in sandbox' : 'Executed') : 'Updated'} {fmtDayTime(stamp, tz)}</span>}
         </p>
 
         {waiting && (
@@ -331,11 +380,11 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
               Cancel action
             </Button>
             <Button variant="primary" icon={Check} onClick={() => approve.mutate()} busy={approve.isPending} disabled={busy || !canApprove} title={gate.reason ?? undefined}>
-              {effect === 'external_write' ? (sandboxed ? 'Approve in sandbox' : 'Approve and run') : 'Approve'}
+              {sandboxed ? 'Approve in sandbox' : effect === 'external_write' ? 'Approve and run' : 'Approve'}
             </Button>
             {!gate.allowed && <p className="basis-full text-[12px] text-warn" data-testid="gate-reason">{gate.reason}</p>}
             {gate.allowed && sandboxed && (
-              <p className="basis-full text-[12px] text-warn" data-testid="sandbox-note">Sandbox: approving applies this to an isolated stand-in for your mailbox and calendar. Nothing real is sent or changed, and the result is not a real success.</p>
+              <p className="basis-full text-[12px] text-warn" data-testid="sandbox-note">Sandbox: approving applies this to an isolated stand-in for your mailbox, calendar and records. Nothing real is sent or changed, nobody real is contacted, and the result is not a real success.</p>
             )}
           </>
         )}
@@ -359,6 +408,8 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
             <p className="font-semibold text-warn">Retry runs this action again immediately.</p>
             <p className="mt-1 text-soft">
               Scriba does not ask for a second approval on a retry: it executes as soon as you confirm here.
+              {extras?.retryMode === 'readback_first' && ' The sandbox is read back first: if the effect is already there, it is not repeated.'}
+              {extras?.retryMode === 'confirm_first' && ' On a real provider the server refuses this retry until you confirm you checked the mailbox or calendar.'}
               {unknownOutcome && ' Part of the first attempt has an unknown outcome, so it may already have happened. Check the provider first: a retry could repeat it.'}
             </p>
             <div className="mt-2.5 flex flex-wrap justify-end gap-2">

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { DeskFollowUp, DeskLifecycleStage, DeskRun, DeskTimelineItem, DeskWorkerStatus } from '../api/desk'
+import type { DeskAction, DeskFollowUp, DeskLifecycleStage, DeskRun, DeskTimelineItem, DeskWorkerStatus } from '../api/desk'
 import { EvaluationResultPanel } from '../components/EvaluationResult'
 import { PROVENANCE, metricsOf, provenanceOf } from '../evaluation/provenance'
 import { evaluationSession } from '../evaluation/session'
@@ -16,7 +16,7 @@ import { deskAction, deskRun, executedAction } from '../test/deskFixtures'
 import { HELD_REASON, QUEUE_GROUPS, groupOf, nextStepOf, runQueueRefetchInterval, toRunRow } from './deskRuns'
 import { explainHold } from './deskHolds'
 import { AgentActivity, ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, VerificationEvidence } from './RunParts'
-import { FOLLOW_UP_STATE, LIFECYCLE, PROGRESS_PATH, effectsOf, followUpInfo, progressOf, stageInfo, stageOfRun, stageTimes, verificationOf, workerView } from './runLifecycle'
+import { FOLLOW_UP_STATE, LIFECYCLE, PROGRESS_PATH, STAGE_ALIASES, canonicalStage, effectsOf, followUpInfo, progressOf, stageInfo, stageOfRun, stageTimes, verificationOf, workerView, type RunStage } from './runLifecycle'
 import { approvalGate, writePolicyFrom } from './writePolicy'
 
 afterEach(() => {
@@ -35,10 +35,13 @@ const opening = [
 ]
 
 describe('every lifecycle stage the contract names', () => {
-  const STAGES = Object.keys(LIFECYCLE) as DeskLifecycleStage[]
+  const STAGES = Object.keys(LIFECYCLE) as RunStage[]
 
-  it('has a name, a holder and a place in the queue for each of the fourteen stages', () => {
-    expect(STAGES).toHaveLength(14)
+  it('has a name, a holder and a place in the queue for each of the fifteen stages', () => {
+    // The fourteen of the first contract, under the names the backend sends, plus HELD.
+    expect(STAGES).toHaveLength(15)
+    expect(STAGES).toEqual(expect.arrayContaining(['UNDERSTANDING', 'INVESTIGATING', 'WAITING_FOR_RESPONSE', 'HELD']))
+    for (const draft of ['CLASSIFIED', 'CONTEXT_GATHERING', 'AWAITING_REPLY']) expect(STAGES, draft).not.toContain(draft)
     for (const stage of STAGES) {
       const run = deskRun({ lifecycle: lifecycle(stage), actions: stage === 'COMPLETED' ? [executedAction()] : [deskAction()] })
       expect(stageOfRun(run)).toBe(stage)
@@ -54,13 +57,19 @@ describe('every lifecycle stage the contract names', () => {
     expect(group('EXECUTING')).toBe('in_progress')
     expect(group('PLANNING')).toBe('in_progress')
     expect(group('VERIFYING')).toBe('in_progress')
-    expect(group('AWAITING_REPLY')).toBe('awaiting_reply')
+    expect(group('WAITING_FOR_RESPONSE')).toBe('awaiting_reply')
+    expect(group('AWAITING_REPLY')).toBe('awaiting_reply') // the first-draft name, read as the same stage
+    expect(group('HELD')).toBe('input')
     expect(group('NEEDS_CLARIFICATION')).toBe('input')
     expect(group('ESCALATED')).toBe('input')
     expect(group('PARTIALLY_COMPLETED')).toBe('problem')
     expect(group('FAILED')).toBe('problem')
     expect(group('CANCELLED')).toBe('cancelled')
     expect(group('COMPLETED', { actions: [executedAction()] })).toBe('done')
+    // The server's word alone is not evidence: an executed action without `verified` keeps the run out of "done".
+    expect(group('COMPLETED', { actions: [executedAction({ verified: false, assistantActionId: null })] })).toBe('unverified')
+    expect(QUEUE_GROUPS.unverified).toMatchObject({ label: 'Executed, not verified', tone: 'warn' })
+    expect(QUEUE_GROUPS.done.label).toBe('Completed and verified')
     // Completed with nothing proposed is "no action needed", not finished work.
     expect(group('COMPLETED', { actions: [] })).toBe('no_action')
   })
@@ -84,18 +93,31 @@ describe('every lifecycle stage the contract names', () => {
 })
 
 describe('the stage names of the revised contract', () => {
-  it('understands the three renamed stages as the stages they replace', () => {
-    for (const [sent, means] of [['UNDERSTANDING', 'CLASSIFIED'], ['INVESTIGATING', 'CONTEXT_GATHERING'], ['WAITING_FOR_RESPONSE', 'AWAITING_REPLY']] as const) {
-      const run = deskRun({ lifecycle: lifecycle(sent) })
-      expect(stageOfRun(run), sent).toBe(means)
-      expect(stageOfRun({ lifecycle: sent }), sent).toBe(means)
-      expect(groupOf(run), sent).not.toBe('unknown')
+  it('works in the names the backend sends, and reads the three first-draft names as aliases of them', () => {
+    for (const [draft, sent] of [['CLASSIFIED', 'UNDERSTANDING'], ['CONTEXT_GATHERING', 'INVESTIGATING'], ['AWAITING_REPLY', 'WAITING_FOR_RESPONSE']] as const) {
+      expect(STAGE_ALIASES[draft], draft).toBe(sent)
+      expect(canonicalStage(draft), draft).toBe(sent)
+      expect(canonicalStage(sent), sent).toBe(sent)
+      // The backend's name is returned as it is; the first-draft name is returned as the backend's.
+      expect(stageOfRun(deskRun({ lifecycle: lifecycle(sent) })), sent).toBe(sent)
+      expect(stageOfRun({ lifecycle: sent }), sent).toBe(sent)
+      const run = deskRun({ lifecycle: lifecycle(draft) })
+      expect(stageOfRun(run), draft).toBe(sent)
+      expect(stageOfRun({ lifecycle: draft }), draft).toBe(sent)
+      expect(groupOf(run), draft).not.toBe('unknown')
+      expect(stageInfo(draft), draft).toBe(LIFECYCLE[sent])
     }
+    expect(Object.keys(STAGE_ALIASES).sort()).toEqual(['AWAITING_REPLY', 'CLASSIFIED', 'CONTEXT_GATHERING'])
+    expect(LIFECYCLE.WAITING_FOR_RESPONSE.label).toBe('Waiting for a response')
+    expect(QUEUE_GROUPS.awaiting_reply.label).toBe('Waiting for a response')
+    expect(PROGRESS_PATH).toEqual(['RECEIVED', 'UNDERSTANDING', 'INVESTIGATING', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING', 'COMPLETED'])
     expect(groupOf(deskRun({ lifecycle: lifecycle('WAITING_FOR_RESPONSE'), state: 'completed', actions: [executedAction()] }))).toBe('awaiting_reply')
-    // Stage events written with the new names give the rail its times.
-    const times = stageTimes([event(1, 'stage', 'Understood.', { stage: 'UNDERSTANDING' }), event(2, 'stage', 'Investigated.', { stage: 'INVESTIGATING' })])
-    expect(times.get('CLASSIFIED')).toBe(at(1))
-    expect(times.get('CONTEXT_GATHERING')).toBe(at(2))
+    // Stage events give the rail its times under the backend's names, whichever spelling was recorded.
+    const times = stageTimes([event(1, 'stage', 'Understood.', { stage: 'UNDERSTANDING' }), event(2, 'stage', 'Context gathered.', { stage: 'CONTEXT_GATHERING' })])
+    expect(times.get('UNDERSTANDING')).toBe(at(1))
+    expect(times.get('INVESTIGATING')).toBe(at(2))
+    expect(times.has('CLASSIFIED')).toBe(false)
+    expect(times.has('CONTEXT_GATHERING')).toBe(false)
   })
 
   it('shows HELD as held, asks for input, and never offers it as something to approve', () => {
@@ -133,6 +155,11 @@ describe('an unknown stage or state', () => {
     render(<ul><FollowUpItem followUp={{ id: 'f1', state: 'snoozed' as DeskFollowUp['state'], waitingOn: 'sofia@lumen.example' }} timeZone="UTC" onClose={() => {}} /></ul>)
     expect(screen.queryByRole('button', { name: 'Stop waiting' })).toBeNull()
     expect(screen.queryByText('Answered')).toBeNull()
+  })
+
+  it('names the escalated follow-up state the later overlay adds', () => {
+    expect(followUpInfo('escalated')).toMatchObject({ label: 'Reminded once, still no answer', tone: 'danger' })
+    expect(followUpInfo('escalated').label).not.toContain('not recognised')
   })
 })
 
@@ -240,7 +267,8 @@ describe('verification', () => {
 
   it('names the evidence when the server says verified, and says when a retry found it already done', () => {
     const readBack = executedAction({ assistantActionId: null, simulated: true, verification: { verified: true, method: 'sandbox_readback', reason: null, at: at(7) } })
-    expect(verificationOf(readBack)).toMatchObject({ state: 'verified', detail: 'Evidence: the sandbox world was read back and the effect is there.' })
+    // A sandbox read-back is evidence about the sandbox only, and the sentence says so.
+    expect(verificationOf(readBack)).toMatchObject({ state: 'verified', detail: 'Evidence: the sandbox world was read back and the effect is there (simulated: no real mailbox or calendar was involved).' })
     const reconciled = executedAction({ verification: { verified: true, method: 'sandbox_readback', reason: null, at: at(7), reconciled: true } })
     expect(verificationOf(reconciled).label).toBe('Verified (already done; not repeated)')
     const recorded = executedAction({ verification: { verified: true, method: 'scriba_action_record', reason: null, at: at(7) } })
@@ -261,8 +289,27 @@ describe('verification', () => {
   it('marks sandbox work as sandbox wherever it is recorded', () => {
     render(<ExecutionStep action={executedAction({ simulated: true, proposedAt: at(4), execution: { status: 'executed', at: at(6), simulated: true }, verification: { verified: true, method: 'sandbox_readback', reason: null, at: at(7) } })} timeZone="UTC" />)
     const record = screen.getByTestId('execution-31')
-    expect(within(record).getByText('Sandbox')).toBeInTheDocument()
-    expect(record).toHaveTextContent('Ran (sandbox: nothing real)')
+    expect(within(record).getByTestId('sandbox-tag')).toHaveTextContent('Sandbox')
+    expect(record).toHaveTextContent('Executed in sandbox: simulated, nothing real was sent or changed')
+    // The same execution outside a sandbox carries none of the sandbox wording.
+    cleanup()
+    render(<ExecutionStep action={executedAction({ proposedAt: at(4), execution: { status: 'executed', at: at(6) } })} timeZone="UTC" />)
+    const real = screen.getByTestId('execution-31')
+    expect(real).toHaveTextContent('· Executed')
+    expect(real).not.toHaveTextContent(/sandbox|simulated/i)
+    expect(within(real).queryByTestId('sandbox-tag')).toBeNull()
+  })
+
+  it('says verification failed in its own words when the read-back does not show the effect', () => {
+    const action = { ...deskAction({ status: 'executed', verified: false, approve: null }), lifecycle: 'VERIFICATION_FAILED' } as DeskAction
+    expect(verificationOf(action)).toMatchObject({ state: 'failed', label: 'Verification failed' })
+    expect(verificationOf(action).detail).toContain('not counted as done')
+    // The server's reason is shown when it gives one.
+    expect(verificationOf({ ...action, verification: { verified: false, method: 'sandbox_readback', reason: 'The event is not on the calendar.', at: at(7) } } as DeskAction).detail).toBe('The event is not on the calendar.')
+    render(<VerificationEvidence action={action} timeZone="UTC" />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Verification failed.')
+    // A run the server calls completed is still a problem when one of its steps failed verification.
+    expect(groupOf(deskRun({ state: 'completed', lifecycle: lifecycle('COMPLETED'), actions: [action] }))).toBe('problem')
   })
 })
 

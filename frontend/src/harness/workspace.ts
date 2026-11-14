@@ -190,7 +190,8 @@ export interface WorkspaceApi {
   submitDraft(emailId: string): Promise<void>;
 
   /** Events and proposed slots on every connected calendar for the visible week. */
-  listAgenda(): Promise<AgendaEvent[]>;
+  /** `week`: the Monday-to-Monday dates to read. Without it, the week that contains now. */
+  listAgenda(week?: { start: string; end: string }): Promise<AgendaEvent[]>;
   getMeetingPrep(eventId: string): Promise<MeetingPrep | null>;
 
   listTasks(): Promise<WorkTask[]>;

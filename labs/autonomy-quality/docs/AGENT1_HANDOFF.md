@@ -1,5 +1,10 @@
 # Handoff to Agent 1: what the lab found on `agent1/autonomous-engine`
 
+> **Superseded for the integrated engine.** The current measurement is the commit-pinned
+> [ACCEPTANCE_REPORT.md](ACCEPTANCE_REPORT.md) on `agent1/integration`, with exact reproductions of its five most
+> damaging root causes in [REPRODUCTIONS.md](REPRODUCTIONS.md). This page is the record of the first handoff, on
+> `0282558`.
+
 From Agent 3 (Autonomy Quality Lab), 14 November 2026. Tested: `0282558` (rules-only, no model, isolated sandbox),
 compared with `34ad288`. Nothing under `backend/` was edited. Scriba was used read-only at `3ae3a2aa`.
 

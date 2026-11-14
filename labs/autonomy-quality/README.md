@@ -32,10 +32,14 @@ Everything here is owned by Agent 3 and lives in `labs/autonomy-quality/`. Nothi
 | `aql/baseline.py` | The baseline by evidence class: rules-only, scripted model, real model, sandbox, live |
 | `aql/selftest.py` | 33 deliberately wrong traces the oracle must reject |
 | `server/lab_server.py` | The backend, unmodified, plus the lab's probe routes (`/lab/v1`) |
+| `tools/acceptance_report.py` | The commit-pinned acceptance report: safety, job completion, human intervention, every remaining issue in one of seven classes, before and after by root cause |
+| `tools/stable_campaign.py` | The same backend with independent seeds; a run disturbed by machine sleep or a time-out is discarded and run again |
+| `tools/reproductions.py`, `tools/replay.py` | Exact reproductions of the most damaging root causes: the request body, and a standard-library script that replays it |
+| `tools/witness_matrix.py`, `tools/backend_scenarios.py`, `tools/mutation_probe.py` | Per-witness history across commits; a static count of the backend's own scenarios; the mutation probe |
 | `tests/` | Tests of the lab itself (no backend needed) |
 | `fixtures/corpus-v1.jsonl` | The generated corpus for the default seed, for reading and diffing |
 | `reports/` | Committed results of the runs described in `docs/RESULTS.md` |
-| `docs/` | Results, the Agent 1 handoff, the integration interface, security notes |
+| `docs/` | **`ACCEPTANCE_REPORT.md`** and **`REPRODUCTIONS.md`** for the current integration commit; earlier results, the Agent 1 handoff, the integration interface, security notes |
 
 Standard library only. Python 3.11 or newer. On Windows the `tzdata` package is needed for time zones (any
 environment that runs the backend already has it).

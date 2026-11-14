@@ -428,3 +428,17 @@ def test_a_file_that_cannot_be_kept_is_not_reported_as_fetched(sessions, portal,
         assert run["browser"]["state"] == "FAILED" and run["browser"]["error"] == "file_not_kept"
         assert run["browser"]["downloads"] == [] and run["fileChanges"] == [] and run["actions"] == []
         assert run["lifecycle"]["reason"] == "browser_failed"
+
+
+def test_a_sweep_picks_up_a_website_errand_even_when_triage_files_it_as_news(sessions, portal, monkeypatch):
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk_with_portal(desk, portal, sessions, monkeypatch)
+        world.deliver(message_id="p1", from_addr="Sofia Marin <sofia@client.example>", subject="Q3 supplier report",
+                      body=ASK, thread_id="T-p1", attachments=[{"filename": "budget.xlsx", "content": budget()}])
+        desk["model"]["on"] = False
+        desk["workflow"].model_understanding = False
+        swept = post(desk, "/intake/sweep").json()
+        assert [o["subject"] for o in swept["opened"]] == ["Q3 supplier report"], swept
+        run = get(desk, f"/runs/{swept['opened'][0]['runId']}").json()
+        assert run["browser"]["state"] == "VERIFIED" and run["fileChanges"][0]["state"] == "suggested"

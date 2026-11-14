@@ -1519,8 +1519,11 @@ class DeskWorkflow:
                 ref = {"provider": item.get("provider"), "id": item.get("id"),
                        "subject": item.get("subject"),
                        "category": (item.get("triage") or {}).get("category")}
-                if ref["category"] not in SWEEP_CATEGORIES or not ref["id"] or not ref["provider"] \
-                        or _not_inbound(item):
+                # Scriba's triage can file "fetch the report from the portal and ..." as news. A
+                # message that asks for a website errand is work, whatever it was filed as.
+                wanted = ref["category"] in SWEEP_CATEGORIES or errands.request(
+                    str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")) is not None
+                if not wanted or not ref["id"] or not ref["provider"] or _not_inbound(item):
                     skipped += 1
                     continue
                 key = run_key(user.id, ref["provider"], item.get("provider_account_id"), ref["id"],

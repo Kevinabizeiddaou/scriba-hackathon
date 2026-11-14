@@ -285,19 +285,17 @@ class DeskWorkflow:
         if planning.injection_suspected(item.get("subject"), text):
             # Mail is data. Text that addresses the assistant is not obeyed,
             # and nothing is proposed on the strength of a message carrying it.
-            plan["flags"].append("prompt_injection_suspected")
-            plan["held"] = {
-                "reason": "untrusted_instructions", "slots": [], "calendars": [],
-                "message": "This message contains text written as instructions to an assistant. "
-                           "Nothing is proposed automatically. Read it yourself before acting."}
-            plan["decisions"].append({"decision": "escalate", "reason": "untrusted_instructions",
-                                      "explanation": "The message tries to instruct the assistant, "
-                                                     "so it was handed to you."})
-            return plan
+            return self._hand_over_untrusted(plan, source="rules")
 
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
         plan["understanding"] = found
+        if found.get("instructs_assistant"):
+            # The rules did not recognise the wording; the model quoted text
+            # in the message that addresses an assistant. A model can only
+            # make the Desk stricter this way: nothing is proposed, and
+            # whatever else it read in this message is not acted on.
+            return self._hand_over_untrusted(plan, source="model", evidence=found["instructs_assistant"])
         if found["source"] == "model" and triage["category"] != "automated":
             self._plan_from_intents(ctx, user, item, calendar, plan, found)
         elif triage["category"] == "action_item":
@@ -319,6 +317,21 @@ class DeskWorkflow:
                 plan["decisions"].append({"decision": "agent_unavailable", "reason": type(exc).__name__,
                                           "explanation": "The model could not be used; the plan above "
                                                          "is rule-based."})
+        return plan
+
+    @staticmethod
+    def _hand_over_untrusted(plan: Dict[str, Any], *, source: str,
+                             evidence: Optional[List[str]] = None) -> Dict[str, Any]:
+        plan["flags"].append("prompt_injection_suspected")
+        plan["held"] = {
+            "reason": "untrusted_instructions", "slots": [], "calendars": [],
+            "message": "This message contains text written as instructions to an assistant. "
+                       "Nothing is proposed automatically. Read it yourself before acting."}
+        decision = {"decision": "escalate", "reason": "untrusted_instructions", "source": source,
+                    "explanation": "The message tries to instruct the assistant, so it was handed to you."}
+        if evidence:
+            decision["evidence"] = list(evidence)
+        plan["decisions"].append(decision)
         return plan
 
     def _understand(self, user: Any, item: Dict[str, Any], detail: Dict[str, Any],
@@ -344,7 +357,8 @@ class DeskWorkflow:
                               "error": None if found and found["intents"] else "no_supported_intent",
                               "dropped": len((found or {}).get("dropped") or [])})
         if not found or not found["intents"]:
-            return {**rules, "dropped": (found or {}).get("dropped") or []}
+            return {**rules, "dropped": (found or {}).get("dropped") or [],
+                    "instructs_assistant": (found or {}).get("instructs_assistant") or []}
         plan["planner"] = "model+rules"
         return found
 
@@ -533,21 +547,28 @@ class DeskWorkflow:
         usage_scope = getattr(self.gateway, "model_usage", None)
         configured = getattr(self.gateway, "model_configured", None)
         has_model = bool(configured()) if callable(configured) else True
+        model_failed = False
         if pre_read:
             pass                    # the model's understanding already read the request
         elif callable(usage_scope):
             with usage_scope() as calls:
                 extracted = self.gateway.extract_meeting(user, item, zone_name)
             plan["usage"].extend(calls)
+            # A call that did not complete (the provider is unreachable) is
+            # not an answer. "The model read no time" and "the model could
+            # not be asked" are different things.
+            model_failed = not extracted and any(call.get("success") is False for call in calls)
         else:
             extracted = self.gateway.extract_meeting(user, item, zone_name)
         if not pre_read:
             plan["reads"].append({"tool": "model.extract_request", "ok": bool(extracted),
                                   "error": None if extracted else
-                                  ("no_usable_answer" if has_model else "model_not_configured")})
-        if not extracted and not has_model:
-            # No model in this process. A time that is written out in full is
-            # read by rule; anything less exact is left unread, never guessed.
+                                  ("model_call_failed" if model_failed else
+                                   "no_usable_answer" if has_model else "model_not_configured")})
+        if not extracted and (not has_model or model_failed):
+            # No model in this process, or it could not be reached. A time
+            # that is written out in full is read by rule; anything less
+            # exact is left unread, never guessed.
             written = reading.explicit_request(
                 str(item.get("body") or item.get("snippet") or ""),
                 self.service.now(user).astimezone(resolve_zone(zone_name)),
@@ -564,6 +585,19 @@ class DeskWorkflow:
             plan.setdefault("assumptions", []).append(
                 f"The length was not stated; your default of {duration} minutes is used.")
         action = str((extracted or {}).get("calendar_action") or "").lower()
+        if extracted and "cancel" not in (intent, action) and reading.stated_zone(
+                str(item.get("body") or item.get("snippet") or ""))[1]:
+            # The message names a zone that means more than one place ("IST",
+            # "my time"). A model may still hand back a time with an offset:
+            # that offset is its guess, and a guessed hour is not booked. The
+            # rules refuse the same text; so does this.
+            extracted = {key: value for key, value in extracted.items()
+                         if key not in ("requested_start", "requested_end", "requester_timezone")}
+            plan.setdefault("missing", []).append("time zone")
+            plan["decisions"].append({
+                "decision": "hold", "reason": "timezone_ambiguous",
+                "explanation": "The message names a time zone that can mean more than one place, "
+                               "so the time it gives was not used."})
         # The rule-based intent is the floor. The model may recognise a change
         # the rules missed; it may not turn a change request into a new booking.
         if intent == "new" and action in ("reschedule", "cancel"):

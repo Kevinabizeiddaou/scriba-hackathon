@@ -443,7 +443,18 @@ the message; a time must carry an offset; below 0.6 confidence nothing is
 proposed (`held.reason: "intent_unclear"`, with `held.missing[]`). A message
 classed as automated is not upgraded, a change request is never turned into
 a new booking, and a message that addresses the assistant is not sent to a
-model. Its tests script the model. One real model has been run through it in
+model. The call also reports `instructs_assistant`: exact quotes of text
+written to an assistant, or asking to skip approval or to send the
+executive's data somewhere. One such quote that is in the message stops the
+run exactly as the rules' own check does (`flags:
+["prompt_injection_suspected"]`, `held.reason: "untrusted_instructions"`,
+the decision carries `source: "model"` and `evidence[]`); a claim that is
+not a quote changes nothing. A time in a zone that means more than one place
+("IST", "CST", "my time") is never used, whoever read it: the decision
+`timezone_ambiguous` is recorded, `plan.missing` gains `time zone` and the
+sender is asked. When a model call fails, a plainly written time is read by
+the rules (`model.extract_request` records `model_call_failed`).
+Its tests script the model. One real model has been run through it in
 the sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 
 ### The model step (off by default)
@@ -491,6 +502,7 @@ Scriba the Desk runs on. A held card has `status: "needs_info"`,
 | `desk_check_failed` | A Desk check itself failed. The card is held, never passed | Retry later |
 | `external_writes_disabled` | The execution gate (section 8): mail and calendar writes are off on this backend. Nothing was claimed or executed | Nothing to offer. The card can be approved once writes are enabled |
 | `proposal_changed` | The stored action is no longer what was proposed and no edit by the person is recorded (section 8, "An approval is bound") | Nothing to offer. Open the run; do not approve as is |
+| `approval_held` (evaluation routes only, HTTP 409) | A guard held the card when the harness approved it; the message names the hold code | Nothing ran |
 | `outcome_unknown` | A provider did not confirm the action. It may or may not have happened (`output.outcome_unknown: true`, card `status: "failed"`) | See "Unknown outcomes" in section 8 |
 | `sandbox_world_gone` | The card was prepared in a sandbox that no longer exists | Nothing to offer |
 

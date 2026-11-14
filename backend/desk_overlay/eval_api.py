@@ -444,6 +444,19 @@ def approvals_of(record: Mapping[str, Any], view: Mapping[str, Any]) -> List[Dic
     return found
 
 
+def measured_usage(usage: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Usage in the contract's shape: token counts are numbers. A model whose
+    calls were not measured (a call that failed before the provider answered)
+    is left out; with nothing measured the usage is unknown, which is null."""
+    if not usage:
+        return None
+    models = [model for model in usage.get("models") or []
+              if model.get("inputTokens") is not None and model.get("outputTokens") is not None]
+    if not models:
+        return None
+    return {"models": models, "estimatedCostUsd": usage.get("estimatedCostUsd")}
+
+
 def _outcome(view: Mapping[str, Any]) -> str:
     """What the run achieved, from what actually executed."""
     done = [a for a in view.get("actions") or [] if a.get("status") in ("executed", "partially_executed")]
@@ -597,7 +610,7 @@ def agent_run(record: Mapping[str, Any], view: Optional[Mapping[str, Any]]) -> D
         startedAt=_stamp(view.get("createdAt"), record["startedAt"]),
         finishedAt=_stamp(view.get("updatedAt"), fallback) if final else None,
         durationMs=int((time.monotonic() - record["started"]) * 1000) if final else None,
-        usage={"models": usage["models"], "estimatedCostUsd": usage["estimatedCostUsd"]} if usage else None,
+        usage=measured_usage(usage),
         error=(failed if status == "failed" else None) or (
             {"code": "run_failed", "message": "The run failed.", "source": "backend", "retryable": False}
             if status == "failed" else None),

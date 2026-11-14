@@ -524,3 +524,16 @@ def test_an_approval_a_guard_holds_at_decision_time_is_reported_not_a_server_err
     assert "proposal_changed" in answered.json()["error"]["message"]
     after = call(desk, "GET", f"/runs/{run['id']}").json()
     assert [a for a in after["actions"] if a["sideEffect"] and a["status"] == "succeeded"] == []
+
+
+def test_usage_that_was_not_measured_is_reported_as_unknown_never_as_a_null_count():
+    """Found when the network dropped during a real-model run: a failed call
+    has no token counts, and the run's usage then broke the contract."""
+    from desk_overlay.eval_api import measured_usage
+
+    failed = {"model": "m", "calls": 1, "inputTokens": None, "outputTokens": None, "cachedInputTokens": None}
+    good = {"model": "n", "calls": 2, "inputTokens": 10, "outputTokens": 4, "cachedInputTokens": 0}
+    assert measured_usage(None) is None
+    assert measured_usage({"models": [failed], "estimatedCostUsd": None}) is None
+    assert measured_usage({"models": [failed, good], "estimatedCostUsd": None}) == {
+        "models": [good], "estimatedCostUsd": None}

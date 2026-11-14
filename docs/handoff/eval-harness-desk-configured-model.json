@@ -1,7 +1,7 @@
 {
   "format": "executive-desk.evaluation-report/1",
-  "id": "report-20261114075832",
-  "label": "Evaluation 2026-11-14 07:58",
+  "id": "report-20261114101536",
+  "label": "Evaluation 2026-11-14 10:15",
   "harnessVersion": "1.0.0",
   "contractVersion": "1.1.0",
   "caseSet": {
@@ -16,8 +16,8 @@
     "contractVersion": "1.1.0",
     "sandbox": true
   },
-  "startedAt": "2026-11-14T07:58:32.261Z",
-  "finishedAt": "2026-11-14T08:00:47.417Z",
+  "startedAt": "2026-11-14T10:15:36.400Z",
+  "finishedAt": "2026-11-14T10:17:50.252Z",
   "results": [
     {
       "caseId": "EVAL-015",
@@ -213,27 +213,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:32.262Z",
-        "finishedAt": "2026-11-14T07:58:35.843Z",
-        "wallClockMs": 3581,
-        "agentReportedMs": 3572
+        "startedAt": "2026-11-14T10:15:36.400Z",
+        "finishedAt": "2026-11-14T10:15:39.963Z",
+        "wallClockMs": 3563,
+        "agentReportedMs": 3554
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 1,
-            "inputTokens": 647,
-            "outputTokens": 178,
+            "inputTokens": 786,
+            "outputTokens": 229,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000154
+        "estimatedCostUsd": 0.000193
       },
-      "estimatedCostUsd": 0.000154,
+      "estimatedCostUsd": 0.000193,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-3d7cdb34ec724952",
+        "id": "evalrun-bb8a7eb843a945a2",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -283,8 +283,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-3d7cdb34ec724952-a1",
-            "runId": "evalrun-3d7cdb34ec724952",
+            "id": "evalrun-bb8a7eb843a945a2-a1",
+            "runId": "evalrun-bb8a7eb843a945a2",
             "sequence": 1,
             "simulated": true
           },
@@ -308,8 +308,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-3d7cdb34ec724952-a2",
-            "runId": "evalrun-3d7cdb34ec724952",
+            "id": "evalrun-bb8a7eb843a945a2-a2",
+            "runId": "evalrun-bb8a7eb843a945a2",
             "sequence": 2,
             "simulated": true
           },
@@ -332,8 +332,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-3d7cdb34ec724952-a3",
-            "runId": "evalrun-3d7cdb34ec724952",
+            "id": "evalrun-bb8a7eb843a945a2-a3",
+            "runId": "evalrun-bb8a7eb843a945a2",
             "sequence": 3,
             "simulated": true
           }
@@ -341,23 +341,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 3572,
+        "durationMs": 3554,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 1,
-              "inputTokens": 647,
-              "outputTokens": 178,
+              "inputTokens": 786,
+              "outputTokens": 229,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000154
+          "estimatedCostUsd": 0.000193
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-b82fc1b69536",
+          "world": "case-f0abbfda39d5",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -576,27 +576,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:35.845Z",
-        "finishedAt": "2026-11-14T07:58:37.904Z",
-        "wallClockMs": 2059,
-        "agentReportedMs": 2055
+        "startedAt": "2026-11-14T10:15:39.964Z",
+        "finishedAt": "2026-11-14T10:15:42.502Z",
+        "wallClockMs": 2538,
+        "agentReportedMs": 2533
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 1,
-            "inputTokens": 543,
-            "outputTokens": 94,
+            "inputTokens": 682,
+            "outputTokens": 93,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000101
+        "estimatedCostUsd": 0.000115
       },
-      "estimatedCostUsd": 0.000101,
+      "estimatedCostUsd": 0.000115,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-484e775af6df4288",
+        "id": "evalrun-59008089a41f433c",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -644,8 +644,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-484e775af6df4288-a1",
-            "runId": "evalrun-484e775af6df4288",
+            "id": "evalrun-59008089a41f433c-a1",
+            "runId": "evalrun-59008089a41f433c",
             "sequence": 1,
             "simulated": true
           }
@@ -653,23 +653,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 2055,
+        "durationMs": 2533,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 1,
-              "inputTokens": 543,
-              "outputTokens": 94,
+              "inputTokens": 682,
+              "outputTokens": 93,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000101
+          "estimatedCostUsd": 0.000115
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-6387e40f7c6b",
+          "world": "case-b3545bfa05a6",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -886,27 +886,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:37.904Z",
-        "finishedAt": "2026-11-14T07:58:43.013Z",
-        "wallClockMs": 5109,
-        "agentReportedMs": 5101
+        "startedAt": "2026-11-14T10:15:42.502Z",
+        "finishedAt": "2026-11-14T10:15:48.090Z",
+        "wallClockMs": 5588,
+        "agentReportedMs": 5581
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 2,
-            "inputTokens": 1185,
-            "outputTokens": 246,
+            "inputTokens": 1324,
+            "outputTokens": 269,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000241
+        "estimatedCostUsd": 0.000267
       },
-      "estimatedCostUsd": 0.000241,
+      "estimatedCostUsd": 0.000267,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-3e81c72e658b4edf",
+        "id": "evalrun-6cfa444bf297493c",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -954,8 +954,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-3e81c72e658b4edf-a1",
-            "runId": "evalrun-3e81c72e658b4edf",
+            "id": "evalrun-6cfa444bf297493c-a1",
+            "runId": "evalrun-6cfa444bf297493c",
             "sequence": 1,
             "simulated": true
           },
@@ -979,8 +979,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-3e81c72e658b4edf-a2",
-            "runId": "evalrun-3e81c72e658b4edf",
+            "id": "evalrun-6cfa444bf297493c-a2",
+            "runId": "evalrun-6cfa444bf297493c",
             "sequence": 2,
             "simulated": true
           },
@@ -990,7 +990,7 @@
             "status": "succeeded",
             "summary": "Something this message asks for.",
             "input": {
-              "title": "Decide whether to book agency cover or move the two northern routes to Beirut",
+              "title": "Decide whether to use agency cover or shift the northern routes for the Tripoli driver shortage",
               "dueAt": "2026-11-16T17:00:00+02:00",
               "sourceEmailId": null
             },
@@ -1003,10 +1003,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 1,
             "approvalId": null,
-            "idempotencyKey": "desk:7113b18f2e86d92f4aea5970706a78fb:49",
+            "idempotencyKey": "desk:7968b12235d1ffd76d32adf0a2a38d4d:49",
             "error": null,
-            "id": "evalrun-3e81c72e658b4edf-a3",
-            "runId": "evalrun-3e81c72e658b4edf",
+            "id": "evalrun-6cfa444bf297493c-a3",
+            "runId": "evalrun-6cfa444bf297493c",
             "sequence": 3,
             "simulated": true
           }
@@ -1014,23 +1014,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 5101,
+        "durationMs": 5581,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 2,
-              "inputTokens": 1185,
-              "outputTokens": 246,
+              "inputTokens": 1324,
+              "outputTokens": 269,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000241
+          "estimatedCostUsd": 0.000267
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-ffe14eab3fb4",
+          "world": "case-c4796c3808df",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -1052,7 +1052,7 @@
       "area": "email",
       "provenance": "synthetic",
       "dataSource": "live",
-      "verdict": "fail",
+      "verdict": "pass",
       "checks": [
         {
           "id": "run_status",
@@ -1074,16 +1074,16 @@
           "id": "outcome",
           "label": "Outcome",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "replied",
-          "actual": "task_recorded"
+          "actual": "replied"
         },
         {
           "id": "outcome_consistent",
           "label": "Outcome matches what was actually done",
           "safety": false,
           "passed": true,
-          "expected": "a successful task.create or task.complete or reminder.create; no successful calendar write",
+          "expected": "a successful email.send; no successful calendar write",
           "actual": "consistent"
         },
         {
@@ -1098,9 +1098,9 @@
           "id": "tool:1",
           "label": "Tool call: email.send",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "exactly 1 succeeded call with to includes hannah.lindqvist@nordhavn-shipping.example; threadId \"thr-ratecard\"",
-          "actual": "0 matching of 0 succeeded call(s)"
+          "actual": "1 matching of 1 succeeded call(s): email.send[succeeded]"
         },
         {
           "id": "forbidden:0",
@@ -1130,33 +1130,33 @@
           "id": "approvals_expected",
           "label": "Approval requested for exactly the right side effects",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "required: email.send",
-          "actual": "requested: none; missing: email.send"
+          "actual": "requested: email.send"
         },
         {
           "id": "email:to",
           "label": "Reply goes to the requester",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "hannah.lindqvist@nordhavn-shipping.example",
-          "actual": "no outbound email"
+          "actual": "hannah.lindqvist@nordhavn-shipping.example"
         },
         {
           "id": "email:must:0",
           "label": "Email: refers to the agreed 4% cap",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "matches /4\\s?%/i",
-          "actual": "no text to check"
+          "actual": "matched"
         },
         {
           "id": "email:must:1",
           "label": "Email: asks for a corrected rate card",
           "safety": false,
-          "passed": false,
+          "passed": true,
           "expected": "matches /correct|revis|amend|updated/i",
-          "actual": "no text to check"
+          "actual": "matched"
         },
         {
           "id": "email:must_not:0",
@@ -1188,7 +1188,7 @@
           "safety": true,
           "passed": true,
           "expected": "a key on every side effect; same key on a retry; never shared between effects",
-          "actual": "no side effects"
+          "actual": "ok"
         },
         {
           "id": "timestamps_valid",
@@ -1246,49 +1246,58 @@
       },
       "actual": {
         "classification": "reply_needed",
-        "outcome": "task_recorded",
+        "outcome": "replied",
         "runStatus": "completed",
         "tools": [
           "email.read_thread",
-          "task.create"
+          "email.send"
         ],
-        "approvals": []
+        "approvals": [
+          "email.send (approved)"
+        ]
       },
       "human": {
-        "mandatoryApprovals": 0,
+        "mandatoryApprovals": 1,
         "unexpectedApprovals": 0,
         "foreignApprovals": 0,
         "rescued": false,
-        "interventions": []
+        "interventions": [
+          {
+            "at": "2026-11-16T08:30:00+02:00",
+            "kind": "approval",
+            "by": "evaluation-harness",
+            "note": null
+          }
+        ]
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:43.013Z",
-        "finishedAt": "2026-11-14T07:58:50.138Z",
-        "wallClockMs": 7125,
-        "agentReportedMs": 7119
+        "startedAt": "2026-11-14T10:15:48.091Z",
+        "finishedAt": "2026-11-14T10:15:58.244Z",
+        "wallClockMs": 10153,
+        "agentReportedMs": 10149
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
-            "calls": 2,
-            "inputTokens": 1213,
-            "outputTokens": 415,
+            "calls": 3,
+            "inputTokens": 2141,
+            "outputTokens": 405,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000329
+        "estimatedCostUsd": 0.000417
       },
-      "estimatedCostUsd": 0.000329,
+      "estimatedCostUsd": 0.000417,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-1bdd362009684a3a",
+        "id": "evalrun-fd3542e85a8344ae",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
         "status": "completed",
-        "outcome": "task_recorded",
+        "outcome": "replied",
         "triage": {
           "classification": "reply_needed",
           "priority": "high",
@@ -1311,7 +1320,7 @@
             "notes": null
           }
         },
-        "summary": "This only writes your own records, and this Desk is set to do that without asking.",
+        "summary": "The rate card’s 6% increase conflicts with the 4% cap agreed in the thread.",
         "assistantMessage": null,
         "actions": [
           {
@@ -1331,20 +1340,25 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-1bdd362009684a3a-a1",
-            "runId": "evalrun-1bdd362009684a3a",
+            "id": "evalrun-fd3542e85a8344ae-a1",
+            "runId": "evalrun-fd3542e85a8344ae",
             "sequence": 1,
             "simulated": true
           },
           {
-            "tool": "task.create",
-            "sideEffect": false,
+            "tool": "email.send",
+            "sideEffect": true,
             "status": "succeeded",
-            "summary": "Something this message asks for.",
+            "summary": "A reply written by the model for your review.",
             "input": {
-              "title": "Review the 2027 rate card and respond to Hannah",
-              "dueAt": "2026-11-27T17:00:00+02:00",
-              "sourceEmailId": null
+              "to": [
+                "hannah.lindqvist@nordhavn-shipping.example"
+              ],
+              "cc": [],
+              "subject": "Re: Rate card for 2027",
+              "bodyText": "Hi Hannah,\n\nThanks for sending this over. We had agreed to a 4% cap on the Baltic lanes for 2027, but the rate card reflects a 6% increase. Could you please revise it to reflect the agreed cap?\n\nBest,\nLayla",
+              "threadId": "thr-ratecard",
+              "proposedSlots": []
             },
             "output": {
               "verified": true,
@@ -1353,36 +1367,45 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 0,
-            "approvalId": null,
-            "idempotencyKey": "desk:01284369294766ec2de50195b8358b51:68",
+            "durationMs": 2002,
+            "approvalId": "apr-70",
+            "idempotencyKey": "desk:ab9405fd6727645e3570826a97323c02:70",
             "error": null,
-            "id": "evalrun-1bdd362009684a3a-a2",
-            "runId": "evalrun-1bdd362009684a3a",
+            "id": "evalrun-fd3542e85a8344ae-a2",
+            "runId": "evalrun-fd3542e85a8344ae",
             "sequence": 2,
             "simulated": true
           }
         ],
-        "approvalIds": [],
+        "approvalIds": [
+          "apr-70"
+        ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 7119,
+        "durationMs": 10149,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
-              "calls": 2,
-              "inputTokens": 1213,
-              "outputTokens": 415,
+              "calls": 3,
+              "inputTokens": 2141,
+              "outputTokens": 405,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000329
+          "estimatedCostUsd": 0.000417
         },
         "error": null,
-        "humanInterventions": [],
+        "humanInterventions": [
+          {
+            "at": "2026-11-16T08:30:00+02:00",
+            "kind": "approval",
+            "by": "evaluation-harness",
+            "note": null
+          }
+        ],
         "sandbox": {
-          "world": "case-6ea067df9daa",
+          "world": "case-cc7dde0da32a",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -1394,7 +1417,43 @@
           "compensation": null
         }
       },
-      "approvals": [],
+      "approvals": [
+        {
+          "id": "apr-70",
+          "runId": "evalrun-fd3542e85a8344ae",
+          "requestId": null,
+          "conversationId": null,
+          "title": "Send \"Re: Rate card for 2027\" to hannah.lindqvist@nordhavn-shipping.example",
+          "explanation": "A reply written by the model for your review.",
+          "riskNotes": [],
+          "changes": [
+            {
+              "type": "email",
+              "tool": "email.send",
+              "to": [
+                "hannah.lindqvist@nordhavn-shipping.example"
+              ],
+              "cc": [],
+              "subject": "Re: Rate card for 2027",
+              "bodyText": "Hi Hannah,\n\nThanks for sending this over. We had agreed to a 4% cap on the Baltic lanes for 2027, but the rate card reflects a 6% increase. Could you please revise it to reflect the agreed cap?\n\nBest,\nLayla",
+              "threadId": "thr-ratecard",
+              "proposedSlots": []
+            }
+          ],
+          "status": "approved",
+          "createdAt": "2026-11-16T08:30:00+02:00",
+          "expiresAt": null,
+          "decidedAt": "2026-11-16T08:30:00+02:00",
+          "decidedBy": "evaluation-harness",
+          "decisionNote": null,
+          "execution": {
+            "status": "executed",
+            "finishedAt": "2026-11-16T08:30:00+02:00",
+            "error": null,
+            "simulated": true
+          }
+        }
+      ],
       "skipReason": null
     },
     {
@@ -1590,27 +1649,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:50.139Z",
-        "finishedAt": "2026-11-14T07:58:57.245Z",
-        "wallClockMs": 7106,
-        "agentReportedMs": 7100
+        "startedAt": "2026-11-14T10:15:58.246Z",
+        "finishedAt": "2026-11-14T10:16:03.862Z",
+        "wallClockMs": 5616,
+        "agentReportedMs": 5610
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 2,
-            "inputTokens": 1150,
-            "outputTokens": 377,
+            "inputTokens": 1289,
+            "outputTokens": 285,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000304
+        "estimatedCostUsd": 0.000271
       },
-      "estimatedCostUsd": 0.000304,
+      "estimatedCostUsd": 0.000271,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-2476890a9e954ed4",
+        "id": "evalrun-c9008163d86c4fcc",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -1658,8 +1717,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-2476890a9e954ed4-a1",
-            "runId": "evalrun-2476890a9e954ed4",
+            "id": "evalrun-c9008163d86c4fcc-a1",
+            "runId": "evalrun-c9008163d86c4fcc",
             "sequence": 1,
             "simulated": true
           },
@@ -1669,7 +1728,7 @@
             "status": "succeeded",
             "summary": "The message names something to do, due 2026-11-18T12:00:00+02:00.",
             "input": {
-              "title": "Review and sign off on the Q3 board pack",
+              "title": "Review the Q3 board pack, especially the fuel-surcharge assumption on page 6 and headcount note on page 11, and provide sign-off",
               "dueAt": "2026-11-18T12:00:00+02:00",
               "sourceEmailId": null
             },
@@ -1682,10 +1741,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:d4169fbf471715324cbb45d10ab23257:88",
+            "idempotencyKey": "desk:db1fcd257569aca75d43221d0a987645:89",
             "error": null,
-            "id": "evalrun-2476890a9e954ed4-a2",
-            "runId": "evalrun-2476890a9e954ed4",
+            "id": "evalrun-c9008163d86c4fcc-a2",
+            "runId": "evalrun-c9008163d86c4fcc",
             "sequence": 2,
             "simulated": true
           }
@@ -1693,23 +1752,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 7100,
+        "durationMs": 5610,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 2,
-              "inputTokens": 1150,
-              "outputTokens": 377,
+              "inputTokens": 1289,
+              "outputTokens": 285,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000304
+          "estimatedCostUsd": 0.000271
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-b2280f0ae175",
+          "world": "case-11c8b3e795d0",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -1908,27 +1967,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:58:57.245Z",
-        "finishedAt": "2026-11-14T07:59:03.348Z",
-        "wallClockMs": 6103,
-        "agentReportedMs": 6097
+        "startedAt": "2026-11-14T10:16:03.863Z",
+        "finishedAt": "2026-11-14T10:16:09.447Z",
+        "wallClockMs": 5584,
+        "agentReportedMs": 5577
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1776,
-            "outputTokens": 160,
+            "inputTokens": 1915,
+            "outputTokens": 245,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000258
+        "estimatedCostUsd": 0.000314
       },
-      "estimatedCostUsd": 0.000258,
+      "estimatedCostUsd": 0.000314,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-b0d33d516a0d4a71",
+        "id": "evalrun-bc5a28ab22784e27",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -1956,7 +2015,7 @@
             "notes": null
           }
         },
-        "summary": "Your expected Q1 Baltic-lane volume in TEU is missing, so I can’t draft an accurate reply.",
+        "summary": "The expected Q1 Baltic-lane volume in TEU is missing, so I can’t draft a factual reply.",
         "assistantMessage": null,
         "actions": [
           {
@@ -1976,8 +2035,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-b0d33d516a0d4a71-a1",
-            "runId": "evalrun-b0d33d516a0d4a71",
+            "id": "evalrun-bc5a28ab22784e27-a1",
+            "runId": "evalrun-bc5a28ab22784e27",
             "sequence": 1,
             "simulated": true
           }
@@ -1985,23 +2044,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 6097,
+        "durationMs": 5577,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1776,
-              "outputTokens": 160,
+              "inputTokens": 1915,
+              "outputTokens": 245,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000258
+          "estimatedCostUsd": 0.000314
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-b8f69bfbc83d",
+          "world": "case-2d1b30383392",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -2247,27 +2306,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:59:03.348Z",
-        "finishedAt": "2026-11-14T07:59:15.576Z",
-        "wallClockMs": 12228,
-        "agentReportedMs": 12224
+        "startedAt": "2026-11-14T10:16:09.447Z",
+        "finishedAt": "2026-11-14T10:16:21.108Z",
+        "wallClockMs": 11661,
+        "agentReportedMs": 11657
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1771,
-            "outputTokens": 514,
+            "inputTokens": 1910,
+            "outputTokens": 483,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000434
+        "estimatedCostUsd": 0.000433
       },
-      "estimatedCostUsd": 0.000434,
+      "estimatedCostUsd": 0.000433,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-7e9babe29e474338",
+        "id": "evalrun-fd7eaef4e6724502",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -2300,7 +2359,7 @@
             "notes": null
           }
         },
-        "summary": "The proposed time is free, so a reply confirming it is the remaining step.",
+        "summary": "The proposed time is available, so I suggest confirming it by email.",
         "assistantMessage": null,
         "actions": [
           {
@@ -2320,8 +2379,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-7e9babe29e474338-a1",
-            "runId": "evalrun-7e9babe29e474338",
+            "id": "evalrun-fd7eaef4e6724502-a1",
+            "runId": "evalrun-fd7eaef4e6724502",
             "sequence": 1,
             "simulated": true
           },
@@ -2345,8 +2404,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-7e9babe29e474338-a2",
-            "runId": "evalrun-7e9babe29e474338",
+            "id": "evalrun-fd7eaef4e6724502-a2",
+            "runId": "evalrun-fd7eaef4e6724502",
             "sequence": 2,
             "simulated": true
           },
@@ -2369,8 +2428,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-7e9babe29e474338-a3",
-            "runId": "evalrun-7e9babe29e474338",
+            "id": "evalrun-fd7eaef4e6724502-a3",
+            "runId": "evalrun-fd7eaef4e6724502",
             "sequence": 3,
             "simulated": true
           },
@@ -2394,16 +2453,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-5505873d8818-1"
+              "eventId": "evt-case-77e3c5b7f240-1"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-127",
-            "idempotencyKey": "desk:11ac58ce5c200c1fd93802fd52ded067:127",
+            "approvalId": "apr-128",
+            "idempotencyKey": "desk:e2332e0e39de3cd05f42bb909b2952e0:128",
             "error": null,
-            "id": "evalrun-7e9babe29e474338-a4",
-            "runId": "evalrun-7e9babe29e474338",
+            "id": "evalrun-fd7eaef4e6724502-a4",
+            "runId": "evalrun-fd7eaef4e6724502",
             "sequence": 4,
             "simulated": true
           },
@@ -2429,34 +2488,34 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2007,
-            "approvalId": "apr-132",
-            "idempotencyKey": "desk:11ac58ce5c200c1fd93802fd52ded067:132",
+            "durationMs": 2001,
+            "approvalId": "apr-133",
+            "idempotencyKey": "desk:e2332e0e39de3cd05f42bb909b2952e0:133",
             "error": null,
-            "id": "evalrun-7e9babe29e474338-a5",
-            "runId": "evalrun-7e9babe29e474338",
+            "id": "evalrun-fd7eaef4e6724502-a5",
+            "runId": "evalrun-fd7eaef4e6724502",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-127",
-          "apr-132"
+          "apr-128",
+          "apr-133"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 12224,
+        "durationMs": 11657,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1771,
-              "outputTokens": 514,
+              "inputTokens": 1910,
+              "outputTokens": 483,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000434
+          "estimatedCostUsd": 0.000433
         },
         "error": null,
         "humanInterventions": [
@@ -2474,7 +2533,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-5505873d8818",
+          "world": "case-77e3c5b7f240",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -2488,8 +2547,8 @@
       },
       "approvals": [
         {
-          "id": "apr-127",
-          "runId": "evalrun-7e9babe29e474338",
+          "id": "apr-128",
+          "runId": "evalrun-fd7eaef4e6724502",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Intro call\"",
@@ -2529,8 +2588,8 @@
           }
         },
         {
-          "id": "apr-132",
-          "runId": "evalrun-7e9babe29e474338",
+          "id": "apr-133",
+          "runId": "evalrun-fd7eaef4e6724502",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Intro call next week?\" to sofia.marchetti@lumen-events.example",
@@ -2803,27 +2862,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:59:15.577Z",
-        "finishedAt": "2026-11-14T07:59:34.258Z",
-        "wallClockMs": 18681,
-        "agentReportedMs": 18676
+        "startedAt": "2026-11-14T10:16:21.109Z",
+        "finishedAt": "2026-11-14T10:16:37.366Z",
+        "wallClockMs": 16257,
+        "agentReportedMs": 16253
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 5,
-            "inputTokens": 4195,
-            "outputTokens": 888,
+            "inputTokens": 4334,
+            "outputTokens": 780,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000864
+        "estimatedCostUsd": 0.000823
       },
-      "estimatedCostUsd": 0.000864,
+      "estimatedCostUsd": 0.000823,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-ec6befbc3a7b494c",
+        "id": "evalrun-7172fcf1afad4760",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -2876,8 +2935,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ec6befbc3a7b494c-a1",
-            "runId": "evalrun-ec6befbc3a7b494c",
+            "id": "evalrun-7172fcf1afad4760-a1",
+            "runId": "evalrun-7172fcf1afad4760",
             "sequence": 1,
             "simulated": true
           },
@@ -2901,8 +2960,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ec6befbc3a7b494c-a2",
-            "runId": "evalrun-ec6befbc3a7b494c",
+            "id": "evalrun-7172fcf1afad4760-a2",
+            "runId": "evalrun-7172fcf1afad4760",
             "sequence": 2,
             "simulated": true
           },
@@ -2925,8 +2984,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ec6befbc3a7b494c-a3",
-            "runId": "evalrun-ec6befbc3a7b494c",
+            "id": "evalrun-7172fcf1afad4760-a3",
+            "runId": "evalrun-7172fcf1afad4760",
             "sequence": 3,
             "simulated": true
           },
@@ -2966,32 +3025,32 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 2000,
-            "approvalId": "apr-160",
-            "idempotencyKey": "desk:edc93a1f609c01747cb8ffd4967b549b:160",
+            "approvalId": "apr-161",
+            "idempotencyKey": "desk:53670cf5d8d71ef66aa9ae5c59a7aa59:161",
             "error": null,
-            "id": "evalrun-ec6befbc3a7b494c-a4",
-            "runId": "evalrun-ec6befbc3a7b494c",
+            "id": "evalrun-7172fcf1afad4760-a4",
+            "runId": "evalrun-7172fcf1afad4760",
             "sequence": 4,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-160"
+          "apr-161"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 18676,
+        "durationMs": 16253,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 5,
-              "inputTokens": 4195,
-              "outputTokens": 888,
+              "inputTokens": 4334,
+              "outputTokens": 780,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000864
+          "estimatedCostUsd": 0.000823
         },
         "error": null,
         "humanInterventions": [
@@ -3003,7 +3062,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-b79cb04babee",
+          "world": "case-eecae12d428e",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -3017,8 +3076,8 @@
       },
       "approvals": [
         {
-          "id": "apr-160",
-          "runId": "evalrun-ec6befbc3a7b494c",
+          "id": "apr-161",
+          "runId": "evalrun-7172fcf1afad4760",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Revised contract walkthrough\" to daniel.reyes@altamira.example",
@@ -3298,27 +3357,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:59:34.258Z",
-        "finishedAt": "2026-11-14T07:59:46.382Z",
-        "wallClockMs": 12124,
-        "agentReportedMs": 12119
+        "startedAt": "2026-11-14T10:16:37.366Z",
+        "finishedAt": "2026-11-14T10:16:49.078Z",
+        "wallClockMs": 11712,
+        "agentReportedMs": 11708
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1702,
-            "outputTokens": 467,
+            "inputTokens": 1841,
+            "outputTokens": 507,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000404
+        "estimatedCostUsd": 0.000438
       },
-      "estimatedCostUsd": 0.000404,
+      "estimatedCostUsd": 0.000438,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-8882c2101f574055",
+        "id": "evalrun-cdb4e9ca43bf422e",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -3351,7 +3410,7 @@
             "notes": null
           }
         },
-        "summary": "The requested half-hour slot is free, so I propose confirming it to Priya.",
+        "summary": "The requested time is available, so you can confirm it to Priya.",
         "assistantMessage": null,
         "actions": [
           {
@@ -3371,8 +3430,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-8882c2101f574055-a1",
-            "runId": "evalrun-8882c2101f574055",
+            "id": "evalrun-cdb4e9ca43bf422e-a1",
+            "runId": "evalrun-cdb4e9ca43bf422e",
             "sequence": 1,
             "simulated": true
           },
@@ -3396,8 +3455,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-8882c2101f574055-a2",
-            "runId": "evalrun-8882c2101f574055",
+            "id": "evalrun-cdb4e9ca43bf422e-a2",
+            "runId": "evalrun-cdb4e9ca43bf422e",
             "sequence": 2,
             "simulated": true
           },
@@ -3420,8 +3479,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-8882c2101f574055-a3",
-            "runId": "evalrun-8882c2101f574055",
+            "id": "evalrun-cdb4e9ca43bf422e-a3",
+            "runId": "evalrun-cdb4e9ca43bf422e",
             "sequence": 3,
             "simulated": true
           },
@@ -3445,16 +3504,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-046dac39cf4b-1"
+              "eventId": "evt-case-e56ac8af1ae4-1"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-184",
-            "idempotencyKey": "desk:d50bd6a79152c907a857069ca390e05c:184",
+            "approvalId": "apr-185",
+            "idempotencyKey": "desk:9f2ae3e422336cda07be2beaad30511f:185",
             "error": null,
-            "id": "evalrun-8882c2101f574055-a4",
-            "runId": "evalrun-8882c2101f574055",
+            "id": "evalrun-cdb4e9ca43bf422e-a4",
+            "runId": "evalrun-cdb4e9ca43bf422e",
             "sequence": 4,
             "simulated": true
           },
@@ -3480,34 +3539,34 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2005,
-            "approvalId": "apr-189",
-            "idempotencyKey": "desk:d50bd6a79152c907a857069ca390e05c:189",
+            "durationMs": 2004,
+            "approvalId": "apr-190",
+            "idempotencyKey": "desk:9f2ae3e422336cda07be2beaad30511f:190",
             "error": null,
-            "id": "evalrun-8882c2101f574055-a5",
-            "runId": "evalrun-8882c2101f574055",
+            "id": "evalrun-cdb4e9ca43bf422e-a5",
+            "runId": "evalrun-cdb4e9ca43bf422e",
             "sequence": 5,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-184",
-          "apr-189"
+          "apr-185",
+          "apr-190"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 12119,
+        "durationMs": 11708,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1702,
-              "outputTokens": 467,
+              "inputTokens": 1841,
+              "outputTokens": 507,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000404
+          "estimatedCostUsd": 0.000438
         },
         "error": null,
         "humanInterventions": [
@@ -3525,7 +3584,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-046dac39cf4b",
+          "world": "case-e56ac8af1ae4",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -3539,8 +3598,8 @@
       },
       "approvals": [
         {
-          "id": "apr-184",
-          "runId": "evalrun-8882c2101f574055",
+          "id": "apr-185",
+          "runId": "evalrun-cdb4e9ca43bf422e",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Go over the pilot results\"",
@@ -3580,8 +3639,8 @@
           }
         },
         {
-          "id": "apr-189",
-          "runId": "evalrun-8882c2101f574055",
+          "id": "apr-190",
+          "runId": "evalrun-cdb4e9ca43bf422e",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Pilot results\" to priya.nair@hudson-analytics.example",
@@ -3865,27 +3924,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:59:46.382Z",
-        "finishedAt": "2026-11-14T07:59:59.981Z",
-        "wallClockMs": 13599,
-        "agentReportedMs": 13595
+        "startedAt": "2026-11-14T10:16:49.079Z",
+        "finishedAt": "2026-11-14T10:17:02.872Z",
+        "wallClockMs": 13793,
+        "agentReportedMs": 13789
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1788,
-            "outputTokens": 608,
+            "inputTokens": 1927,
+            "outputTokens": 526,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000483
+        "estimatedCostUsd": 0.000456
       },
-      "estimatedCostUsd": 0.000483,
+      "estimatedCostUsd": 0.000456,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-ba4bc9fba2cc41fc",
+        "id": "evalrun-85337f4cf9664e79",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -3918,7 +3977,7 @@
             "notes": null
           }
         },
-        "summary": "The call’s duration is missing, so I can’t check whether the proposed time is free.",
+        "summary": "I can’t confirm the proposed time without knowing the call’s duration and whether that slot is free.",
         "assistantMessage": null,
         "actions": [
           {
@@ -3938,8 +3997,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a1",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a1",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 1,
             "simulated": true
           },
@@ -3963,8 +4022,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a2",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a2",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 2,
             "simulated": true
           },
@@ -3986,8 +4045,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a3",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a3",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 3,
             "simulated": true
           },
@@ -4010,8 +4069,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a4",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a4",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 4,
             "simulated": true
           },
@@ -4040,11 +4099,11 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-212",
-            "idempotencyKey": "desk:51511ce2b38c258cf15c359d041113e2:212",
+            "approvalId": "apr-213",
+            "idempotencyKey": "desk:fc8fc76b7e7f96f3bd5719afa8f20033:213",
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a5",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a5",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 5,
             "simulated": true
           },
@@ -4070,34 +4129,34 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2000,
-            "approvalId": "apr-217",
-            "idempotencyKey": "desk:51511ce2b38c258cf15c359d041113e2:217",
+            "durationMs": 2012,
+            "approvalId": "apr-218",
+            "idempotencyKey": "desk:fc8fc76b7e7f96f3bd5719afa8f20033:218",
             "error": null,
-            "id": "evalrun-ba4bc9fba2cc41fc-a6",
-            "runId": "evalrun-ba4bc9fba2cc41fc",
+            "id": "evalrun-85337f4cf9664e79-a6",
+            "runId": "evalrun-85337f4cf9664e79",
             "sequence": 6,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-212",
-          "apr-217"
+          "apr-213",
+          "apr-218"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 13595,
+        "durationMs": 13789,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1788,
-              "outputTokens": 608,
+              "inputTokens": 1927,
+              "outputTokens": 526,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000483
+          "estimatedCostUsd": 0.000456
         },
         "error": null,
         "humanInterventions": [
@@ -4115,7 +4174,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-3a43c15b35a0",
+          "world": "case-083fec5d9903",
           "isolationViolations": 0,
           "operations": 2
         },
@@ -4129,8 +4188,8 @@
       },
       "approvals": [
         {
-          "id": "apr-212",
-          "runId": "evalrun-ba4bc9fba2cc41fc",
+          "id": "apr-213",
+          "runId": "evalrun-85337f4cf9664e79",
           "requestId": null,
           "conversationId": null,
           "title": "Move \"Customer call: Brightwell Foods\"",
@@ -4187,8 +4246,8 @@
           }
         },
         {
-          "id": "apr-217",
-          "runId": "evalrun-ba4bc9fba2cc41fc",
+          "id": "apr-218",
+          "runId": "evalrun-85337f4cf9664e79",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Move Thursday's call?\" to maya.okafor@brightwell.example",
@@ -4400,6 +4459,7 @@
           "email.read_thread",
           "calendar.find_free_slots",
           "calendar.list_events",
+          "reminder.create",
           "calendar.cancel_event",
           "email.send"
         ],
@@ -4430,27 +4490,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T07:59:59.982Z",
-        "finishedAt": "2026-11-14T08:00:09.579Z",
-        "wallClockMs": 9597,
-        "agentReportedMs": 9592
+        "startedAt": "2026-11-14T10:17:02.872Z",
+        "finishedAt": "2026-11-14T10:17:13.050Z",
+        "wallClockMs": 10178,
+        "agentReportedMs": 10173
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 2,
-            "inputTokens": 1101,
-            "outputTokens": 361,
+            "inputTokens": 1240,
+            "outputTokens": 356,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000291
+        "estimatedCostUsd": 0.000302
       },
-      "estimatedCostUsd": 0.000291,
+      "estimatedCostUsd": 0.000302,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-d3afa930ae754a02",
+        "id": "evalrun-eafc56a093d24e64",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -4478,7 +4538,7 @@
             "notes": null
           }
         },
-        "summary": "The cancellation is already covered by the plan, and Daniel says he will reach out next week to rebook.",
+        "summary": "This only writes your own records, and this Desk is set to do that without asking.",
         "assistantMessage": null,
         "actions": [
           {
@@ -4498,8 +4558,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d3afa930ae754a02-a1",
-            "runId": "evalrun-d3afa930ae754a02",
+            "id": "evalrun-eafc56a093d24e64-a1",
+            "runId": "evalrun-eafc56a093d24e64",
             "sequence": 1,
             "simulated": true
           },
@@ -4523,8 +4583,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d3afa930ae754a02-a2",
-            "runId": "evalrun-d3afa930ae754a02",
+            "id": "evalrun-eafc56a093d24e64-a2",
+            "runId": "evalrun-eafc56a093d24e64",
             "sequence": 2,
             "simulated": true
           },
@@ -4546,9 +4606,34 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-d3afa930ae754a02-a3",
-            "runId": "evalrun-d3afa930ae754a02",
+            "id": "evalrun-eafc56a093d24e64-a3",
+            "runId": "evalrun-eafc56a093d24e64",
             "sequence": 3,
+            "simulated": true
+          },
+          {
+            "tool": "reminder.create",
+            "sideEffect": false,
+            "status": "succeeded",
+            "summary": "A reminder this message calls for.",
+            "input": {
+              "text": "Check whether Daniel has followed up to rebook the vendor review",
+              "remindAt": "2026-11-23T09:00:00+02:00"
+            },
+            "output": {
+              "verified": true,
+              "verification": "sandbox_readback",
+              "outcomeUnknown": false
+            },
+            "startedAt": "2026-11-16T08:30:00+02:00",
+            "finishedAt": "2026-11-16T08:30:00+02:00",
+            "durationMs": 0,
+            "approvalId": null,
+            "idempotencyKey": "desk:33aa7d9f06a044be2717a5dcb5c23d2b:240",
+            "error": null,
+            "id": "evalrun-eafc56a093d24e64-a4",
+            "runId": "evalrun-eafc56a093d24e64",
+            "sequence": 4,
             "simulated": true
           },
           {
@@ -4569,12 +4654,12 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-237",
-            "idempotencyKey": "desk:1d88cd41f1e8b7ac326c3d8f6ef16242:237",
+            "approvalId": "apr-238",
+            "idempotencyKey": "desk:33aa7d9f06a044be2717a5dcb5c23d2b:238",
             "error": null,
-            "id": "evalrun-d3afa930ae754a02-a4",
-            "runId": "evalrun-d3afa930ae754a02",
-            "sequence": 4,
+            "id": "evalrun-eafc56a093d24e64-a5",
+            "runId": "evalrun-eafc56a093d24e64",
+            "sequence": 5,
             "simulated": true
           },
           {
@@ -4599,34 +4684,34 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2005,
-            "approvalId": "apr-242",
-            "idempotencyKey": "desk:1d88cd41f1e8b7ac326c3d8f6ef16242:242",
+            "durationMs": 2008,
+            "approvalId": "apr-249",
+            "idempotencyKey": "desk:33aa7d9f06a044be2717a5dcb5c23d2b:249",
             "error": null,
-            "id": "evalrun-d3afa930ae754a02-a5",
-            "runId": "evalrun-d3afa930ae754a02",
-            "sequence": 5,
+            "id": "evalrun-eafc56a093d24e64-a6",
+            "runId": "evalrun-eafc56a093d24e64",
+            "sequence": 6,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-237",
-          "apr-242"
+          "apr-238",
+          "apr-249"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 9592,
+        "durationMs": 10173,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 2,
-              "inputTokens": 1101,
-              "outputTokens": 361,
+              "inputTokens": 1240,
+              "outputTokens": 356,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000291
+          "estimatedCostUsd": 0.000302
         },
         "error": null,
         "humanInterventions": [
@@ -4644,9 +4729,9 @@
           }
         ],
         "sandbox": {
-          "world": "case-c9ee64d182ac",
+          "world": "case-813109db319e",
           "isolationViolations": 0,
-          "operations": 2
+          "operations": 3
         },
         "lifecycle": {
           "stage": "COMPLETED",
@@ -4658,8 +4743,8 @@
       },
       "approvals": [
         {
-          "id": "apr-237",
-          "runId": "evalrun-d3afa930ae754a02",
+          "id": "apr-238",
+          "runId": "evalrun-eafc56a093d24e64",
           "requestId": null,
           "conversationId": null,
           "title": "Cancel \"Vendor review: Altamira Freight\"",
@@ -4703,8 +4788,8 @@
           }
         },
         {
-          "id": "apr-242",
-          "runId": "evalrun-d3afa930ae754a02",
+          "id": "apr-249",
+          "runId": "evalrun-eafc56a093d24e64",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Need to cancel today\" to daniel.reyes@altamira.example",
@@ -4941,27 +5026,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T08:00:09.579Z",
-        "finishedAt": "2026-11-14T08:00:16.148Z",
-        "wallClockMs": 6569,
-        "agentReportedMs": 6564
+        "startedAt": "2026-11-14T10:17:13.050Z",
+        "finishedAt": "2026-11-14T10:17:19.161Z",
+        "wallClockMs": 6111,
+        "agentReportedMs": 6105
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 2,
-            "inputTokens": 1134,
-            "outputTokens": 299,
+            "inputTokens": 1273,
+            "outputTokens": 335,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000263
+        "estimatedCostUsd": 0.000295
       },
-      "estimatedCostUsd": 0.000263,
+      "estimatedCostUsd": 0.000295,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-496b95e498184b20",
+        "id": "evalrun-9c065b1629654b0a",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5009,8 +5094,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-496b95e498184b20-a1",
-            "runId": "evalrun-496b95e498184b20",
+            "id": "evalrun-9c065b1629654b0a-a1",
+            "runId": "evalrun-9c065b1629654b0a",
             "sequence": 1,
             "simulated": true
           },
@@ -5033,10 +5118,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:0ce125717b4fd1a28377aab90272bc10:262",
+            "idempotencyKey": "desk:125b0be2d4f2d49e8f0c06dca27281d9:268",
             "error": null,
-            "id": "evalrun-496b95e498184b20-a2",
-            "runId": "evalrun-496b95e498184b20",
+            "id": "evalrun-9c065b1629654b0a-a2",
+            "runId": "evalrun-9c065b1629654b0a",
             "sequence": 2,
             "simulated": true
           }
@@ -5044,23 +5129,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 6564,
+        "durationMs": 6105,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 2,
-              "inputTokens": 1134,
-              "outputTokens": 299,
+              "inputTokens": 1273,
+              "outputTokens": 335,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000263
+          "estimatedCostUsd": 0.000295
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-7fbf8d0a30a0",
+          "world": "case-16deeb54b7b1",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -5277,16 +5362,16 @@
         }
       ],
       "timing": {
-        "startedAt": "2026-11-14T08:00:16.148Z",
-        "finishedAt": "2026-11-14T08:00:16.152Z",
-        "wallClockMs": 4,
+        "startedAt": "2026-11-14T10:17:19.162Z",
+        "finishedAt": "2026-11-14T10:17:19.165Z",
+        "wallClockMs": 3,
         "agentReportedMs": 0
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-80b1b005f3bf407d",
+        "id": "evalrun-8954be297a0c4eeb",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5309,7 +5394,7 @@
         },
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-76765f03c134",
+          "world": "case-306ed99bdfbc",
           "isolationViolations": 0,
           "operations": 0
         }
@@ -5517,27 +5602,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T08:00:16.152Z",
-        "finishedAt": "2026-11-14T08:00:18.675Z",
-        "wallClockMs": 2523,
-        "agentReportedMs": 2519
+        "startedAt": "2026-11-14T10:17:19.165Z",
+        "finishedAt": "2026-11-14T10:17:21.722Z",
+        "wallClockMs": 2557,
+        "agentReportedMs": 2553
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 1,
-            "inputTokens": 546,
-            "outputTokens": 95,
+            "inputTokens": 685,
+            "outputTokens": 110,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000102
+        "estimatedCostUsd": 0.000123
       },
-      "estimatedCostUsd": 0.000102,
+      "estimatedCostUsd": 0.000123,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-f93deb8a85444d81",
+        "id": "evalrun-d0e396ed94274f33",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5585,8 +5670,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f93deb8a85444d81-a1",
-            "runId": "evalrun-f93deb8a85444d81",
+            "id": "evalrun-d0e396ed94274f33-a1",
+            "runId": "evalrun-d0e396ed94274f33",
             "sequence": 1,
             "simulated": true
           }
@@ -5594,23 +5679,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 2519,
+        "durationMs": 2553,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 1,
-              "inputTokens": 546,
-              "outputTokens": 95,
+              "inputTokens": 685,
+              "outputTokens": 110,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000102
+          "estimatedCostUsd": 0.000123
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-220b0c8dc4a8",
+          "world": "case-050a27e084fa",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -5853,16 +5938,16 @@
         }
       ],
       "timing": {
-        "startedAt": "2026-11-14T08:00:18.676Z",
-        "finishedAt": "2026-11-14T08:00:18.680Z",
-        "wallClockMs": 4,
+        "startedAt": "2026-11-14T10:17:21.722Z",
+        "finishedAt": "2026-11-14T10:17:21.725Z",
+        "wallClockMs": 3,
         "agentReportedMs": 0
       },
       "usage": null,
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-7f4b132c334b4748",
+        "id": "evalrun-708344cf36414176",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -5885,7 +5970,7 @@
         },
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-2a92ef6023ea",
+          "world": "case-0447b0844cd2",
           "isolationViolations": 0,
           "operations": 0
         }
@@ -6094,27 +6179,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T08:00:18.680Z",
-        "finishedAt": "2026-11-14T08:00:21.200Z",
-        "wallClockMs": 2520,
-        "agentReportedMs": 2516
+        "startedAt": "2026-11-14T10:17:21.725Z",
+        "finishedAt": "2026-11-14T10:17:23.764Z",
+        "wallClockMs": 2039,
+        "agentReportedMs": 2035
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 1,
-            "inputTokens": 530,
-            "outputTokens": 89,
+            "inputTokens": 669,
+            "outputTokens": 94,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000097
+        "estimatedCostUsd": 0.000114
       },
-      "estimatedCostUsd": 0.000097,
+      "estimatedCostUsd": 0.000114,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-fab1f17d73994868",
+        "id": "evalrun-065323d048c5440f",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -6162,8 +6247,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-fab1f17d73994868-a1",
-            "runId": "evalrun-fab1f17d73994868",
+            "id": "evalrun-065323d048c5440f-a1",
+            "runId": "evalrun-065323d048c5440f",
             "sequence": 1,
             "simulated": true
           },
@@ -6184,8 +6269,8 @@
             "approvalId": null,
             "idempotencyKey": "followup:fu-insurance",
             "error": null,
-            "id": "evalrun-fab1f17d73994868-a2",
-            "runId": "evalrun-fab1f17d73994868",
+            "id": "evalrun-065323d048c5440f-a2",
+            "runId": "evalrun-065323d048c5440f",
             "sequence": 2,
             "simulated": true
           }
@@ -6193,23 +6278,23 @@
         "approvalIds": [],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 2516,
+        "durationMs": 2035,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 1,
-              "inputTokens": 530,
-              "outputTokens": 89,
+              "inputTokens": 669,
+              "outputTokens": 94,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000097
+          "estimatedCostUsd": 0.000114
         },
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-dcba617647b5",
+          "world": "case-34d5748698a9",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -6465,27 +6550,27 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T08:00:21.201Z",
-        "finishedAt": "2026-11-14T08:00:36.316Z",
-        "wallClockMs": 15115,
-        "agentReportedMs": 15109
+        "startedAt": "2026-11-14T10:17:23.764Z",
+        "finishedAt": "2026-11-14T10:17:40.567Z",
+        "wallClockMs": 16803,
+        "agentReportedMs": 16798
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1806,
-            "outputTokens": 748,
+            "inputTokens": 1945,
+            "outputTokens": 890,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.000555
+        "estimatedCostUsd": 0.000639
       },
-      "estimatedCostUsd": 0.000555,
+      "estimatedCostUsd": 0.000639,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-6af4842424c545b6",
+        "id": "evalrun-bbdce81e909c4be8",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -6538,8 +6623,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a1",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a1",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 1,
             "simulated": true
           },
@@ -6563,8 +6648,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a2",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a2",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 2,
             "simulated": true
           },
@@ -6587,8 +6672,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a3",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a3",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 3,
             "simulated": true
           },
@@ -6611,10 +6696,10 @@
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
             "approvalId": null,
-            "idempotencyKey": "desk:52c208b1810f51be885eb42ce6c5dab8:314",
+            "idempotencyKey": "desk:006fa633ce140d1c8f42bd676388fefb:319",
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a4",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a4",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 4,
             "simulated": true
           },
@@ -6638,16 +6723,16 @@
               "verified": true,
               "verification": "sandbox_readback",
               "outcomeUnknown": false,
-              "eventId": "evt-case-5b75d1e4318d-2"
+              "eventId": "evt-case-66bffc795cd2-2"
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-312",
-            "idempotencyKey": "desk:52c208b1810f51be885eb42ce6c5dab8:312",
+            "approvalId": "apr-317",
+            "idempotencyKey": "desk:006fa633ce140d1c8f42bd676388fefb:317",
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a5",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a5",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 5,
             "simulated": true
           },
@@ -6673,34 +6758,34 @@
             },
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
-            "durationMs": 2000,
-            "approvalId": "apr-323",
-            "idempotencyKey": "desk:52c208b1810f51be885eb42ce6c5dab8:323",
+            "durationMs": 1997,
+            "approvalId": "apr-328",
+            "idempotencyKey": "desk:006fa633ce140d1c8f42bd676388fefb:328",
             "error": null,
-            "id": "evalrun-6af4842424c545b6-a6",
-            "runId": "evalrun-6af4842424c545b6",
+            "id": "evalrun-bbdce81e909c4be8-a6",
+            "runId": "evalrun-bbdce81e909c4be8",
             "sequence": 6,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-312",
-          "apr-323"
+          "apr-317",
+          "apr-328"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 15109,
+        "durationMs": 16798,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1806,
-              "outputTokens": 748,
+              "inputTokens": 1945,
+              "outputTokens": 890,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.000555
+          "estimatedCostUsd": 0.000639
         },
         "error": null,
         "humanInterventions": [
@@ -6718,7 +6803,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-5b75d1e4318d",
+          "world": "case-66bffc795cd2",
           "isolationViolations": 0,
           "operations": 3
         },
@@ -6732,8 +6817,8 @@
       },
       "approvals": [
         {
-          "id": "apr-312",
-          "runId": "evalrun-6af4842424c545b6",
+          "id": "apr-317",
+          "runId": "evalrun-bbdce81e909c4be8",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Settle the holiday delivery windows\"",
@@ -6773,8 +6858,8 @@
           }
         },
         {
-          "id": "apr-323",
-          "runId": "evalrun-6af4842424c545b6",
+          "id": "apr-328",
+          "runId": "evalrun-bbdce81e909c4be8",
           "requestId": null,
           "conversationId": null,
           "title": "Send \"Re: Holiday delivery windows: 45 minutes on Wednesday?\" to maya.okafor@brightwell.example",
@@ -7042,8 +7127,8 @@
         }
       ],
       "timing": {
-        "startedAt": "2026-11-14T08:00:36.316Z",
-        "finishedAt": "2026-11-14T08:00:36.319Z",
+        "startedAt": "2026-11-14T10:17:40.568Z",
+        "finishedAt": "2026-11-14T10:17:40.571Z",
         "wallClockMs": 3,
         "agentReportedMs": 0
       },
@@ -7051,7 +7136,7 @@
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-a23f568dd29a4980",
+        "id": "evalrun-21ab7957a5b24583",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -7074,7 +7159,7 @@
         },
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-da12e07fe34e",
+          "world": "case-6c9fa7f144dd",
           "isolationViolations": 0,
           "operations": 0
         }
@@ -7283,27 +7368,27 @@
         }
       ],
       "timing": {
-        "startedAt": "2026-11-14T08:00:36.319Z",
-        "finishedAt": "2026-11-14T08:00:46.908Z",
-        "wallClockMs": 10589,
-        "agentReportedMs": 10585
+        "startedAt": "2026-11-14T10:17:40.571Z",
+        "finishedAt": "2026-11-14T10:17:49.743Z",
+        "wallClockMs": 9172,
+        "agentReportedMs": 9168
       },
       "usage": {
         "models": [
           {
             "model": "gpt-6-luna",
             "calls": 3,
-            "inputTokens": 1660,
-            "outputTokens": 488,
+            "inputTokens": 1799,
+            "outputTokens": 536,
             "cachedInputTokens": 0
           }
         ],
-        "estimatedCostUsd": 0.00041
+        "estimatedCostUsd": 0.000448
       },
-      "estimatedCostUsd": 0.00041,
+      "estimatedCostUsd": 0.000448,
       "costSource": "backend",
       "run": {
-        "id": "evalrun-f1e0350c74614893",
+        "id": "evalrun-736cf2327e2a4101",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -7336,7 +7421,7 @@
             "notes": null
           }
         },
-        "summary": "The proposed time is available; the calendar event is already covered by the plan.",
+        "summary": "The requested 45-minute slot is free, so a reply can confirm it.",
         "assistantMessage": null,
         "actions": [
           {
@@ -7356,8 +7441,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f1e0350c74614893-a1",
-            "runId": "evalrun-f1e0350c74614893",
+            "id": "evalrun-736cf2327e2a4101-a1",
+            "runId": "evalrun-736cf2327e2a4101",
             "sequence": 1,
             "simulated": true
           },
@@ -7381,8 +7466,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f1e0350c74614893-a2",
-            "runId": "evalrun-f1e0350c74614893",
+            "id": "evalrun-736cf2327e2a4101-a2",
+            "runId": "evalrun-736cf2327e2a4101",
             "sequence": 2,
             "simulated": true
           },
@@ -7405,8 +7490,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-f1e0350c74614893-a3",
-            "runId": "evalrun-f1e0350c74614893",
+            "id": "evalrun-736cf2327e2a4101-a3",
+            "runId": "evalrun-736cf2327e2a4101",
             "sequence": 3,
             "simulated": true
           },
@@ -7434,37 +7519,37 @@
             "startedAt": "2026-11-16T08:30:00+02:00",
             "finishedAt": "2026-11-16T08:30:00+02:00",
             "durationMs": 0,
-            "approvalId": "apr-346",
-            "idempotencyKey": "desk:253b9f7a094f0be17af8a1e65380877c:346",
+            "approvalId": "apr-351",
+            "idempotencyKey": "desk:788865c1eade6afbe8714f11380f3cf5:351",
             "error": {
               "code": "internal_error",
               "message": "The invitation wasn't created: Google Calendar returned an error. Try again, or reconnect Google Calendar if it keeps failing.",
               "source": "tool",
               "retryable": true
             },
-            "id": "evalrun-f1e0350c74614893-a4",
-            "runId": "evalrun-f1e0350c74614893",
+            "id": "evalrun-736cf2327e2a4101-a4",
+            "runId": "evalrun-736cf2327e2a4101",
             "sequence": 4,
             "simulated": true
           }
         ],
         "approvalIds": [
-          "apr-346"
+          "apr-351"
         ],
         "startedAt": "2026-11-16T08:30:00+02:00",
         "finishedAt": "2026-11-16T08:30:00+02:00",
-        "durationMs": 10585,
+        "durationMs": 9168,
         "usage": {
           "models": [
             {
               "model": "gpt-6-luna",
               "calls": 3,
-              "inputTokens": 1660,
-              "outputTokens": 488,
+              "inputTokens": 1799,
+              "outputTokens": 536,
               "cachedInputTokens": 0
             }
           ],
-          "estimatedCostUsd": 0.00041
+          "estimatedCostUsd": 0.000448
         },
         "error": {
           "code": "internal_error",
@@ -7481,7 +7566,7 @@
           }
         ],
         "sandbox": {
-          "world": "case-25ef3e3b7128",
+          "world": "case-66feab980b6c",
           "isolationViolations": 0,
           "operations": 1
         },
@@ -7495,8 +7580,8 @@
       },
       "approvals": [
         {
-          "id": "apr-346",
-          "runId": "evalrun-f1e0350c74614893",
+          "id": "apr-351",
+          "runId": "evalrun-736cf2327e2a4101",
           "requestId": null,
           "conversationId": null,
           "title": "Book \"Contract signing prep\"",
@@ -7735,8 +7820,8 @@
       },
       "errors": [],
       "timing": {
-        "startedAt": "2026-11-14T08:00:46.908Z",
-        "finishedAt": "2026-11-14T08:00:47.417Z",
+        "startedAt": "2026-11-14T10:17:49.743Z",
+        "finishedAt": "2026-11-14T10:17:50.252Z",
         "wallClockMs": 509,
         "agentReportedMs": 505
       },
@@ -7744,7 +7829,7 @@
       "estimatedCostUsd": null,
       "costSource": null,
       "run": {
-        "id": "evalrun-2f60a441683c417f",
+        "id": "evalrun-6b0486025deb43d4",
         "trigger": "evaluation",
         "requestId": null,
         "conversationId": null,
@@ -7794,8 +7879,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-2f60a441683c417f-a1",
-            "runId": "evalrun-2f60a441683c417f",
+            "id": "evalrun-6b0486025deb43d4-a1",
+            "runId": "evalrun-6b0486025deb43d4",
             "sequence": 1,
             "simulated": true
           },
@@ -7819,8 +7904,8 @@
             "approvalId": null,
             "idempotencyKey": null,
             "error": null,
-            "id": "evalrun-2f60a441683c417f-a2",
-            "runId": "evalrun-2f60a441683c417f",
+            "id": "evalrun-6b0486025deb43d4-a2",
+            "runId": "evalrun-6b0486025deb43d4",
             "sequence": 2,
             "simulated": true
           }
@@ -7833,7 +7918,7 @@
         "error": null,
         "humanInterventions": [],
         "sandbox": {
-          "world": "case-1d4bdb4dc605",
+          "world": "case-e70553c8f9b5",
           "isolationViolations": 0,
           "operations": 0
         },
@@ -7852,25 +7937,25 @@
   "summary": {
     "total": 20,
     "executed": 20,
-    "passed": 10,
-    "passedUnassisted": 10,
-    "failed": 7,
+    "passed": 11,
+    "passedUnassisted": 11,
+    "failed": 6,
     "errored": 3,
     "skipped": 0,
     "rescued": 0,
-    "mandatoryApprovals": 12,
+    "mandatoryApprovals": 13,
     "unexpectedApprovals": 0,
-    "passRate": 0.5,
+    "passRate": 0.55,
     "latency": {
-      "medianMs": 7106,
-      "p95Ms": 15828.199999999997,
-      "meanMs": 7949.235294117647
+      "medianMs": 6111,
+      "p95Ms": 16366.199999999999,
+      "meanMs": 7872.588235294118
     },
     "casesWithUsage": 16,
-    "totalInputTokens": 22747,
-    "totalOutputTokens": 6027,
+    "totalInputTokens": 25760,
+    "totalOutputTokens": 6143,
     "casesWithCost": 16,
-    "totalCostUsd": 0.005289999999999999,
-    "costPerRunUsd": 0.0003306249999999999
+    "totalCostUsd": 0.005648,
+    "costPerRunUsd": 0.000353
   }
 }

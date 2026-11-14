@@ -29,7 +29,7 @@ export function RunCard({ run, timeZone, defaultOpen = true, className }: { run:
         <span className="min-w-0 flex-1 truncate text-[13px] text-soft" aria-live="polite">
           {active ? (current?.summary ?? 'Reading the request') : run.outcome ? OUTCOME[run.outcome] : run.status === 'awaiting_approval' ? 'A proposal is ready for your review' : ''}
         </span>
-        <span className="tabular-nums text-[11.5px] text-mute">
+        <span className="tabular-nums text-xs text-mute">
           {steps} {steps === 1 ? 'step' : 'steps'}
           {run.durationMs !== null && ` · ${fmtDuration(run.durationMs)}`}
         </span>
@@ -40,7 +40,7 @@ export function RunCard({ run, timeZone, defaultOpen = true, className }: { run:
           {run.summary && <p className="mb-3 text-[13.5px] text-ink">{run.summary}</p>}
           {run.error && (
             <p role="alert" className="mb-3 rounded-lg border border-danger/25 bg-danger/[0.07] px-3 py-2 text-[12.5px] text-danger">
-              {run.error.message} <span className="font-mono text-[11px] opacity-80">({run.error.code})</span>
+              {run.error.message} <span className="font-mono text-xs opacity-80">({run.error.code})</span>
             </p>
           )}
           <ActionTimeline actions={run.actions} timeZone={timeZone} />

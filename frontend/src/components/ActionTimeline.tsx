@@ -73,13 +73,13 @@ export function ActionTimeline({ actions, timeZone, detailed = false }: { action
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <p className={clsx('min-w-0 text-[13.5px]', muted ? 'text-mute line-through decoration-white/20' : 'text-ink')}>{action.summary}</p>
-                <span className={clsx('flex shrink-0 items-center gap-1 text-[11.5px] font-medium tabular-nums', style.text)}>
+                <span className={clsx('flex shrink-0 items-center gap-1 text-xs font-medium tabular-nums', style.text)}>
                   {StatusIcon && <StatusIcon aria-hidden className={clsx('h-3 w-3', action.status === 'running' && 'animate-spin')} strokeWidth={2.5} />}
                   {ACTION_STATUS[action.status].label}
                   {action.durationMs !== null && action.durationMs > 0 && <span className="text-mute"> · {fmtDuration(action.durationMs)}</span>}
                 </span>
               </div>
-              <p className="text-[11.5px] text-mute">
+              <p className="text-xs text-mute">
                 {TOOL_LABEL[action.tool]}
                 {detailed && <span className="font-mono"> · {action.tool}</span>}
                 {detailed && action.startedAt && <span className="tabular-nums"> · {fmtTime(action.startedAt, timeZone)}</span>}
@@ -87,13 +87,13 @@ export function ActionTimeline({ actions, timeZone, detailed = false }: { action
               </p>
               {action.error && (
                 <p className="mt-1 rounded-md border border-danger/25 bg-danger/[0.07] px-2 py-1 text-[12px] text-danger">
-                  {action.error.message} <span className="font-mono text-[11px] opacity-80">({action.error.code})</span>
+                  {action.error.message} <span className="font-mono text-xs opacity-80">({action.error.code})</span>
                 </p>
               )}
               {detailed && (
                 <details className="group mt-1">
-                  <summary className="tap inline-flex cursor-pointer select-none items-center text-[11.5px] font-medium text-accent hover:underline">Input and output</summary>
-                  <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-line bg-sunken p-2.5 font-mono text-[11.5px] leading-[17px] text-soft">
+                  <summary className="tap inline-flex cursor-pointer select-none items-center text-xs font-medium text-accent hover:underline">Input and output</summary>
+                  <pre className="mt-1 max-h-64 overflow-auto rounded-md border border-line bg-sunken p-2.5 font-mono text-xs leading-[17px] text-soft">
                     {JSON.stringify({ input: action.input, output: action.output }, null, 2)}
                   </pre>
                 </details>

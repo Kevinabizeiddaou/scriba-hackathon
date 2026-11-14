@@ -15,8 +15,8 @@ const STATUS_TONE: Record<FeatureStatus, Tone> = { connected: 'ok', unverified: 
 
 function Stat({ icon: Icon, label, value, hint, page, tone = 'neutral' }: { icon: LucideIcon; label: string; value: number | string; hint: string; page: Page; tone?: 'neutral' | 'attention' }) {
   return (
-    <a href={hrefFor(page)} className="card group flex items-start gap-3 px-4 py-3.5 transition-colors duration-150 hover:border-line-strong">
-      <span className={clsx('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]', tone === 'attention' ? 'bg-brand-500/40 text-accent' : 'bg-white/[0.06] text-soft')}>
+    <a href={hrefFor(page)} className="card group flex items-start gap-3 px-3.5 py-3 transition-colors duration-150 first:col-span-2 hover:border-line-strong sm:px-4 sm:py-3.5 xl:first:col-span-1">
+      <span className={clsx('mt-0.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-[10px] sm:flex', tone === 'attention' ? 'bg-brand-500/40 text-accent' : 'bg-white/[0.06] text-soft')}>
         <Icon aria-hidden className="h-[18px] w-[18px]" />
       </span>
       <span className="min-w-0">
@@ -77,7 +77,7 @@ export function OverviewPage() {
           <SkeletonRows rows={5} />
         ) : (
           <div className="space-y-5">
-            <section aria-label="At a glance" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <section aria-label="At a glance" className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
               <Stat icon={ShieldCheck} label="Waiting for your approval" value={approvals.data?.length ?? 0} hint="Nothing is sent until you decide" page="approvals" tone={(approvals.data?.length ?? 0) > 0 ? 'attention' : 'neutral'} />
               <Stat icon={Inbox} label="Open in the inbox" value={openMail.length} hint={`${openMail.filter((e) => e.status === 'new').length} not yet read by the secretary`} page="inbox" />
               <Stat icon={CalendarDays} label="Meetings today" value={todayEvents.length} hint={conflicts > 0 ? `${conflicts} in conflict` : 'No conflicts'} page="calendar" tone={conflicts > 0 ? 'attention' : 'neutral'} />
@@ -166,7 +166,7 @@ export function OverviewPage() {
                               <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                                 <SourceBadge source={event.provider} />
                                 {event.conflictsWith.length > 0 && (
-                                  <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-danger">
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-danger">
                                     <AlertTriangle aria-hidden className="h-3 w-3" />
                                     Conflict
                                   </span>
@@ -207,7 +207,7 @@ export function OverviewPage() {
                   <dl className="grid grid-cols-2 gap-2">
                     {(Object.keys(counts) as FeatureStatus[]).map((status) => (
                       <div key={status} className="rounded-xl bg-white/[0.04] px-3 py-2">
-                        <dt className="text-[11.5px] text-mute">{STATUS_LABEL[status]}</dt>
+                        <dt className="text-xs text-mute">{STATUS_LABEL[status]}</dt>
                         <dd className="text-[18px] font-bold tabular-nums text-ink">{counts[status]}</dd>
                       </div>
                     ))}

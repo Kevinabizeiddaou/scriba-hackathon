@@ -326,10 +326,10 @@ export function LiveRunDetail({ runId }: { runId: number }) {
                     <div className="min-w-0 flex-1 pt-0.5">
                       <p className={clsx('flex flex-wrap items-baseline gap-x-2 text-[13.5px] font-semibold', style.text)}>
                         {step.label}
-                        <span className="text-[11.5px] font-medium text-mute">{style.word}</span>
+                        <span className="text-xs font-medium text-mute">{style.word}</span>
                       </p>
                       <p className="mt-0.5 text-[12.5px] leading-[19px] text-soft">{step.detail}</p>
-                      <p className="mt-0.5 text-[11.5px] text-mute">Source: {step.source}</p>
+                      <p className="mt-0.5 text-xs text-mute">Source: {step.source}</p>
                     </div>
                   </li>
                 )

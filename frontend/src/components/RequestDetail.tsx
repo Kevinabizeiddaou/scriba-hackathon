@@ -120,7 +120,7 @@ export function RequestDetail({ request }: { request: SecretaryRequest }) {
         <ol className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-4">
           {steps(request, run, approvals).map((step, i) => (
             <li key={step.label} className="flex items-start gap-2.5" aria-current={step.state === 'current' ? 'step' : undefined}>
-              <span className={clsx('mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold tabular-nums', STEP_STYLE[step.state])}>
+              <span className={clsx('mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold tabular-nums', STEP_STYLE[step.state])}>
                 {step.state === 'done' ? <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={3} /> : step.state === 'failed' ? <X aria-hidden className="h-3.5 w-3.5" strokeWidth={3} /> : step.state === 'skipped' ? <MinusCircle aria-hidden className="h-3.5 w-3.5" /> : i + 1}
               </span>
               <span className="min-w-0 leading-tight">

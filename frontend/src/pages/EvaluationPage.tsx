@@ -17,12 +17,13 @@ const NO_DATA = '—';
 
 function Kpi({ label, value, caption, empty }: { label: string; value: string; caption: ReactNode; empty: boolean }) {
   return (
-    <div className="card px-4 py-3.5">
+    <div className="min-w-0 bg-surface px-4 py-3">
       <p className="eyebrow">{label}</p>
-      <p className={clsx('mt-1.5 text-[26px] font-bold leading-8 tabular-nums tracking-[-0.01em]', empty ? 'text-mute' : 'text-ink')} aria-label={empty ? `${label}: no data yet` : undefined}>
+      {/* A number that does not exist yet is drawn small and grey, so six empty tiles do not read as six results. */}
+      <p className={clsx('mt-1 font-bold tabular-nums tracking-[-0.01em]', empty ? 'text-[18px] leading-6 text-mute' : 'text-[24px] leading-8 text-ink')} aria-label={empty ? `${label}: no data yet` : undefined}>
         {value}
       </p>
-      <p className="mt-1 min-h-[34px] text-[12px] leading-[17px] text-mute">{caption}</p>
+      <p className="mt-0.5 text-[12px] leading-[17px] text-mute">{caption}</p>
     </div>
   );
 }
@@ -83,7 +84,7 @@ function SnapshotCard({ day, label, date, snapshot, previous, timeZone }: { day:
           <dd className="tabular-nums text-ink">{s.latency ? fmtDuration(s.latency.medianMs) : NO_DATA}</dd>
         </div>
       </dl>
-      <p className="mt-2 truncate text-[11.5px] text-mute" title={snapshot.label}>
+      <p className="mt-2 truncate text-xs text-mute" title={snapshot.label}>
         {snapshot.label} · saved {fmtDayTime(snapshot.savedAt, timeZone)}
       </p>
     </div>
@@ -131,7 +132,7 @@ function SelfTestPanel({ report }: { report: SelfTestReport }) {
               {report.probes.map(({ probe, result, asExpected, mismatch }) => (
                 <tr key={probe.id}>
                   <td className="px-3 py-2 text-ink">{probe.label}</td>
-                  <td className="px-3 py-2 font-mono text-[11.5px] text-soft">{probe.caseId}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-soft">{probe.caseId}</td>
                   <td className="px-3 py-2">
                     <Pill tone={VERDICT[result.verdict].tone} icon={null}>
                       {VERDICT[result.verdict].label}
@@ -228,7 +229,7 @@ export function EvaluationPage() {
   return (
     <div>
       <PageHeader
-        title="Evaluation Dashboard"
+        title="Evaluation"
         subtitle="Twenty synthetic cases across the secretary's work: inbox, email, scheduling, tasks, follow-ups, workflows and safety. Scored automatically. Numbers appear only after a run against the real backend."
         actions={
           <>
@@ -294,7 +295,7 @@ export function EvaluationPage() {
         )}
 
         {/* Headline numbers: live data only */}
-        <section aria-label="Headline results" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <section aria-label="Headline results" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-card md:grid-cols-3 xl:grid-cols-6">
           <Kpi label="Cases executed" empty={!summary} value={summary ? `${summary.executed} / ${DESK_SUITE.length}` : `0 / ${DESK_SUITE.length}`} caption={summary ? `${summary.skipped} skipped` : 'Twenty cases are defined and ready.'} />
           <Kpi
             label="Pass rate"
@@ -365,7 +366,7 @@ export function EvaluationPage() {
                     }}
                     title={`${c.id}: ${c.title} (${text})`}
                     aria-label={`${c.id}, ${c.title}: ${text}`}
-                    className={clsx('tap flex h-10 w-full cursor-pointer flex-col items-center justify-center rounded-lg border text-[10.5px] font-bold leading-none tabular-nums transition-colors duration-150 hover:border-accent/60', CELL[verdict])}
+                    className={clsx('tap flex h-10 w-full cursor-pointer flex-col items-center justify-center rounded-lg border text-xs font-bold leading-none tabular-nums transition-colors duration-150 hover:border-accent/60', CELL[verdict])}
                   >
                     <span>{c.id.slice(-2)}</span>
                     <span aria-hidden className="mt-0.5 h-2.5 text-[9.5px]">
@@ -380,7 +381,7 @@ export function EvaluationPage() {
               );
             })}
           </div>
-          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-mute">
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-mute">
             <span>P pass</span>
             <span>F fail</span>
             <span>E error</span>
@@ -483,13 +484,13 @@ export function EvaluationPage() {
                       <tr id={`case-${c.id}`} className={clsx('border-b border-line transition-colors duration-150', open ? 'bg-white/[0.04]' : 'hover:bg-white/[0.025]')}>
                         <th scope="row" className="px-4 py-2.5 text-left font-normal sm:pl-5">
                           <button type="button" onClick={() => setOpenCase(open ? null : c.id)} aria-expanded={open} aria-controls={`case-panel-${c.id}`} className="cursor-pointer text-left">
-                            <span className="block font-mono text-[11.5px] text-mute">{c.id}</span>
+                            <span className="block font-mono text-xs text-mute">{c.id}</span>
                             <span className="block font-semibold text-ink hover:text-accent">{c.title}</span>
                           </button>
                         </th>
                         <td className="px-3 py-2.5 text-soft">
                           <span className="block">{AREA_LABEL[c.area]}</span>
-                          <span className="block text-[11.5px] text-mute">{categoryLabel(c.category)}</span>
+                          <span className="block text-xs text-mute">{categoryLabel(c.category)}</span>
                         </td>
                         <td className="px-3 py-2.5">
                           {result ? (

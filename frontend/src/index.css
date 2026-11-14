@@ -124,11 +124,11 @@
   }
 
   .pill {
-    @apply inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-[11.5px] font-semibold leading-none;
+    @apply inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-semibold leading-none;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-mute;
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-mute;
   }
 
   .field {
@@ -150,6 +150,32 @@
     min-height: 44px;
     min-width: 44px;
   }
+  /* Inline links and small icon buttons that must keep their size in the layout: the hit area
+     grows around them instead, to at least 44px in each direction. */
+  .hit {
+    position: relative;
+  }
+  .hit::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* A row that scrolls sideways (filter tabs, suggested prompts) fades at its trailing edge, so a
+   clipped label reads as "there is more" and not as a rendering fault. */
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  padding-right: 28px;
+  scrollbar-width: none;
+}
+.scroll-fade::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes rise-in {

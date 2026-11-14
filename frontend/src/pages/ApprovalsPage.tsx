@@ -66,7 +66,7 @@ export function ApprovalsPage({ approvalId }: { approvalId: string | null }) {
   return (
     <div>
       <PageHeader
-        title="Approval Center"
+        title="Approval center"
         subtitle="Nothing is sent and no calendar is changed until you approve it here. Each card shows exactly what will happen and why."
       />
       <div className="px-4 pb-10 sm:px-6 lg:px-8">

@@ -201,7 +201,7 @@ export function ApprovalCard({ approval, run, origin, compact = false, highlight
               </Button>
             </div>
           </div>
-          {dataSource === 'simulated' && <p className="mt-2.5 text-right text-[11.5px] text-mute">Mock mode: approving only simulates these steps. Nothing leaves this browser.</p>}
+          {dataSource === 'simulated' && <p className="mt-2.5 text-right text-xs text-mute">Mock mode: approving only simulates these steps. Nothing leaves this browser.</p>}
         </footer>
       ) : (
         <footer className="mt-4 space-y-3 border-t border-line pt-3.5">

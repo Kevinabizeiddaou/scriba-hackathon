@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowLeft, CheckSquare, Inbox, ListChecks, Send, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckSquare, Inbox, Info, ListChecks, ListTodo, Reply, RotateCcw, Send, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { getApi, getWorkspace } from '../harness';
 import type { EmailCategory, EmailWorkStatus, InboxEmail, MailProvider } from '../harness/workspace';
@@ -13,6 +13,9 @@ import { LiveEmailDetail } from '../live/LiveEmailDetail';
 import { sourceProblems } from '../live/LiveOverviewPage';
 import { useLiveSession } from '../live/session';
 import { useResource, useWorkspace } from '../lib/useResource';
+
+/** Each kind of mail has its own icon, so a meeting request, an action and a reply can be told apart at a glance. */
+const CATEGORY_ICON: Record<EmailCategory, LucideIcon> = { meeting: CalendarDays, action_required: ListTodo, reply_needed: Reply, follow_up: RotateCcw, fyi: Info, low_priority: Info };
 
 interface Filter {
   id: string;
@@ -228,7 +231,7 @@ export function InboxPage({ emailId }: { emailId: string | null }) {
         <div className="flex min-h-0 flex-1 border-t border-line">
           <section aria-label="Messages" className={clsx('flex w-full min-w-0 flex-col lg:w-[410px] lg:shrink-0 lg:border-r lg:border-line', selected && 'hidden lg:flex')}>
             <div className="border-b border-line px-3 py-2.5">
-              <div role="group" aria-label="Filter by status" className="flex gap-1.5 overflow-x-auto">
+              <div role="group" aria-label="Filter by status" className="flex gap-1.5 overflow-x-auto scroll-fade">
                 {filters.map((f) => {
                   const on = f.id === active.id;
                   return (
@@ -281,22 +284,32 @@ export function InboxPage({ emailId }: { emailId: string | null }) {
                       <a
                         href={hrefFor('inbox', email.id)}
                         aria-current={isSelected ? 'true' : undefined}
-                        className={clsx('block rounded-xl border px-3.5 py-3 transition-colors duration-150', isSelected ? 'border-accent/40 bg-brand-500/20' : 'border-transparent hover:border-line hover:bg-white/[0.04]')}
+                        className={clsx('relative block rounded-xl border px-3.5 py-3 transition-colors duration-150', isSelected ? 'border-accent/40 bg-brand-500/20' : 'border-transparent hover:border-line hover:bg-white/[0.04]')}
                       >
+                        {/* A rail down the side marks urgent and high-priority mail; the priority is also written out below. */}
+                        {(email.priority === 'urgent' || email.priority === 'high') && <span aria-hidden data-testid="priority-rail" className={clsx('absolute bottom-3 left-0 top-3 w-[3px] rounded-full', email.priority === 'urgent' ? 'bg-danger' : 'bg-warn')} />}
                         <span className="flex items-baseline justify-between gap-3">
-                          <span className={clsx('truncate text-[13.5px] text-ink', email.unread ? 'font-bold' : 'font-semibold')}>{email.from.name}</span>
-                          <span className="shrink-0 text-[11.5px] tabular-nums text-mute">{fmtDayTime(email.receivedAt, tz)}</span>
+                          <span className={clsx('flex min-w-0 items-center gap-1.5 text-[13.5px] text-ink', email.unread ? 'font-bold' : 'font-semibold')}>
+                            {email.unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"><span className="sr-only">Unread. </span></span>}
+                            <span className="truncate">{email.from.name}</span>
+                          </span>
+                          <span className="shrink-0 text-xs tabular-nums text-mute">{fmtDayTime(email.receivedAt, tz)}</span>
                         </span>
                         <span className="mt-0.5 block truncate text-[13px] text-soft">{email.subject}</span>
                         <span className="mt-0.5 line-clamp-2 text-[12px] leading-[17px] text-mute">{email.summary}</span>
                         <span className="mt-2 flex flex-wrap items-center gap-1.5">
                           {email.status !== 'untracked' && <Pill tone={status.tone}>{status.label}</Pill>}
-                          <Pill tone={EMAIL_CATEGORY[email.category].tone} icon={null}>
-                            {EMAIL_CATEGORY[email.category].label}
-                          </Pill>
                           {(email.priority === 'urgent' || email.priority === 'high') && (
                             <Pill tone={PRIORITY[email.priority].tone} icon={null}>
                               {PRIORITY[email.priority].label}
+                            </Pill>
+                          )}
+                          {/* Mail that asks for something gets a chip with its kind; mail that asks for nothing is labelled quietly. */}
+                          {email.category === 'fyi' || email.category === 'low_priority' ? (
+                            <span className="text-xs text-mute">{EMAIL_CATEGORY[email.category].label}</span>
+                          ) : (
+                            <Pill tone={EMAIL_CATEGORY[email.category].tone} icon={CATEGORY_ICON[email.category]}>
+                              {EMAIL_CATEGORY[email.category].label}
                             </Pill>
                           )}
                           <SourceBadge source={email.provider} className="ml-auto" />

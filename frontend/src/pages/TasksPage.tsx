@@ -44,7 +44,7 @@ function TaskRow({ task, onError }: { task: WorkTask; onError: (error: Error) =>
         aria-checked={done}
         aria-label={`${done ? 'Reopen' : 'Complete'}: ${task.title}`}
         onClick={toggle}
-        className={clsx('tap mt-0.5 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors duration-150', done ? 'border-ok/60 bg-ok/20 text-ok' : 'border-line-strong text-transparent hover:border-accent')}
+        className={clsx('hit mt-0.5 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors duration-150', done ? 'border-ok/60 bg-ok/20 text-ok' : 'border-line-strong text-transparent hover:border-accent')}
       >
         <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={3} />
       </button>

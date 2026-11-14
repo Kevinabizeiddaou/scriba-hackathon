@@ -6,7 +6,13 @@ import react from '@vitejs/plugin-react'
 // port are refused, so the port is fixed, not a preference.
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173,
+    strictPort: true,
+    // File events from a Windows/macOS bind mount do not reach a Linux container, so the
+    // Docker dev service sets VITE_USE_POLLING=1 to keep hot reload working.
+    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 300 } : undefined,
+  },
   preview: { port: 5173, strictPort: true },
   build: {
     // React and the data libraries change far less often than the Desk does, so they are kept in

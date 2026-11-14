@@ -79,20 +79,13 @@ function DataSourceNote() {
   return live ? <LiveConnection /> : <MockSourceNote />;
 }
 
-/** One quiet line; the full note (backend, overlay, what an approval does) opens on request. */
 function LiveConnection() {
-  const session = useLiveSession()!;
+  // Nothing is drawn in the sidebar: the banner above every screen states the mode. The full
+  // note stays available to assistive technology.
   return (
-    <details className="group px-1 text-[12px]">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-1 text-mute hover:text-ink">
-        <ModeBadge mode={session.mode} />
-        <span className="group-open:hidden">Connection details</span>
-        <span className="hidden group-open:inline">Hide details</span>
-      </summary>
-      <div className="mt-2">
-        <ModeNote />
-      </div>
-    </details>
+    <div className="sr-only">
+      <ModeNote />
+    </div>
   );
 }
 

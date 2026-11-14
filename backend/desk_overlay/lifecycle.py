@@ -37,6 +37,7 @@ EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
 OPEN = ("pending", "needs_info", "draft", "awaiting_approval")
 RUNNING = ("approved", "executing")
+ALREADY_DONE_REASONS = ("already_scheduled", "task_exists")
 CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found", "intent_unclear",
                    "details_missing")
 
@@ -157,7 +158,12 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
     if not actions:
         if held:
             reason = str(held.get("reason") or "")
-            stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
+            if reason in ALREADY_DONE_REASONS:
+                # A request that repeats something already in place: nothing
+                # is left to do, and nobody needs to be asked.
+                stage = "COMPLETED"
+            else:
+                stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
         elif meta.get("draft_request"):
             stage, reason = "ESCALATED", "reply_needs_author"
         else:

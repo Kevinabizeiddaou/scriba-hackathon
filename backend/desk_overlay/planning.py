@@ -27,6 +27,8 @@ _BY_WEEKDAY = re.compile(
 _CLOCK = re.compile(r"\b(?:at|by)\s+(?:\w+\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", re.I)
 _CLOCK_24 = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
 _NOON = re.compile(r"\b(noon|midday)\b", re.I)
+_EVENING = re.compile(r"\b(evening|tonight|end of (?:the )?day|eod|close of business|cob)\b", re.I)
+_MORNING = re.compile(r"\b(?:first thing|morning)\b", re.I)
 
 # Text that addresses the assistant rather than the executive. Mail is data:
 # finding this never makes the Desk do what it says. It makes the Desk stop.
@@ -115,6 +117,10 @@ def deadline_from(text: str, now: dt.datetime) -> Optional[dt.datetime]:
         hour, minute = int(clock_24.group(1)), int(clock_24.group(2))
     elif _NOON.search(lowered):
         hour, minute = 12, 0
+    elif _MORNING.search(lowered):
+        hour, minute = 9, 0
+    elif re.search(r"\b(evening|tonight)\b", lowered):
+        hour, minute = 18, 0
     return dt.datetime.combine(day, dt.time(hour, minute), tzinfo=now.tzinfo)
 
 

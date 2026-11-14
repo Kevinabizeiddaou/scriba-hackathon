@@ -417,3 +417,74 @@ def test_a_cancellation_does_not_need_the_zone(desk):
     run = desk.intake("c1").json()
     reasons = [i["data"].get("reason") for i in run["timeline"] if i["kind"] == "decision"]
     assert "timezone_ambiguous" not in reasons
+
+
+# ── several requests in one message: each keeps its own deadline ────────────
+
+TWO = ("Could we take 45 minutes on Tuesday at 10:00 to settle the delivery windows? It would help if you "
+       "could send me your cut-off dates by Monday evening so I can check them first.")
+
+
+def test_a_task_beside_a_meeting_takes_its_deadline_from_its_own_sentence(desk):
+    """Found with a real model: the task was given the MEETING's time."""
+    modelled(desk, {"intents": [
+        intent("new_meeting", "Could we take 45 minutes on Tuesday at 10:00",
+               requested_start=TUE10[0], requested_end="2026-11-17T10:45:00+00:00"),
+        intent("task", "send me your cut-off dates by Monday evening", title="Send the cut-off dates")]})
+    meeting_mail(desk, body=TWO)
+    run = desk.intake("m1").json()
+    by_tool = {a["tool_name"]: a for a in run["actions"]}
+    assert set(by_tool) == {"create_calendar_event", "create_task"}
+    assert by_tool["create_task"]["input"]["due_at"].startswith("2026-11-16T18:00")     # Monday evening
+    assert by_tool["create_calendar_event"]["input"]["start"].startswith("2026-11-17T10:00")
+
+
+def test_a_task_beside_a_meeting_with_no_deadline_of_its_own_has_none(desk):
+    modelled(desk, {"intents": [
+        intent("new_meeting", "Could we take 45 minutes on Tuesday at 10:00",
+               requested_start=TUE10[0], requested_end="2026-11-17T10:45:00+00:00"),
+        intent("task", "send me your cut-off dates", title="Send the cut-off dates")]})
+    meeting_mail(desk, body=TWO.replace(" by Monday evening", ""))
+    task = next(a for a in desk.intake("m1").json()["actions"] if a["tool_name"] == "create_task")
+    assert "due_at" not in task["input"]                 # not the meeting's Tuesday
+
+
+def test_a_message_the_rules_read_as_work_is_recorded_even_if_the_model_saw_only_a_reply(desk):
+    """Found with a real model: "I need your decision today" came back as a
+    reply to write, and nothing recorded that a decision was due."""
+    modelled(desk, {"intents": [intent("reply_needed", "I need your decision today")]})
+    desk.world().deliver(message_id="d1", from_addr="Omar <omar@client.example>", subject="Depot cover",
+                         body="Agency cover or move the routes? I need your decision today to book it.",
+                         thread_id="T-d1")
+    run = desk.intake("d1").json()
+    assert run["category"] == "action_item"
+    [task] = [a for a in run["actions"] if a["tool_name"] == "create_task"]
+    assert task["input"]["due_at"].startswith("2026-11-16")          # today, in the world's clock
+    assert not [a for a in run["actions"] if a["tool_name"] == "send_email"]
+
+
+@pytest.mark.parametrize("words, hour", [("by Monday evening", 18), ("by Monday morning", 9),
+                                         ("by Monday noon", 12), ("by Monday", 17)])
+def test_a_part_of_the_day_is_read_as_a_time(words, hour):
+    from desk_overlay import planning
+
+    due = planning.deadline_from(f"Please send it {words}.", NOW)
+    assert (due.weekday(), due.hour) == (0, hour)
+
+
+# ── the conversation so far, including what the executive wrote ─────────────
+
+def test_the_thread_shown_to_a_model_includes_the_executives_own_messages(desk):
+    modelled(desk, {"intents": []})
+    world = desk.world()
+    world.sent.append({"id": "s0", "provider": "gmail", "provider_account_id": world.gmail_accounts[0],
+                       "to": ["sofia@client.example"], "subject": "Rates", "thread_id": "T-m1",
+                       "text": "We can accept an increase capped at 4%.", "mode": "compose",
+                       "sent_at": "2026-11-10T09:00:00+00:00"})
+    world.deliver(message_id="m0", from_addr=SOFIA, subject="Rates", body="Agreed, 4% cap.",
+                  thread_id="T-m1", received_at=dt.datetime(2026, 11, 11, 9, 0, tzinfo=UTC))
+    meeting_mail(desk, body="Rate card attached: lanes move up by 6%. Could you confirm?")
+    desk.intake("m1")
+    _, user_message = desk.gateway.model_calls[0]["messages"]
+    assert "capped at 4%" in user_message["content"] and "Agreed, 4% cap." in user_message["content"]
+    assert '"written_by_the_executive": true' in user_message["content"]

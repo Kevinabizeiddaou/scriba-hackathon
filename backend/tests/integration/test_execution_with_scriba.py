@@ -488,6 +488,10 @@ def test_an_unconfirmed_write_is_unknown_and_a_retry_does_not_repeat_it():
         settled = get(desk, f"/runs/{run['runId']}").json()
         assert settled["actions"][0]["verified"] is True
         assert settled["actions"][0]["verification"]["reconciled"] is True
+        # The run goes on from there: the confirmation is proposed without a
+        # client having to ask (it used to rest in EXECUTING for ever).
+        assert [a["purpose"] for a in settled["actions"]] == ["book", "confirm"]
+        assert settled["lifecycle"]["stage"] == "AWAITING_APPROVAL" and settled["next"] == []
 
 
 def test_an_unknown_outcome_that_did_not_happen_is_run_again_after_the_check():

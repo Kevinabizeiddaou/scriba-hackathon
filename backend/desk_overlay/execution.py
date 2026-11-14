@@ -480,6 +480,7 @@ class ExecutionGate:
                 self._record(user, run, "verification", {
                     "toolCallId": card["id"], "tool": tool, "verified": True, "method": "sandbox_readback",
                     "reconciled": True, "recovered": True, "objectId": found}, world)
+                self._settled(user, run, world)
             elif world is not None:
                 repo.update_tool_call(card["id"], user_id=user.id, status="failed", error="interrupted",
                                       output_payload_patch={"error_code": "interrupted", "recovered": True,
@@ -568,13 +569,19 @@ class ExecutionGate:
                 "code": (card.get("output") or {}).get("error_code") or card.get("error")}, world)
         if status in ("executed", "partially_executed"):
             self._verify(ctx, tool, card, result)
-            if run is not None and callable(self.on_settled):
-                try:
-                    with self.registry.using(world):
-                        self.on_settled(user, run)
-                except Exception:
-                    logger.exception("desk follow-on step could not be proposed")
+            self._settled(user, run, world)
         return result
+
+    def _settled(self, user: DeskUser, run: Optional[Dict[str, Any]], world: Any) -> None:
+        """An action has taken effect, however that was learned (it ran, or a
+        read-back found it): whatever may only follow it can now be proposed."""
+        if run is None or not callable(self.on_settled):
+            return
+        try:
+            with self.registry.using(world):
+                self.on_settled(user, run)
+        except Exception:
+            logger.exception("desk follow-on step could not be proposed")
 
     def _object_id(self, tool: str, card: Mapping[str, Any], result: Mapping[str, Any]) -> Optional[str]:
         sandbox = ((result.get("assistant_action") or {}) if isinstance(result, Mapping) else {}).get("sandbox")
@@ -630,6 +637,7 @@ class ExecutionGate:
             self._record(user, run, "verification", {
                 "toolCallId": row.get("id"), "tool": tool, "verified": True,
                 "method": "sandbox_readback", "reconciled": True, "objectId": found}, world)
+            self._settled(user, run, world)
             return {"tool_call": repo.serialize_tool_call(updated or row), "reconciled": True}
         if world is None and overrides.get(RETRY_CONFIRM_FLAG) is not True:
             return hold(ctx, row.get("id"), UNKNOWN_CODE,

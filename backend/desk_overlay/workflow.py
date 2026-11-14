@@ -31,7 +31,7 @@ import datetime as dt
 import hashlib
 import re
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
@@ -334,6 +334,32 @@ class DeskWorkflow:
         plan["decisions"].append(decision)
         return plan
 
+    def thread_context(self, user: Any, item: Mapping[str, Any],
+                       detail: Mapping[str, Any]) -> List[Dict[str, Any]]:
+        """The conversation so far, oldest first: what arrived AND what the
+        executive wrote. Read from the mailbox, never recalled. ``own`` marks
+        the executive's messages; everything else is untrusted text."""
+        thread_id = str(item.get("threadId") or item.get("thread_id") or "")
+        rows: List[Dict[str, Any]] = [
+            {"id": m.get("id"), "from_addr": m.get("from_addr"), "timestamp": m.get("timestamp"),
+             "subject": m.get("subject"), "body": m.get("body") or m.get("snippet"), "own": False}
+            for m in (detail.get("thread") or {}).get("messages") or []]
+        if thread_id:
+            try:
+                sent = self.gateway.list_sent(None, user, str(item.get("provider") or "gmail"),
+                                              item.get("provider_account_id")) or []
+            except Exception:
+                sent = []           # unknown is not "nothing was sent": the thread is just shorter
+            for row in sent:
+                if str(row.get("thread_id") or row.get("threadId") or "") == thread_id:
+                    rows.append({"id": row.get("id"), "from_addr": user.email,
+                                 "timestamp": row.get("sent_at") or row.get("timestamp"),
+                                 "subject": row.get("subject"),
+                                 "body": row.get("text") or row.get("body") or row.get("snippet"),
+                                 "own": True})
+        rows.sort(key=lambda row: (_moment(row.get("timestamp")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc)))
+        return rows
+
     def _understand(self, user: Any, item: Dict[str, Any], detail: Dict[str, Any],
                     plan: Dict[str, Any]) -> Dict[str, Any]:
         """The message's intents: from a model when one is configured and
@@ -350,7 +376,7 @@ class DeskWorkflow:
         now = self.service.now(user).astimezone(resolve_zone(zone_name))
         with self.gateway.model_usage() as calls:
             found = understanding.from_model(
-                self.gateway, item=item, thread=(detail.get("thread") or {}).get("messages") or [],
+                self.gateway, item=item, thread=self.thread_context(user, item, detail),
                 now=now, timezone=zone_name)
         plan["usage"].extend(calls)
         plan["reads"].append({"tool": "model.understand", "ok": bool(found and found["intents"]),
@@ -399,7 +425,8 @@ class DeskWorkflow:
                 self._plan_meeting(ctx, user, item, calendar, plan, intent=wanted,
                                    extracted=understanding.extracted_from(intent))
             elif kind == "task":
-                self._plan_task(ctx, user, item, plan, title=details.get("title"), due_at=details.get("due_at"))
+                self._plan_task(ctx, user, item, plan, title=details.get("title"), due_at=details.get("due_at"),
+                                evidence=intent.get("evidence"), alone=len(sure) == 1)
             elif kind == "reminder":
                 when = _moment(details.get("remind_at"))
                 if details.get("title") and when is not None and when > self.service.now(user):
@@ -420,6 +447,13 @@ class DeskWorkflow:
             else:
                 plan["decisions"].append({"decision": "none", "reason": kind,
                                           "explanation": "No action is needed for this part."})
+        if triage.get("category") == "action_item" and not any(
+                p.get("tool_name") in ("create_task", "create_reminder") for p in plan["proposals"]) \
+                and (plan.get("held") or {}).get("reason") != "task_exists":
+            # The rules' reading is the floor here too: a message they read as
+            # something to do is recorded as a task even when the model saw
+            # only a reply in it. A decision someone is waiting for is work.
+            self._plan_task(ctx, user, item, plan)
 
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         """This message may be the answer someone was being waited on for."""
@@ -442,7 +476,8 @@ class DeskWorkflow:
                                        "follow-up was closed."})
 
     def _plan_task(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
-                   title: Optional[str] = None, due_at: Optional[str] = None) -> None:
+                   title: Optional[str] = None, due_at: Optional[str] = None,
+                   evidence: Optional[List[str]] = None, alone: bool = True) -> None:
         title = str(title or item.get("subject") or "Follow up on email").strip()[:160]
         try:
             open_tasks = self.gateway.open_tasks(ctx, user, 100)
@@ -467,8 +502,16 @@ class DeskWorkflow:
         due = None
         try:
             zone_name, _, _, _ = self.service.working_context(user, None, None, None)
-            due = planning.deadline_from(f"{item.get('subject')}\n{item.get('body') or item.get('snippet') or ''}",
-                                         self.service.now(user).astimezone(resolve_zone(zone_name)))
+            local_now = self.service.now(user).astimezone(resolve_zone(zone_name))
+            whole = f"{item.get('subject')}\n{item.get('body') or item.get('snippet') or ''}"
+            if evidence:
+                # One request among several: its deadline is in its own
+                # sentence. Another request's date (the meeting's) is not it.
+                due = planning.deadline_from(" ".join(str(quote) for quote in evidence), local_now)
+                if due is None and alone:
+                    due = planning.deadline_from(whole, local_now)
+            else:
+                due = planning.deadline_from(whole, local_now)
         except InvalidAvailabilityRequest:
             due = None
         if due_at and _moment(due_at) is not None:

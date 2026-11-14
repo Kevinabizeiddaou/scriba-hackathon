@@ -408,7 +408,8 @@ def test_a_second_message_about_an_open_task_makes_no_second_task(desk):
                          body="Reminder: the deadline is Friday.")
     run = desk.intake("a2").json()
     assert run["actions"] == [] and run["held"]["reason"] == "task_exists"
-    assert run["lifecycle"]["stage"] == "ESCALATED"
+    # Nothing is left to do and nobody needs asking: handled, with the reason kept.
+    assert run["lifecycle"]["stage"] == "COMPLETED" and run["lifecycle"]["reason"] == "task_exists"
 
 
 # ── untrusted content ───────────────────────────────────────────────────────
@@ -738,6 +739,7 @@ def test_a_request_sent_again_for_a_meeting_already_booked_is_recognised(desk):
     assert run["actions"] == [] and run["held"]["reason"] == "already_scheduled"
     assert run["flags"] == ["duplicate"] and run["held"]["target"]["title"] == "Intro call"
     assert len(desk.world().events) == 1
+    assert run["lifecycle"]["stage"] == "COMPLETED" and run["lifecycle"]["reason"] == "already_scheduled"
 
 
 def test_a_conflict_with_somebody_elses_meeting_is_still_a_conflict(desk):

@@ -1,7 +1,11 @@
-# Scriba Executive Desk in Docker.
+# Scriba Executive Desk in Docker. This is the only supported way to run the app.
 #
-#   docker compose up api desk                      seeded Scriba API + live workspace, hot reload
-#                                                   http://localhost:5173 (API on :8000)
+#   docker compose build
+#   docker compose up -d                            seeded Scriba API (:8000) + the Desk, hot reload
+#                                                   http://localhost:5173
+#   docker compose down                             stop it
+#
+# Other profiles:
 #   docker compose --profile demo up desk-demo      mock data, no backend needed  http://localhost:5174
 #   docker compose --profile prod up --build desk-prod   production build (nginx) http://localhost:5173
 #   docker compose --profile test run --rm frontend-tests
@@ -20,16 +24,28 @@ services:
       dockerfile: Dockerfile.seeded
       additional_contexts:
         scriba: ${SCRIBA_PATH:-../scriba/Gmail}
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
       - ${SCRIBA_PATH:-../scriba/Gmail}:/scriba:ro
       - ./backend:/desk:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/providers/status', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
 
   desk:
     build:
       context: ./frontend
       target: dev
+    restart: unless-stopped
+    # Wait for the API so the first page load does not show "could not be reached".
+    depends_on:
+      api:
+        condition: service_healthy
     ports:
       - "5173:5173"
     environment:

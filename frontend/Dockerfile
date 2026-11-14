@@ -9,6 +9,8 @@
 
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
+# scripts/require-docker.mjs: the dev and preview servers only start inside this image.
+ENV DESK_IN_DOCKER=1
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 

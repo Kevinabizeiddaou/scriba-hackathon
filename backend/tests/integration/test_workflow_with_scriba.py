@@ -261,7 +261,11 @@ def meeting_world(**busy):
         data["meeting_plan"] = PLAN
         data.update(busy)
         service = world["chat_service"]
+        # The event card names the Google account that received the request.
+        # Scriba checks that account's Calendar scope against its token store,
+        # which this hermetic world does not have: the answer is scripted.
         with patch.object(service, "_safe_provider_status", lambda account_email: CONNECTED), \
+                patch.object(service, "_google_calendar_account_state", lambda *a, **k: "ok"), \
                 patch.object(service, "execute_action", world["calendar_write"]):
             yield world
 
@@ -286,7 +290,9 @@ def test_meeting_request_event_is_created_before_any_reply_is_proposed():
         assert approved.json()["tool_call"]["status"] == "executed", approved.json()["tool_call"]
         assert len(world["calendar_write"].calls) == 1
         sent = world["calendar_write"].calls[0]["kwargs"]["action"]
-        assert sent["action_type"] == "create_calendar_event"
+        assert sent["action_type"] == "create_calendar_event" and sent["provider"] == "google_calendar"
+        # The organizer is the mailbox the request arrived in, named explicitly.
+        assert sent["payload"]["provider_account_id"] == "alice@gmail.example"
 
         after = post(world, f"/runs/{run['runId']}/advance").json()
         reply = next(a for a in after["actions"] if a["tool_name"] == "send_email")

@@ -216,7 +216,7 @@ def test_an_answer_in_the_thread_from_that_person_closes_the_follow_up(desk):
     desk.world().deliver(message_id="m9", from_addr=SOFIA, subject="Re: Intro call next week?",
                          body="Wednesday at 10 works.", thread_id="T-m1")
     after = desk.get("/follow-ups").json()
-    assert after["counts"] == {"waiting": 0, "overdue": 0, "satisfied": 1, "closed": 0}
+    assert after["counts"] == {"waiting": 0, "overdue": 0, "escalated": 0, "satisfied": 1, "closed": 0}
     assert after["followUps"][0]["satisfiedBy"] == "m9"
     assert desk.get(f"/runs/{run['runId']}").json()["lifecycle"]["stage"] == "COMPLETED"
 

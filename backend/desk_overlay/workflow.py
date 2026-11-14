@@ -36,6 +36,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
+from .commands import Commands, reply_text
 from .service import DeskService, NotFound
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -47,11 +48,12 @@ _OPEN = ("pending", "needs_info", "draft", "awaiting_approval", "approved", "exe
 # Messages a sweep opens a run for. Informational and automated mail is left alone.
 SWEEP_CATEGORIES = ("meeting_request", "action_item", "needs_reply")
 SWEEP_MAX_NEW = 5
-TRIGGERS = ("manual", "sweep", "worker", "evaluation")
+TRIGGERS = ("manual", "sweep", "worker", "evaluation", "chat")
 # How long the Desk waits for an answer before it proposes a reminder.
 FOLLOW_UP_DAYS = 2
 EVENT_SEARCH_DAYS = 45
-REPLY_PURPOSES_AWAITING = ("offer_times", "clarify", "nudge")
+# A reminder (nudge) is not a new wait: it belongs to the follow-up it chases.
+REPLY_PURPOSES_AWAITING = ("offer_times", "clarify")
 
 
 class IntakeBusy(RuntimeError):
@@ -91,6 +93,7 @@ class DeskWorkflow:
         # model is really configured: one structured call reads the message's
         # intents. With it off, the rules and Scriba's extraction do.
         self.model_understanding = False
+        self.commands = Commands(self)
         self._locks: Dict[str, Any] = {}
         self._locks_guard = threading.Lock()
 
@@ -116,6 +119,13 @@ class DeskWorkflow:
 
     def _record(self, user: Any, run: Dict[str, Any], kind: str, data: Dict[str, Any]) -> None:
         lifecycle.record(self.gateway, user, run, kind, data, at=self.service.now(user).isoformat())
+
+    # ── an instruction from the executive ───────────────────────────────────
+    def command(self, ctx: Any, user: Any, text: str, *, request_id: Optional[str] = None,
+                trigger: str = "chat") -> Dict[str, Any]:
+        """Open a run for work the executive asked for in their own words.
+        See ``commands.py``. Proposes; sends nothing and changes no calendar."""
+        return self.commands.run(ctx, user, text, request_id=request_id, trigger=trigger)
 
     # ── intake ──────────────────────────────────────────────────────────────
     def intake(self, ctx: Any, user: Any, *, provider: str, item_id: str,
@@ -237,6 +247,7 @@ class DeskWorkflow:
             "stepId": proposal.get("stepId"), "binding": _binding(proposal["tool_name"], (card or {}).get("input")
                                                                or proposal["tool_input"]),
             "purpose": proposal.get("purpose"), "reason": proposal.get("reason"),
+            "followUpId": proposal.get("followUpId"), "target": proposal.get("target"),
             "proposedSlots": proposal.get("proposedSlots"),
             "status": (card or {}).get("status")})
         self._auto_approve_internal(user, run, proposal["tool_name"], card)
@@ -1059,7 +1070,13 @@ class DeskWorkflow:
                         continue
                     if step["state"] == "ready":
                         source = next((c for c in cards if c.get("id") == by_id[step["dependsOn"][0]]["toolCallId"]), None)
-                        if source is not None:
+                        if source is None:
+                            continue
+                        if step.get("purpose") == "notify":
+                            self.commands.propose_notification(user, run, source, step)
+                        elif (step.get("pending") or {}).get("tool_name"):
+                            self._propose(user, run, {**step["pending"], "stepId": step["id"]})
+                        else:
                             self._propose_confirmation(user, run, source, step["id"])
                     elif step["state"] == "blocked" and step["id"] not in blocked:
                         self._record(user, run, "decision", {
@@ -1121,6 +1138,8 @@ class DeskWorkflow:
         close it when the answer arrives; mark it overdue, and propose a
         reminder for approval, when it does not. Never sends anything."""
         meta = run["meta"]
+        if meta.get("kind") == "command":
+            return      # a reminder sent from an instruction belongs to the follow-up it chases
         events = self.gateway.run_events(user, run)
         cards = self.gateway.run_cards(user, run)
         purposes = self._purposes(user, run, events)
@@ -1135,9 +1154,13 @@ class DeskWorkflow:
             if (card["tool_name"] == "send_email" and card["status"] in _DONE
                     and purpose in REPLY_PURPOSES_AWAITING and follow_id not in known):
                 data = card.get("input") or {}
-                opened = {"id": follow_id, "state": "waiting", "toolCallId": card.get("id"),
-                          "threadId": data.get("thread_id") or meta.get("thread_id"),
-                          "waitingOn": sender_address(str(data.get("to") or meta.get("from_addr") or "")),
+                thread = data.get("thread_id") or meta.get("thread_id")
+                person = sender_address(str(data.get("to") or meta.get("from_addr") or ""))
+                if any(f.get("state") in ("waiting", "overdue", "escalated") and f.get("threadId") == thread
+                       and f.get("waitingOn") == person for f in known.values()):
+                    continue        # one wait per person and conversation, however many replies went out
+                opened = {"id": follow_id, "state": "waiting", "kind": "reply", "toolCallId": card.get("id"),
+                          "threadId": thread, "waitingOn": person,
                           "subject": meta.get("subject"),
                           # When the send executed, where that was recorded.
                           "sentAt": executed_at.get(card.get("id")) or now.isoformat(),
@@ -1149,6 +1172,9 @@ class DeskWorkflow:
         waiting = [f for f in known.values() if f.get("state") in ("waiting", "overdue")]
         if not waiting:
             return
+        nudge_of = {(e.get("data") or {}).get("followUpId"): (e.get("data") or {}).get("toolCallId")
+                    for e in events if e.get("kind") == "proposal" and (e.get("data") or {}).get("followUpId")}
+        by_id = {card.get("id"): card for card in cards}
         try:
             sources, rows = self.service.read_mail(ctx, user, [meta["provider"]], 100, None)
         except Exception:
@@ -1169,6 +1195,20 @@ class DeskWorkflow:
                     "satisfiedAt": answer.get("timestamp")})
                 continue
             due = _moment(follow.get("dueAt"))
+            nudge = by_id.get(nudge_of.get(follow["id"]))
+            if follow.get("state") == "overdue" and nudge is not None and nudge["status"] in _DONE:
+                # One reminder went out. If that brings no answer either, the
+                # Desk does not write a third time: it is the person's now.
+                # When it went out: the execution record; failing that, when
+                # the wait was last recorded (it became overdue then).
+                reminded = (_moment(executed_at.get(nudge.get("id"))) or _moment(follow.get("updatedAt"))
+                            or now)
+                if now > reminded + dt.timedelta(days=FOLLOW_UP_DAYS):
+                    self._record(user, run, "followup", {
+                        "id": follow["id"], "state": "escalated", "nudges": 1,
+                        "lastNudgeAt": reminded.isoformat(),
+                        "reason": "no_answer_after_reminder"})
+                continue
             if follow.get("state") == "waiting" and due is not None and now > due:
                 self._record(user, run, "followup", {"id": follow["id"], "state": "overdue"})
                 item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
@@ -1176,7 +1216,7 @@ class DeskWorkflow:
                         "provider_account_id": meta.get("provider_account_id"), "id": meta.get("email_id")}
                 # A reminder is PROPOSED. Chasing someone is the person's call.
                 self._propose(user, run, {
-                    "tool_name": "send_email", "purpose": "nudge",
+                    "tool_name": "send_email", "purpose": "nudge", "followUpId": follow["id"],
                     "reason": "No answer arrived by the follow-up date.",
                     "tool_input": self._reply_input(item, planning.nudge_reply(
                         subject=str(meta.get("subject") or "")))})
@@ -1186,13 +1226,25 @@ class DeskWorkflow:
         known = {f["id"]: f for f in lifecycle.follow_ups(self.gateway.run_events(user, run))}
         if follow_id not in known:
             raise NotFound("Follow-up not found.")
-        if known[follow_id].get("state") in ("waiting", "overdue"):
+        if known[follow_id].get("state") in ("waiting", "overdue", "escalated"):
             self._record(user, run, "followup", {"id": follow_id, "state": "closed", "by": user.email})
         return self.view(ctx, user, run_id)
 
     def follow_ups(self, ctx: Any, user: Any, *, refresh: bool = True, limit: int = 50) -> Dict[str, Any]:
-        """Every follow-up across the user's runs, newest run first."""
+        """Everything the executive is waiting on, from records.
+
+        - replies awaited on mail the Desk sent (kept on the run that sent it);
+        - replies awaited that the Desk did not open (``source: "external"``:
+          a world can be seeded with them);
+        - the executive's own tasks whose date has passed (``overdueTasks``).
+
+        Each follow-up says how many reminders went out for it (``nudges``)
+        and whether one is waiting for approval (``nudgePending``), counted
+        from the action cards of every run, so nothing is chased twice.
+        """
+        now = self.service.now(user)
         found: List[Dict[str, Any]] = []
+        nudges: Dict[str, Dict[str, Any]] = {}
         for run in self.gateway.list_runs(user, limit):
             if refresh:
                 try:
@@ -1200,11 +1252,55 @@ class DeskWorkflow:
                         self._track_follow_ups(ctx, user, run)
                 except Exception:
                     pass
-            for follow in lifecycle.follow_ups(self.gateway.run_events(user, run)):
-                found.append({**follow, "runId": run["id"]})
+            events = self.gateway.run_events(user, run)
+            cards = {card.get("id"): card for card in self.gateway.run_cards(user, run)}
+            for item in events:
+                data = item.get("data") or {}
+                if item.get("kind") != "proposal" or not data.get("followUpId"):
+                    continue
+                card = cards.get(data.get("toolCallId")) or {}
+                entry = nudges.setdefault(str(data["followUpId"]), {"sent": 0, "pending": False, "lastAt": None})
+                if card.get("status") in _EFFECT:
+                    entry["sent"] += 1
+                    entry["lastAt"] = next((e.get("at") for e in reversed(events)
+                                            if e.get("kind") == "execution"
+                                            and (e.get("data") or {}).get("toolCallId") == card.get("id")), None)
+                elif card.get("status") in _OPEN:
+                    entry["pending"] = True
+            for follow in lifecycle.follow_ups(events):
+                found.append({"kind": "reply", **follow, "runId": run["id"], "source": "desk"})
+        waiting = getattr(self.gateway, "waiting_follow_ups", None)
+        for follow in (waiting(user) if callable(waiting) else []):
+            awaited = follow.get("waitingOn") or {}
+            due = _moment(follow.get("expectedBy"))
+            found.append({
+                "id": str(follow.get("id")), "kind": "reply", "source": "external", "runId": None,
+                "state": "overdue" if due is not None and now > due else "waiting",
+                "waitingOn": str(awaited.get("email") if isinstance(awaited, dict) else awaited or "").lower(),
+                "waitingOnName": awaited.get("name") if isinstance(awaited, dict) else None,
+                "threadId": follow.get("threadId"), "subject": follow.get("subject"),
+                "sentAt": follow.get("sentAt"), "dueAt": follow.get("expectedBy")})
+        for follow in found:
+            sent = nudges.get(str(follow.get("id"))) or {}
+            follow["nudges"] = int(sent.get("sent") or follow.get("nudges") or 0)
+            follow["nudgePending"] = bool(sent.get("pending"))
+            follow.setdefault("lastNudgeAt", sent.get("lastAt"))
+            reminded = _moment(follow.get("lastNudgeAt")) or _moment(follow.get("updatedAt"))
+            if follow["state"] == "overdue" and follow["nudges"] and reminded is not None:
+                # Reminded once: it waits again, and after that it is the person's.
+                follow["state"] = "escalated" if now > reminded + dt.timedelta(days=FOLLOW_UP_DAYS) else "waiting"
         counts = {state: sum(1 for f in found if f.get("state") == state)
-                  for state in ("waiting", "overdue", "satisfied", "closed")}
-        return {"account": user.email, "followUps": found, "counts": counts}
+                  for state in ("waiting", "overdue", "escalated", "satisfied", "closed")}
+        overdue_tasks: List[Dict[str, Any]] = []
+        try:
+            for task in self.gateway.open_tasks(ctx, user, 200):
+                due = _moment(task.get("due_at"))
+                if due is not None and now > due:
+                    overdue_tasks.append({"id": str(task.get("id")), "title": task.get("title"),
+                                          "dueAt": due.isoformat()})
+        except Exception:
+            overdue_tasks = []                  # unknown: not reported as "none overdue" either
+        return {"account": user.email, "followUps": found, "counts": counts, "overdueTasks": overdue_tasks}
 
     # ── reading a run ───────────────────────────────────────────────────────
     def _run(self, user: Any, run_id: int) -> Dict[str, Any]:
@@ -1266,6 +1362,7 @@ class DeskWorkflow:
             counts[status] = counts.get(status, 0) + 1
         view: Dict[str, Any] = {
             "runId": run["id"],
+            "kind": meta.get("kind") or "email",
             "duplicate": duplicate,
             "state": state,
             "lifecycle": stage,
@@ -1291,6 +1388,9 @@ class DeskWorkflow:
             view["actions"] = actions
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
+            if meta.get("kind") == "command":
+                view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
+                view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))
         return view
 
     def list_runs(self, ctx: Any, user: Any, limit: int = 50) -> List[Dict[str, Any]]:
@@ -1448,6 +1548,9 @@ def _action_view(card: Dict[str, Any], evidence: Dict[str, Any], meta: Dict[str,
         "purpose": proposal.get("purpose"),
         "reason": proposal.get("reason"),
         "stepId": proposal.get("stepId"),
+        # The existing event a calendar change is about, as it was when proposed.
+        "target": proposal.get("target"),
+        "followUpId": proposal.get("followUpId"),
         # Held by a guard: it cannot be approved as it stands.
         "held": bool(status == "needs_info" and output.get("blocked")),
         # How many times execution was attempted (a retry is one more).

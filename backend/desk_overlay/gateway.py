@@ -289,7 +289,11 @@ class ScribaGateway:
             message_id = next((m["id"] for m in messages if m.get("role") == "assistant"), None)
         # The one address the Desk vouches for on its own cards: the sender of
         # the message the run is about, taken from its From header.
-        with trusted_recipients([sender_address(str(run["meta"].get("from_addr") or ""))]):
+        # ... and, on a run the executive started by instruction, the people a
+        # RECORD names: the attendees of the meeting being changed, the person
+        # a follow-up is waiting on. Recorded on the run when it was planned.
+        with trusted_recipients([sender_address(str(run["meta"].get("from_addr") or "")),
+                                 *(run["meta"].get("vouched") or [])]):
             return chat_service._handle_tool_call(
                 account_email=user.email, user_id=user.id, conversation_id=run["id"],
                 message_id=int(message_id), tool_name=tool_name, tool_input=dict(tool_input),

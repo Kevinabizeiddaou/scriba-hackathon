@@ -168,7 +168,7 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
     (the confirmation reply after a booking).
     """
     statuses = [str(action.get("status") or "") for action in actions]
-    waiting_on = [f for f in follow_ups(events) if f.get("state") in ("waiting", "overdue")]
+    waiting_on = [f for f in follow_ups(events) if f.get("state") in ("waiting", "overdue", "escalated")]
     held = meta.get("held") if isinstance(meta.get("held"), Mapping) else None
     unknown = any(action.get("outcomeUnknown") for action in actions)
     reason: Optional[str] = None

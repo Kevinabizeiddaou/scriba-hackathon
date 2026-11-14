@@ -53,6 +53,14 @@ class IntakeBody(BaseModel):
     mailbox: Optional[str] = None
 
 
+class CommandBody(BaseModel):
+    """An instruction from the signed-in person, in their own words."""
+
+    text: str = Field(min_length=1, max_length=2000)
+    # The same requestId sent again returns the same run: nothing is planned twice.
+    requestId: Optional[str] = Field(default=None, max_length=120)
+
+
 class DeliverBody(BaseModel):
     """A synthetic message for the caller's own sandbox mailbox."""
 
@@ -199,6 +207,13 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.intake(
             request, user, provider=body.provider, item_id=body.id, mailbox=body.mailbox))
+
+    @router.post("/commands")
+    def desk_command(request: Request, body: CommandBody) -> Dict[str, Any]:
+        """Open a run for an instruction ("remind me...", "move my 1:1...",
+        "chase what is overdue"). It proposes cards; it sends nothing."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.command(request, user, body.text, request_id=body.requestId))
 
     @router.post("/intake/sweep")
     def desk_intake_sweep(request: Request, body: Optional[SweepBody] = None) -> Dict[str, Any]:

@@ -29,6 +29,13 @@ __pycache__/
 # repository; if someone places one here it must not be committed.
 vendor/scriba/
 
+# Claude Code: local worktrees and personal settings
+.claude/worktrees/
+.claude/settings.local.json
+
+# Vercel CLI project link
+.vercel/
+
 # Editors / OS
 .vscode/
 .idea/

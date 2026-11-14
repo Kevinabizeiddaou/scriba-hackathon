@@ -4,6 +4,9 @@
  * Scans the files Git would commit (tracked + staged), never node_modules.
  *
  *   node scripts/check-no-secrets.mjs
+ *
+ * Runs on every commit through .githooks/pre-commit (one-time setup per clone:
+ * `git config core.hooksPath .githooks`).
  */
 import { execFileSync } from 'node:child_process'
 import { readFileSync, statSync } from 'node:fs'
@@ -43,7 +46,10 @@ for (const file of files) {
   }
   let size = 0
   try {
-    size = statSync(file).size
+    const stat = statSync(file)
+    // Git lists a nested repository (a worktree, a checkout) as one directory entry.
+    if (!stat.isFile()) continue
+    size = stat.size
   } catch {
     continue
   }

@@ -62,6 +62,12 @@ in force, and is otherwise held (`external_writes_disabled`). See
 
 ## Run it
 
+**Use Docker:** `docker compose build`, then `docker compose up -d` from the
+repository root runs the overlay on Scriba's seeded backend (the `api`
+service; see "Run it" in the [main README](../README.md)). The manual commands
+below are what that container does, kept for reference and for running the
+overlay on a real Scriba backend.
+
 You need a Scriba checkout at commit `3ae3a2aa` or newer and its Python
 environment (the overlay adds no dependency). Nothing in Scriba is edited.
 Scriba's configuration stays where it is; none of it is copied here.
@@ -123,7 +129,16 @@ signed-in Scriba user. No new OAuth client, redirect URI or cloud setup.
 Running the overlay on a hosted Scriba API is a deployment change and needs
 explicit authorization. It is not done from this repository.
 
+The Desk's own hosted API is a separate deployment: `Dockerfile.railway` builds
+Scriba at a pinned commit with the overlay mounted, for Railway. See
+[../docs/DEPLOY.md](../docs/DEPLOY.md).
+
 ## Test it
+
+**Use Docker:** `docker compose --profile test run --rm backend-tests` from the
+repository root runs the whole suite below, integration tests included, in the
+`api` image (Python 3.12 with Scriba's pinned packages). The commands below are
+the same thing by hand.
 
 Use Scriba's Python environment (it has FastAPI, pytest and httpx).
 

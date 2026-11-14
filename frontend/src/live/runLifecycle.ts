@@ -199,11 +199,13 @@ export const HELD_REASON_V3: Record<Exclude<DeskHeldReason, 'calendar_conflict' 
 export const HELD_REASON_REVISED: Record<string, { title: string; next: string }> = {
   intent_unclear: { title: 'It is not clear enough what this message asks for', next: 'Read the message and decide. Nothing was proposed, because acting on an unclear reading would be a guess.' },
   details_missing: { title: 'A detail needed to act is not in the message', next: 'Ask the sender for the missing detail, or handle it yourself. Nothing was filled in for you.' },
+  // Added with the integrated backend (overlay 0.5). Wording is the backend owner's first draft.
   conflicting_instructions: { title: 'The message contradicts itself or takes an instruction back', next: 'Read it and decide which is meant. Nothing was picked for you.' },
-  needs_review: { title: 'This message could not be placed, so it is handed to you', next: 'Read it and decide what it needs. It was not filed as done.' },
-  reply_needs_author: { title: 'This needs a reply in your own words', next: 'Write the reply, or ask for a draft to review. Nothing is sent by itself.' },
-  already_in_progress: { title: 'This repeats a request that is already being handled', next: 'Nothing: open the earlier run to see where it stands. No second action was proposed.' },
-  already_handled: { title: 'This repeats a request that was already handled', next: 'Nothing. No second action was proposed.' },
+  needs_review: { title: 'It is not clear what this message needs from you', next: 'Read it and decide. It was written by a person, so it was not filed as dealt with.' },
+  reply_needs_author: { title: 'This needs a reply in your words', next: 'Write the reply yourself. Nothing could be drafted from what the secretary can verify.' },
+  already_in_progress: { title: 'The same request is already being handled', next: 'Nothing: the sender asked for this before in the same conversation, and that run is still open.' },
+  already_handled: { title: 'The same request was already handled', next: 'Nothing: the sender asked for this before in the same conversation, and it was dealt with.' },
+  unresolved_requests: { title: 'The message asked for something more that was not acted on', next: 'Read what is listed as unresolved and take it from there. The rest of the run is done.' },
 }
 
 // ── evidence ────────────────────────────────────────────────────────────────
@@ -278,8 +280,13 @@ export const FOLLOW_UP_STATE: Record<DeskFollowUp['state'], { label: string; ton
 
 export const FOLLOW_UP_ORDER: DeskFollowUp['state'][] = ['overdue', 'waiting', 'satisfied', 'closed']
 
+/** States the backend sends since overlay 0.4 that the typed `state` does not list (so the table above stays exhaustive). */
+export const FOLLOW_UP_STATE_REVISED: Record<string, { label: string; tone: Tone; blurb: string }> = {
+  escalated: { label: 'Reminded once, still no answer', tone: 'danger', blurb: 'One reminder went out and two more days passed. The secretary will not write again: this one is yours.' },
+}
+
 export function followUpInfo(state: string): { label: string; tone: Tone; blurb: string } {
-  return FOLLOW_UP_STATE[state as DeskFollowUp['state']] ?? { label: `State not recognised: ${state}`, tone: 'danger', blurb: 'This version of the Desk does not know this follow-up state. It is not treated as answered.' }
+  return FOLLOW_UP_STATE[state as DeskFollowUp['state']] ?? FOLLOW_UP_STATE_REVISED[state] ?? { label: `State not recognised: ${state}`, tone: 'danger', blurb: 'This version of the Desk does not know this follow-up state. It is not treated as answered.' }
 }
 
 // ── the worker ──────────────────────────────────────────────────────────────

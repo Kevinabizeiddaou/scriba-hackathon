@@ -9,7 +9,7 @@ only, with synthetic files built in memory. No external write was made or is
 possible. ScribaAssist/Scriba was read from a clone and not changed; none of
 its source is in this repository.
 
-Contract: [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md) section 13.
+Contract: [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md) section 14.
 What was reused and what was not: [SCRIBA_REUSE_MATRIX.md](SCRIBA_REUSE_MATRIX.md).
 
 ## 1. What works now
@@ -53,13 +53,13 @@ changed.
 | `simulated: true` | A visible "simulated device" label on the device, every task and every job. It is a fake in a sandbox world |
 | A task with `checks: 0` | Say before it is run that it can finish but cannot be verified |
 | Starting a task | An explicit confirmation by the person, then `startDeskDesktopJob({recordingId, deviceId?, confirm: true})`. On 409 read the header `X-Desk-Error-Code` and show the body's message: nothing was queued |
-| `DeskDesktopJob.state` | Ten states (contract 13.4). `ACCEPTED` is "queued, not started". Only `VERIFIED` is green. `SUCCEEDED_UNVERIFIED`, `NEEDS_REVIEW` and `OUTCOME_UNKNOWN` each need their own wording and none of them is success |
+| `DeskDesktopJob.state` | Ten states (contract 14.4). `ACCEPTED` is "queued, not started". Only `VERIFIED` is green. `SUCCEEDED_UNVERIFIED`, `NEEDS_REVIEW` and `OUTCOME_UNKNOWN` each need their own wording and none of them is success |
 | `resume.supported: false` | Do not offer "resume". Offer "run again" as a new, confirmed job, and for `OUTCOME_UNKNOWN` say to check the computer first |
 | Polling | Poll `GET /desk/desktop/jobs/{id}` while `final` is false. No push channel exists |
 
 ### 2.3 Sample payloads
 
-In the contract, 13.2 to 13.4. A live sample: start
+In the contract, 14.2 to 14.4. A live sample: start
 `python backend/dev/seeded_desk_server.py --demo`; the message "Q4 budget
 figures" carries a workbook, and the world has a fake computer with two
 recorded tasks (one with a check, one without).

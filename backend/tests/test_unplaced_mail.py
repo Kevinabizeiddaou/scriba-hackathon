@@ -86,3 +86,17 @@ def test_a_reply_that_was_drafted_is_not_also_a_hand_over(desk):
                                 intent("task", "Could you confirm by Friday", title="Confirm the terms")]})
     run = deliver(desk, "Could you confirm by Friday that the terms are acceptable?")
     assert [a["tool_name"] for a in run["actions"]] == ["create_task"] and run["held"] is None
+
+
+def test_a_subject_that_merely_resembles_a_newsletter_does_not_file_a_persons_message():
+    """Found by Agent 3's lab on the integrated tree: "Investor update" from a
+    person, saying a meeting should be dropped, was filed as automated."""
+    from desk_overlay.triage import triage
+
+    weak = {"classification": "automated/promotional", "priority": "low", "reasons": ["weak_automated_subject"]}
+    item = {"subject": "Quarterly bulletin", "body": "The board would rather skip Thursday's session this time."}
+    record = triage(item, weak)
+    assert record["category"] != "automated" and "desk_automated_not_established" in record["reasons"]
+    for strong in (["automated_sender"], ["bulk"], ["weak_automated_subject", "automated_content"], []):
+        verdict = {"classification": "automated/promotional", "priority": "low", "reasons": strong}
+        assert triage(item, verdict)["category"] == "automated", strong

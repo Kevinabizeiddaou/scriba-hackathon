@@ -122,7 +122,7 @@ the secretary workflow on them yet.
 ## 4. Desk overlay endpoints (Tested on the seeded backend)
 
 These exist only when the backend runs with the Desk overlay
-([backend/README.md](../backend/README.md)), version 0.4.0 (what 0.4 added: section 12). All need a
+([backend/README.md](../backend/README.md)), version 0.5.0 (what 0.4 added: section 12; 0.5: section 13). All need a
 session, and all sit behind Scriba's own session and cross-site guards. The
 ones in this section are read-only. Types and client functions:
 `frontend/src/api/desk.ts`; fields added in 0.3 are optional there, so a
@@ -1032,14 +1032,117 @@ instead of 500.
   store, so it knows nothing Scriba does not hold.
 - French and Arabic mail is still not read by the rules.
 
-## 13. Overlay 0.5: files and the desktop bridge (Tested in a sandbox; no real mailbox or device)
+
+## 13. Overlay 0.5: the integrated engine, and work that is not silently lost
+
+0.5 is the merge of overlay 0.3.1 (`agent1/engine-reconciliation`: the action
+as approved, an explicit action lifecycle, reader guards, the right meeting
+or none) and overlay 0.4 (`agent1/autonomous-engine`: section 12), on `main`
+with the frontend of pull request 7. Sections 6 to 12 all hold. What follows
+is new in 0.5.
+
+### Policy
+
+1. **"No work" is a finding, not a default.** A message from a person is
+   filed (`COMPLETED`, `no_action_needed`) only when it says nothing is asked
+   ("FYI", "no need to reply"), or is a bare acknowledgement, or reports
+   something the Desk acted on. A sign-off "Thanks" is not that. A message
+   that says something is still outstanding is not that. A message in a
+   language the rules cannot read is not that. Mail is filed as automated
+   only when Scriba's classifier has a sign for it; a subject that merely
+   resembles a newsletter's (`weak_automated_subject` alone) is not one.
+   Everything else is `held.reason: "needs_review"`, `stage: "ESCALATED"`.
+2. **A compound request is not complete while a part of it is open.**
+   `DeskRun.unresolved[]` lists what was identified and not acted on:
+   `{id, text, why, resolved}`. While one is unresolved the run is
+   `ESCALATED` with `lifecycle.reason: "unresolved_requests"`, never
+   `COMPLETED`, and `next` contains `resolve_unresolved`.
+3. **A holding reply does not satisfy a wait.** A reply that says the answer
+   is not there yet, or promises it and gives no answer, leaves the follow-up
+   `waiting` (`reason: "holding_reply"`, `lastHoldingReplyId`,
+   `lastHoldingReplyAt`). It can still become overdue. A reply that answers
+   (a yes, a time, "that works") or hands the thing over satisfies it, even
+   when it also mentions the future.
+
+### New route
+
+| Method and path | Purpose | Type |
+| --- | --- | --- |
+| `POST /desk/runs/{runId}/unresolved/resolve` | The person takes over the requests the Desk could not act on. Records a `human` event; the run can then complete. Safe to repeat | `DeskRun` |
+
+### `unresolved[].why`
+
+| Value | Meaning |
+| --- | --- |
+| `needs_your_decision` | A sentence asks the executive for something beside the main request, and it is not clearly a separate piece of work to record ("please bring the tide tables") |
+| `names_an_address` | The sentence names an address or a link. The Desk neither records nor acts on it by itself |
+| `second_scheduling_request` | The message asks two different things of the calendar (cancel this, and could we meet then); the Desk acted on one |
+| `details_missing` | A reminder was read with no time |
+| `reply_needs_author` | Something else was recorded, and a reply the message also needs was not drafted |
+| `possibly_same_as_open_task` | The request looks like an open task (`taskId`) with another date |
+| `not_recorded` | More separate requests than the Desk records from one message (three) |
+
+### Several requests, on the rules' path
+
+A message is read sentence by sentence (`backend/desk_overlay/requests.py`).
+Nothing after the sign-off, no legal footer and no quoted text is read. A
+sentence that asks the executive to do something (an imperative with
+"please", "could you", "I need you to", "your sign-off is needed by") is a
+request. Two deadlines in one sentence are two requests.
+
+| The sentence | Becomes |
+| --- | --- |
+| is about the calendar (asks to meet, move, cancel or book; or asks about a day and a time) | part of the meeting request. Never a task |
+| only asks to be answered ("let me know", a plain question) | nothing of its own |
+| asks for work, is introduced as one more thing or carries its own deadline, and names no address | a `create_task` card with a title from the sentence and a deadline from the sentence |
+| asks for work otherwise | an `unresolved` entry |
+
+The meeting's time is read from the sentences about the meeting: another
+request's date no longer makes the meeting's time ambiguous. In a message
+the rules class as work, two or more such sentences are two or more tasks.
+
+### Tasks that already exist
+
+A new task is compared with the open ones by content, not only by title: an
+open task most of whose title is in the request, with no other task close.
+Same work and the same date (or none stated): `held.reason: "task_exists"`
+with `held.target: {taskId, title}`. Same work with another date:
+`unresolved` (`possibly_same_as_open_task`), no second task.
+
+### Instructions taken back
+
+"Cancel it. On second thought, keep it." is `conflicting_instructions`
+before any reader is asked: no model is called and no task is made from
+either half.
+
+### From the reconciliation (0.3.1), for reference
+
+`action.lifecycle` (twelve named states), `action.final`, `action.retry`
+(`{mode, attempts, sameEffect}`), `action.edited`, `action.effectiveInput`
+(the action as approved: what is verified and what the sender is told),
+`plan.steps[].state: "blocked"` after a dependency that failed verification,
+`held.reason: "conflicting_instructions"`, the unknown-outcome rule on a
+held card, `taskUpdates[].state: "unverified"` with `stage: "VERIFYING"`.
+They are specified in section 6 ("The lifecycle of an action") and section 8.
+
+### Limits of 0.5
+
+- What a sentence asks is read from its form. A request worded as a plain
+  statement ("the auditors are waiting for your letter") is not recognised
+  as work by the rules; such a message is handed over (`needs_review`), not
+  recorded as a task. With model understanding on, the model's intents are
+  planned as in section 6.
+- French, Arabic and other non-English mail is handed over, not read.
+- A holding reply is recognised by its wording. It is not asked of a model.
+- The rules still read one meeting request per message.
+## 14. Overlay 0.5: files and the desktop bridge (Tested in a sandbox; no real mailbox or device)
 
 Typed in `frontend/src/api/desk.ts` (`DeskAttachment`, `DeskFile`,
 `DeskDesktopStatus`, `DeskDesktopJob`, ...). Nothing here generates or parses a
 file with Desk code: the readers, the table query, the content scan and the
 generators are Scriba's (see `docs/handoff/SCRIBA_REUSE_MATRIX.md`).
 
-### 13.1 What is real and what is not
+### 14.1 What is real and what is not
 
 | | State |
 | --- | --- |
@@ -1050,7 +1153,7 @@ generators are Scriba's (see `docs/handoff/SCRIBA_REUSE_MATRIX.md`).
 | A **real paired computer** | Adapter written and tested against Scriba's function shapes. **No device executed anything**: on this backend Scriba reports the subsystem off, and its tables need Postgres |
 | The fake device in a sandbox world | Everything it returns has `simulated: true` |
 
-### 13.2 A message that brings a file
+### 14.2 A message that brings a file
 
 Every attachment is read when the run is opened (at most 10 per message, 25 MB
 each). Each read is a `read` event with `tool: "file.read_attachment"` and
@@ -1090,7 +1193,7 @@ review blocks the reply (`blocked`, section 6).
 person's own records): they need an approval, except in a world or on a Desk
 set to keep own records without asking. They never send, upload or share.
 
-### 13.3 A generated file
+### 14.3 A generated file
 
 `DeskRun.files[]`, one per generated file:
 
@@ -1119,7 +1222,7 @@ attachment or a generated file). Always `Content-Disposition: attachment`,
 `404` for another person's file, an unknown id, and on a backend that keeps no
 files for the Desk. **Render it never; offer it as a download.**
 
-### 13.4 The desktop bridge
+### 14.4 The desktop bridge
 
 Scriba's existing agent, reached through Scriba's own job queue. The Desk adds
 no agent. A job is created only by the signed-in person, explicitly.
@@ -1172,7 +1275,7 @@ recorded task. Running it again is a new job that the person asks for.
 `{attachments, generate, read, simulated}`. `health.capabilities` gains
 `files` and `desktop_bridge`.
 
-### 13.5 Limits of 0.5
+### 14.5 Limits of 0.5
 
 - A desktop job is not yet a step of a Desk run's plan: it is started and
   followed through the routes above.

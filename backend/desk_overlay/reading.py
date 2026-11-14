@@ -304,7 +304,10 @@ def retracted(text: str) -> bool:
     return bool(_RETRACT.search(str(text or "")))
 
 
-_REMINDER = re.compile(r"\bremind (?:me|yourself|you|us)\b|\bset (?:me |yourself )?a reminder\b", re.I)
+_REMINDER = re.compile(
+    r"\bremind (?:me|yourself|you|us)\s+(?:to|about|of|that|on|at|in|when|before|after|tomorrow|today|tonight|"
+    r"next|this|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"
+    r"|\bset (?:me |yourself )?a reminder\b", re.I)
 
 
 def reminder_request(text: str) -> bool:

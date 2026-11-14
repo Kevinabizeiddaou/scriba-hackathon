@@ -125,6 +125,35 @@ MUTANTS = [
      "moment = parse_time(details.get(key)) if details.get(key) else None", UNIT),
     ("reading: ambiguous zone converted anyway", "desk_overlay/reading.py",
      "    if _AMBIGUOUS_ZONE.search(raw):\n        return None, True", "    if False:\n        return None, True", UNIT),
+    # ── overlay 0.5: work that is not silently lost ─────────────────────────
+    ("pass4 requests: any message from a person is news", "desk_overlay/requests.py",
+     "    if not readable(text):\n        return False", "    if not readable(text):\n        return True", UNIT),
+    ("pass4 requests: a request in the message is still news", "desk_overlay/requests.py",
+     '    if any(unit["kind"] in ("scheduling", "action") for unit in units(subject, text)):\n        return False',
+     '    if any(unit["kind"] in ("scheduling", "action") for unit in units(subject, text)):\n        pass', UNIT),
+    ("pass4 requests: a holding reply counts as the answer", "desk_overlay/requests.py",
+     "    if _NOT_YET.search(own):\n        return True", "    if _NOT_YET.search(own):\n        return False", UNIT),
+    ("pass4 requests: a footer is read as a request", "desk_overlay/requests.py",
+     "        if _SIGN_OFF.match(line):\n            break", "        if _SIGN_OFF.match(line):\n            continue", UNIT),
+    ("pass4 workflow: an unresolved request does not keep the run open", "desk_overlay/lifecycle.py",
+     "            and any(not entry[\"resolved\"] for entry in unresolved_of(meta, events)):",
+     "            and False:", UNIT),
+    ("pass4 workflow: a request that names an address becomes a task", "desk_overlay/workflow.py",
+     '        clear = [u for u in asked if u.get("separate") and not u.get("names_address")]',
+     '        clear = [u for u in asked if u.get("separate")]', UNIT),
+    ("pass4 workflow: the same work under another title is recorded twice", "desk_overlay/workflow.py",
+     '            same = match["task"] if match["status"] == "one" else None', "            same = None", UNIT),
+    ("pass4 workflow: a weekday that contradicts its date is booked for a model", "desk_overlay/workflow.py",
+     '            plan["reads"].append({"tool": "rules.check_date", "ok": False, "error": "weekday_contradicts_date"})\n'
+     '            self._hold(plan, user, item, calendar, "conflicting_instructions",',
+     '            plan["reads"].append({"tool": "rules.check_date", "ok": False, "error": "weekday_contradicts_date"})\n'
+     '            (lambda *a, **k: None)(plan, user, item, calendar, "conflicting_instructions",', UNIT),
+    ("pass4 triage: a weak subject hint files a person's message", "desk_overlay/triage.py",
+     '    automated = classification == "automated/promotional" and not weak_only',
+     '    automated = classification == "automated/promotional"', UNIT),
+    ("pass4 workflow: a holding reply closes a wait the Desk did not open", "desk_overlay/workflow.py",
+     '                if requests.is_holding_reply(item.get("body") or item.get("snippet")):',
+     "                if False:", UNIT),
 ]
 
 env = dict(os.environ, SCRIBA_BACKEND_PATH=scriba)

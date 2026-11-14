@@ -248,7 +248,7 @@ export function LiveOverviewPage() {
                   {runsForUser.slice(0, 5).map(({ row, run }) => (
                     <li key={row.runId}>
                       <a href={link('work', String(row.runId))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{run!.email.subject || 'No subject'}</span>
                           <span className="block truncate text-[12px] text-soft">{nextStepOf(run!).label}</span>
                         </span>
@@ -272,7 +272,7 @@ export function LiveOverviewPage() {
                   return (
                     <li key={card.toolCall.id}>
                       <a href={link('approvals')} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block text-[12px] text-mute">{description.title}</span>
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{description.headline || 'No title on the card'}</span>
                           {description.recipients.length > 0 && <span className="block truncate text-[12px] text-soft">To {description.recipients.join(', ')}</span>}
@@ -295,7 +295,7 @@ export function LiveOverviewPage() {
                   return (
                     <li key={`${line.provider}:${line.id}`}>
                       <a href={link('inbox', emailKey(line.provider, line.id))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-transparent px-3 py-2 hover:border-line hover:bg-white/[0.04]">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{parseSender(line.from_addr).name}</span>
                           <span className="block truncate text-[12.5px] text-soft">{line.subject || '(no subject)'}</span>
                         </span>
@@ -375,7 +375,7 @@ export function LiveOverviewPage() {
                   <li key={item.key}>
                     <a href={item.href} className="flex items-center gap-3 py-2 hover:bg-white/[0.02]">
                       {item.kind === 'unverified' ? <AlertTriangle aria-hidden className="h-4 w-4 shrink-0 text-warn" /> : <CheckCircle2 aria-hidden className={clsx('h-4 w-4 shrink-0', item.kind === 'verified' ? 'text-ok' : 'text-mute')} />}
-                      <span className="min-w-0 flex-1">
+                      <span className="min-w-[min(100%,170px)] flex-1">
                         <span className="block truncate text-[13.5px] font-medium text-ink">{item.title}</span>
                         <span className="block truncate text-[12px] text-soft">{item.detail}</span>
                       </span>

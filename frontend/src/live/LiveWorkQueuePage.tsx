@@ -102,7 +102,8 @@ function RunRow({ entry }: { entry: RunEntry }) {
         className="card group block px-4 py-3.5 hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
         <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
-          <div className="min-w-0 flex-1">
+          {/* On a phone the subject keeps the full width and the tags wrap under it. */}
+          <div className="min-w-[min(100%,240px)] flex-1">
             <p className="truncate text-[14.5px] font-semibold text-ink">{subject}</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-soft">
               <span className="truncate">{sender.name || sender.email || 'Unknown sender'}</span>{' '}
@@ -133,7 +134,7 @@ function RunRow({ entry }: { entry: RunEntry }) {
         )}
         {run && next ? (
           <div className="mt-2.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5 border-t border-line pt-2.5 text-[12.5px]">
-            <p className="min-w-0 flex-1 text-soft">
+            <p className="min-w-[min(100%,200px)] flex-1 text-soft">
               <span className="text-mute">Proposed: </span>
               {runHeadline(run)}
             </p>

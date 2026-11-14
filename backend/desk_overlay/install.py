@@ -64,8 +64,10 @@ def install(app: Any, gateway: Optional[Any] = None, *, chat_scope: Optional[boo
         from .agent import DeskAgent
 
         agent = DeskAgent(routed, env=env)
-    router = build_router(routed, extra_health=lambda request: scope.status(), registry=registry,
-                          claims=_claims(routed, env), env=env, agent=agent)
+    from .jira.routes import build_jira_router, health as jira_health
+
+    router = build_router(routed, registry=registry, claims=_claims(routed, env), env=env, agent=agent,
+                          extra_health=lambda request: {**scope.status(), **jira_health(env)})
     desk = router.desk
     desk["gate"] = gate
     workflow = desk["workflow"]
@@ -77,6 +79,11 @@ def install(app: Any, gateway: Optional[Any] = None, *, chat_scope: Optional[boo
     # when a model is really configured (never with a placeholder key).
     workflow.model_understanding = str(env.get("DESK_UNDERSTANDING") or "").strip().lower() == "model"
     app.include_router(router)
+    # Jira (desk_overlay/jira). Always mounted; only /desk/jira/status answers
+    # unless DESK_JIRA is on.
+    jira_router = build_jira_router(routed, env=env)
+    desk["jira"] = jira_router.jira
+    app.include_router(jira_router)
 
     if str(env.get("DESK_EVAL_SANDBOX") or "").strip().lower() in ("1", "true", "on"):
         from .eval_api import build_eval_router

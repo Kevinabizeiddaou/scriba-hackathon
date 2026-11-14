@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { CalendarDays, ClipboardList, FlaskConical, History, Inbox, LayoutDashboard, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, X, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ClipboardList, FlaskConical, History, Inbox, LayoutDashboard, ListTodo, LogOut, Menu, MessageSquareText, ShieldCheck, SquareKanban, X, type LucideIcon } from 'lucide-react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getApi, getWorkspace } from '../harness';
 import { hrefFor, type Page } from '../lib/router';
@@ -16,6 +16,8 @@ interface NavItem {
   group: 'Desk' | 'Work' | 'Quality';
   /** Shown only on a live backend: the screen has no demo counterpart. */
   liveOnly?: boolean;
+  /** Shown only when the backend reports Jira as part of this Desk (GET /desk/health, `jira.enabled`). */
+  needsJira?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -27,6 +29,7 @@ const NAV: NavItem[] = [
   { page: 'chat', label: 'Secretary chat', short: 'Chat', icon: MessageSquareText, group: 'Work' },
   { page: 'approvals', label: 'Approval center', short: 'Approvals', icon: ShieldCheck, group: 'Work' },
   { page: 'activity', label: 'Activity', short: 'Activity', icon: History, group: 'Work' },
+  { page: 'jira', label: 'Jira', short: 'Jira', icon: SquareKanban, group: 'Work', liveOnly: true, needsJira: true },
   { page: 'evaluation', label: 'Evaluation', short: 'Evaluation', icon: FlaskConical, group: 'Quality' },
 ];
 /** The four destinations that fit in the phone's bottom bar. The rest are behind "More". */
@@ -161,7 +164,8 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             : 0;
   const badgeLabel = (target: Page) => (target === 'work' ? 'runs that need you' : target === 'inbox' ? 'new requests' : target === 'approvals' ? 'approvals waiting' : target === 'activity' ? 'actions that failed or only partly ran' : 'overdue items');
   const groups = ['Desk', 'Work', 'Quality'] as const;
-  const nav = NAV.filter((item) => !item.liveOnly || session !== null);
+  const jiraOn = session?.health?.jira?.enabled === true;
+  const nav = NAV.filter((item) => (!item.liveOnly || session !== null) && (!item.needsJira || jiraOn));
   const bottom = session !== null ? LIVE_BOTTOM : BOTTOM;
   const inMore = nav.filter((item) => !bottom.includes(item.page));
   const moreActive = inMore.some((item) => item.page === page);

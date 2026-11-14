@@ -52,6 +52,8 @@ export interface DeskHealth {
   sandbox?: { id: string; label: string } | null
   worker?: Pick<DeskWorkerStatus, 'enabled' | 'running' | 'reason' | 'intervalSeconds' | 'lastTickAt'>
   model?: { configured: boolean }
+  /** Present only when the backend runs with Jira on (DESK_JIRA). Absent means Jira is not part of this Desk. */
+  jira?: { enabled: boolean; version: string; writes: 'held' | 'sandbox' | 'external' }
 }
 
 export interface DeskCapability {

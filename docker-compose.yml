@@ -54,6 +54,10 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       DESK_DEMO: ${DESK_DEMO:-}
+      # Jira (docs/jira/README.md). Off unless set. With DESK_DEMO it runs on a synthetic site.
+      DESK_JIRA: ${DESK_JIRA:-}
+      DESK_JIRA_WRITES: ${DESK_JIRA_WRITES:-}
+      DESK_JIRA_WRITES_AUTHORIZED_BY: ${DESK_JIRA_WRITES_AUTHORIZED_BY:-}
     volumes: *scriba-volumes
     healthcheck:
       # /live answers without a session or a database. Checked every 2 s while starting,

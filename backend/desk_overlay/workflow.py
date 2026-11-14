@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
-from . import lifecycle, planning, plans, reading, understanding
+from . import files, lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
@@ -321,6 +321,16 @@ class DeskWorkflow:
             # and nothing is proposed on the strength of a message carrying it.
             return self._hand_over_untrusted(plan, source="rules")
 
+        attached = self._read_attachments(user, item, plan)
+        flagged = [f for f in attached if f.get("findings")]
+        if flagged:
+            # A file is data too. One that carries text written to an
+            # assistant is not read to a model, not summarised and not acted
+            # on: the message is handed over with the file named.
+            return self._hand_over_untrusted(
+                plan, source="attachment",
+                evidence=[f"{f['filename']}: {finding}" for f in flagged for finding in f["findings"]][:6])
+
         try:
             earlier = self.memory.earlier_same_request(ctx, user, item, self.thread_context(user, item, detail))
         except Exception:
@@ -374,6 +384,8 @@ class DeskWorkflow:
             plan["decisions"].append({"decision": "none", "reason": triage["category"],
                                       "explanation": "No action is needed for this message."})
 
+        self._plan_file_review(user, item, plan, attached)
+
         if self.agent is not None:
             try:
                 plan = self.agent.refine(ctx, user, item, detail, plan, workflow=self)
@@ -392,6 +404,78 @@ class DeskWorkflow:
                 "message": "This needs a reply in your words, and none could be drafted from what "
                            "the Desk can verify. It is yours to answer."}
         return plan
+
+    # ── files that arrive with a message ────────────────────────────────────
+    def _read_attachments(self, user: Any, item: Mapping[str, Any], plan: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Read every attachment of the message with Scriba's own readers and
+        record each read. Returns the analyses (kept for planning only: file
+        text is never written to the run's record)."""
+        listing = getattr(self.gateway, "attachments", None)
+        rows = listing(user, item) if callable(listing) else None
+        if not rows:
+            return []                       # none, or a mailbox whose attachments this backend cannot read
+        found: List[Dict[str, Any]] = []
+        for index, row in enumerate(rows):
+            base = {"tool": "file.read_attachment", "attachmentId": row.get("id"), "filename": row.get("filename"),
+                    "sizeBytes": row.get("sizeBytes")}
+            if index >= files.MAX_ATTACHMENTS:
+                plan["reads"].append({**base, "ok": False, "error": "too_many_attachments"})
+                continue
+            try:
+                content = self.gateway.attachment_content(user, str(row.get("id")))
+                analysis = files.analyse(str(row.get("filename") or "file"), content or b"")
+            except Exception as exc:        # one unreadable file does not stop the message
+                plan["reads"].append({**base, "ok": False, "error": type(exc).__name__})
+                continue
+            analysis["attachmentId"] = row.get("id")
+            plan["reads"].append({
+                **base, "ok": bool(analysis["read"]), "error": None if analysis["read"] else analysis.get("code"),
+                "kind": analysis.get("kind"), "sha256": analysis.get("sha256"), "unit": analysis.get("unit"),
+                "unitCount": analysis.get("unitCount"), "truncated": bool(analysis.get("truncated")),
+                "unread": len(analysis.get("unread") or []), "findings": len(analysis.get("findings") or []),
+                "unusual": len(analysis.get("unusual") or [])})
+            found.append(analysis)
+            if analysis["read"]:
+                plan.setdefault("facts", []).append(
+                    f"Read \"{analysis['filename']}\" ({analysis.get('label')}): "
+                    f"{analysis.get('unitCount')} {analysis.get('unit')}(s).")
+            else:
+                plan.setdefault("missing", []).append(f"the content of \"{analysis['filename']}\"")
+        return found
+
+    def _plan_file_review(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                          attached: List[Dict[str, Any]]) -> None:
+        """When a message asks for its file to be looked at: one review
+        document per readable file (Scriba's ``create_document``), and, after
+        the first one exists and was verified, a reply for approval."""
+        readable = [f for f in attached if f.get("read")]
+        if not readable or plan.get("held", None) and plan["held"].get("reason") not in ("needs_review",):
+            return
+        if not reading.file_request(str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")):
+            return
+        sender = str(item.get("from_addr") or "the sender")
+        first = len(plan["proposals"])
+        for analysis in readable[:3]:
+            plan["proposals"].append({
+                "tool_name": "create_document", "purpose": "review_file",
+                "reason": f"The message asks for \"{analysis['filename']}\" to be looked at. "
+                          "The review is built from the file itself, by fixed rules.",
+                "tool_input": files.summary_document(analysis, sender=sender, subject=str(item.get("subject") or ""))})
+        if plan.get("held") and plan["held"].get("reason") == "needs_review":
+            plan["held"] = None             # the Desk can place it after all: it asks for a file to be reviewed
+        plan["decisions"].append({
+            "decision": "propose", "reason": "file_review_requested",
+            "explanation": f"A review of {len(readable[:3])} attached file(s) is proposed. It writes only "
+                           "your own records."})
+        unusual = [f["finding"] for analysis in readable[:3] for f in analysis.get("unusual") or []]
+        if sender_address(sender) and item["triage"].get("category") != "automated":
+            plan.setdefault("deferred", []).append({
+                "tool": "send_email", "purpose": "reply", "depends_on_index": first,
+                "pending": {"tool_name": "send_email", "purpose": "reply",
+                            "reason": "The file was reviewed, so the sender can be answered. You approve or change "
+                                      "the wording.",
+                            "tool_input": self._reply_input(item, planning.file_review_reply(
+                                filenames=[a["filename"] for a in readable[:3]], findings=unusual))}})
 
     @staticmethod
     def _hand_over_untrusted(plan: Dict[str, Any], *, source: str,

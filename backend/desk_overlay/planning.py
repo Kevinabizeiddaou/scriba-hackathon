@@ -225,6 +225,19 @@ def find_target_events(events: List[Mapping[str, Any]], *, sender: Optional[str]
     return {"status": "ambiguous", "candidates": theirs}
 
 
+def file_review_reply(*, filenames: List[str], findings: List[str]) -> str:
+    """The fixed reply after a file was reviewed. It states what was read and
+    quotes what the checks raised, as questions for the sender. It promises
+    nothing and judges nothing: the person approves, edits or rejects it."""
+    names = " and ".join(f'"{name}"' for name in filenames[:3]) or "the file you sent"
+    if findings:
+        lines = "\n".join(f"- {finding}" for finding in findings[:6])
+        return (f"Thank you for sending {names}. I have gone through it, and a few figures stood out. "
+                f"Could you confirm them?\n\n{lines}\n\nI will come back to you once I have your answer.")
+    return (f"Thank you for sending {names}. I have gone through it and nothing stood out in what I checked. "
+            "I will come back to you if I have questions.")
+
+
 def reply_subject(subject: str) -> str:
     text = str(subject or "").strip()
     return text if text.lower().startswith("re:") else f"Re: {text}"

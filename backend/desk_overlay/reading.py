@@ -313,6 +313,22 @@ def reminder_request(text: str) -> bool:
     return bool(_REMINDER.search(str(text or "")))
 
 
+_FILE_ASK = re.compile(
+    r"\b(review|summari[sz]e|summary|look (?:at|over|through)|go (?:over|through)|check|analy[sz]e|"
+    r"comments? on|feedback on|thoughts on|anything unusual|sign[- ]?off|approve|read through)\b", re.I)
+_FILE_WORD = re.compile(
+    r"\b(attach\w*|enclosed|spreadsheet|workbook|report|document|file|figures|numbers|contract|agreement|"
+    r"proposal|draft|deck|slides|minutes|invoice)\b", re.I)
+
+
+def file_request(subject: str, text: str) -> bool:
+    """The message asks for something to be done WITH a file it brings: read,
+    reviewed, checked, summarised, signed off. Only meaningful for a message
+    that has an attachment; the caller checks that."""
+    combined = f"{subject or ''}\n{text or ''}"
+    return bool(_FILE_ASK.search(combined) and _FILE_WORD.search(combined))
+
+
 def refers_to_existing(subject: str, text: str) -> bool:
     """The message speaks of a meeting that exists ("Thursday's call", "our
     review") or of moving one ("push ... back to Friday"). Whether the sender

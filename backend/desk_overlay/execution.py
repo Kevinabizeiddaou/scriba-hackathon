@@ -37,7 +37,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional
 
 from . import lifecycle, readiness
 from .gateway import DeskUser
-from .sandbox import (OP_CANCEL_EVENT, OP_CREATE_EVENT, OP_CREATE_REMINDER, OP_CREATE_TASK,
+from .sandbox import (OP_CANCEL_EVENT, OP_CREATE_DOCUMENT, OP_CREATE_EVENT, OP_CREATE_REMINDER,
+                      OP_CREATE_SPREADSHEET, OP_CREATE_TASK,
                       OP_DRAFT_EMAIL, OP_SEND_EMAIL, OP_UPDATE_EVENT, SandboxFault,
                       SandboxIsolationError, SandboxWorld, WorldRegistry, active_world)
 
@@ -53,6 +54,7 @@ TOOL_OPS = {
     "create_calendar_event": OP_CREATE_EVENT, "update_calendar_event": OP_UPDATE_EVENT,
     "cancel_calendar_event": OP_CANCEL_EVENT, "create_task": OP_CREATE_TASK,
     "create_reminder": OP_CREATE_REMINDER,
+    "create_document": OP_CREATE_DOCUMENT, "create_spreadsheet": OP_CREATE_SPREADSHEET,
 }
 # Real provider entry points. Reaching one while a world is in force is a defect.
 _TRIPWIRES = (
@@ -124,10 +126,12 @@ class ExecutionGate:
         import importlib
 
         from app import chat_calendar_edit, chat_service, chat_validation, llm_client
+        from app.services import document_service
 
         repo = chat_service.repo
         gate = self
         saved = self._saved = {
+            "store_document": document_service.store_generated_document,
             "approve": chat_service.approve_tool_call, "retry": chat_service.retry_tool_call,
             "cancel": chat_service.cancel_tool_call, "execute": chat_service.execute_action,
             "retry_action": chat_service.retry_action,
@@ -370,6 +374,25 @@ class ExecutionGate:
                                      "sandbox_world": world.id}
             return saved["audit"](**kwargs)
 
+        def store_generated_document(**kwargs: Any) -> Dict[str, Any]:
+            # Where Scriba keeps a file it generated (a Word document, a
+            # workbook). While a world is in force the file goes to the world
+            # and nowhere else: no disk, no database, no cloud storage.
+            ctx = _call.get()
+            world = (ctx or {}).get("world") if ctx else active_world()
+            if world is None:
+                return saved["store_document"](**kwargs)
+            gate.stats["sandboxExecutions"] += 1
+            try:
+                return world.store_generated(
+                    filename=str(kwargs.get("filename") or "Document"), content=kwargs.get("content_bytes") or b"",
+                    mime_type=str(kwargs.get("mime_type") or ""), extension=str(kwargs.get("extension") or ""))
+            except SandboxFault as fault:
+                if ctx is not None and getattr(fault, "uncertain", False):
+                    ctx["notes"]["outcome"] = "unknown"
+                raise RuntimeError("The file store did not confirm the write.") from fault
+
+        document_service.store_generated_document = store_generated_document
         chat_service.log_action_execution = log_action_execution
         chat_validation.is_past_datetime = is_past_datetime
         chat_service.approve_tool_call = approve_tool_call
@@ -429,6 +452,9 @@ class ExecutionGate:
         from app import chat_calendar_edit, chat_service, chat_validation, llm_client
 
         saved = self._saved
+        from app.services import document_service
+
+        document_service.store_generated_document = saved["store_document"]
         chat_validation.is_past_datetime = saved["is_past"]
         chat_service.log_action_execution = saved["audit"]
         chat_service.approve_tool_call = saved["approve"]
@@ -596,7 +622,8 @@ class ExecutionGate:
         output = card.get("output") or {}
         payload = output.get("result") if isinstance(output.get("result"), Mapping) else {}
         event = payload.get("event") if isinstance(payload.get("event"), Mapping) else {}
-        for value in (event.get("id"), output.get("calendar_event_id"), payload.get("message_id"),
+        document = output.get("document") if isinstance(output.get("document"), Mapping) else {}
+        for value in (document.get("id"), event.get("id"), output.get("calendar_event_id"), payload.get("message_id"),
                       (payload.get("task") or {}).get("id") if isinstance(payload.get("task"), Mapping) else None,
                       (payload.get("reminder") or {}).get("id")
                       if isinstance(payload.get("reminder"), Mapping) else None):
@@ -670,6 +697,14 @@ def _when(value: Any) -> Optional[dt.datetime]:
 
 
 def _expected(tool: str, data: Mapping[str, Any]) -> Dict[str, Any]:
+    if tool == "create_document":
+        # What the reopened file must show: the title and every heading that was approved.
+        return {"kind": "docx", "title": data.get("title"),
+                "headings": [s.get("heading") for s in data.get("sections") or []
+                             if isinstance(s, Mapping) and s.get("heading")]}
+    if tool == "create_spreadsheet":
+        sheets = data.get("sheets") if isinstance(data.get("sheets"), list) else []
+        return {"kind": "xlsx", "sheets": [s.get("name") for s in sheets if isinstance(s, Mapping) and s.get("name")]}
     planned = data.get("planned_change") if isinstance(data.get("planned_change"), Mapping) else {}
     return {"start": planned.get("start") or data.get("start") or data.get("start_time"),
             "timezone": data.get("timezone"), "thread_id": data.get("thread_id")}

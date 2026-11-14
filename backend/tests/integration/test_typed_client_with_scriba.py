@@ -139,3 +139,45 @@ def test_every_reason_and_code_the_backend_can_emit_is_named_in_the_typed_client
     for code in codes:
         assert f'"{code}"' in source, code
     assert codes <= members("DeskGateHoldCode") | members("DeskRevisedCardCode")
+
+
+# ── overlay 0.5: files and the desktop bridge ───────────────────────────────
+
+def test_files_on_a_run_and_the_desktop_bridge_are_declared_too():
+    from desk_overlay import desktop
+
+    from .test_files_with_scriba import mail_with, workbook
+
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        run = mail_with(desk, [{"filename": "budget.xlsx", "content": workbook()}])
+        approve(desk, run["actions"][0])
+        done = get(desk, f"/runs/{run['runId']}").json()
+        problems = [f"DeskRun.{k}" for k in undeclared(done, "DeskRun")]
+        assert done["attachments"] and done["files"]
+        for item in done["attachments"]:
+            problems += [f"DeskAttachment.{k}" for k in undeclared(item, "DeskAttachment")]
+        for item in done["files"]:
+            problems += [f"DeskFile.{k}" for k in undeclared(item, "DeskFile")]
+        for action in done["actions"]:
+            problems += [f"DeskAction.{k}" for k in undeclared(action, "DeskAction")]
+        assert {a["purpose"] for a in done["actions"]} <= members("DeskActionPurpose")
+        assert {a["verification"]["method"] for a in done["actions"] if a["verification"]} <= set(
+            re.findall(r"'(\w+)'", re.search(r"method: ('sandbox_readback'.*)", CLIENT).group(1)))
+
+        world.add_desktop(recordings=[{"name": "Export"}])
+        client, prefix = desk["client"], desk["prefix"]
+        status = client.get(f"{prefix}/desk/desktop").json()
+        problems += [f"DeskDesktopStatus.{k}" for k in undeclared(status, "DeskDesktopStatus")]
+        problems += [f"DeskDesktopDevice.{k}" for k in undeclared(status["devices"][0], "DeskDesktopDevice")]
+        problems += [f"DeskDesktopTask.{k}" for k in undeclared(status["tasks"][0], "DeskDesktopTask")]
+        job = client.post(f"{prefix}/desk/desktop/jobs", json={"recordingId": 1, "confirm": True}, headers=ORIGIN).json()
+        problems += [f"DeskDesktopJob.{k}" for k in undeclared(job, "DeskDesktopJob")]
+        health = client.get(f"{prefix}/desk/health").json()
+        problems += [f"DeskHealth.{k}" for k in ("files", "desktop") if k not in fields("DeskHealth")]
+        assert set(health["files"]) <= {"attachments", "generate", "read", "simulated"}
+        assert sorted(set(problems)) == []
+    assert members("DeskDesktopJobState") == set(desktop.STATES)
+    for route in ("/desk/desktop", "/desk/desktop/jobs", "/desk/files/"):
+        assert route in CLIENT, route

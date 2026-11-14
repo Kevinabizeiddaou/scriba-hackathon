@@ -1640,6 +1640,8 @@ class DeskWorkflow:
             view["actions"] = actions
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
+            view["attachments"] = _attachment_views(events)
+            view["files"] = _file_views(actions)
             if meta.get("kind") == "command":
                 view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
                 view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))
@@ -1804,6 +1806,39 @@ def _summary(meta: Dict[str, Any], proposals: List[Dict[str, Any]]) -> str:
     elif not proposals:
         parts.append("No action is proposed.")
     return " ".join(part for part in parts if part)
+
+
+def _attachment_views(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The files that came with the message, as they were read. Facts about
+    each file only: its text is never part of a run's record."""
+    found = []
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "read" and data.get("tool") == "file.read_attachment":
+            found.append({"id": data.get("attachmentId"), "filename": data.get("filename"),
+                          "kind": data.get("kind"), "sizeBytes": data.get("sizeBytes"), "sha256": data.get("sha256"),
+                          "read": bool(data.get("ok")), "error": data.get("error"), "unit": data.get("unit"),
+                          "unitCount": data.get("unitCount"), "truncated": bool(data.get("truncated")),
+                          "unreadParts": data.get("unread") or 0, "untrustedFindings": data.get("findings") or 0,
+                          "unusual": data.get("unusual") or 0, "readAt": item.get("at")})
+    return found
+
+
+def _file_views(actions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Files the Desk generated in this run. ``verified`` is true only after
+    the file was reopened and showed what was approved."""
+    found = []
+    for action in actions:
+        document = (action.get("output") or {}).get("document")
+        if not isinstance(document, dict) or not document.get("id"):
+            continue
+        found.append({
+            "id": str(document["id"]), "filename": document.get("filename"), "mimeType": document.get("mime_type"),
+            "sizeBytes": document.get("size_bytes"), "toolCallId": action.get("toolCallId"),
+            "stepId": action.get("stepId"), "state": action.get("lifecycle"), "verified": bool(action.get("verified")),
+            "simulated": bool(action.get("simulated")),
+            "download": {"method": "GET", "path": f"/desk/files/{document['id']}"}})
+    return found
 
 
 def _action_views(cards: List[Dict[str, Any]], events: List[Dict[str, Any]],

@@ -200,3 +200,67 @@ def test_another_person_cannot_read_a_file_of_this_world():
         assert desk["routed"].stored_file(DeskUser(id=1, email=ALICE), stored["id"])["sha256"] == stored["sha256"]
         desk["sign_in"](BOB)
         assert desk["routed"].stored_file(DeskUser(id=2, email=BOB), stored["id"]) is None
+
+
+def test_the_run_lists_what_arrived_and_what_was_made_and_only_the_owner_can_download_it():
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        source = workbook()
+        run = mail_with(desk, [{"filename": "budget.xlsx", "content": source}])
+        [arrived] = run["attachments"]
+        assert arrived["filename"] == "budget.xlsx" and arrived["read"] is True and arrived["kind"] == "xlsx"
+        assert arrived["sha256"] == files.sha256(source) and arrived["unusual"] == 3
+        assert run["files"] == []                                   # nothing is made before the approval
+        approve(desk, run["actions"][0])
+        [made] = get(desk, f"/runs/{run['runId']}").json()["files"]
+        assert made["verified"] is True and made["state"] == "VERIFIED" and made["simulated"] is True
+        assert made["download"] == {"method": "GET", "path": f"/desk/files/{made['id']}"}
+
+        got = desk["client"].get(f"{desk['prefix']}{made['download']['path']}")
+        assert got.status_code == 200 and got.content[:2] == b"PK"
+        assert got.headers["content-disposition"].startswith("attachment;")     # never rendered in the browser
+        assert got.headers["x-content-type-options"] == "nosniff"
+        assert files.read(made["filename"], got.content)["read"] is True
+        # The attachment can be fetched by its owner too, unchanged.
+        original = desk["client"].get(f"{desk['prefix']}/desk/files/{arrived['id']}")
+        assert original.status_code == 200 and original.content == source
+
+        assert desk["client"].get(f"{desk['prefix']}/desk/files/no-such-file").status_code == 404
+        desk["sign_in"](BOB)
+        assert desk["client"].get(f"{desk['prefix']}{made['download']['path']}").status_code == 404
+        assert desk["client"].get(f"{desk['prefix']}/desk/files/{arrived['id']}").status_code == 404
+
+
+def test_figures_are_computed_over_every_row_of_a_large_sheet_without_holding_it():
+    """Sixty thousand rows: the figures are exact, nothing is sampled, and the
+    review that is proposed stays small."""
+    import tracemalloc
+
+    from app import chat_file_tools
+
+    rows = 60_000
+    big = __import__("io").BytesIO()
+    import openpyxl
+
+    book = openpyxl.Workbook(write_only=True)
+    sheet = book.create_sheet("Ledger")
+    sheet.append(["Entry", "Amount"])
+    for n in range(1, rows + 1):
+        sheet.append([f"E{n}", 10 if n != 31_337 else 999_999])
+    book.save(big)
+    content = big.getvalue()
+    tracemalloc.start()
+    analysis = files.analyse("ledger.xlsx", content)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    [figures] = analysis["figures"]
+    amount = next(c for c in figures["columns"] if c["name"] == "Amount")
+    assert figures["rowsScanned"] == rows
+    assert amount["numericValues"] == rows and amount["sum"] == 10 * (rows - 1) + 999_999
+    assert amount["largest"] == 999_999
+    assert [f["rule"] for f in analysis["unusual"]] == ["far_above_average"]
+    assert len(analysis["text"]) <= files.TEXT_CHARS                 # the file's text is never carried whole
+    assert peak < 150 * 1024 * 1024, f"peak {peak / 1e6:.0f} MB"
+    document = files.summary_document(analysis, sender="x", subject="y")
+    assert len(str(document)) < 6_000
+    assert chat_file_tools.normalize_document(document)["title"] == "Review of ledger.xlsx"

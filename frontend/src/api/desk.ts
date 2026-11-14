@@ -52,6 +52,15 @@ export interface DeskHealth {
   sandbox?: { id: string; label: string } | null
   worker?: Pick<DeskWorkerStatus, 'enabled' | 'running' | 'reason' | 'intervalSeconds' | 'lastTickAt'>
   model?: { configured: boolean }
+  // ── overlay 0.5 ──────────────────────────────────────────────────────────
+  /**
+   * Files, read and generated with Scriba's own readers and generators. `attachments` says
+   * whether THIS user's mail attachments can be read on this backend: true in a sandbox world,
+   * false on a real mailbox (not connected to the Desk yet).
+   */
+  files?: { attachments: boolean; generate: string[]; read: string[]; simulated: boolean }
+  /** Whether a paired computer can be used. The detail is `fetchDeskDesktop`. */
+  desktop?: Pick<DeskDesktopStatus, 'available' | 'reason' | 'simulated'>
 }
 
 export interface DeskCapability {
@@ -337,6 +346,8 @@ export type DeskActionPurpose =
   | 'nudge'
   | 'reply'
   | 'record_task'
+  /** A review of a file that came with the message, built from the file itself (0.5). */
+  | 'review_file'
 
 /**
  * The explicit state of ONE action (overlay 0.3.1, BACKEND_CONTRACT section 6, "The lifecycle of
@@ -415,7 +426,8 @@ export interface DeskActionExecution {
 export interface DeskActionVerification {
   verified: boolean
   /** `sandbox_readback`: the isolated world was read back. `scriba_action_record`: Scriba's own record. */
-  method: 'sandbox_readback' | 'scriba_action_record' | 'user_confirmed' | null
+  /** `file_reopened` (0.5): a generated file was opened again and shows what was approved. */
+  method: 'sandbox_readback' | 'scriba_action_record' | 'user_confirmed' | 'file_reopened' | null
   reason: string | null
   at: string
   /** True when a retry found the effect already there and did not repeat it. */
@@ -439,6 +451,9 @@ export interface DeskAction {
     | 'update_calendar_event'
     | 'cancel_calendar_event'
     | 'send_email'
+    /** Scriba's own file tools (0.5): a Word document or a workbook in the person's own records. */
+    | 'create_document'
+    | 'create_spreadsheet'
     | string
   /** Scriba's tool-call status (see BACKEND_CONTRACT section 3). */
   status: string
@@ -711,6 +726,149 @@ export interface DeskTaskUpdate {
   updatedAt?: string
 }
 
+// ── files (overlay 0.5; BACKEND_CONTRACT section 12) ───────────────────────
+
+/** A file that came with the message, as it was read. Facts about the file only: never its text. */
+export interface DeskAttachment {
+  id: string
+  filename: string
+  /** Decided by the file's bytes, not its name. Null when it was not accepted. */
+  kind: 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'csv' | 'text' | 'image' | string | null
+  sizeBytes: number
+  sha256: string | null
+  /** False: it was not read. `error` says why (`file_blocked`, `file_type_mismatch`, `file_too_large`, `file_unreadable`, `too_many_attachments`). */
+  read: boolean
+  error: string | null
+  /** What was counted: `page`, `sheet`, `slide`, ... and how many. */
+  unit: string | null
+  unitCount: number | null
+  truncated: boolean
+  /** Scanned pages with no text layer. They were NOT read. */
+  unreadParts: number
+  /** Passages written to an assistant. More than zero: the run is held and nothing was proposed. */
+  untrustedFindings: number
+  /** For a table: how many things the fixed checks raised. */
+  unusual: number
+  readAt: string
+}
+
+/** A file the Desk generated in this run. Not done until `verified`. */
+export interface DeskFile {
+  id: string
+  filename: string
+  mimeType: string
+  sizeBytes: number
+  /** The action that made it, and its step in the plan. */
+  toolCallId: number
+  stepId: string | null
+  state: DeskActionLifecycle
+  /** True only after the file was reopened and showed the title and headings that were approved. */
+  verified: boolean
+  /** True in a sandbox world: the file exists only there. */
+  simulated: boolean
+  /** Owner only. Always served as a download (`Content-Disposition: attachment`), never rendered. */
+  download: { method: 'GET'; path: string }
+}
+
+// ── the desktop bridge (overlay 0.5; BACKEND_CONTRACT section 13) ──────────
+
+/**
+ * Where a desktop job stands, by what its record proves. `ACCEPTED` is queued, not started.
+ * `VERIFIED` needs the recording's own checks to have passed; a task with no check that reports
+ * success is `SUCCEEDED_UNVERIFIED`; one whose step fell back to a recorded position is
+ * `NEEDS_REVIEW`; one that started and went silent is `OUTCOME_UNKNOWN`.
+ */
+export type DeskDesktopJobState =
+  | 'ACCEPTED'
+  | 'STARTED'
+  | 'RUNNING'
+  | 'AWAITING_APPROVAL'
+  | 'VERIFIED'
+  | 'SUCCEEDED_UNVERIFIED'
+  | 'NEEDS_REVIEW'
+  | 'OUTCOME_UNKNOWN'
+  | 'FAILED'
+  | 'CANCELLED'
+
+export interface DeskDesktopDevice {
+  id: number
+  name: string
+  kind: 'desktop' | 'browser' | string
+  presence: string
+  ready: boolean
+  state: string
+  session: 'unlocked' | 'locked' | 'unknown' | string
+  agentVersion: string | null
+  updateRequired: boolean
+  lastSeenAt: string | null
+  /** Online, up to date, and the desktop agent (not the browser extension). */
+  canRunRecordedTasks: boolean
+  allowedFolders: number
+  /** True: a FAKE device in a sandbox world. Nothing ran on a real computer. */
+  simulated: boolean
+}
+
+export interface DeskDesktopTask {
+  id: number
+  name: string
+  kind: string
+  ready: boolean
+  steps: number
+  hasPassword: boolean
+  /** Checks the recording carries. Zero: a run of it can finish but never be verified. */
+  checks: number
+  apps: string[]
+  runsWhileLocked: boolean
+  simulated: boolean
+}
+
+export interface DeskDesktopStatus {
+  account?: string
+  available: boolean
+  /** Why not: `desktop_agent_disabled`, `no_device_paired`, `no_device_ready`, `no_desktop_in_sandbox`, `desktop_backend_unreachable`, ... */
+  reason: string | null
+  message: string | null
+  simulated: boolean
+  devices: DeskDesktopDevice[]
+  tasks: DeskDesktopTask[]
+  /** Always `supported: false`: Scriba's agent keeps no checkpoint for a recorded task. */
+  resume: { supported: boolean; reason: string }
+  states: DeskDesktopJobState[]
+}
+
+export interface DeskDesktopJob {
+  id: number
+  deviceId: number | null
+  recordingId: number | null
+  task: string | null
+  state: DeskDesktopJobState
+  final: boolean
+  /** Scriba's own job status, as stored. */
+  scribaStatus: string
+  failureStage: string | null
+  error: string | null
+  cancelRequested: boolean
+  progress: unknown
+  result: {
+    stepsReplayed: number | null
+    needsReview: boolean
+    healedClicks: number | null
+    retried: boolean | null
+    filesDone: number | null
+    filesTotal: number | null
+  }
+  verified: boolean
+  verification: { method: 'recording_checks' | null; checks: number; passed: number; reason: string | null }
+  resume: { supported: boolean; reason: string }
+  createdAt: string | null
+  startedAt: string | null
+  finishedAt: string | null
+  updatedAt: string | null
+  /** What the device reported, newest last. Recorded steps are never included. */
+  events: Array<{ at: string | null; action: string | null; status: string | null; message: string | null }>
+  simulated: boolean
+}
+
 // ── the plan of a run (BACKEND_CONTRACT section 6, "The plan") ─────────────
 
 export type DeskIntentType =
@@ -834,6 +992,10 @@ export interface DeskRun {
   plan?: DeskPlan | null
   /** Changes this run suggests to existing tasks, each in its latest state (0.3.1). */
   taskUpdates?: DeskTaskUpdate[]
+  /** Files that came with the message, as they were read (0.5). Empty on a backend that cannot read attachments. */
+  attachments?: DeskAttachment[]
+  /** Files the Desk generated in this run (0.5). */
+  files?: DeskFile[]
   /** `command` (0.4): the run was started from a chat instruction; `email.email_id`, `thread_id` and `from_addr` are then null. */
   kind?: 'email' | 'command'
   updatedAt?: string
@@ -904,6 +1066,25 @@ export const fetchDeskRuns = (limit?: number) =>
 export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
 
 export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+/** The path of a file of the caller's own records. Fetch it with credentials; it is always a download. */
+export const deskFilePath = (fileId: string) => `/desk/files/${encodeURIComponent(fileId)}`
+
+/** Paired computers, recorded tasks, and whether anything can be run. Never throws for "not connected": read `available`. */
+export const fetchDeskDesktop = () => getJson<DeskDesktopStatus>('/desk/desktop')
+
+/**
+ * Queue one of the person's recorded tasks on one of their computers. `confirm` must be true: it
+ * is the person's explicit go-ahead. Rejects with 409 and the header `X-Desk-Error-Code` when no
+ * desktop can take it; nothing was queued then.
+ */
+export const startDeskDesktopJob = (body: { recordingId: number; deviceId?: number; confirm: true }) =>
+  postJson<DeskDesktopJob>('/desk/desktop/jobs', body)
+
+export const fetchDeskDesktopJob = (jobId: number) => getJson<DeskDesktopJob>(`/desk/desktop/jobs/${jobId}`)
+
+/** Ask the device to stop. A running job stops at its next step: read `cancelRequested`, then poll. */
+export const cancelDeskDesktopJob = (jobId: number) => postJson<DeskDesktopJob>(`/desk/desktop/jobs/${jobId}/cancel`)
 
 /** Mark done the existing task this run matched. Writes only the person's own records. Safe to repeat. */
 export const applyDeskTaskUpdate = (runId: number, taskId: string) =>

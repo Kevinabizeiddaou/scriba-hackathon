@@ -134,6 +134,10 @@ class SandboxWorld:
         # Desk generated. Bytes live here only; nothing is written to disk.
         # An attachment is never changed or removed: a generated file is new.
         self.files: Dict[str, Dict[str, Any]] = {}
+        # A FAKE paired computer, when a demonstration or a test gives the
+        # world one (``add_desktop``). None: this world has no desktop, and
+        # nothing can be run on a computer from it.
+        self.desktop: Optional[Dict[str, Any]] = None
         self.faults: List[Dict[str, Any]] = []
         self.unreadable: Dict[str, str] = {}       # "google:<account>" / "outlook" / "gmail_mail" -> code
         self.oplog: List[Dict[str, Any]] = []
@@ -515,6 +519,27 @@ class SandboxWorld:
                                            "object_id": object_id}}}
         return {"status": "failed", "result": {}, "error": error or "provider_error",
                 "error_code": error or "provider_error", "action": {}}
+
+    def add_desktop(self, *, name: str = "Sandbox desktop (simulated)", online: bool = True, locked: bool = False,
+                    recordings: Optional[List[Mapping[str, Any]]] = None) -> Dict[str, Any]:
+        """Give the world a fake paired computer and recorded tasks. Each
+        recording is ``{name, steps?, checks?, script?}``; ``script`` decides
+        how a replay of it ends (see desktop.SandboxDesktop)."""
+        self.desktop = {
+            "devices": [{"id": 1, "device_name": name, "device_kind": "desktop", "status": "online" if online else "offline",
+                         "ready": bool(online), "state": "ready" if online else "offline",
+                         "session_state": "locked" if locked else "unlocked", "agent_version": "simulated",
+                         "last_seen_at": self.now().astimezone(UTC).isoformat(), "allowed_folders": [],
+                         "capabilities": {}, "update": {"required": False}}],
+            "recordings": [{"id": index, "name": str(r.get("name") or f"Task {index}"), "kind": "desktop",
+                            "status": str(r.get("status") or "ready"), "step_count": int(r.get("steps") or 3),
+                            "has_password": False, "checks": [{"name": "check"}] * int(r.get("checks", 1)),
+                            "apps": list(r.get("apps") or ["Spreadsheet"]), "unattended": False,
+                            "script": str(r.get("script") or "pass")}
+                           for index, r in enumerate(recordings or [], start=1)],
+            "jobs": {},
+        }
+        return self.desktop
 
     # ── files ───────────────────────────────────────────────────────────────
     def attachments_of(self, message_id: str) -> List[Dict[str, Any]]:

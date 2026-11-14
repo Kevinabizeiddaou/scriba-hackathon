@@ -27,26 +27,36 @@ being told. Full account: `docs/handoff/INTEGRATION_0_5.md`.
   wording for new held reasons and the escalated follow-up state, and the
   three tests that pin the backend's source text.
 
-## Measured on one commit, `bd4f0cc`
+## Measured on the head of this branch, `5b3a1d0`
 
+`5b3a1d0` merges `main` at `326b15d` (Docker, CI, hosting, and main's own
+merge of the engines). Its engine differs from `bd4f0cc`, where the full
+round below was first run, by one retraction pattern taken from `main`.
 Everything in a sandbox; external writes off; no live mailbox or calendar.
+Evidence: `docs/handoff/integration-0.5/at-5b3a1d0/`.
 
-| Check | Result | Mode |
-| --- | --- | --- |
-| Backend suites | 869 passed, 56 skipped | no model |
-| Frontend | type check clean, 452 of 452 tests, build passes | |
-| API smoke on the demo backend | 33 of 33 | no model |
-| Backend scenarios (56) | rules 53, scripted model 55, real model 52; **0 unsafe in every mode** | sandbox |
-| Official 20 cases | **19 of 20** | real model `gpt-6-luna`, one run |
-| Reworded hold-out | **17 of 20** | real model, one run |
-| Agent 3's lab, 291 items | 218 completed, 54 handed over, 19 failed, **0 unsafe, 0 false successes** (15 on their trial merge); 7 of 7 gates pass | rules only |
-| Agent 4's eight workdays | 55 of 77 with approvals only (54 before), **0 incorrect, 0 invariant violations** | rules only |
-| Mutation check | 55 planted, 55 caught | |
-| Autonomous path demo | worker, model, checked plan, approval, sandbox execution, read-back, follow-up, completed | real model |
+| Check | `5b3a1d0` (head) | `bd4f0cc` | Mode |
+| --- | --- | --- | --- |
+| Backend suites | 869 passed, 56 skipped | same | no model |
+| Frontend (main's, with the 0.5 client) | type check clean, 456 of 456 tests, build passes | 452 of 452 | |
+| Secret scan (`scripts/check-no-secrets.mjs`) | clean | | |
+| Backend scenarios (56) | real model 53 of 56; **0 unsafe** | real model 52; rules 53, scripted 55 | sandbox |
+| Official 20 cases | **17, 19, 19** over three runs | 19 | real model `gpt-6-luna` |
+| Reworded hold-out | **18, 17, 17** over three runs | 17 | real model |
+| Agent 3's lab, 291 items | 219 completed, 53 handed over, 19 failed, **0 unsafe, 0 false successes**; 7 of 7 gates, both seeds | 218 / 54 / 19 | rules only |
+| Agent 4's eight workdays | identical to `bd4f0cc`: **0 incorrect, 0 invariant violations** | 55 of 77 approvals only | rules only |
+| Mutation check | 55 planted, 55 caught | same | |
+| Autonomous path demo | | passes (worker, model, checked plan, approval, sandbox execution, read-back, follow-up, completed) | real model |
 
-Real-model figures are one run per case and vary: across the five integration
-commits measured the official suite scored 19, 19, 18, 18, 19 and the
-hold-out 17, 17, 17, 15, 17.
+Real-model figures vary run to run: 222 model calls on `5b3a1d0`, none
+failed. The one official run at 17 missed EVAL-015 because the model read a
+resent request as information; it passed in the other two runs. EVAL-023
+(a reply plus a task) fails every run and is the main open case.
+
+**The hosted Desk** (https://scriba-hackaton.vercel.app, `main`, overlay
+0.4) was checked read-only with a signed-in account: every page loads, no
+failing request, no page wider than a phone, `externalWrites.enabled: false`,
+execution held.
 
 ## What a reviewer should know
 
@@ -58,6 +68,14 @@ hold-out 17, 17, 17, 15, 17.
   state is the backend owner's first draft and wants Agent 2's eye.
 - Two behaviours change for a client compared with `main`: repeats are
   `COMPLETED`, and unplaced mail is `ESCALATED`.
+
+## Merging redeploys the hosted Desk
+
+`main` deploys the Desk to https://scriba-hackaton.vercel.app (API on
+Railway, see `docs/DEPLOY.md`). The hosted site runs overlay 0.4 today;
+merging this branch puts 0.5 there. That is the merger's decision, not this
+branch's: nothing here was deployed. After a merge, `/api/health` should
+answer 200 and `/api/desk/health` 401 without a session, as they do now.
 
 No external write is possible from this branch. ScribaAssist/Scriba was not
 changed.

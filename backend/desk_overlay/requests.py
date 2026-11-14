@@ -206,12 +206,38 @@ def without(text: Any, removed: List[str]) -> str:
     return result
 
 
+# Saying outright that it is not there yet.
+_NOT_YET = re.compile(
+    r"\bstill\b|\b(?:not|n'?t)\b.{0,40}\byet\b|\bnot (?:quite|there)\b|\bworking on\b|\bin progress\b|\bbear with\b"
+    r"|\bneed (?:more|a little|a bit|some|another)\b|\bwaiting (?:for|on)\b|\bchasing\b|\bdelayed\b"
+    r"|\brunning (?:late|behind)\b|\bout of (?:the )?office\b|\baway until\b|\bon leave\b", re.I)
+# Promising to provide it later. "I'll bring the contract" is not this: the
+# verb has to be about supplying the answer.
+_WILL_PROVIDE = re.compile(
+    r"\b(?:i|we)(?:'ll| will| shall| should| hope to| expect to| aim to| plan to)\s+(?:\w+\s+){0,2}?"
+    r"(?:have|send|get back|come back|revert|let you know|confirm|check|look into|reply|respond|update|share|"
+    r"forward|follow up|be in touch|pick (?:this|it) up)\b"
+    r"|\bget back to you\b|\bcome back to you\b|\bgive me (?:a|until|till|another)\b|\bsoon\b|\bshortly\b"
+    r"|\bin due course\b", re.I)
+# An answer in the message itself.
+_ANSWERS = re.compile(
+    r"\b(?:works|suits|is fine|that'?s fine|sounds good|yes|agreed|confirmed|accept(?:ed)?|declin\w+|prefer|"
+    r"let'?s go with|go ahead|approved|no problem|perfect)\b|\b\d{1,2}[:.]\d{2}\b|\b\d{1,2}\s?(?:am|pm)\b", re.I)
+
+
 def is_holding_reply(text: Any) -> bool:
-    """The reply says the answer is still coming, and does not contain it."""
+    """The reply says the answer is still coming, and does not contain it.
+
+    Either it says outright that it is not there yet, or it promises to
+    supply it later and gives no answer now. A reply that hands the thing
+    over, or that answers (a yes, a time, "that works") while mentioning the
+    future, is an answer."""
     own = " ".join(sentences(text))
-    if not own or len(own.split()) > 80:
+    if not own or len(own.split()) > 80 or _DELIVERS.search(own):
         return False
-    return bool(_DEFERS.search(own)) and not _DELIVERS.search(own)
+    if _NOT_YET.search(own):
+        return True
+    return bool(_WILL_PROVIDE.search(own)) and not _ANSWERS.search(own)
 
 
 def no_work_established(subject: Any, text: Any) -> bool:

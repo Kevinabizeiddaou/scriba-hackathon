@@ -223,6 +223,12 @@ def test_what_counts_as_putting_an_answer_off():
     assert not requests.is_holding_reply("Please find the signed copy attached.")
     assert not requests.is_holding_reply("Yes, Thursday at 10 works.")
     assert not requests.is_holding_reply("I will send the rest later, but the main schedule is attached.")
+    # An answer that also mentions the future is an answer.
+    assert not requests.is_holding_reply("Wednesday at 10:00 works. I'll bring the contract.")
+    assert not requests.is_holding_reply("Yes, that suits us. We will see you there.")
+    assert not requests.is_holding_reply("Thursday is better for me, I will be travelling on Wednesday.")
+    assert requests.is_holding_reply("I'll come back to you once legal has looked.")
+    assert requests.is_holding_reply("We should have an answer for you shortly.")
 
 
 # ── what a request is not ───────────────────────────────────────────────────

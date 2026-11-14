@@ -1,0 +1,57 @@
+CAUGHT gate: external writes not held
+CAUGHT gate: executor does not fail closed either
+CAUGHT gate: tripwire does not raise
+CAUGHT gate: unknown outcome reported as plain failure
+CAUGHT gate: unknown outcome retried without a read-back
+CAUGHT gate: a gone sandbox falls through
+CAUGHT readiness: env alone enables writes
+CAUGHT readiness: lead switch not required
+CAUGHT claims: memory store hands out a held key
+CAUGHT workflow: in-flight claim not respected
+CAUGHT workflow: injection not held
+CAUGHT workflow: busy time booked anyway
+CAUGHT workflow: non-organizer change proposed
+CAUGHT workflow: stranger's change request acted on
+CAUGHT workflow: overdue follow-up sends repeated reminders
+CAUGHT workflow: unreadable mailbox treated as no answer
+CAUGHT workflow: partial counted as verified
+CAUGHT worker: starts in production
+CAUGHT worker: overlapping ticks allowed
+CAUGHT worker: hourly limit ignored
+CAUGHT agent: any tool allowed
+CAUGHT agent: step limit removed
+CAUGHT agent: proposal type not checked
+CAUGHT sandbox: default world answers for anyone
+CAUGHT sandbox: organizer not required for a change
+CAUGHT sandbox: same event created twice
+CAUGHT eval: another user's run visible
+CAUGHT eval: contradicting decision accepted
+CAUGHT gateway: placeholder key treated as a model
+CAUGHT pass2 binding: a changed action is approved anyway
+CAUGHT pass2 retry: runs the unedited proposal
+CAUGHT pass2 recovery: settles an action still in flight
+CAUGHT pass2 plan: a blocked step counts as ready
+CAUGHT pass3 plan: a step follows a dependency that failed verification
+CAUGHT pass3 gate: an unknown outcome held once can be approved without the check
+CAUGHT pass3 gate: verification ignores the edit made at approval
+CAUGHT pass3 lifecycle: executed without evidence is called verified
+CAUGHT pass3 planning: a cancelled or finished meeting is a target
+CAUGHT pass3 reading: a day moved by a word beside it is read
+CAUGHT pass3 workflow: a retraction is carried out
+CAUGHT pass2 understanding: an unquoted intent is kept
+CAUGHT pass2 understanding: low confidence acted on
+CAUGHT pass2 lifecycle: failed verification not escalated
+CAUGHT pass2 understanding: a time without an offset is used
+CAUGHT reading: ambiguous zone converted anyway
+CAUGHT pass4 requests: any message from a person is news
+CAUGHT pass4 requests: a request in the message is still news
+CAUGHT pass4 requests: a holding reply counts as the answer
+CAUGHT pass4 requests: a footer is read as a request
+CAUGHT pass4 workflow: an unresolved request does not keep the run open
+CAUGHT pass4 workflow: a request that names an address becomes a task
+CAUGHT pass4 workflow: the same work under another title is recorded twice
+CAUGHT pass4 workflow: a weekday that contradicts its date is booked for a model
+CAUGHT pass4 triage: a weak subject hint files a person's message
+CAUGHT pass4 workflow: a holding reply closes a wait the Desk did not open
+
+55 caught, 0 missed, 0 not applied

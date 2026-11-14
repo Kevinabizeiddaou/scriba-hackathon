@@ -69,7 +69,7 @@ def main() -> None:
     parser.add_argument("--preflight", action="store_true", help="one small model call, then stop")
     parser.add_argument("--only", default="")
     parser.add_argument("--out", default=str(BACKEND.parent / "docs" / "handoff" /
-                                             "eval-backend-scenarios-0.4-configured-model.json"))
+                                             "integration-0.5" / "eval-backend-scenarios-configured-model.json"))
     args = parser.parse_args()
     load_key(Path(args.key_file))
     bootstrap()

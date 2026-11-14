@@ -10,41 +10,43 @@
 @tailwind utilities;
 
 /*
- * Scriba Executive Desk: dark burgundy theme.
- * Token values mirror Scriba's dark theme (bg #130a10, card #1c1118, ink #f3e9ee,
- * accent #e98aa6, brand #8b2040). Muted text is a solid colour rather than Scriba's
- * 55% alpha so that small labels stay above 4.5:1 on every surface.
+ * Scriba Executive Desk: "midnight and iris".
+ *
+ * A blue-black page, three cool surface levels, grey-blue text and one soft violet-blue accent.
+ * The accent is kept away from the four status colours (green, amber, rose, cyan) so that a link
+ * is never read as a state. Every text colour is above 4.5:1 on all three surfaces (the lowest,
+ * muted text on a raised surface, is 5.5:1); white on the primary button is 5.5:1.
  */
 :root {
   color-scheme: dark;
-  --bg: #130a10;
-  --surface: #1c1118;
-  --raised: #251620;
-  --sunken: #0e070b;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --ink: #f3e9ee;
-  --soft: #c7b2bc;
-  --mute: #a08a95;
-  --accent: #e98aa6;
-  --ok: #4ade80;
-  --warn: #fbbf24;
+  --bg: #0a0d14;
+  --surface: #121827;
+  --raised: #1a2132;
+  --sunken: #070a10;
+  --line: rgba(160, 175, 215, 0.11);
+  --line-strong: rgba(160, 175, 215, 0.22);
+  --ink: #eef1f8;
+  --soft: #b6bfd2;
+  --mute: #8e98af;
+  --accent: #a9b4ff;
+  --ok: #54d99a;
+  --warn: #f5c451;
   --danger: #fca5a5;
-  --info: #93c5fd;
+  --info: #67d8ef;
 
   /* The same colours as space-separated channels, for Tailwind opacity modifiers. */
-  --bg-rgb: 19 10 16;
-  --surface-rgb: 28 17 24;
-  --raised-rgb: 37 22 32;
-  --sunken-rgb: 14 7 11;
-  --ink-rgb: 243 233 238;
-  --soft-rgb: 199 178 188;
-  --mute-rgb: 160 138 149;
-  --accent-rgb: 233 138 166;
-  --ok-rgb: 74 222 128;
-  --warn-rgb: 251 191 36;
+  --bg-rgb: 10 13 20;
+  --surface-rgb: 18 24 39;
+  --raised-rgb: 26 33 50;
+  --sunken-rgb: 7 10 16;
+  --ink-rgb: 238 241 248;
+  --soft-rgb: 182 191 210;
+  --mute-rgb: 142 152 175;
+  --accent-rgb: 169 180 255;
+  --ok-rgb: 84 217 154;
+  --warn-rgb: 245 196 81;
   --danger-rgb: 252 165 165;
-  --info-rgb: 147 197 253;
+  --info-rgb: 103 216 239;
 }
 
 @layer base {
@@ -57,8 +59,8 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1100px 520px at 12% -10%, rgba(139, 32, 64, 0.22), transparent 62%),
-      radial-gradient(900px 480px at 100% 0%, rgba(107, 24, 48, 0.14), transparent 60%),
+      radial-gradient(1100px 520px at 10% -12%, rgba(79, 91, 213, 0.2), transparent 62%),
+      radial-gradient(900px 460px at 100% -6%, rgba(103, 216, 239, 0.07), transparent 60%),
       var(--bg);
     background-attachment: fixed;
     color: var(--ink);
@@ -70,7 +72,7 @@
   }
 
   ::selection {
-    background: rgba(233, 138, 166, 0.3);
+    background: rgba(169, 180, 255, 0.32);
   }
 
   :focus-visible {
@@ -90,13 +92,13 @@
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(160, 175, 215, 0.2);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.26);
+    background: rgba(160, 175, 215, 0.34);
     background-clip: content-box;
     border: 2px solid transparent;
   }
@@ -111,7 +113,7 @@
     @apply inline-flex h-9 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-btn px-3.5 text-[13px] font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-45;
   }
   .btn-primary {
-    @apply bg-brand-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] hover:bg-[#a02a4e] active:bg-brand-600 disabled:hover:bg-brand-500;
+    @apply bg-brand-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_4px_14px_rgba(79,91,213,0.28)] hover:bg-[#5d69e0] active:bg-brand-600 disabled:hover:bg-brand-500;
   }
   .btn-secondary {
     @apply border border-line-strong bg-white/[0.05] text-ink hover:bg-white/[0.1] active:bg-white/[0.14];

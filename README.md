@@ -227,6 +227,32 @@ Git hook. Enable it once per clone:
 git config core.hooksPath .githooks
 ```
 
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main` and every pull request:
+
+| Job | What it checks |
+| --- | --- |
+| `secret-scan` | No secret, token store or dump in the tracked files |
+| `frontend` | Typecheck, unit tests, production build |
+| `images` | The compose file is valid; the frontend dev and production images build |
+| `backend` | The whole backend suite in the `api` image, then the smoke test against the running seeded `api`, in normal and demo mode |
+| `hosted-image` | `backend/Dockerfile.railway` builds, starts against a throwaway Postgres and passes the anonymous smoke checks; its Scriba pin matches `backend/SCRIBA_REVISION` |
+
+`backend` and `hosted-image` need Scriba, a private repository. They read it
+with the repository secret `SCRIBA_GITHUB_TOKEN`: a fine-grained GitHub token
+with **Contents: read-only** on `ScribaAssist/Scriba` and nothing else. To set
+it (the command asks for the token):
+
+```bash
+gh secret set SCRIBA_GITHUB_TOKEN --repo nabiljaber/scriba-hackathon
+```
+
+Pull requests from forks get no secrets, so those two jobs are skipped there.
+This repository's Actions logs are public: the jobs print no Scriba code
+(pytest runs with `--tb=line`; run the suite locally for full tracebacks).
+
 ## Repository rules
 
 - This repository is public. No `.env`, token, credential, customer data or

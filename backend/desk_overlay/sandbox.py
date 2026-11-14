@@ -641,6 +641,12 @@ class RoutedGateway:
         world = self.world_for(user)
         return world.now() if world is not None else None
 
+    def propose_action(self, user: Any, run: Any, **kwargs: Any) -> Any:
+        """Create the card with the user's world in force, so Scriba's own
+        validation (its provider status, its clock) sees the same world."""
+        with self.registry.using(self.world_for(user)):
+            return self.inner.propose_action(user, run, **kwargs)
+
     # ── provider reads ──────────────────────────────────────────────────────
     def provider_status(self, request: Any) -> Dict[str, Any]:
         world = self.world_for(ctx=request)

@@ -409,15 +409,25 @@ class DeskWorkflow:
         # Attendees: the sender, taken from the message's From header. Names or
         # addresses that appear only in the message text are not added.
         sender = sender_address(str(item.get("from_addr") or ""))
+        event_input: Dict[str, Any] = {
+            "title": str(extracted.get("summary") or item.get("subject") or "Meeting").strip()[:160],
+            "start": check["slot"]["start"], "end": check["slot"]["end"], "timezone": zone_name,
+            "attendees": [sender] if sender else [],
+            "description": f"Requested by {item.get('from_addr')} by email.",
+        }
+        # The meeting goes on the calendar of the account the request reached:
+        # the invitation then comes from the address the sender wrote to. It is
+        # named on the card, never left for Scriba to choose between calendars.
+        if str(item.get("provider")) == "outlook":
+            event_input["calendar_provider"] = "outlook"
+        else:
+            event_input["calendar_provider"] = "google"
+            if item.get("provider_account_id"):
+                event_input["provider_account_id"] = item.get("provider_account_id")
         plan["proposals"].append({
             "tool_name": "create_calendar_event", "purpose": "book",
             "reason": "The requested time is free on every connected calendar.",
-            "tool_input": {
-                "title": str(extracted.get("summary") or item.get("subject") or "Meeting").strip()[:160],
-                "start": check["slot"]["start"], "end": check["slot"]["end"], "timezone": zone_name,
-                "attendees": [sender] if sender else [],
-                "description": f"Requested by {item.get('from_addr')} by email.",
-            }})
+            "tool_input": event_input})
         plan["decisions"].append({"decision": "propose", "reason": "time_free",
                                   "explanation": "The requested time is free, so the meeting is "
                                                  "proposed for your approval."})

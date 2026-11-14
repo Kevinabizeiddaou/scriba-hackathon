@@ -121,7 +121,7 @@ class ExecutionGate:
             return self
         import importlib
 
-        from app import chat_calendar_edit, chat_service, llm_client
+        from app import chat_calendar_edit, chat_service, chat_validation, llm_client
 
         repo = chat_service.repo
         gate = self
@@ -132,6 +132,8 @@ class ExecutionGate:
             "status": chat_service._safe_provider_status,
             "account_state": chat_service._google_calendar_account_state,
             "temporal": getattr(llm_client, "build_temporal_context", None),
+            "is_past": chat_validation.is_past_datetime,
+            "audit": chat_service.log_action_execution,
             "edit": {name: getattr(chat_calendar_edit, name) for name in (
                 "_fetch_google_event", "_fetch_outlook_event", "_calendar_meetings",
                 "_mirrored_provider", "_google_account_for", "_own_outlook_addresses",
@@ -324,6 +326,23 @@ class ExecutionGate:
             world = in_force()
             return saved["temporal"](timezone, now=now or (world.now() if world is not None else None))
 
+        def is_past_datetime(value: Any, now: Optional[dt.datetime] = None) -> bool:
+            # "In the past" is judged on the world's clock while one is in force.
+            world = in_force()
+            return saved["is_past"](value, now or (world.now() if world is not None else None))
+
+        def log_action_execution(**kwargs: Any) -> Any:
+            # Scriba's audit line for an approved action. In a sandbox it must
+            # say so: a simulated execution is never recorded as a real one.
+            world = in_force(kwargs.get("account_email"))
+            if world is not None:
+                kwargs["action_name"] = f"sandbox_{kwargs.get('action_name')}"
+                kwargs["details"] = {**(kwargs.get("details") or {}), "simulated": True,
+                                     "sandbox_world": world.id}
+            return saved["audit"](**kwargs)
+
+        chat_service.log_action_execution = log_action_execution
+        chat_validation.is_past_datetime = is_past_datetime
         chat_service.approve_tool_call = approve_tool_call
         chat_service.retry_tool_call = retry_tool_call
         chat_service.cancel_tool_call = cancel_tool_call
@@ -378,9 +397,11 @@ class ExecutionGate:
         """Undo ``install``. For tests."""
         if not self._saved:
             return
-        from app import chat_calendar_edit, chat_service, llm_client
+        from app import chat_calendar_edit, chat_service, chat_validation, llm_client
 
         saved = self._saved
+        chat_validation.is_past_datetime = saved["is_past"]
+        chat_service.log_action_execution = saved["audit"]
         chat_service.approve_tool_call = saved["approve"]
         chat_service.retry_tool_call = saved["retry"]
         chat_service.cancel_tool_call = saved["cancel"]

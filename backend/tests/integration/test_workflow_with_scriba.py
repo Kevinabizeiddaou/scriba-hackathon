@@ -283,7 +283,7 @@ def test_meeting_request_event_is_created_before_any_reply_is_proposed():
 
         approved = world["client"].post(event["approve"]["path"], json={}, headers=ORIGIN)
         assert approved.status_code == 200, approved.text
-        assert approved.json()["tool_call"]["status"] == "executed"
+        assert approved.json()["tool_call"]["status"] == "executed", approved.json()["tool_call"]
         assert len(world["calendar_write"].calls) == 1
         sent = world["calendar_write"].calls[0]["kwargs"]["action"]
         assert sent["action_type"] == "create_calendar_event"

@@ -29,6 +29,9 @@ __pycache__/
 # repository; if someone places one here it must not be committed.
 vendor/scriba/
 
+# Vercel CLI project link
+.vercel/
+
 # Editors / OS
 .vscode/
 .idea/

@@ -87,7 +87,9 @@ services:
     build:
       context: ./frontend
       target: dev
-    command: ["sh", "-c", "npm run typecheck && npm test"]
+    # Half the CPUs: with one worker per CPU the evaluation self-test (5 s per case) can run
+    # out of time under load in the container; with half it passes and finishes sooner.
+    command: ["sh", "-c", "npm run typecheck && npm test -- --maxWorkers=50%"]
     environment:
       # Some UI tests assert local clock times written for UTC+2 (the team's zone).
       TZ: ${TZ:-Asia/Beirut}

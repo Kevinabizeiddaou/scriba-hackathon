@@ -338,3 +338,43 @@ def test_recording_a_task_does_not_complete_a_run_whose_meeting_request_is_held(
     reply = {"status": "executed", "purpose": "clarify", "verified": True, "verification": {"verified": True}}
     assert lifecycle.derive(meta, [task, reply], [])["stage"] == "COMPLETED"
     assert lifecycle.derive({"held": {"reason": "task_exists"}}, [task], [])["stage"] == "COMPLETED"
+
+
+# ── found with a real model on the reconciliation scenarios ─────────────────
+
+def test_the_same_work_under_another_title_is_not_recorded_twice(desk):
+    """A model titled it "Sign off on the towage contract"; the open task was
+    "Towage contract". A second task was created."""
+    desk.world().tasks.append({"id": "t-tow", "title": "Towage contract", "status": "open",
+                               "due_at": "2026-11-18T12:00:00+00:00"})
+    modelled(desk, {"intents": [intent("task", "I need your sign-off on the towage contract by Wednesday noon",
+                                       title="Sign off on the towage contract", due_at="2026-11-18T12:00:00+00:00")]})
+    run = deliver(desk, "A reminder that I need your sign-off on the towage contract by Wednesday noon.")
+    assert run["actions"] == [] and run["held"]["reason"] == "task_exists"
+    assert run["held"]["target"]["taskId"] == "t-tow" and len(desk.world().tasks) == 1
+
+
+def test_possibly_the_same_task_with_another_date_is_left_for_the_person(desk):
+    desk.world().tasks.append({"id": "t-tow", "title": "Towage contract", "status": "open",
+                               "due_at": "2026-11-18T12:00:00+00:00"})
+    modelled(desk, {"intents": [intent("task", "sign the towage contract by Friday",
+                                       title="Sign the towage contract", due_at="2026-11-20T17:00:00+00:00")]})
+    run = deliver(desk, "Please sign the towage contract by Friday.")
+    assert run["actions"] == [] and [u["why"] for u in run["unresolved"]] == ["possibly_same_as_open_task"]
+    assert run["lifecycle"]["stage"] != "COMPLETED" or run["lifecycle"]["reason"] == "unresolved_requests"
+
+
+def test_a_different_piece_of_work_is_still_recorded(desk):
+    desk.world().tasks.append({"id": "t-tow", "title": "Towage contract", "status": "open"})
+    modelled(desk, {"intents": [intent("task", "renew the pilotage licence", title="Renew the pilotage licence")]})
+    run = deliver(desk, "Please renew the pilotage licence before the end of the month.")
+    assert [a["tool_name"] for a in run["actions"]] == ["create_task"]
+
+
+def test_an_instruction_taken_back_is_not_turned_into_a_task_by_any_reader(desk):
+    """A model read "cancel it... on second thought, keep it" as a task to
+    keep the meeting. No reader picks a half."""
+    modelled(desk, {"intents": [intent("task", "keep it as it is", title="Keep the survey briefing")]})
+    run = deliver(desk, "Please call off the survey briefing on Thursday. On second thought, keep it as it is.")
+    assert run["actions"] == [] and run["held"]["reason"] == "conflicting_instructions"
+    assert desk.gateway.model_calls == []

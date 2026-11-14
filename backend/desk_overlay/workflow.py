@@ -346,6 +346,15 @@ class DeskWorkflow:
                                       "explanation": "The request repeats one already taken in."})
             return plan
 
+        if reading.retracted(text):
+            # "Cancel it. On second thought, keep it." Which half stands is the
+            # writer's to say. No reader, rule or model, gets to pick, and no
+            # task is made out of either half.
+            self._hold(plan, user, item, calendar, "conflicting_instructions",
+                       "The message gives an instruction and then takes it back, so nothing is "
+                       "proposed. Read it and decide.")
+            return plan
+
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
         plan["understanding"] = found
@@ -630,7 +639,9 @@ class DeskWorkflow:
                                           "explanation": "No action is needed for this part."})
         if triage.get("category") == "action_item" and not any(
                 p.get("tool_name") in ("create_task", "create_reminder") for p in plan["proposals"]) \
-                and (plan.get("held") or {}).get("reason") != "task_exists":
+                and (plan.get("held") or {}).get("reason") != "task_exists" \
+                and not any(d.get("reason") in ("task_exists", "possibly_same_as_open_task")
+                            for d in plan["decisions"]):
             # The rules' reading is the floor here too: a message they read as
             # something to do is recorded as a task even when the model saw
             # only a reply in it. A decision someone is waiting for is work.
@@ -782,6 +793,33 @@ class DeskWorkflow:
         except Exception:
             open_tasks = None
             plan["reads"].append({"tool": "task.list", "ok": False, "error": "unavailable"})
+        same = None
+        if open_tasks and not any(_same_title(task.get("title"), title) for task in open_tasks):
+            # Not the same title; is it the same work? An open task most of
+            # whose title is in this request, when no other task comes close.
+            match = planning.match_open_task(f"{title}\n{' '.join(str(q) for q in evidence or [])}", open_tasks)
+            same = match["task"] if match["status"] == "one" else None
+        if same is not None:
+            wanted = _moment(due_at) if due_at else None
+            theirs = _moment(same.get("due_at"))
+            if wanted is None or theirs is None or abs((wanted - theirs).total_seconds()) < 3600:
+                # Same work, same date (or none stated): it is already recorded.
+                plan["held"] = plan["held"] or {
+                    "reason": "task_exists", "slots": [], "calendars": [],
+                    "target": {"taskId": str(same.get("id")), "title": same.get("title")},
+                    "message": f"You already have an open task for this (\"{same.get('title')}\"), so no "
+                               "second one is proposed."}
+                plan["decisions"].append({"decision": "none", "reason": "task_exists",
+                                          "explanation": "You already have this task."})
+            else:
+                # It looks like a task you have, with another date. Not a
+                # second task, and not silently dropped either.
+                plan.setdefault("unresolved", []).append({
+                    "text": title[:300], "why": "possibly_same_as_open_task", "taskId": str(same.get("id"))})
+                plan["decisions"].append({"decision": "none", "reason": "possibly_same_as_open_task",
+                                          "explanation": f"This may be your open task \"{same.get('title')}\" "
+                                                         "with a different date. It was left for you."})
+            return
         if open_tasks and any(_same_title(task.get("title"), title) for task in open_tasks):
             # A second message about the same thing must not make a second task.
             plan["held"] = {"reason": "task_exists", "slots": [], "calendars": [],

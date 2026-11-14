@@ -21,7 +21,7 @@ follow-ups, finished tasks, partial failure, model outage, injection, approval r
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 24 | 24 |
 | Executed actions verified | 24 | 24 |
-| Median latency (ms, no model call) | 29 | 34 |
+| Median latency (ms, no model call) | 16 | 24 |
 
 ## The 14 scenarios of the reconciliation branch (S25 to S38)
 
@@ -35,7 +35,7 @@ follow-ups, finished tasks, partial failure, model outage, injection, approval r
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 14 | 14 |
 | Executed actions verified | 14 | 14 |
-| Median latency (ms, no model call) | 9 | 17 |
+| Median latency (ms, no model call) | 15 | 10 |
 
 ## The 18 scenarios of overlay 0.4 (N01 to N18)
 
@@ -49,7 +49,7 @@ follow-ups, finished tasks, partial failure, model outage, injection, approval r
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 18 | 18 |
 | Executed actions verified | 18 | 18 |
-| Median latency (ms, no model call) | 0 | 0 |
+| Median latency (ms, no model call) | 0 | 1 |
 
 **Rules only** is the Desk with no model. **Scripted model** gives the understanding step the
 answer a careful reader would give, so it measures everything behind the model (validation,

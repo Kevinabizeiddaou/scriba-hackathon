@@ -122,9 +122,11 @@ the secretary workflow on them yet.
 ## 4. Desk overlay endpoints (Tested on the seeded backend)
 
 These exist only when the backend runs with the Desk overlay
-([backend/README.md](../backend/README.md)). All need a session, all are
-read-only, and all sit behind Scriba's own session and cross-site guards.
-Types and client functions: `frontend/src/api/desk.ts`.
+([backend/README.md](../backend/README.md)), version 0.3.0. All need a
+session, and all sit behind Scriba's own session and cross-site guards. The
+ones in this section are read-only. Types and client functions:
+`frontend/src/api/desk.ts`; fields added in 0.3 are optional there, so a
+client written against 0.2 still compiles.
 
 "Tested" here means: unit and route tests, integration tests on the real
 Scriba application with providers replaced at the SDK boundary, and the
@@ -133,7 +135,7 @@ calendar has been read through these routes yet.**
 
 | Method and path | Purpose | Type |
 | --- | --- | --- |
-| `GET /desk/health` | Overlay present, version, `writes: false` | `DeskHealth` |
+| `GET /desk/health` | Overlay present, version, `writes: false`, and the readiness block of section 8: `externalWrites`, `sandboxExecution`, `executionMode`, `worker`, `model` | `DeskHealth` |
 | `GET /desk/connections` | The four Desk capabilities, readiness, sending mailboxes. Excluded integrations are removed on the server | `DeskConnections` |
 | `GET /desk/inbox?provider=all\|gmail\|outlook&limit=&mailbox=` | Gmail and Outlook merged, newest first; every row keeps `provider` and `provider_account_id` and gains `triage` | `DeskInbox` |
 | `GET /desk/inbox/item?provider=&id=&mailbox=&days=` | One message: triage, the messages of its thread found in the recent inbox, the mailbox a reply must come from, and for a meeting request the next working days across both calendars | `DeskInboxItem` |
@@ -152,9 +154,15 @@ does not have.
 
 Triage `category` is one of `meeting_request`, `needs_reply`, `action_item`,
 `informational`, `automated`, with `outcome` `schedule`, `reply`, `task` or
-`none`. It is rule-based (Scriba's reply classifier plus deadline and
-meeting-intent patterns) and works on the subject and snippet, not the full
-body. It makes no model call.
+`none`. It is rule-based: Scriba's reply classifier, plus the Desk's own
+reading of the text (`backend/desk_overlay/reading.py`), which recognises a
+request to meet, move or cancel even when a classifier saw only news, and a
+request for a decision, approval or sign-off. `reasons` then contains
+`desk_meeting_new`, `desk_meeting_reschedule`, `desk_meeting_cancel` or
+`desk_action_requested`. It works on the subject and the snippet (the full
+body where a row carries one) and makes no model call. It is brittle to
+wording: see the evaluation numbers in
+[handoff/AGENT1_BACKEND_STATUS.md](handoff/AGENT1_BACKEND_STATUS.md).
 
 Rules a client can rely on:
 
@@ -229,81 +237,163 @@ After it executes, the card carries `output.availability_override`
 back `needs_info` even if the card was `awaiting_approval` a moment ago,
 because the calendars are re-read at approval.
 
-Limits: the gate covers creating an event, not yet moving one; search results
-can still contain items that came from an excluded integration; no model was
-called in any test, so what the agent says in prose is unverified.
+The gate covers creating an event and, from 0.3, moving one
+(`update_calendar_event`): the new time is checked on every calendar and the
+event's own current slot does not count against it.
 
-## 6. Desk workflow: one incoming email (Integrated; execution simulated or in-memory)
+Limits: search results can still contain items that came from an excluded
+integration; no model was called in any test, so what the agent says in prose
+is unverified.
+
+## 6. Desk workflow: one incoming email (Integrated; execution in a sandbox or held)
 
 | Method and path | Purpose | Type |
 | --- | --- | --- |
-| `POST /desk/intake` `{provider, id, mailbox?}` | Take one inbox message through classify, thread, calendar context and proposal. Idempotent per message: a repeat returns the same run with `duplicate: true` | `DeskRun` |
-| `POST /desk/intake/sweep` `{provider?, limit?, max_new?, mailbox?}` | Open a run for every recent message that needs one and has none. Bounded and safe to repeat (see below) | `DeskSweep` |
-| `GET /desk/runs` | The user's runs, newest first | `{account, runs[]}` |
-| `GET /desk/runs/{runId}` | A run with its proposed actions and their current status | `DeskRun` |
-| `POST /desk/runs/{runId}/advance` | Propose what may only follow an executed step (the confirmation reply after the event exists). Safe to repeat | `DeskRun` |
+| `POST /desk/intake` `{provider, id, mailbox?}` | Take one inbox message through classify, thread, calendar context, plan and proposal. Idempotent per message: a repeat returns the same run with `duplicate: true`. 409 when another worker is taking the same message in at that moment | `DeskRun` |
+| `POST /desk/intake/sweep` `{provider?, limit?, max_new?, mailbox?}` | Open a run for every recent message that needs one and has none. Bounded and safe to repeat (see below). The manual "check now" | `DeskSweep` |
+| `GET /desk/runs?limit=` | The user's runs, newest first. **Each row says where the run stands** | `{account, runs: DeskRunRow[]}` |
+| `GET /desk/runs/{runId}` | A run with its actions, their evidence, its timeline, follow-ups and model usage | `DeskRun` |
+| `POST /desk/runs/{runId}/advance` | Propose what may only follow an executed step, and look after the run's follow-ups. Safe to repeat. The backend also does this by itself as soon as a step executes, so a client rarely needs it | `DeskRun` |
+| `GET /desk/worker` | The background intake worker's status, the caller's own row, and the caller's runs by stage | `{account, worker: DeskWorkerStatus, runs}` |
+| `GET /desk/follow-ups?refresh=&limit=` | Replies awaited on mail the Desk sent, in their latest state. Reads mail; sends nothing | `{account, followUps[], counts}` |
+| `POST /desk/runs/{runId}/follow-ups/{id}/close` | The person closes a follow-up | `DeskRun` |
 
 These create a run and action cards inside Scriba. They send no mail and
 write no calendar. **Every action is approved through Scriba's existing
 `POST /chat/tool-calls/{toolCallId}/approve`** (each action carries its
-`approve` path) and rejected through `.../cancel`.
+`approve` path), rejected through `.../cancel`, retried through `.../retry`.
+What an approve then does is decided by the execution gate (section 8).
 
-What is proposed:
+### What is proposed
 
 | Message | Proposal |
 | --- | --- |
-| Actionable (deadline, no question) | One `create_task` card |
-| New meeting request, requested time verified free on every calendar | One `create_calendar_event` card, attendee = the sender from the From header. After it is executed, `next` contains `"advance"`, which proposes one `send_email` reply in the original thread, from the receiving mailbox |
-| Meeting request, time busy or unverifiable or not understood | No card. `held.reason` is `calendar_conflict`, `availability_unknown`, `time_not_understood`, `change_request` or `invalid_preferences`; `held.slots` are verified free times; `draftRequest` is the reply request |
-| Needs a reply | No card; `draftRequest`, and `next: ["draft_reply"]` |
+| Something to do (a written deadline, or a request for a decision, approval or sign-off) | One `create_task` card. `due_at` is set only when a day is written out; it is never invented. Priority follows the deadline. If an open task with the same title exists, no card: `held.reason: "task_exists"` |
+| New meeting request, time verified free on every calendar | One `create_calendar_event` card: attendee = the sender from the From header; `calendar_provider` and `provider_account_id` = the calendar of the mailbox the request reached. After it executes, one `send_email` confirmation in the original thread (`purpose: "confirm"`) |
+| The same request again, when the sender is already on an event at that exact time | No card. `held.reason: "already_scheduled"`, `flags: ["duplicate"]` |
+| Meeting request, time busy | No event. One `send_email` reply (`purpose: "offer_times"`) offering up to three times verified free on every calendar; `proposedSlots` lists them. `held.reason: "calendar_conflict"` |
+| Meeting request, no time could be read | The same reply with `purpose: "clarify"`, when verified free times exist. `held.reason: "time_not_understood"` |
+| Meeting request, a calendar could not be read | No card at all: nothing is verified, so nothing is offered. `held.reason: "availability_unknown"` |
+| Request to move a meeting | The ORIGINAL event is found among the meetings the sender is on. New time verified free (the meeting's own slot does not count against it): one `update_calendar_event` card naming that `event_id`. Never a second event. Then a confirmation |
+| Request to cancel a meeting | Same search: one `cancel_calendar_event` card for that event. Then a confirmation |
+| A change request that cannot be tied to one meeting, or to one the user organizes | No card. `held.reason`: `event_not_found` (the sender is on no meeting), `event_ambiguous` (`held.candidates[]`), `not_organizer`, `calendar_lookup_failed` |
+| Needs a reply | No card unless the model step is on (below); `draftRequest`, and `next: ["draft_reply"]` |
+| Text that addresses the assistant ("ignore previous instructions", "system note to AI") | Nothing. `held.reason: "untrusted_instructions"`, `flags: ["prompt_injection_suspected"]`. The message is not sent to a model |
 | Informational or automated | Nothing |
 
-`DeskRun.state`: `awaiting_approval`, `executing`, `completed`, `partial`
-(some actions executed, some failed), `failed`, `cancelled`,
-`no_action_proposed`. An action's `verified` is true only when the card
-executed and Scriba recorded the action (`assistantActionId`); it is never
-inferred.
+A reply the Desk sends that awaits an answer (`offer_times`, `clarify`,
+`nudge`) opens a **follow-up** on the run once it has executed: `waiting`,
+then `satisfied` when a message from that person arrives in that thread,
+`overdue` after two days (one `send_email` reminder is then PROPOSED, with
+`purpose: "nudge"`, never sent), or `closed` by the person. A mailbox that
+cannot be read leaves a follow-up as it is: unknown is not "no answer".
 
-Readiness:
+### Reading a time
+
+With a model configured, Scriba's own extraction reads the request. With no
+model (`health.model.configured: false`) a time is read by rule, and only when
+it is written out in full: one day and one clock time, or one range, in a
+zone that resolves to exactly one zone ("ET", "CET", "London time", "your
+time"). "IST", "my time", two candidate times, or "at 3" are not read; the
+run is held as `time_not_understood`. A model that answers nothing is not
+second-guessed by the rules.
+
+### `DeskRun`
+
+`state` (unchanged): `awaiting_approval`, `executing`, `completed`, `partial`,
+`failed`, `cancelled`, `no_action_proposed`. **A partly executed action now
+makes the run `partial`**, and such an action is not `verified`.
+
+`lifecycle` (new): `{stage, reason, final, outcomeUnknown, compensation}`.
+
+| `stage` | Meaning |
+| --- | --- |
+| `RECEIVED`, `CLASSIFIED`, `CONTEXT_GATHERING`, `PLANNING` | Recorded as the run is opened; they appear in `timeline`, never as a resting stage |
+| `AWAITING_APPROVAL` | A card waits for the person (including a held card) |
+| `EXECUTING` | A card is running, or a step executed and the next one is about to be proposed |
+| `VERIFYING` | Executed but not yet verified, or `outcomeUnknown`: the provider did not confirm and it may or may not have happened |
+| `COMPLETED` | Everything proposed took effect and was verified, or nothing was needed |
+| `AWAITING_REPLY` | A reply went out and its follow-up is `waiting` or `overdue` |
+| `NEEDS_CLARIFICATION` | Cannot be acted on as written (`time_not_understood`, `event_not_found`, `event_ambiguous`) and nothing could be proposed |
+| `ESCALATED` | Handed to the person; the Desk proposes nothing |
+| `PARTIALLY_COMPLETED` | Some actions took effect and some did not. `compensation.policy` is `escalate`: the Desk never undoes an executed action by itself |
+| `FAILED`, `CANCELLED` | |
+
+Other new fields: `trigger` (`manual`, `sweep`, `worker`, `evaluation`),
+`simulated` (the run lives in an isolated provider world), `flags`,
+`updatedAt`, `actionCounts`, `followUps[]`, `usage`, and `timeline[]`:
+`{at, kind, summary, data}` with `kind` one of `stage`, `decision`, `read`,
+`proposal`, `approval`, `execution`, `verification`, `human`, `followup`,
+`usage`, `error`. One event is one kind: an agent decision, a tool read, a
+proposed write, a human decision, an execution and a verification are never
+merged. `summary` never contains message text.
+
+Each action also carries `purpose`, `reason`, `proposedSlots`, `output` (the
+whole card output: no second request per action), `errorCode`,
+`idempotencyKey`, `proposedAt`, `decisions[]`, `execution`, `verification`,
+`outcomeUnknown`, `simulated`. **`verified` is true only on evidence**: a
+read-back of the provider state where one exists (`verification.method:
+"sandbox_readback"`), otherwise Scriba's record of the executed action
+(`"scriba_action_record"`).
+
+`usage` is `{models[], estimatedCostUsd, priceSource}` from Scriba's own
+telemetry record of each call and Scriba's own price table. It is `null` when
+no model call was recorded, and `estimatedCostUsd` is `null` when any call has
+no known price. Null is not zero.
+
+A `DeskRunRow` (`GET /desk/runs`) has `runId, provider, email_id, subject,
+from_addr, category, created_at` as before, plus `state`, `lifecycle` (the
+stage), `next`, `trigger`, `simulated`, `held: {reason} | null`,
+`actionCounts`, `updatedAt`, `followUps: [{id, state}]`.
+
+### Sweep and the worker
+
+`POST /desk/intake/sweep` is unchanged (see `DeskSweep`), except that drafts,
+sent mail, spam and trash are skipped when a row carries its labels or folder.
+
+The **background intake worker** does the same thing with no client open. It
+is opt-in (`DESK_INTAKE_WORKER=on`, `DESK_INTAKE_USERS=a@x,b@y`), refuses to
+start in a production process, and acts as one enrolled user at a time with
+that user's identity passed explicitly. It does not poll a provider: mail
+reaches Scriba through Scriba's own ingestion, and the worker reads the inbox
+through the runtime behind `GET /emails`. Per tick, per user: take in up to
+`maxNewPerTick` messages, propose what follows an executed step, look after
+follow-ups. It only proposes.
+
+| `worker.you.lastStatus` | Meaning |
+| --- | --- |
+| `ok` | |
+| `mailbox_unreadable` | A connected mailbox could not be read. What was readable was handled; the worker slows down for this user |
+| `backing_off` | Skipped this tick after a failure |
+| `rate_limited`, `backpressure` | The hourly limit was reached, or `maxPending` runs already await the person |
+| `failed` | The pass for this user raised; `consecutiveFailures` counts |
+
+**One run per message** is a claim, not a process lock. The key is user,
+provider, receiving account and provider message id. `worker.claims.store`:
+`scriba_receipts` (Scriba's own `automation_action_receipts` ledger, UNIQUE on
+user and key; `durable: true`), `sqlite` (a local file; durable) or `memory`
+(this process; the seeded backend, whose runs are in memory too).
+
+### The model step (off by default)
+
+`DESK_AGENT=on`, with a configured model, adds one bounded planning step
+after the rules (`backend/desk_overlay/agent.py`): at most 4 model calls, 4
+tool calls and 45 seconds. It may read through four read tools and may
+propose a reply to the sender in the message's thread, a task or a reminder.
+It cannot choose a recipient, propose a calendar change or approve anything.
+Its tests script the model. **No real model has been run through it.**
+
+### Readiness
 
 | Capability | Status |
 | --- | --- |
-| Classification, proposals, duplicates, isolation, run states | Tested without Scriba and on the real Scriba app |
-| Task case: propose, approve through Scriba's route, executed by Scriba's engine, verified | Integrated, with in-memory storage |
-| Meeting case: propose, gate at approval, event before reply | Integrated; the calendar write itself is a recording stand-in |
-| Extracting the requested time from the email | Uses Scriba's model call; scripted in tests, **never run against a real model** |
-| Sending the confirmation reply | Card creation tested; the send is not executed in any test |
-| Anything on a live mailbox, calendar or model | Not tested |
-
-### Sweep
-
-`POST /desk/intake/sweep` reads the recent inbox (`provider` `all`, `gmail` or
-`outlook`; `limit` 1 to 50, default 25) and runs `/desk/intake` for each
-message triaged `meeting_request`, `action_item` or `needs_reply` that has no
-run yet. Informational and automated mail is left alone. It proposes
-actions exactly as `/desk/intake` does: nothing is sent or written.
-
-| Field | Meaning |
-| --- | --- |
-| `status` | `completed`, or `already_running` when another sweep for the same user is in progress (nothing was done) |
-| `examined` | Messages read |
-| `opened[]` | `{provider, id, subject, category, runId, state}` for each run opened by this call |
-| `existing` | Messages that already had a run |
-| `skipped` | Messages that need no run |
-| `deferred[]` | Messages that need a run but were over `max_new` (1 to 10, default 5). Call again to take them |
-| `failed[]` | `{provider, id, subject, category, error}`; one failure does not stop the others, and the message is retried by the next sweep |
-| `complete` | False when a connected mailbox could not be read, so mail may be missing. `sources[]` says which |
-
-The bound exists because each meeting request costs one model call and a
-calendar read. The sweep runs only when a signed-in client calls it; there
-is no background job and no push trigger.
-
-Limits: runs start when a client calls `/desk/intake` or
-`/desk/intake/sweep`; nothing starts them when mail arrives with no client
-open. Reschedule and cancel requests are
-held, not proposed. One Desk process is assumed (the duplicate guard is a
-process lock plus a lookup). The confirmation reply text is a fixed template
-the user can edit on the card.
+| Classification, proposals, lifecycle, evidence, claims, follow-ups, worker | Tested without Scriba and on the real Scriba app |
+| Approve, cancel and retry through Scriba's routes; execution; verification; unknown outcomes; partial success | Tested on the real Scriba app against an isolated provider world |
+| Reschedule and cancel through Scriba's own calendar-edit validation | Tested on the real Scriba app; the event read and the write are the world's |
+| The background worker opening runs with no client | Tested, and seen over HTTP on the seeded demo backend |
+| Durable claims on Scriba's receipt ledger | The adapter is tested against a stand-in with the ledger's outcomes. **Not run against a Postgres database** |
+| Extracting a time with a model; a model-written reply | Scripted in tests. **Never run against a real model** |
+| Anything on a live mailbox or calendar | Not tested |
 
 ## 7. Desk safeguards on proposed actions (Integrated; no live provider)
 
@@ -319,15 +409,28 @@ Scriba the Desk runs on. A held card has `status: "needs_info"`,
 | `unverified_recipient` | A recipient or attendee (`output.unverified_recipients[]`) was not given by the user, is not the sender of the message being answered, and is not one of the user's own accounts | Show the address. To accept it, approve with `{"payload_overrides": {"desk_confirmed_recipients": ["<address>"]}}`. To change it, send the corrected field and the same confirmation |
 | `reply_target_changed` | A Gmail reply targets a message that is no longer the latest in its thread (a newer message arrived, or the user already wrote there) | Open the thread; do not approve as is |
 | `reply_target_unverified` | The message being answered, or the user's sent mail, could not be read | Retry later |
+| `reply_target_missing` | A Gmail reply does not name the message it answers | Complete it in chat |
 | `recipient_required`, `body_required`, `title_required`, `reminder_incomplete`, `start_required` | The action is incomplete | Let the user fill the field |
-| `calendar_conflict`, `availability_unknown` | The booking gate (section 5) | As in section 5 |
+| `calendar_conflict`, `availability_unknown` | The booking gate (section 5). It now covers **moving** an event too: the new time is checked on every calendar, and the event's own current slot does not count against it | As in section 5 |
 | `desk_check_failed` | A Desk check itself failed. The card is held, never passed | Retry later |
+| `external_writes_disabled` | The execution gate (section 8): mail and calendar writes are off on this backend. Nothing was claimed or executed | Nothing to offer. The card can be approved once writes are enabled |
+| `outcome_unknown` | A provider did not confirm the action. It may or may not have happened (`output.outcome_unknown: true`, card `status: "failed"`) | See "Unknown outcomes" in section 8 |
+| `sandbox_world_gone` | The card was prepared in a sandbox that no longer exists | Nothing to offer |
 
 Rules:
 
-- `desk_verified_recipients`, `desk_confirmed_recipients` and
-  `desk_availability_override` are honoured only on an approve request. In a
-  model's proposal they are ignored.
+- **`payload_overrides` on approve.** The Desk reads exactly four keys, and
+  only on an approve request (in a model's proposal they are ignored):
+  `desk_confirmed_recipients` (addresses the user confirmed or typed),
+  `desk_availability_override` (`true`: book despite the booking gate),
+  `desk_verified_recipients` (set by the Desk itself), and
+  `desk_retry_after_unknown_confirmed` (`true`: the user checked and wants an
+  unknown-outcome action run again, on a real provider). Every other key is
+  merged into the card's input by Scriba and re-validated by Scriba's gate and
+  then by the Desk's checks, so an edited recipient, time or text is checked
+  exactly like a proposed one. For `update_calendar_event` and
+  `cancel_calendar_event` the change is recomputed from the live event at
+  approval; a client cannot supply `planned_change`.
 - When a user edits a recipient on a card, send `desk_confirmed_recipients`
   with the addresses the user typed, in the same approve request.
 - An approve that carries an `idempotency_key` and is repeated with the same
@@ -340,3 +443,145 @@ Not covered by a Desk guard (they live in Scriba itself): what happens to a
 session cookie after sign-out, the thread context Scriba gives its draft
 writer, and the provider call inside one already-approved attempt. The Desk
 does not assume any Scriba change for these.
+
+## 8. The execution gate and external-write readiness (Enforced in the server)
+
+`GET /desk/health` reports three separate things:
+
+```json
+"writes": false,
+"externalWrites": {
+  "enabled": false, "capable": true, "authorized": false, "revision": null,
+  "reason": "scriba_fixes_verified",
+  "message": "No Scriba revision has been verified to contain the outbound fixes (this backend reports 3ae3a2aa).",
+  "checks": [
+    {"id": "desk_guards_installed", "ok": true, "detail": "..."},
+    {"id": "scriba_fixes_verified", "ok": false, "detail": "..."},
+    {"id": "isolated_provider_tests", "ok": false, "detail": "..."},
+    {"id": "lead_authorization", "ok": false, "detail": "..."}
+  ]
+},
+"sandboxExecution": {"available": true, "worlds": 2, "note": "..."},
+"executionMode": "sandbox",
+"sandbox": {"id": "demo-alice", "label": "demo"},
+"worker": {"enabled": true, "running": true, "reason": null, "intervalSeconds": 15, "lastTickAt": "..."},
+"model": {"configured": false}
+```
+
+- `externalWrites.enabled` is true only when **every** check passes. It is
+  **false on every backend today, by construction**: the list of verified
+  Scriba revisions in `backend/desk_overlay/readiness.py` is empty, and adding
+  one is a reviewed code change made after the outbound fixes are confirmed
+  active in that revision and isolated provider tests have passed. No
+  environment variable alone can enable writes, and passing unit tests never
+  does. `writes` equals `externalWrites.enabled`.
+- `executionMode` is what approving a mail or calendar action does **for this
+  user**: `sandbox` (it runs against the user's isolated provider world),
+  `held` (the gate refuses it) or `external` (a real provider; unreachable
+  today).
+- A client must not treat `sandboxExecution.available` as permission to show
+  real sends: a sandbox result has `simulated: true` everywhere and is never a
+  provider success.
+
+**Enforcement is in the server, not in disabled buttons.** For every card of
+a Desk run (and every card at all when `chatScope` is `enforced`), an approve
+or retry of `send_email`, `draft_email_reply`, `create_calendar_event`,
+`update_calendar_event` or `cancel_calendar_event`:
+
+- with a sandbox world in force: is applied to the world. Scriba's execution
+  engine is not called. Reaching a real provider client during that call
+  raises and is counted (`GET /desk/sandbox` `isolationViolations`, which must
+  be empty);
+- otherwise, with writes disabled: comes back `needs_info` with
+  `output.error_code: "external_writes_disabled"`. Nothing is claimed,
+  nothing is executed, and the card stays approvable for later.
+
+`create_task` and `create_reminder` write only the user's own Scriba records.
+They are not held; they still need an approval, except in a world that sets
+the internal-write policy to automatic (evaluation worlds do: section 10).
+
+### Unknown outcomes
+
+A provider call that times out may have taken effect. The card is then
+`status: "failed"` with `output.outcome_unknown: true` and `error_code:
+"outcome_unknown"`; the action's `outcomeUnknown` is true and the run rests in
+`VERIFYING`. It is never reported as a plain failure, and never retried
+blindly:
+
+- in a sandbox, a retry first reads the world back. If the effect is there
+  the card becomes `executed` with `output.reconciled: true` and no second
+  write happens; if it is not, the action runs;
+- on a real provider there is no read-back: the retry is held until the user
+  confirms they checked (`desk_retry_after_unknown_confirmed`).
+
+A failure between two steps (the event exists, the confirmation failed) is
+`PARTIALLY_COMPLETED`. The event stays. Retry the failed card.
+
+## 9. The sandbox world and the demo backend (Tested; seen over HTTP)
+
+A sandbox world is a complete stand-in for one person's Gmail, Outlook Mail,
+Google Calendar and Outlook Calendar, with tasks and reminders. It is not a
+flag on a real provider call: while a world is in force the Desk's gateway
+answers every provider read from it, and approved actions are applied to it.
+
+`python backend/dev/seeded_desk_server.py --demo` gives the seeded users
+Alice and Bob a world each, with mail for every case in section 6 and the
+intake worker on.
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /desk/sandbox` | The caller's world: accounts, counts, every operation executed in it (`{seq, at, op, status, object_id, error, simulated: true}`), and `isolationViolations` (must be empty). 404 when the backend has no world for the caller |
+| `POST /desk/sandbox/deliver` `{provider?, from_addr, subject, body, thread_id?}` | Put a synthetic message in the caller's own sandbox mailbox. It is not taken in by this call: the worker, or a sweep, finds it like any mail |
+
+`op` is one of `email.send`, `email.draft`, `calendar.create_event`,
+`calendar.update_event`, `calendar.cancel_event`, `task.create`,
+`reminder.create`, `followup.close`.
+
+## 10. Sandbox evaluation routes: `/desk/eval/v1` (Tested with the harness's own runner)
+
+Present only in a process started with `DESK_EVAL_SANDBOX=on` (the seeded dev
+backend sets it). They implement the five calls of contract 1.1.0
+(`docs/frontend/API_CONTRACT.md`) that the evaluation runner makes:
+`GET /meta`, `POST /evaluation/runs`, `GET /runs/{id}`, `GET /approvals`,
+`POST /approvals/{id}/decision`, with the `X-Executive-Desk-Contract` header.
+
+What runs: the real Desk workflow, Scriba's card validation and approve path,
+the Desk's safeguards and execution gate. What is replaced: the providers.
+Each case gets its own world built from the case's own `context` (calendar,
+tasks, awaited replies, clock, faults) and `input`. No case id is inspected
+and no expected answer exists in the backend.
+
+Things a harness should know:
+
+- `meta.agent` is `"real"` only when a model is configured. Without one the
+  Desk still runs, on rules alone, and reports `"scripted"`: its results are
+  not the product's and the harness labels them simulated.
+- `meta.sandbox` is always true. `meta.desk.isolation` reports the tripwire
+  and its violation count; each run carries `sandbox.isolationViolations`.
+- `input.kind: "conversation"` is **not supported**: the run ends `failed`
+  with `error.code: "conversation_input_unsupported"`. It is never faked.
+  `capabilities.chat` is false.
+- Internal writes (`task.create`, `reminder.create`) run without an approval
+  in an evaluation world, as contract 1.1.0 requires; they are still simulated.
+  In the product they need an approval. `meta.desk.internalWrites` says which.
+- A card the Desk holds (`needs_info`) is not offered as an approval: it
+  cannot be approved as it stands. Its action is `skipped` and the run ends
+  `completed` with outcome `escalated`.
+- All timestamps of a run are on the case's clock (`context.now`), which is
+  fixed; order within a run is `sequence`.
+- `usage` is null unless a model call was recorded.
+
+## 11. Environment
+
+Read by the Desk only. None of these is a credential.
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `DESK_CHAT_SCOPE` | `on`: narrow Scriba's chat to the Desk's tools for the whole process | off (the seeded dev backend: on) |
+| `DESK_CLAIMS` | `scriba`, `sqlite:<path>` or `memory` | `scriba` (the seeded dev backend: `memory`) |
+| `DESK_INTAKE_WORKER`, `DESK_INTAKE_USERS` | `on`, and the Scriba users the worker serves | off |
+| `DESK_INTAKE_INTERVAL`, `DESK_INTAKE_MAX_NEW`, `DESK_INTAKE_MAX_PER_HOUR`, `DESK_INTAKE_MAX_PENDING` | Seconds between ticks (min 15), runs per user per tick, per hour, and the number awaiting the person at which intake pauses | 60, 3, 30, 20 |
+| `DESK_MODEL` | `off`: the Desk makes no model call, whatever Scriba is configured with. A placeholder key (`test-key`) is never treated as a model | `auto` (the seeded dev backend: `off`) |
+| `DESK_AGENT` | `on`: the bounded model step | off |
+| `DESK_EVAL_SANDBOX` | `on`: mount `/desk/eval/v1` | off (the seeded dev backend: on) |
+| `DESK_EXTERNAL_WRITES`, `DESK_EXTERNAL_WRITES_AUTHORIZED_BY`, `DESK_ISOLATED_PROVIDER_TEST_REPORT` | The lead's switch and the record of isolated provider tests. Necessary, not sufficient (section 8) | unset |

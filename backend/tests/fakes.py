@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
@@ -49,6 +50,8 @@ class FakeGateway:
         # A model exists by default; what it answers is ``meeting_plan``.
         self.model_available = True
         self.model_calls: List[Dict[str, Any]] = []
+        self.model_script: List[Any] = []
+        self._usage: Optional[List[Dict[str, Any]]] = None
 
     def add_user(self, user_id: int, address: str, *, google: Optional[List[str]] = None,
                  outlook: Optional[str] = None, gmail_mail: bool = False, outlook_mail: bool = False,
@@ -103,6 +106,28 @@ class FakeGateway:
 
     def model_configured(self) -> bool:
         return self.model_available
+
+    # A scripted model: ``model_script`` holds its answers, in order.
+    def model_json(self, messages: List[Dict[str, str]], *, max_tokens: int = 900) -> Dict[str, Any]:
+        self.model_calls.append({"messages": messages})
+        if self._usage is not None:
+            self._usage.append({"model": "scripted-model", "inputTokens": 100, "outputTokens": 20,
+                                "cachedInputTokens": None, "costUsd": None, "priceSource": None})
+        script = getattr(self, "model_script", [])
+        if not script:
+            raise RuntimeError("the model is unavailable")
+        answer = script.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    @contextmanager
+    def model_usage(self):
+        self._usage = []
+        try:
+            yield self._usage
+        finally:
+            self._usage = None
 
     def session_email(self, request: Any) -> Optional[str]:
         from desk_overlay.gateway import acting_user

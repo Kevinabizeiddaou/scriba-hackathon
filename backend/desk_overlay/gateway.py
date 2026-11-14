@@ -365,6 +365,17 @@ class ScribaGateway:
         except Exception:
             return False
 
+    def model_json(self, messages: List[Dict[str, str]], *, max_tokens: int = 900) -> Dict[str, Any]:
+        """One structured call through Scriba's model gateway: its provider,
+        its policy for the chat feature, its retries and its telemetry."""
+        from app import llm_client
+
+        if not self.model_configured():
+            raise RuntimeError("no model is configured for the Desk")
+        return llm_client._openai_request({
+            "feature": "chat", "messages": messages, "max_tokens": max_tokens,
+            "response_format": {"type": "json_object"}})
+
     @contextmanager
     def model_usage(self) -> Iterator[List[Dict[str, Any]]]:
         """Collect the model calls made inside the block.

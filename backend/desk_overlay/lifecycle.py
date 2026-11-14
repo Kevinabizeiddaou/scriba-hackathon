@@ -246,6 +246,13 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
         else:
             stage = "COMPLETED"
 
+    if stage == "COMPLETED" and actions and held and str(held.get("reason")) not in ALREADY_DONE_REASONS \
+            and all(a.get("purpose") == "record_task" for a in actions if a.get("status") in EXECUTED):
+        # Something else in the message was recorded, and what the hold is
+        # about was never dealt with (no reply, no question, no change). A
+        # recorded task does not answer a meeting request.
+        reason = str(held.get("reason") or "")
+        stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
     if stage == "COMPLETED" and (held is None or str(held.get("reason")) not in ALREADY_DONE_REASONS) \
             and any(not entry["resolved"] for entry in unresolved_of(meta, events)):
         # Everything the Desk proposed is done, and the message asked for

@@ -20,15 +20,16 @@ do not depend on what the request is about.
 """
 from __future__ import annotations
 
+import datetime as dt
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from . import reading
 
 _SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
 _GREETING = re.compile(r"^\s*(?:hi|hello|hey|dear|good (?:morning|afternoon|evening))\b[^,\n]{0,40},?\s*$", re.I)
 _SIGN_OFF = re.compile(r"^\s*(?:thanks|thank you|many thanks|best|best regards|kind regards|regards|cheers|"
-                       r"yours|sincerely|warm regards|all the best)\b[\s,!.]*(?:[A-Z][\w.'-]*\s*){0,3}$", re.I)
+                       r"yours|sincerely|warm regards|all the best)\b[\s,!.]*(?-i:(?:[A-Z][\w.'-]*\s*){0,3})$", re.I)
 _QUOTED = re.compile(r"^\s*(?:>|on .{0,80} wrote:|from:|sent:|-{2,}\s*original message)", re.I)
 
 # The forms a request to the reader takes.
@@ -100,7 +101,49 @@ def sentences(text: Any) -> List[str]:
         if not line.strip() or _GREETING.match(line):
             continue
         kept.extend(part.strip() for part in _SENTENCE.split(line) if part.strip())
-    return [s for s in kept if len(re.findall(r"[A-Za-z]{2,}", s)) >= 2 and not _BOILERPLATE.search(s)]
+    # Words in any script: a message in Arabic is still a message.
+    return [s for s in kept if len(re.findall(r"[^\W\d_]{2,}", s)) >= 2 and not _BOILERPLATE.search(s)]
+
+
+# Words an English sentence can hardly do without. Their absence from a
+# message of some length means these rules cannot read it at all.
+_FUNCTION_WORDS = frozenset("""
+    the a an and or but to of in on at for from with by is are was were be been it this that these those
+    i you we he she they me us my your our his her their not no yes will would can could should have has had do does
+    please thanks thank as if so
+""".split())
+
+
+def readable(text: Any) -> bool:
+    """Whether these rules can read the message. They read English; a message
+    with almost none of English's small words is in another language, and
+    what it asks is then UNKNOWN, never "nothing"."""
+    words = re.findall(r"[^\W\d_]+", " ".join(sentences(text)).lower())
+    if len(words) < 4:
+        return True
+    known = sum(1 for word in words if word in _FUNCTION_WORDS)
+    return known / len(words) >= 0.12
+
+
+def _calendar_wish(sentence: str) -> Optional[str]:
+    """``new``, ``reschedule`` or ``cancel`` when the sentence is about the
+    calendar: it asks to meet, move or cancel, or it asks about a day AND a
+    time. Such a sentence is never recorded as a task."""
+    signal = reading.meeting_signal("", sentence)
+    if signal:
+        return signal
+    if reading._CANCEL.search(sentence):
+        return "cancel"
+    if reading._MOVE.search(sentence):
+        return "reschedule"
+    lowered = sentence.lower()
+    times, _ = reading._times(lowered)
+    if times and reading._days(lowered, dt.date(2026, 1, 5)) and sentence.rstrip().endswith("?") \
+            and not _DEADLINE_MARK.search(sentence):
+        return "new"                       # "would you have half an hour on Tuesday at 11:00?"
+    if reading._MEET_VERB.search(sentence) and reading._MEETING_NOUN.search(sentence):
+        return "new"
+    return None
 
 
 def _clauses(sentence: str) -> List[str]:
@@ -126,7 +169,7 @@ def units(subject: Any, text: Any) -> List[Dict[str, Any]]:
     asks to be answered) or ``action`` (anything else to do)."""
     found: List[Dict[str, Any]] = []
     for sentence in sentences(text):
-        scheduling = reading.meeting_signal("", sentence)
+        scheduling = _calendar_wish(sentence)
         if not scheduling and not is_ask(sentence):
             continue
         if scheduling:
@@ -176,6 +219,8 @@ def no_work_established(subject: Any, text: Any) -> bool:
     the message says so, or it is a bare acknowledgement. A message that
     asks anything, or says something is still outstanding, is never "no work"."""
     own = sentences(text)
+    if not readable(text):
+        return False                        # another language: what it asks is not known
     if any(unit["kind"] in ("scheduling", "action") for unit in units(subject, text)):
         return False
     whole = f"{subject or ''}\n" + " ".join(own)
@@ -187,5 +232,9 @@ def no_work_established(subject: Any, text: Any) -> bool:
     # "Thanks, received." and nothing else. A message that says something is
     # STILL outstanding is not this, however short: someone may be waiting on
     # the reader (a holding reply counts only against a wait the Desk knows).
-    return words <= 14 and (not own or bool(_ACKNOWLEDGES.search(" ".join(own)))) \
-        and not _DEFERS.search(" ".join(own))
+    if not own:
+        # Nothing but a greeting and a sign-off ("Thanks, Imogen"), or truly
+        # empty. A body these rules could not keep is not "nothing".
+        lines = [line.strip() for line in str(text or "").splitlines() if line.strip()]
+        return all(_GREETING.match(line) or _SIGN_OFF.match(line) or len(line.split()) <= 3 for line in lines)
+    return words <= 14 and bool(_ACKNOWLEDGES.search(" ".join(own))) and not _DEFERS.search(" ".join(own))

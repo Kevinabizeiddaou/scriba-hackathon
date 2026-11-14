@@ -294,3 +294,47 @@ def test_a_question_that_begins_remind_me_is_not_a_reminder_to_set(desk):
     assert not reading.reminder_request("Remind me, which quay did we settle on for the Altair?")
     assert reading.reminder_request("Remind me on Wednesday at 09:00 to ring the chairman.")
     assert reading.reminder_request("Please remind yourself to bring the survey.")
+
+
+# ── found by running the lab on the integrated tree ─────────────────────────
+
+@pytest.mark.parametrize("body", [
+    "أعتذر، لا أستطيع الحضور يوم الخميس. يرجى تأجيل اللقاء إلى الأسبوع القادم.",
+    "Je ne pourrai pas venir jeudi. Merci de reporter notre rendez-vous à la semaine prochaine.",
+    "Leider schaffe ich es am Donnerstag nicht. Bitte verschieben Sie unser Treffen auf nächste Woche.",
+])
+def test_a_message_the_rules_cannot_read_is_handed_over_not_filed(desk, body):
+    run = deliver(desk, body, subject="Jeudi")
+    assert run["actions"] == [] and run["lifecycle"]["stage"] != "COMPLETED"
+    assert requests.readable(body) is False
+    assert requests.readable("The harbour office is shut on Thursday, so we will meet at the depot.") is True
+
+
+def test_a_question_about_a_day_and_a_time_is_the_meeting_request_not_extra_work(desk):
+    asked = requests.units("Berth", "Would you have half an hour on Tuesday at 10:00 for the berth plan?")
+    assert [(u["kind"], u.get("intent")) for u in asked] == [("scheduling", "new")]
+    # ...while a deadline that happens to name a day and an hour is work, not a meeting.
+    work = requests.units("Berth", "Please also forward the tide tables to the pilots by Monday noon.")
+    assert [(u["kind"], u["separate"]) for u in work] == [("action", True)]
+    assert requests.units("Depot", "The depot passed its fire inspection this morning.") == []
+
+
+def test_a_request_to_change_another_meeting_is_never_recorded_as_a_task(desk):
+    desk.gateway.model_available = False
+    desk.world().deliver(
+        message_id="k1", from_addr=SOFIA, subject="Berth", thread_id="T-k1",
+        body="Could we meet on Tuesday at 10:00 for an hour? Please also call off your pilots' briefing to free the slot.")
+    run = desk.intake("k1").json()
+    assert not [a for a in run["actions"] if a["tool_name"] in ("create_task", "cancel_calendar_event")]
+    assert [u["why"] for u in run["unresolved"]] == ["second_scheduling_request"]
+
+
+def test_recording_a_task_does_not_complete_a_run_whose_meeting_request_is_held():
+    from desk_overlay import lifecycle
+
+    meta = {"held": {"reason": "event_not_found"}}
+    task = {"status": "executed", "purpose": "record_task", "verified": True, "verification": {"verified": True}}
+    assert lifecycle.derive(meta, [task], [])["stage"] == "NEEDS_CLARIFICATION"
+    reply = {"status": "executed", "purpose": "clarify", "verified": True, "verification": {"verified": True}}
+    assert lifecycle.derive(meta, [task, reply], [])["stage"] == "COMPLETED"
+    assert lifecycle.derive({"held": {"reason": "task_exists"}}, [task], [])["stage"] == "COMPLETED"

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd frontend && npm ci",
+  "buildCommand": "cd frontend && VITE_API_BASE_URL=/api npm run build",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://RAILWAY_API_HOST/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -896,6 +896,16 @@ class RoutedGateway:
         found = world.file(file_id) if world is not None else None
         return found["content"] if found and found["origin"] == "attachment" else None
 
+    def keep_file(self, user: Any, *, filename: str, content: bytes, mime_type: str,
+                  extension: str) -> Optional[Dict[str, Any]]:
+        """Keep a new file in the caller's own records. None where this
+        backend keeps no files for the Desk (a real one, today). Raises
+        SandboxFault when the world's store is set to fail."""
+        world = self.world_for(user)
+        if world is None:
+            return None
+        return world.store_generated(filename=filename, content=content, mime_type=mime_type, extension=extension)
+
     def stored_file(self, user: Any, file_id: str) -> Optional[Dict[str, Any]]:
         """A file of the caller's own world, with its bytes. None for anyone else's."""
         world = self.world_for(user)

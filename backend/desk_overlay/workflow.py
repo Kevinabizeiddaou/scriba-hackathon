@@ -36,6 +36,8 @@ from typing import Any, Dict, List, Mapping, Optional
 from . import lifecycle, planning, plans, reading, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
+from .commands import Commands, reply_text
+from .memory import Memory
 from .service import DeskService, NotFound
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -47,11 +49,21 @@ _OPEN = ("pending", "needs_info", "draft", "awaiting_approval", "approved", "exe
 # Messages a sweep opens a run for. Informational and automated mail is left alone.
 SWEEP_CATEGORIES = ("meeting_request", "action_item", "needs_reply")
 SWEEP_MAX_NEW = 5
-TRIGGERS = ("manual", "sweep", "worker", "evaluation")
+TRIGGERS = ("manual", "sweep", "worker", "evaluation", "chat")
 # How long the Desk waits for an answer before it proposes a reminder.
 FOLLOW_UP_DAYS = 2
 EVENT_SEARCH_DAYS = 45
-REPLY_PURPOSES_AWAITING = ("offer_times", "clarify", "nudge")
+# A reminder (nudge) is not a new wait: it belongs to the follow-up it chases.
+REPLY_PURPOSES_AWAITING = ("offer_times", "clarify")
+
+
+# A person saying outright that nothing is asked of the reader.
+_NEWS = re.compile(
+    r"\b(?:fyi|for (?:your )?info(?:rmation)?|no (?:further )?action (?:is )?(?:needed|required|necessary)|"
+    r"nothing (?:is )?(?:needed|required) (?:from|of) you|no need to (?:reply|respond|do anything)|"
+    r"just (?:an update|a heads[- ]up|to let you know|keeping you (?:posted|in the loop)|so you know)|"
+    r"for the record|keeping you (?:posted|in the loop)|thank you|thanks(?: again)?|"
+    r"received,? (?:with )?thanks|noted|sounds good|see you (?:then|there|on))\b", re.I)
 
 
 class IntakeBusy(RuntimeError):
@@ -91,6 +103,8 @@ class DeskWorkflow:
         # model is really configured: one structured call reads the message's
         # intents. With it off, the rules and Scriba's extraction do.
         self.model_understanding = False
+        self.commands = Commands(self)
+        self.memory = Memory(self)
         self._locks: Dict[str, Any] = {}
         self._locks_guard = threading.Lock()
 
@@ -114,8 +128,26 @@ class DeskWorkflow:
         world = world_for(user) if callable(world_for) else None
         return bool(world is not None and world.evaluation)
 
+    def runs_in_scope(self, user: Any, limit: int = 50) -> List[Dict[str, Any]]:
+        """The user's runs in the world now in force (their real accounts, or
+        one sandbox world). Work done in one world is never read as history
+        in another."""
+        world = self._world_id(user)
+        try:
+            runs = self.gateway.list_runs(user, 200, include_evaluation=self._is_evaluation(user))
+        except TypeError:
+            runs = self.gateway.list_runs(user, 200)
+        return [run for run in runs if run["meta"].get("sandbox") == world][:limit]
+
     def _record(self, user: Any, run: Dict[str, Any], kind: str, data: Dict[str, Any]) -> None:
         lifecycle.record(self.gateway, user, run, kind, data, at=self.service.now(user).isoformat())
+
+    # ── an instruction from the executive ───────────────────────────────────
+    def command(self, ctx: Any, user: Any, text: str, *, request_id: Optional[str] = None,
+                trigger: str = "chat") -> Dict[str, Any]:
+        """Open a run for work the executive asked for in their own words.
+        See ``commands.py``. Proposes; sends nothing and changes no calendar."""
+        return self.commands.run(ctx, user, text, request_id=request_id, trigger=trigger)
 
     # ── intake ──────────────────────────────────────────────────────────────
     def intake(self, ctx: Any, user: Any, *, provider: str, item_id: str,
@@ -237,6 +269,7 @@ class DeskWorkflow:
             "stepId": proposal.get("stepId"), "binding": _binding(proposal["tool_name"], (card or {}).get("input")
                                                                or proposal["tool_input"]),
             "purpose": proposal.get("purpose"), "reason": proposal.get("reason"),
+            "followUpId": proposal.get("followUpId"), "target": proposal.get("target"),
             "proposedSlots": proposal.get("proposedSlots"),
             "status": (card or {}).get("status")})
         self._auto_approve_internal(user, run, proposal["tool_name"], card)
@@ -288,6 +321,25 @@ class DeskWorkflow:
             # and nothing is proposed on the strength of a message carrying it.
             return self._hand_over_untrusted(plan, source="rules")
 
+        try:
+            earlier = self.memory.earlier_same_request(ctx, user, item, self.thread_context(user, item, detail))
+        except Exception:
+            earlier = None                  # history unreadable: handle the message on its own
+        if earlier is not None:
+            # The same sender already asked for this in this conversation and
+            # the Desk has it. A second copy must not become a second action.
+            plan["flags"].append("duplicate")
+            reason = "already_in_progress" if earlier["open"] else "already_handled"
+            plan["held"] = {
+                "reason": reason, "slots": [], "calendars": [],
+                "target": {"runId": earlier["runId"], "messageId": earlier["messageId"], "stage": earlier["stage"]},
+                "message": "This repeats a request the same sender already made in this conversation, "
+                           + ("which is being handled." if earlier["open"] else "which was handled.")
+                           + " Nothing new is proposed."}
+            plan["decisions"].append({"decision": "none", "reason": reason, "earlierRunId": earlier["runId"],
+                                      "explanation": "The request repeats one already taken in."})
+            return plan
+
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
         plan["understanding"] = found
@@ -308,6 +360,16 @@ class DeskWorkflow:
             plan["decisions"].append({"decision": "escalate", "reason": "reply_needs_author",
                                       "explanation": "This needs a reply in your words. A draft can "
                                                      "be prepared for you to review."})
+        elif triage["category"] == "informational" and not self._is_plainly_news(item, plan):
+            # Written by a person, and the rules cannot say what it needs.
+            # Filing it as dealt with would hide it: it is handed over.
+            plan["held"] = {
+                "reason": "needs_review", "slots": [], "calendars": [],
+                "message": "This was written by a person and it is not clear what, if anything, it "
+                           "needs from you. It was not filed as dealt with: read it and decide."}
+            plan["decisions"].append({"decision": "escalate", "reason": "needs_review",
+                                      "explanation": "The Desk could not place this message, so it "
+                                                     "was handed to you instead of being filed."})
         else:
             plan["decisions"].append({"decision": "none", "reason": triage["category"],
                                       "explanation": "No action is needed for this message."})
@@ -319,6 +381,16 @@ class DeskWorkflow:
                 plan["decisions"].append({"decision": "agent_unavailable", "reason": type(exc).__name__,
                                           "explanation": "The model could not be used; the plan above "
                                                          "is rule-based."})
+        asked = {str(i.get("type")) for i in found.get("intents") or []
+                 if (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE}
+        if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
+                and plan["held"] is None and not plan["proposals"] and not plan.get("task_updates"):
+            # A reply is needed and none was drafted. That is not "done":
+            # the message is handed to the person, who writes it.
+            plan["held"] = {
+                "reason": "reply_needs_author", "slots": [], "calendars": [],
+                "message": "This needs a reply in your words, and none could be drafted from what "
+                           "the Desk can verify. It is yours to answer."}
         return plan
 
     @staticmethod
@@ -335,6 +407,35 @@ class DeskWorkflow:
             decision["evidence"] = list(evidence)
         plan["decisions"].append(decision)
         return plan
+
+    @staticmethod
+    def _time_in_doubt(intent: Mapping[str, Any], now: dt.datetime) -> Optional[str]:
+        """Why a scheduling intent's time must not be used, or None."""
+        details = intent.get("details") or {}
+        if not details.get("requested_start"):
+            return None
+        for missing in intent.get("missing") or []:
+            if re.search(r"\b(which|when|date|day)\b|\btime\b(?!\s*zone)", str(missing), re.I) \
+                    and not re.search(r"\b(duration|length|end)\b", str(missing), re.I):
+                return ("The reader gave a time and also reported the time as unclear "
+                        f"(\"{missing}\"), so it was not used.")
+        if intent.get("type") == "new_meeting":
+            quoted = " ".join(str(quote) for quote in intent.get("evidence") or []).lower()
+            days = reading._days(quoted, now.date())
+            times, written_range = reading._times(quoted)
+            if len(set(days)) > 1 or (len(set(times)) > 1 and not written_range):
+                return "The message names more than one day or time for this meeting, so none was picked."
+        return None
+
+    @staticmethod
+    def _is_plainly_news(item: Mapping[str, Any], plan: Mapping[str, Any]) -> bool:
+        """"No action" has to be earned: the message says it is for
+        information, or the Desk already recorded what it reports (a task it
+        finished, an awaited answer it brought)."""
+        if plan.get("task_updates") or plan.get("closed_follow_ups"):
+            return True
+        text = f"{item.get('subject') or ''}\n{item.get('body') or item.get('snippet') or ''}"
+        return bool(_NEWS.search(text))
 
     def thread_context(self, user: Any, item: Mapping[str, Any],
                        detail: Mapping[str, Any]) -> List[Dict[str, Any]]:
@@ -421,6 +522,16 @@ class DeskWorkflow:
                     continue
                 scheduled = True
                 wanted = {"new_meeting": "new", "reschedule": "reschedule", "cancellation": "cancel"}[kind]
+                doubt = self._time_in_doubt(intent, self.service.now(user))
+                if doubt and kind != "cancellation":
+                    # The reader named a time AND said the time is unclear, or
+                    # quoted two days or two times for one meeting. Picking
+                    # one is a guess; the sender is asked instead.
+                    intent = {**intent, "details": {key: value for key, value in details.items()
+                                                    if key not in ("requested_start", "requested_end")}}
+                    plan.setdefault("missing", []).append("which time")
+                    plan["decisions"].append({"decision": "hold", "reason": "time_ambiguous",
+                                              "explanation": doubt})
                 # The rules' reading is the floor: a change request stays one.
                 if floor in ("reschedule", "cancel"):
                     wanted = floor
@@ -1125,7 +1236,13 @@ class DeskWorkflow:
                         continue
                     if step["state"] == "ready":
                         source = next((c for c in cards if c.get("id") == by_id[step["dependsOn"][0]]["toolCallId"]), None)
-                        if source is not None:
+                        if source is None:
+                            continue
+                        if step.get("purpose") == "notify":
+                            self.commands.propose_notification(user, run, source, step)
+                        elif (step.get("pending") or {}).get("tool_name"):
+                            self._propose(user, run, {**step["pending"], "stepId": step["id"]})
+                        else:
                             self._propose_confirmation(user, run, source, step["id"])
                     elif step["state"] == "blocked" and step["id"] not in blocked:
                         self._record(user, run, "decision", {
@@ -1188,6 +1305,8 @@ class DeskWorkflow:
         close it when the answer arrives; mark it overdue, and propose a
         reminder for approval, when it does not. Never sends anything."""
         meta = run["meta"]
+        if meta.get("kind") == "command":
+            return      # a reminder sent from an instruction belongs to the follow-up it chases
         events = self.gateway.run_events(user, run)
         cards = self.gateway.run_cards(user, run)
         purposes = self._purposes(user, run, events)
@@ -1202,9 +1321,13 @@ class DeskWorkflow:
             if (card["tool_name"] == "send_email" and card["status"] in _DONE
                     and purpose in REPLY_PURPOSES_AWAITING and follow_id not in known):
                 data = card.get("input") or {}
-                opened = {"id": follow_id, "state": "waiting", "toolCallId": card.get("id"),
-                          "threadId": data.get("thread_id") or meta.get("thread_id"),
-                          "waitingOn": sender_address(str(data.get("to") or meta.get("from_addr") or "")),
+                thread = data.get("thread_id") or meta.get("thread_id")
+                person = sender_address(str(data.get("to") or meta.get("from_addr") or ""))
+                if any(f.get("state") in ("waiting", "overdue", "escalated") and f.get("threadId") == thread
+                       and f.get("waitingOn") == person for f in known.values()):
+                    continue        # one wait per person and conversation, however many replies went out
+                opened = {"id": follow_id, "state": "waiting", "kind": "reply", "toolCallId": card.get("id"),
+                          "threadId": thread, "waitingOn": person,
                           "subject": meta.get("subject"),
                           # When the send executed, where that was recorded.
                           "sentAt": executed_at.get(card.get("id")) or now.isoformat(),
@@ -1216,6 +1339,9 @@ class DeskWorkflow:
         waiting = [f for f in known.values() if f.get("state") in ("waiting", "overdue")]
         if not waiting:
             return
+        nudge_of = {(e.get("data") or {}).get("followUpId"): (e.get("data") or {}).get("toolCallId")
+                    for e in events if e.get("kind") == "proposal" and (e.get("data") or {}).get("followUpId")}
+        by_id = {card.get("id"): card for card in cards}
         try:
             sources, rows = self.service.read_mail(ctx, user, [meta["provider"]], 100, None)
         except Exception:
@@ -1236,6 +1362,20 @@ class DeskWorkflow:
                     "satisfiedAt": answer.get("timestamp")})
                 continue
             due = _moment(follow.get("dueAt"))
+            nudge = by_id.get(nudge_of.get(follow["id"]))
+            if follow.get("state") == "overdue" and nudge is not None and nudge["status"] in _DONE:
+                # One reminder went out. If that brings no answer either, the
+                # Desk does not write a third time: it is the person's now.
+                # When it went out: the execution record; failing that, when
+                # the wait was last recorded (it became overdue then).
+                reminded = (_moment(executed_at.get(nudge.get("id"))) or _moment(follow.get("updatedAt"))
+                            or now)
+                if now > reminded + dt.timedelta(days=FOLLOW_UP_DAYS):
+                    self._record(user, run, "followup", {
+                        "id": follow["id"], "state": "escalated", "nudges": 1,
+                        "lastNudgeAt": reminded.isoformat(),
+                        "reason": "no_answer_after_reminder"})
+                continue
             if follow.get("state") == "waiting" and due is not None and now > due:
                 self._record(user, run, "followup", {"id": follow["id"], "state": "overdue"})
                 item = {"provider": meta["provider"], "from_addr": meta.get("from_addr"),
@@ -1243,7 +1383,7 @@ class DeskWorkflow:
                         "provider_account_id": meta.get("provider_account_id"), "id": meta.get("email_id")}
                 # A reminder is PROPOSED. Chasing someone is the person's call.
                 self._propose(user, run, {
-                    "tool_name": "send_email", "purpose": "nudge",
+                    "tool_name": "send_email", "purpose": "nudge", "followUpId": follow["id"],
                     "reason": "No answer arrived by the follow-up date.",
                     "tool_input": self._reply_input(item, planning.nudge_reply(
                         subject=str(meta.get("subject") or "")))})
@@ -1253,25 +1393,81 @@ class DeskWorkflow:
         known = {f["id"]: f for f in lifecycle.follow_ups(self.gateway.run_events(user, run))}
         if follow_id not in known:
             raise NotFound("Follow-up not found.")
-        if known[follow_id].get("state") in ("waiting", "overdue"):
+        if known[follow_id].get("state") in ("waiting", "overdue", "escalated"):
             self._record(user, run, "followup", {"id": follow_id, "state": "closed", "by": user.email})
         return self.view(ctx, user, run_id)
 
     def follow_ups(self, ctx: Any, user: Any, *, refresh: bool = True, limit: int = 50) -> Dict[str, Any]:
-        """Every follow-up across the user's runs, newest run first."""
+        """Everything the executive is waiting on, from records.
+
+        - replies awaited on mail the Desk sent (kept on the run that sent it);
+        - replies awaited that the Desk did not open (``source: "external"``:
+          a world can be seeded with them);
+        - the executive's own tasks whose date has passed (``overdueTasks``).
+
+        Each follow-up says how many reminders went out for it (``nudges``)
+        and whether one is waiting for approval (``nudgePending``), counted
+        from the action cards of every run, so nothing is chased twice.
+        """
+        now = self.service.now(user)
         found: List[Dict[str, Any]] = []
-        for run in self.gateway.list_runs(user, limit):
+        nudges: Dict[str, Dict[str, Any]] = {}
+        for run in self.runs_in_scope(user, limit):
             if refresh:
                 try:
                     with self._lock(run["meta"]["key"]):
                         self._track_follow_ups(ctx, user, run)
                 except Exception:
                     pass
-            for follow in lifecycle.follow_ups(self.gateway.run_events(user, run)):
-                found.append({**follow, "runId": run["id"]})
+            events = self.gateway.run_events(user, run)
+            cards = {card.get("id"): card for card in self.gateway.run_cards(user, run)}
+            for item in events:
+                data = item.get("data") or {}
+                if item.get("kind") != "proposal" or not data.get("followUpId"):
+                    continue
+                card = cards.get(data.get("toolCallId")) or {}
+                entry = nudges.setdefault(str(data["followUpId"]), {"sent": 0, "pending": False, "lastAt": None})
+                if card.get("status") in _EFFECT:
+                    entry["sent"] += 1
+                    entry["lastAt"] = next((e.get("at") for e in reversed(events)
+                                            if e.get("kind") == "execution"
+                                            and (e.get("data") or {}).get("toolCallId") == card.get("id")), None)
+                elif card.get("status") in _OPEN:
+                    entry["pending"] = True
+            for follow in lifecycle.follow_ups(events):
+                found.append({"kind": "reply", **follow, "runId": run["id"], "source": "desk"})
+        waiting = getattr(self.gateway, "waiting_follow_ups", None)
+        for follow in (waiting(user) if callable(waiting) else []):
+            awaited = follow.get("waitingOn") or {}
+            due = _moment(follow.get("expectedBy"))
+            found.append({
+                "id": str(follow.get("id")), "kind": "reply", "source": "external", "runId": None,
+                "state": "overdue" if due is not None and now > due else "waiting",
+                "waitingOn": str(awaited.get("email") if isinstance(awaited, dict) else awaited or "").lower(),
+                "waitingOnName": awaited.get("name") if isinstance(awaited, dict) else None,
+                "threadId": follow.get("threadId"), "subject": follow.get("subject"),
+                "sentAt": follow.get("sentAt"), "dueAt": follow.get("expectedBy")})
+        for follow in found:
+            sent = nudges.get(str(follow.get("id"))) or {}
+            follow["nudges"] = int(sent.get("sent") or follow.get("nudges") or 0)
+            follow["nudgePending"] = bool(sent.get("pending"))
+            follow.setdefault("lastNudgeAt", sent.get("lastAt"))
+            reminded = _moment(follow.get("lastNudgeAt")) or _moment(follow.get("updatedAt"))
+            if follow["state"] == "overdue" and follow["nudges"] and reminded is not None:
+                # Reminded once: it waits again, and after that it is the person's.
+                follow["state"] = "escalated" if now > reminded + dt.timedelta(days=FOLLOW_UP_DAYS) else "waiting"
         counts = {state: sum(1 for f in found if f.get("state") == state)
-                  for state in ("waiting", "overdue", "satisfied", "closed")}
-        return {"account": user.email, "followUps": found, "counts": counts}
+                  for state in ("waiting", "overdue", "escalated", "satisfied", "closed")}
+        overdue_tasks: List[Dict[str, Any]] = []
+        try:
+            for task in self.gateway.open_tasks(ctx, user, 200):
+                due = _moment(task.get("due_at"))
+                if due is not None and now > due:
+                    overdue_tasks.append({"id": str(task.get("id")), "title": task.get("title"),
+                                          "dueAt": due.isoformat()})
+        except Exception:
+            overdue_tasks = []                  # unknown: not reported as "none overdue" either
+        return {"account": user.email, "followUps": found, "counts": counts, "overdueTasks": overdue_tasks}
 
     # ── reading a run ───────────────────────────────────────────────────────
     def _run(self, user: Any, run_id: int) -> Dict[str, Any]:
@@ -1334,6 +1530,7 @@ class DeskWorkflow:
             counts[status] = counts.get(status, 0) + 1
         view: Dict[str, Any] = {
             "runId": run["id"],
+            "kind": meta.get("kind") or "email",
             "duplicate": duplicate,
             "state": state,
             "lifecycle": stage,
@@ -1359,6 +1556,9 @@ class DeskWorkflow:
             view["actions"] = actions
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
+            if meta.get("kind") == "command":
+                view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
+                view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))
         return view
 
     def list_runs(self, ctx: Any, user: Any, limit: int = 50) -> List[Dict[str, Any]]:
@@ -1576,6 +1776,9 @@ def _action_view(card: Dict[str, Any], evidence: Dict[str, Any], meta: Dict[str,
         "purpose": proposal.get("purpose"),
         "reason": proposal.get("reason"),
         "stepId": proposal.get("stepId"),
+        # The existing event a calendar change is about, as it was when proposed.
+        "target": proposal.get("target"),
+        "followUpId": proposal.get("followUpId"),
         # Held by a guard: it cannot be approved as it stands.
         "held": held,
         # How many times execution was attempted (a retry is one more).

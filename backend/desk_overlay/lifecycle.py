@@ -37,7 +37,7 @@ EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
 OPEN = ("pending", "needs_info", "draft", "awaiting_approval")
 RUNNING = ("approved", "executing")
-ALREADY_DONE_REASONS = ("already_scheduled", "task_exists")
+ALREADY_DONE_REASONS = ("already_scheduled", "task_exists", "already_in_progress", "already_handled")
 CLARIFY_REASONS = ("time_not_understood", "event_ambiguous", "event_not_found", "intent_unclear",
                    "details_missing")
 
@@ -168,7 +168,7 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
     (the confirmation reply after a booking).
     """
     statuses = [str(action.get("status") or "") for action in actions]
-    waiting_on = [f for f in follow_ups(events) if f.get("state") in ("waiting", "overdue")]
+    waiting_on = [f for f in follow_ups(events) if f.get("state") in ("waiting", "overdue", "escalated")]
     held = meta.get("held") if isinstance(meta.get("held"), Mapping) else None
     unknown = any(action.get("outcomeUnknown") for action in actions)
     reason: Optional[str] = None

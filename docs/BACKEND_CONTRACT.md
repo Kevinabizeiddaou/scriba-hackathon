@@ -122,7 +122,7 @@ the secretary workflow on them yet.
 ## 4. Desk overlay endpoints (Tested on the seeded backend)
 
 These exist only when the backend runs with the Desk overlay
-([backend/README.md](../backend/README.md)), version 0.3.0. All need a
+([backend/README.md](../backend/README.md)), version 0.4.0 (what 0.4 added: section 12). All need a
 session, and all sit behind Scriba's own session and cross-site guards. The
 ones in this section are read-only. Types and client functions:
 `frontend/src/api/desk.ts`; fields added in 0.3 are optional there, so a
@@ -816,3 +816,218 @@ Read by the Desk only. None of these is a credential.
 | `DESK_AGENT` | `on`: the bounded model step | off |
 | `DESK_EVAL_SANDBOX` | `on`: mount `/desk/eval/v1` | off (the seeded dev backend: on) |
 | `DESK_EXTERNAL_WRITES`, `DESK_EXTERNAL_WRITES_AUTHORIZED_BY`, `DESK_ISOLATED_PROVIDER_TEST_REPORT` | The lead's switch and the record of isolated provider tests. Necessary, not sufficient (section 8) | unset |
+
+
+## 12. Overlay 0.4: the secretary's wider job (added after `8cff1f4`)
+
+Everything in this section is additive. No route was removed and no existing
+field changed its meaning, with two deliberate exceptions listed under
+"Changed behaviour". Same evidence as the rest: tested on the real Scriba
+application with providers replaced by a sandbox world; one real model
+(`gpt-6-luna`) measured in the sandbox; no live mailbox or calendar.
+
+### New routes
+
+| Method and path | Purpose | Type |
+| --- | --- | --- |
+| `POST /desk/commands` `{text, requestId?}` | Open a run for an instruction the signed-in person typed. Proposes cards; sends nothing. The same `requestId` returns the same run with `duplicate: true`. 400 for an empty text, 409 while another worker holds it | `DeskRun` with `kind: "command"` |
+| `GET /desk/memory?thread=&sender=` | What the Desk knows right now, read from records. Reads only | `DeskMemory` |
+| `POST /desk/runs/{runId}/task-updates/{taskId}/apply` | Mark done the task this run matched. Writes only the person's own Scriba records. Repeating it changes nothing. 404 when the run suggests no change to that task | `DeskRun` |
+| `POST /desk/runs/{runId}/task-updates/{taskId}/dismiss` | Dismiss that suggestion | `DeskRun` |
+
+`GET /desk/follow-ups` gained fields (below). `/desk/eval/v1` now runs cases
+whose `input.kind` is `conversation`, and `/meta` reports
+`capabilities.chat: true`.
+
+### New fields on `DeskRun` (all optional for a client written against 0.3)
+
+| Field | Meaning |
+| --- | --- |
+| `kind` | `"email"` or `"command"`. A command run has `email.email_id`, `email.thread_id` and `email.from_addr` null |
+| `command` | Command runs only: `{text, operations[]}`. `operations` is what was read: `reminder`, `task`, `reschedule`, `cancel`, `notify`, `chase_overdue` |
+| `assistantMessage` | Command runs only: one short paragraph in words, built from the run's own state. It says what executed, what waits for approval, what did not happen, and what will follow. It changes as the run advances |
+| `taskUpdates[]` | Existing tasks this run touched: `{taskId, title, op: "complete", state, source, matched[], verified, by, error}`. `state`: `suggested`, `completed`, `dismissed`, `failed` |
+| `trigger` | New value `"chat"` |
+| `next[]` | New value `"complete_task"`: a `taskUpdates` entry is `suggested` |
+| `actions[].target` | The existing event a calendar change is about, as it was when proposed: `{id, title, start, end, provider}` |
+| `actions[].followUpId` | On a reminder (`purpose: "nudge"`): the follow-up it chases |
+| `actions[].purpose` | New value `"notify"`: telling a meeting's attendees about a change the executive asked for |
+| `plan.steps[].pending` | On a deferred step: what will be proposed once the step it depends on took effect |
+| `followUps[].kind`, `.nudges`, `.lastNudgeAt`, `.reason` | See "Follow-ups as records" |
+
+New values of `lifecycle.reason` with `stage: "COMPLETED"`:
+`already_scheduled`, `task_exists`, `already_in_progress`, `already_handled`
+(a repeat, with `flags: ["duplicate"]` where the Desk recognised one),
+`task_completed`. With `stage: "ESCALATED"`: `task_completion_suggested`,
+`task_completion_failed`, and, from `held.reason`, `needs_review`.
+New `held.reason` values: `needs_review`, `already_in_progress`,
+`already_handled` (both with `held.target: {runId, messageId, stage}`).
+New evidence kind in `timeline[]`: `task`.
+
+### An instruction from the executive (`POST /desk/commands`)
+
+The text is read into operations by rules, or, with `DESK_UNDERSTANDING=model`
+and a configured model, by one structured call whose every operation must
+quote the instruction. Each operation is then planned by checked code:
+
+| Operation | What is proposed | Checks |
+| --- | --- | --- |
+| `reminder` | One `create_reminder` card | A time is needed. With none: `held.reason: "details_missing"` and the reply asks when. A reminder tied to the meeting this instruction moves, with no time of its own, is set one hour before the meeting and is a deferred step |
+| `task` | One `create_task` card | |
+| `reschedule` | One `update_calendar_event` card for the ORIGINAL event | The meeting is found on the calendar by the words used (a word in the title counts double a word in an attendee's address). None: `event_not_found`. More than one: `event_ambiguous` with `held.candidates[]`. Not the organizer: `not_organizer`. The new time is checked on every connected calendar; busy: `calendar_conflict`; unreadable: `availability_unknown`. The meeting keeps its length unless an end is given |
+| `cancel` | One `cancel_calendar_event` card | As above |
+| `notify` | A deferred `send_email` (`purpose: "notify"`) to the event's attendees | Proposed only after the calendar change took effect; `blocked` if it did not. **Recipients are the attendees on the calendar event, minus the executive's own addresses.** An address in the instruction or in a model's answer is never used |
+| `chase_overdue` | One `send_email` (`purpose: "nudge"`) per overdue follow-up, in its thread, to the person the follow-up record names | Only `state: "overdue"`. A follow-up already reminded, or with a reminder waiting for approval, gets none (`decision: already_chased`) |
+
+A bare hour is read as a working day is spoken: 8 to 12 as written, 1 to 7 as
+the afternoon, and that reading is listed in `plan.assumptions`. Two days or
+two times in a phrase are not read. An instruction the Desk cannot place:
+`held.reason: "intent_unclear"`, nothing proposed.
+
+Provenance of recipients on a command run: the addresses the planner took
+from calendar and follow-up RECORDS are stored on the run and accepted by the
+recipient check of section 7. Nothing else is. Every mail and calendar card
+still needs the person's approval through Scriba's approve route.
+
+### Finishing an existing task
+
+A message that says work is finished and asks for nothing (rules), or that a
+model reports as `work_done`, is matched to the executive's open tasks **by
+the message's own words**. Only when exactly one task has at least 60% of its
+title's words in the message, and no other task comes close, is a
+`taskUpdates` entry recorded. Two candidates: nothing is marked, and a
+`decision` with `reason: "task_match_ambiguous"` is recorded. A model's own
+words about which task it is are not used.
+
+- In a world whose policy lets the Desk keep the person's own records
+  (`auto_internal_writes`, the evaluation contract's rule for internal
+  tools), the task is completed at once (`by: "policy"`).
+- Otherwise the entry is `suggested`, `next` contains `complete_task`, the
+  run is `ESCALATED` with reason `task_completion_suggested`, and the person
+  applies or dismisses it with the two routes above.
+- `verified` is true when a read-back of the open tasks no longer shows it.
+  On a real Scriba backend completion goes through Scriba's own tasks
+  runtime (what `POST /tasks/{id}/complete` calls). That path is **not run
+  against a real database** here.
+
+### A request that repeats
+
+| Situation | Result |
+| --- | --- |
+| The sender is already on an event at the requested time | As before: no card, `held.reason: "already_scheduled"`, `flags: ["duplicate"]`. **Now `stage: "COMPLETED"`** |
+| An open task with the same title exists | As before: no card, `held.reason: "task_exists"`. **Now `stage: "COMPLETED"`** |
+| The same sender already asked for the same thing in this conversation, in nearly the same words, and the Desk took that message in | No card. `flags: ["duplicate"]`, `held.reason: "already_in_progress"` (the earlier run is still open) or `"already_handled"`, `held.target.runId` |
+| ...and the earlier run was rejected or failed | Not a repeat: asking again is a new request and is planned normally |
+
+"Nearly the same words" compares the words that carry the request (no
+greeting, no "resending in case this got buried", nothing quoted below);
+at least 80% must be shared.
+
+### Several requests in one message
+
+With model understanding on, each intent is planned separately (section 6).
+Two corrections: a task read beside a meeting takes its deadline from **its
+own sentence** (the intent's quote), never from the meeting's time, and has
+no deadline when its sentence names none; and a message the rules read as
+work (`category: "action_item"`) gets its task even when the model reported
+only a reply. Parts of the day are read as times: morning 09:00, noon 12:00,
+evening 18:00, otherwise 17:00.
+
+### The conversation so far
+
+The model's understanding call and the bounded model step are shown the
+thread oldest first, **including what the executive wrote** (read from sent
+mail), each entry marked `written_by_the_executive`. The bounded step is also
+shown `records`: meetings with the sender, open tasks, replies awaited from
+the sender, and what the Desk already did in this conversation. A part that
+could not be read is the string `"unknown"`, never an empty list. It may
+propose an acknowledgement for a request with a deadline, and a reply that
+points out a contradiction with what was agreed; it may never decide,
+approve or accept for the executive.
+
+### `DeskMemory` (`GET /desk/memory`)
+
+```json
+{
+  "account": "...", "asOf": "<instant>", "scope": {"threadId": null, "sender": null},
+  "meetings":  {"ok": true, "items": [{"id", "title", "start", "end", "attendees[]", "organizer", "provider"}]},
+  "tasks":     {"ok": true, "items": [{"id", "title", "dueAt", "overdue"}]},
+  "waiting":   {"ok": true, "items": [{"id", "kind", "state", "waitingOn", "subject", "threadId", "sentAt", "dueAt", "nudges", "nudgePending", "runId", "source"}]},
+  "pending":   {"ok": true, "items": [{"runId", "subject", "tool", "purpose", "status", "toolCallId", "start", "title"}]},
+  "done":      {"ok": true, "items": [ ...same shape, executed actions, with "verified"... ]},
+  "decisions": {"ok": true, "items": [{"runId", "subject", "at", "decision", "tool", "toolCallId", "fields"}]},
+  "runs":      {"ok": true, "items": [{"runId", "kind", "subject", "from", "threadId", "createdAt", "stage", "reason"}]}
+}
+```
+
+Every part is a read of stored data made when the route is called: Scriba's
+mirrored calendar, its tasks, and the evidence on the Desk's runs. Nothing is
+recalled by a model and nothing is cached between requests. A part that could
+not be read is `{"ok": false, "items": [], "error": "<type>"}`: **unknown is
+never shown as empty.** Meetings cover the next 14 days. `thread` narrows the
+run-derived parts to one conversation; `sender` narrows meetings to those the
+address is on. Scope: the caller, and the world in force (a sandbox world's
+history is never read as another world's).
+
+### Follow-ups as records
+
+`GET /desk/follow-ups` returns `{account, followUps[], counts, overdueTasks[]}`.
+
+| Field | Meaning |
+| --- | --- |
+| `followUps[].kind` | `"reply"` |
+| `followUps[].source` | `"desk"`: opened by a run when a reply that awaits an answer was sent (`runId` set). `"external"`: a wait the Desk did not open (a sandbox world can be seeded with them); `runId` is null |
+| `followUps[].state` | `waiting`, `overdue`, `escalated`, `satisfied`, `closed` |
+| `followUps[].nudges` | Reminders sent for it, counted from executed cards across the person's runs |
+| `followUps[].nudgePending` | A reminder for it is waiting for approval |
+| `counts` | Now includes `escalated` |
+| `overdueTasks[]` | The person's open tasks whose date has passed: `{id, title, dueAt}`. Empty when the tasks could not be read is NOT a statement that none is overdue |
+
+Transitions: `waiting` to `overdue` when `dueAt` passes (two days after the
+send); one reminder is then proposed for approval (in the run, or by
+`chase_overdue`); `overdue` to `escalated` when two more days pass after that
+reminder went out, with `reason: "no_answer_after_reminder"`: **the Desk
+never proposes a second reminder**; to `satisfied` when the awaited person
+answers in the thread, at any point; to `closed` by the person. One wait per
+person and conversation: a second reply to the same person in the same
+thread opens no second follow-up, and a reminder opens none either.
+
+### Mail that cannot be placed
+
+A message written by a person, which the rules class as `informational` and
+which neither says it is for information ("FYI", "no action needed", "just to
+let you know", a thank-you) nor reports something the Desk acted on, is no
+longer filed: `held.reason: "needs_review"`, `stage: "ESCALATED"`, no card.
+Automated and bulk mail is filed as before. With model understanding on, a
+model's `fyi` reading counts as earned.
+
+### Changed behaviour (the two exceptions)
+
+1. `already_scheduled` and `task_exists` runs are `COMPLETED`, not
+   `ESCALATED`. A client that listed them under "needs you" will now list
+   them as done, with the reason.
+2. Person-written mail the rules cannot place is `ESCALATED` (`needs_review`)
+   where it was `COMPLETED` (`no_action_needed`).
+
+Also fixed: after a read-back settles an action (a retry, or recovery after an
+interruption) the next step is proposed without a client call; and
+`POST /desk/eval/v1/approvals/{id}/decision` answers 409 `approval_held`
+instead of 500.
+
+### Limits of 0.4
+
+- An instruction can set reminders and tasks, move or cancel ONE existing
+  meeting and tell its attendees, and chase overdue replies. It cannot book a
+  new meeting with someone, write a free-form email, or address anyone a
+  record does not name.
+- Follow-up kinds other than `reply` (a meeting awaiting confirmation, a
+  promised document) are not separate records: a promised document is a task
+  and shows under `overdueTasks` when late.
+- A holding reply ("still working on it") from the awaited person satisfies
+  the follow-up like any answer.
+- A reminder to a wait the Desk did not open is sent as a new message carrying
+  the thread id, not as a reply to a specific message. Whether Gmail and
+  Outlook thread it is **not verified on a live provider**.
+- Memory covers the Desk's runs and what Scriba stores. It has no separate
+  store, so it knows nothing Scriba does not hold.
+- French and Arabic mail is still not read by the rules.

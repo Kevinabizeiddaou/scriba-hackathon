@@ -337,6 +337,8 @@ export type DeskActionPurpose =
   | 'nudge'
   | 'reply'
   | 'record_task'
+  /** Telling a meeting's attendees about a change the person asked for in chat (0.4). */
+  | 'notify'
 
 /**
  * The explicit state of ONE action (overlay 0.3.1, BACKEND_CONTRACT section 6, "The lifecycle of
@@ -497,6 +499,10 @@ export interface DeskAction {
   proposedAt?: string | null
   decisions?: DeskActionDecision[]
   execution?: DeskActionExecution | null
+  /** 0.4: the existing event a calendar change is about, as it was when proposed. Use its title on the card. */
+  target?: DeskEventTarget | null
+  /** 0.4: on a reminder (`purpose: 'nudge'`), the follow-up it chases. */
+  followUpId?: string | null
 }
 
 /** Reasons overlay 0.3 adds. `change_request` is no longer sent: a change is resolved or held for one of these. */
@@ -528,6 +534,16 @@ export type DeskHeldReasonRevised =
   | 'details_missing'
   /** The message contradicts itself or takes an instruction back (0.3.1). Nothing is picked. */
   | 'conflicting_instructions'
+  /** Written by a person and the Desk cannot tell what it needs (0.4). Not filed: read it. */
+  | 'needs_review'
+  /** A reply is needed and none could be drafted from what the Desk can verify (0.4). */
+  | 'reply_needs_author'
+  /** The same sender already asked for this in the conversation and that run is open (0.4). `held.target.runId`. */
+  | 'already_in_progress'
+  /** ...and that run is finished (0.4). */
+  | 'already_handled'
+  /** Several requests were read and not every one could be acted on (0.5). `held.unresolved[]`. */
+  | 'unresolved_requests'
 
 /** Every reason a run can be held for, on the first draft of overlay 0.3. */
 export type DeskHeldReason = DeskHeldReasonV2 | DeskHeldReasonV3
@@ -647,9 +663,33 @@ export interface DeskTimelineItem {
   data: Record<string, unknown>
 }
 
+/**
+ * A follow-up state the backend sends since 0.4 that `DeskFollowUp.state` does not list, so
+ * that exhaustive tables over the four original states still compile: reminded once, still no
+ * answer, now the person's. The Desk never proposes a second reminder.
+ */
+export type DeskFollowUpStateRevised = 'escalated'
+
 export interface DeskFollowUp {
   id: string
+  /** Also `DeskFollowUpStateRevised` ('escalated') since 0.4. */
   state: 'waiting' | 'overdue' | 'satisfied' | 'closed'
+  /** 0.4: always 'reply' today. */
+  kind?: 'reply'
+  /** 0.4: 'desk' was opened by a run; 'external' is a wait the Desk did not open (`runId` null). */
+  source?: 'desk' | 'external'
+  /** 0.4: reminders sent for it, counted from executed cards across the person's runs. */
+  nudges?: number
+  /** 0.4: a reminder for it is waiting for approval. */
+  nudgePending?: boolean
+  lastNudgeAt?: string | null
+  /** 0.4: 'no_answer_after_reminder' on an escalated one. 0.5: 'holding_reply' when the person only acknowledged. */
+  reason?: string | null
+  waitingOnName?: string | null
+  satisfiedAt?: string
+  /** 0.5: the awaited person wrote but did not answer ("still working on it"). The wait stays open. */
+  lastHoldingReplyAt?: string | null
+  lastHoldingReplyId?: string | null
   threadId?: string | null
   waitingOn?: string | null
   subject?: string | null
@@ -803,8 +843,14 @@ export interface DeskRun {
 
   // ── overlay 0.3 and later. Absent on an older backend. ──────────────────
   lifecycle?: DeskLifecycle
-  /** What started the run. `worker`: the background intake worker, with no client open. */
-  trigger?: 'manual' | 'sweep' | 'worker' | 'evaluation'
+  /** What started the run. `worker`: the background intake worker, with no client open. `chat` (0.4): POST /desk/commands. */
+  trigger?: 'manual' | 'sweep' | 'worker' | 'evaluation' | 'chat'
+  /** 0.4: 'command' for a run opened by an instruction; its `email.email_id` and `from_addr` are then empty. */
+  kind?: 'email' | 'command'
+  /** 0.4, command runs: what was typed and the operations read from it. */
+  command?: { text: string; operations: DeskCommandOperation[] }
+  /** 0.4, command runs: one paragraph composed by code from the run's state. Changes as the run advances. */
+  assistantMessage?: string
   /** True when the run lives in an isolated provider world: nothing real is read or written. */
   simulated?: boolean
   flags?: DeskRunFlag[]
@@ -818,6 +864,52 @@ export interface DeskRun {
   followUps?: DeskFollowUp[]
   timeline?: DeskTimelineItem[]
   usage?: DeskRunUsage | null
+}
+
+/** The operations an instruction can be read into (0.4, BACKEND_CONTRACT section 12). */
+export type DeskCommandOperation = 'reminder' | 'task' | 'reschedule' | 'cancel' | 'notify' | 'chase_overdue'
+
+/** The existing event a calendar change is about, as it was when proposed (0.4). */
+export interface DeskEventTarget {
+  id?: string | null
+  title?: string | null
+  start?: string | null
+  end?: string | null
+  provider?: string | null
+  provider_account_id?: string | null
+}
+
+interface DeskMemoryPart<T> {
+  /** False: this part could not be read. `items` is then empty and that does NOT mean there is nothing. */
+  ok: boolean
+  items: T[]
+  error?: string
+}
+
+export interface DeskMemoryAction {
+  runId: number
+  subject: string | null
+  tool: string
+  purpose: string | null
+  status: string
+  verified?: boolean
+  toolCallId: number
+  start?: string | null
+  title?: string | null
+}
+
+/** GET /desk/memory: what the Desk knows right now, read from records (0.4). */
+export interface DeskMemory {
+  account: string
+  asOf: string
+  scope: { threadId: string | null; sender: string | null }
+  meetings: DeskMemoryPart<{ id: string; title: string; start: string; end: string; attendees: string[]; organizer: boolean; provider: string }>
+  tasks: DeskMemoryPart<{ id: string; title: string; dueAt: string | null; overdue: boolean }>
+  waiting: DeskMemoryPart<DeskFollowUp>
+  pending: DeskMemoryPart<DeskMemoryAction>
+  done: DeskMemoryPart<DeskMemoryAction>
+  decisions: DeskMemoryPart<{ runId: number; subject: string | null; at: string; decision: string; tool?: string; toolCallId?: number; fields?: string[] }>
+  runs: DeskMemoryPart<{ runId: number; kind: 'email' | 'command'; subject: string | null; from: string | null; threadId: string | null; createdAt: string; stage: string; reason: string | null }>
 }
 
 /** A row of GET /desk/runs. From overlay 0.3 a row says where the run stands. */
@@ -1018,3 +1110,22 @@ export const DESK_RETRY_AFTER_UNKNOWN = { payload_overrides: { desk_retry_after_
 export const confirmDeskRecipients = (addresses: string[], extra: Record<string, unknown> = {}) => ({
   payload_overrides: { ...extra, desk_confirmed_recipients: addresses },
 })
+
+// ── overlay 0.4: instructions, memory (BACKEND_CONTRACT section 12) ─────────
+
+/**
+ * Open a run for an instruction the signed-in person typed ("remind me...", "move my 1:1 with
+ * Omar to Wednesday at 14:00 and let him know", "chase what is overdue"). Proposes cards; sends
+ * nothing. The same `requestId` returns the same run, so a retried send plans nothing twice.
+ */
+export const postDeskCommand = (text: string, requestId?: string) =>
+  postJson<DeskRun>('/desk/commands', { text, requestId })
+
+/** What the Desk knows right now, read from records. `thread` and `sender` narrow it. */
+export const getDeskMemory = (query: { thread?: string; sender?: string } = {}) => {
+  const params = new URLSearchParams()
+  if (query.thread) params.set('thread', query.thread)
+  if (query.sender) params.set('sender', query.sender)
+  const suffix = params.toString()
+  return getJson<DeskMemory>(`/desk/memory${suffix ? `?${suffix}` : ''}`)
+}

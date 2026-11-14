@@ -245,7 +245,7 @@ def test_meta_says_what_is_behind_the_url(desk):
     assert meta.status_code == 200 and meta.headers[CONTRACT_HEADER] == CONTRACT_VERSION
     body = meta.json()
     assert body["contractVersion"] == "1.1.0" and body["sandbox"] is True
-    assert body["capabilities"] == {"evaluation": True, "faultInjection": True, "chat": False,
+    assert body["capabilities"] == {"evaluation": True, "faultInjection": True, "chat": True,
                                     "tokenUsage": True, "idempotentPosts": False}
     assert body["agent"] == "real" and body["desk"]["planner"] == "rules+model"
     assert body["desk"]["isolation"] == {"tripwire": True, "violations": 0, "sandboxExecutions": 0}
@@ -415,13 +415,39 @@ def test_an_injected_provider_failure_is_reported_and_nothing_is_claimed(desk):
     assert approvals[0]["execution"]["status"] == "failed"
 
 
-def test_a_chat_case_is_refused_honestly_not_faked(desk):
-    body = {"caseId": "T-chat", "mode": "sandbox",
-            "input": {"kind": "conversation", "messages": [{"role": "user", "text": "Remind me to call Omar"}]},
-            "context": {"now": NOW, "principal": PRINCIPAL, "calendar": [], "tasks": [], "followUps": [], "faults": []}}
+def chat_case(text, **context):
+    return {"caseId": "T-chat", "mode": "sandbox",
+            "input": {"kind": "conversation", "messages": [{"role": "user", "text": text}]},
+            "context": {"now": NOW, "principal": PRINCIPAL, "calendar": [], "tasks": [], "followUps": [],
+                        "faults": [], **context}}
+
+
+def test_a_chat_case_runs_through_the_desks_own_instruction_path(desk):
+    run, approvals, _ = drive(desk, chat_case("Remind me tomorrow at 9 to call Omar about the depot."))
+    assert run_problems(run) == [] and run["status"] == "completed" and run["error"] is None
+    assert tools(run) == ["reminder.create"] and approvals == []         # the person's own record
+    [reminder] = [a for a in run["actions"] if a["tool"] == "reminder.create"]
+    assert reminder["input"]["remindAt"] == "2026-11-17T09:00:00+02:00"
+    assert "09:00" in run["assistantMessage"] and run["outcome"] == "task_recorded"
+    assert run["triage"]["classification"] == "action_required"
+
+
+def test_a_chat_case_with_no_time_asks_instead_of_inventing_one(desk):
+    run, approvals, _ = drive(desk, chat_case("Remind me to call Omar."))
+    assert run["status"] == "completed" and tools(run) == [] and approvals == []
+    assert "When should I remind you" in run["assistantMessage"]
+
+
+def test_a_chat_case_without_a_user_message_fails_honestly(desk):
+    body = chat_case("x")
+    body["input"]["messages"] = []
     started = call(desk, "POST", "/evaluation/runs", json=body).json()
-    assert started["status"] == "failed" and started["error"]["code"] == "conversation_input_unsupported"
-    assert run_problems(started) == [] and started["actions"] == []
+    for _ in range(100):
+        started = call(desk, "GET", f"/runs/{started['id']}").json()
+        if started["status"] == "failed":
+            break
+        time.sleep(0.02)
+    assert started["status"] == "failed" and started["error"]["code"] == "invalid_request"
 
 
 # ── the approval gate and isolation ─────────────────────────────────────────
@@ -501,7 +527,8 @@ def test_every_repository_case_yields_a_contract_valid_run_that_ends(desk, case)
         if action["sideEffect"] and action["status"] in ("succeeded", "failed"):
             assert action["approvalId"] in approved, action
     if case["input"]["kind"] == "conversation":
-        assert run["error"]["code"] == "conversation_input_unsupported"
+        # A case that starts from what the executive typed is run, and answers in words.
+        assert run["error"] is None and isinstance(run["assistantMessage"], str) and run["assistantMessage"]
 
 
 def test_an_approval_a_guard_holds_at_decision_time_is_reported_not_a_server_error(desk):
@@ -537,3 +564,18 @@ def test_usage_that_was_not_measured_is_reported_as_unknown_never_as_a_null_coun
     assert measured_usage({"models": [failed], "estimatedCostUsd": None}) is None
     assert measured_usage({"models": [failed, good], "estimatedCostUsd": None}) == {
         "models": [good], "estimatedCostUsd": None}
+
+
+def test_the_outcome_names_the_most_consequential_thing_done():
+    from desk_overlay.eval_api import _outcome
+
+    def action(tool, status, purpose=None):
+        return {"tool_name": tool, "status": status, "purpose": purpose}
+    task, ack = action("create_task", "executed", "record_task"), action("send_email", "executed", "reply")
+    assert _outcome({"actions": [task, ack]}) == "task_recorded"          # an acknowledgement beside the record
+    assert _outcome({"actions": [ack]}) == "replied"
+    assert _outcome({"actions": [task, action("send_email", "cancelled", "reply")]}) == "declined"
+    assert _outcome({"actions": [task, action("send_email", "executed", "clarify")]}) == "clarification_requested"
+    assert _outcome({"actions": [action("create_calendar_event", "executed", "book"), task, ack]}) == "scheduled"
+    assert _outcome({"actions": [], "taskUpdates": [{"state": "completed"}]}) == "task_recorded"
+    assert _outcome({"actions": [action("send_email", "cancelled", "reply")]}) == "declined"

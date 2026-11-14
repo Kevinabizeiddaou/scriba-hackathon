@@ -192,9 +192,7 @@ class EvalRuns:
             self.runs[record["id"]] = record
         self.registry.add(world)
         if kind == "conversation":
-            self._fail(record, "conversation_input_unsupported",
-                       "This backend runs evaluation cases that start from an email. A chat turn "
-                       "needs Scriba's model-planned chat agent, which is not driven from here yet.")
+            self._pool.submit(self._command, record, dict(body))
         else:
             self._pool.submit(self._intake, record, dict(body))
         return self.view(user, record["id"])
@@ -211,6 +209,26 @@ class EvalRuns:
                 message_id = deliver_case_mail(world, body)
                 run = self.workflow.intake(AppContext(self.app), user, provider="gmail",
                                            item_id=message_id, trigger="evaluation")
+            record["deskRunId"] = run["runId"]
+            record["state"] = "open"
+        except EvalError as exc:
+            self._fail(record, exc.code, exc.message)
+        except Exception as exc:
+            logger.exception("desk evaluation run could not be started")
+            self._fail(record, "run_failed", f"The run could not be started: {type(exc).__name__}.")
+
+    def _command(self, record: Dict[str, Any], body: Dict[str, Any]) -> None:
+        """A case that starts from what the executive typed: the Desk's own
+        instruction path, in the case's world."""
+        world, user = record["world"], record["user"]
+        record["state"] = "running"
+        said = [m for m in (body.get("input") or {}).get("messages") or [] if (m or {}).get("role") == "user"]
+        try:
+            if not said or not str(said[-1].get("text") or "").strip():
+                raise EvalError(400, "invalid_request", "input.messages needs a user message.")
+            with self.registry.using(world), acting_as(user):
+                run = self.workflow.command(AppContext(self.app), user, str(said[-1]["text"]),
+                                            request_id=record["id"], trigger="evaluation")
             record["deskRunId"] = run["runId"]
             record["state"] = "open"
         except EvalError as exc:
@@ -294,6 +312,10 @@ class EvalRuns:
 
 def _classification(view: Mapping[str, Any]) -> str:
     category = view.get("category")
+    if view.get("kind") == "command":
+        asked = (view.get("command") or {}).get("operations") or []
+        return ("reschedule" if "reschedule" in asked else "cancellation" if "cancel" in asked
+                else "follow_up" if "chase_overdue" in asked else "action_required" if asked else "unclear")
     intent = next((i["data"].get("meetingIntent") for i in view.get("timeline") or []
                    if i.get("kind") == "stage" and i["data"].get("stage") == "UNDERSTANDING"), None)
     if any(f.get("external") and f.get("state") == "satisfied" for f in view.get("followUps") or []):
@@ -467,15 +489,25 @@ def _outcome(view: Mapping[str, Any]) -> str:
         return "rescheduled"
     if "cancel_calendar_event" in names:
         return "cancelled_meeting"
+    actions = view.get("actions") or []
     sent = [a for a in done if a["tool_name"] == "send_email"]
-    if sent:
-        purpose = sent[-1].get("purpose")
+    special = next((a.get("purpose") for a in reversed(sent)
+                    if a.get("purpose") in ("offer_times", "clarify", "nudge")), None)
+    if special:
         return {"offer_times": "alternatives_proposed", "clarify": "clarification_requested",
-                "nudge": "follow_up_sent"}.get(str(purpose), "replied")
+                "nudge": "follow_up_sent"}[str(special)]
+    external = ("send_email", "create_calendar_event", "update_calendar_event", "cancel_calendar_event")
+    refused = [a for a in actions if a["tool_name"] in external and a.get("status") == "cancelled"]
+    if refused and not any(a["tool_name"] in external for a in done):
+        # The person said no to what would have gone out, and nothing went out.
+        return "declined"
     if names & {"create_task", "create_reminder"} or any(
             update.get("state") == "completed" for update in view.get("taskUpdates") or []):
+        # Work was recorded. An acknowledgement sent beside it does not make
+        # the run "a reply": the record is what the run was for.
         return "task_recorded"
-    actions = view.get("actions") or []
+    if sent:
+        return "replied"
     if actions and all(a.get("status") == "cancelled" for a in actions):
         return "declined"
     stage = (view.get("lifecycle") or {}).get("stage")
@@ -619,6 +651,7 @@ def agent_run(record: Mapping[str, Any], view: Optional[Mapping[str, Any]]) -> D
                               "missingFields": ["time"] if held.get("reason") == "time_not_understood" else [],
                               "notes": held.get("message")}},
         summary=next((lifecycle.summary_of(i) for i in reversed(timeline) if i.get("kind") == "decision"), None),
+        assistantMessage=view.get("assistantMessage"),
         actions=actions, approvalIds=[a["id"] for a in pending],
         startedAt=_stamp(view.get("createdAt"), record["startedAt"]),
         finishedAt=_stamp(view.get("updatedAt"), fallback) if final else None,
@@ -666,7 +699,7 @@ def build_eval_router(app: Any, desk: Dict[str, Any]) -> APIRouter:
             "sandbox": True,
             "principal": {"name": user.email.split("@")[0], "email": user.email, "timezone": "UTC"},
             "simulatedNow": None,
-            "capabilities": {"evaluation": True, "faultInjection": True, "chat": False,
+            "capabilities": {"evaluation": True, "faultInjection": True, "chat": True,
                              "tokenUsage": True, "idempotentPosts": False},
             # Beyond the contract: how this sandbox is built and what it has seen.
             "desk": {

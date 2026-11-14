@@ -1,4 +1,8 @@
-# Configured model: what was measured
+# Configured model: what was measured at `8cff1f4`
+
+> This page is the record of the measurement at `8cff1f4`. The measurement of
+> overlay 0.4, and the comparison with this one, is
+> [EVAL_COMPARISON_0_4.md](EVAL_COMPARISON_0_4.md).
 
 Run on 14 November 2026 with a real model, `gpt-6-luna`, through Scriba's own
 model gateway (its `chat` policy, low reasoning effort). The key was supplied

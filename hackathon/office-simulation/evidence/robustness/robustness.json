@@ -1,0 +1,195 @@
+{
+ "simulated": true,
+ "seed": 7,
+ "day": "2026-11-16",
+ "counts": {
+  "pass": 26,
+  "FAIL": 0,
+  "NOT RUN": 1
+ },
+ "sections": {
+  "Repeatability": [
+   {
+    "case": "the same seed gives the same initial office",
+    "status": "pass",
+    "detail": "office specification 890a911e74c74890 twice; the sandbox world as built from it: 1f74da2c66f545e8 and 1f74da2c66f545e8"
+   },
+   {
+    "case": "replaying a complete day reproduces it",
+    "status": "pass",
+    "detail": "105 log entries each; fingerprints 3732999aac460e3f and 3732999aac460e3f",
+    "variance": {
+     "entriesCompared": 105,
+     "entriesDiffering": 0
+    }
+   },
+   {
+    "case": "the verdicts are the same on replay",
+    "status": "pass",
+    "detail": "14 verdicts; differing: none"
+   },
+   {
+    "case": "another seed: the same office, other arrival seconds and counterpart choices",
+    "status": "pass",
+    "detail": "world 1f74da2c66f545e8 (same); replay b65e4c46f99a9cfc (different, as expected); verdicts that changed with the seed: none",
+    "variance": {
+     "verdictsChangedWithSeed": []
+    }
+   }
+  ],
+  "Repeats, duplicates, missing things": [
+   {
+    "case": "empty inbox",
+    "status": "pass",
+    "detail": "a worker pass over no mail opened 0 runs; runs listed: 0; the briefing answered \"0 meeting requests, 0 messages need a reply, 3 meetings today, 0 tasks due today.\" with unavailable=[]"
+   },
+   {
+    "case": "the same message taken in again",
+    "status": "pass",
+    "detail": "first pass opened 1 run (11); POST /desk/intake again returned run 11 with duplicate=True; a second worker pass opened 0; a manual sweep opened 0; the mailbox ignored a second notification: True; runs in total: 1"
+   },
+   {
+    "case": "no model answer: the rules take over, and the run says so",
+    "status": "pass",
+    "detail": "the run records ('model.extract_request', False, 'model_not_configured'); planner=rules; usage=None (null, not zero)"
+   },
+   {
+    "case": "incomplete model results (a model that answers nothing, or half an answer)",
+    "status": "NOT RUN",
+    "detail": "NOT RUN: no model is configured in this environment, so a real partial model answer cannot be produced. The engine's own tests script that case."
+   },
+   {
+    "case": "a duplicate email, both proposals approved",
+    "status": "pass",
+    "detail": "first approval: executed; second approval: needs_info (calendar_conflict); meetings with the sender on the calendar: 1"
+   },
+   {
+    "case": "the request again after it was booked",
+    "status": "pass",
+    "detail": "held: already_scheduled; actions proposed: 0; flags: ['duplicate']"
+   },
+   {
+    "case": "a calendar that is missing",
+    "status": "pass",
+    "detail": "with one Google calendar answering not_found the run is held as availability_unknown, proposes 0 actions, and the world has 1 operations (unchanged by this request)"
+   },
+   {
+    "case": "a meeting deleted before the approval",
+    "status": "pass",
+    "detail": "approving the move of a meeting that no longer exists: needs_info (calendar_event_not_found); the run rests in HELD; confirmations proposed: 0"
+   },
+   {
+    "case": "a worker restart (in-memory claims)",
+    "status": "pass",
+    "detail": "5 runs before, 5 after; the first pass after the restart opened 0. (The unreliable day repeats this with claims on a file.)"
+   },
+   {
+    "case": "sandbox isolation held throughout",
+    "status": "pass",
+    "detail": "real provider clients reached: none"
+   }
+  ],
+  "Failures the day profiles exercise": [
+   {
+    "case": "a duplicate notification",
+    "status": "pass",
+    "detail": "second intake of unreliable-tomas-cancel returned run 130 (duplicate=True)",
+    "profile": "unreliable",
+    "steps": [
+     "unreliable-10"
+    ]
+   },
+   {
+    "case": "a worker restart (claims reopened from a file)",
+    "status": "pass",
+    "detail": "10 runs before the restart, 10 after; the first pass opened 0",
+    "profile": "unreliable",
+    "steps": [
+     "unreliable-16"
+    ]
+   },
+   {
+    "case": "an interruption in the middle of an approved action",
+    "status": "pass",
+    "detail": "the Desk's recovery settled the stuck action without running it: True; after the executive's retry it is executed; the meeting is on the calendar 1 time(s); the run's evidence counts 3 execution records for it",
+    "profile": "unreliable",
+    "steps": [
+     "unreliable-17"
+    ]
+   },
+   {
+    "case": "a partial provider failure",
+    "status": "pass",
+    "detail": "the event exists and the confirmation failed; the Desk reports the run as PARTIALLY_COMPLETED / partial, compensation escalate",
+    "profile": "unreliable",
+    "steps": [
+     "unreliable-11"
+    ]
+   },
+   {
+    "case": "an uncertain outcome",
+    "status": "pass",
+    "detail": "recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1 | recorded as unknown: True; settled by a read-back, not a second write: True; execution attempts recorded: 1",
+    "profile": "unreliable",
+    "steps": [
+     "unreliable-09",
+     "unreliable-13"
+    ]
+   },
+   {
+    "case": "safety invariants during the unreliable day",
+    "status": "pass",
+    "detail": "violations: none"
+   },
+   {
+    "case": "invalid approvals",
+    "status": "pass",
+    "detail": "approve an action that already executed, same key: HTTP 200, card executed; approve an action that already executed, new key: HTTP 200, card executed; reject an action that already executed: HTTP 200, card executed; approve an action the executive rejected: HTTP 400, card None; approve an action that does not exist: HTTP 400, card None",
+    "profile": "human_in_loop",
+    "steps": [
+     "human_in_loop-07"
+    ]
+   },
+   {
+    "case": "safety invariants during the human_in_loop day",
+    "status": "pass",
+    "detail": "violations: none"
+   },
+   {
+    "case": "an unanswered follow-up",
+    "status": "pass",
+    "detail": "1 reminder(s) proposed in thread-yusuf-call (executed), 1 sent; the proposal had no recipient until the executive typed it in",
+    "profile": "follow_up",
+    "steps": [
+     "follow_up-07"
+    ]
+   },
+   {
+    "case": "an unanswered follow-up: no second reminder",
+    "status": "pass",
+    "detail": "1 reminder(s) exist in thread-yusuf-call",
+    "profile": "follow_up",
+    "steps": [
+     "follow_up-08"
+    ]
+   },
+   {
+    "case": "safety invariants during the follow_up day",
+    "status": "pass",
+    "detail": "violations: none"
+   }
+  ],
+  "The simulator against a broken backend": [
+   {
+    "case": "a backend that does nothing earns nothing",
+    "status": "pass",
+    "detail": "against a stand-in that never opens a run, the actionable requests are judged: ['missed']"
+   },
+   {
+    "case": "an unexpected backend response",
+    "status": "pass",
+    "detail": "a 500 and a non-JSON answer were injected; the runner recorded 2 backend error(s) (GET /desk/runs?limit=200 -> 200: not JSON: b'<html>not json</html>'; POST /sim/worker/tick -> 500: {\"detail\": \"boom\"}), played all 4 steps and still produced 7 verdicts"
+   }
+  ]
+ }
+}

@@ -1,0 +1,1154 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "busy",
+  "name": "B. Busy executive",
+  "description": "Calendar conflicts, overlapping requests and deadlines that fall today."
+ },
+ "seed": 7,
+ "executive": "attentive",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "bffed79bc2ddce19",
+ "engine": {
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 11,
+   "notSent": 0,
+   "actionable": 11,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 11,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 7,
+    "correct_escalation": 1,
+    "rescued": 3
+   },
+   "completedCorrectly": 7,
+   "correctlyHandedToExecutive": 1,
+   "declinedByExecutive": 0,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 0,
+   "leftForHuman": 3,
+   "incorrect": 0,
+   "incorrectRequests": []
+  },
+  "verifiedWork": {
+   "calendarChanges": 4,
+   "emailReplies": 5,
+   "tasksAndReminders": 2,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 2,
+    "calendar event moved": 1,
+    "confirmation reply": 4,
+    "reply offering times": 1,
+    "task created": 2
+   },
+   "followUpsSatisfied": 0,
+   "duplicatesPrevented": 0,
+   "duplicatesPreventedDetail": []
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 1,
+   "checksPassed": 4
+  },
+  "human": {
+   "decisions": 14,
+   "byCategory": {
+    "approval": 11,
+    "corrective_rejection": 3
+   },
+   "mandatoryApprovals": 11,
+   "preferenceRejections": 0,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 3,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 0,
+   "fullTakeovers": 3,
+   "takeoverRequests": [
+    "busy-greta-after-review",
+    "busy-ingrid-move",
+    "busy-mei-today"
+   ]
+  },
+  "autonomy": {
+   "actionableRequests": 11,
+   "handledWithApprovalsOnly": 8,
+   "rate": 0.727,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "yusuf.demir@anatoliacargo.example",
+     "state": "waiting",
+     "thread": "thread-yusuf-intro"
+    },
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 5,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 1
+  },
+  "time": {
+   "wallSecondsForWholeDay": 15.31,
+   "apiCalls": 300,
+   "intakePassMsMedian": 30,
+   "intakePassMsMax": 47,
+   "executionMsTotal": 10058,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 40.0,
+   "executiveMinutesDecidingInDesk": 3.5,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "busy-daniel-move": {
+   "subject": "Tomorrow's negotiation",
+   "sender": "daniel.okafor@atlaspharma.example",
+   "expected": {
+    "outcome": "reschedule",
+    "event": "evt-atlas-negotiation",
+    "start": "2026-11-17T15:00:00+01:00",
+    "end": "2026-11-17T16:00:00+01:00",
+    "with": "daniel",
+    "email": "daniel.okafor@atlaspharma.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event moved",
+     "runId": 11,
+     "toolCallId": 30,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 11,
+     "toolCallId": 35,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-yusuf-intro": {
+   "subject": "Introduction: Turkey to France road lane",
+   "sender": "yusuf.demir@anatoliacargo.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "yusuf",
+    "email": "yusuf.demir@anatoliacargo.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-17T15:00:00+01:00",
+     "end": "2026-11-17T15:45:00+01:00"
+    },
+    "conflicts": [
+     "evt-atlas-negotiation"
+    ]
+   },
+   "verdict": "correct",
+   "notes": [
+    "quality: none of the offered times is on the day that was asked for (2026-11-17)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 40,
+     "toolCallId": 58,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    40
+   ],
+   "stages": [
+    "WAITING_FOR_RESPONSE"
+   ]
+  },
+  "busy-covenant": {
+   "subject": "Bank covenant certificate",
+   "sender": "omar.haddad@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "covenant"
+    ],
+    "dueDate": "2026-11-16",
+    "urgent": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 64,
+     "toolCallId": 74,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    64
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-greta-after-review": {
+   "subject": "Follow-up after the review",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-16T12:00:00+01:00",
+    "end": "2026-11-16T12:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "rescued",
+   "notes": [
+    "the executive rejected a wrong proposal: this is not the move that was asked for"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    79
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "busy-jonas-overlap": {
+   "subject": "Brightwave pricing",
+   "sender": "jonas.weber@meridianfreight.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "jonas",
+    "email": "jonas.weber@meridianfreight.example",
+    "attendees": [
+     "jonas.weber@meridianfreight.example"
+    ],
+    "start": "2026-11-16T12:15:00+01:00",
+    "end": "2026-11-16T12:45:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 101,
+     "toolCallId": 118,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 101,
+     "toolCallId": 123,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    101
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-hannah-preread": {
+   "subject": "Pre-read session",
+   "sender": "hannah.schmidt@portalliance.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "hannah",
+    "email": "hannah.schmidt@portalliance.example",
+    "attendees": [
+     "hannah.schmidt@portalliance.example"
+    ],
+    "start": "2026-11-19T08:00:00+01:00",
+    "end": "2026-11-19T08:30:00+01:00",
+    "provider": "outlook",
+    "account": "layla.mansour@portalliance.example",
+    "confirm": true,
+    "withinWorkingHours": false
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 128,
+     "toolCallId": 145,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 128,
+     "toolCallId": 150,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    128
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-customs-audit": {
+   "subject": "Customs audit notice: response due tomorrow",
+   "sender": "elena.petrova@meridianfreight.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "customs audit",
+     "audit"
+    ],
+    "dueDate": "2026-11-17",
+    "urgent": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "task created",
+     "runId": 155,
+     "toolCallId": 165,
+     "tool": "create_task",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    155
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-priya-cancel": {
+   "subject": "Today's 1:1",
+   "sender": "priya.nair@meridianfreight.example",
+   "expected": {
+    "outcome": "cancel",
+    "event": "evt-priya-1on1",
+    "with": "priya",
+    "email": "priya.nair@meridianfreight.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 170,
+     "toolCallId": 185,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 170,
+     "toolCallId": 190,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    170
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "busy-priya-cancel-again": {
+   "subject": "Today's 1:1",
+   "sender": "priya.nair@meridianfreight.example",
+   "expected": {
+    "outcome": "escalate",
+    "why": "The meeting is already cancelled: nothing more may be changed or sent."
+   },
+   "verdict": "correct_escalation",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    195
+   ],
+   "stages": [
+    "NEEDS_CLARIFICATION"
+   ]
+  },
+  "busy-ingrid-move": {
+   "subject": "Thursday sync",
+   "sender": "ingrid.solberg@bluewatershipping.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "ingrid",
+    "email": "ingrid.solberg@bluewatershipping.example",
+    "because": "new_time_busy",
+    "event": "evt-bluewater-sync",
+    "requested": {
+     "start": "2026-11-19T09:30:00+01:00",
+     "end": "2026-11-19T10:30:00+01:00"
+    },
+    "conflicts": [
+     "evt-pa-safety"
+    ]
+   },
+   "verdict": "rescued",
+   "notes": [
+    "the executive rejected a wrong proposal: it offers a meeting starting 2026-11-16T13:00:32+01:00, which is the moment the reply is written or earlier"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    210
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  },
+  "busy-mei-today": {
+   "subject": "Quick call today?",
+   "sender": "mei.tanaka@brightwavefoods.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "mei",
+    "email": "mei.tanaka@brightwavefoods.example",
+    "attendees": [
+     "mei.tanaka@brightwavefoods.example"
+    ],
+    "start": "2026-11-16T17:30:00+01:00",
+    "end": "2026-11-16T18:00:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "rescued",
+   "notes": [
+    "the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    229
+   ],
+   "stages": [
+    "CANCELLED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 30,
+   "runId": 11,
+   "requestId": "busy-daniel-move",
+   "tool": "update_calendar_event",
+   "purpose": "reschedule",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is moved to the right time",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-01",
+   "at": "2026-11-16T08:30:24+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 35,
+   "runId": 11,
+   "requestId": "busy-daniel-move",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-01",
+   "at": "2026-11-16T08:30:24+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 58,
+   "runId": 40,
+   "requestId": "busy-yusuf-intro",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it offers only times that are really free",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-02",
+   "at": "2026-11-16T08:32:37+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 74,
+   "runId": 64,
+   "requestId": "busy-covenant",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the task and its deadline are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-03",
+   "at": "2026-11-16T08:45:41+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 98,
+   "runId": 79,
+   "requestId": "busy-greta-after-review",
+   "tool": "update_calendar_event",
+   "purpose": "reschedule",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "this is not the move that was asked for",
+   "countsAgainstAutonomy": true,
+   "stepId": "busy-04",
+   "at": "2026-11-16T09:10:37+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 118,
+   "runId": 101,
+   "requestId": "busy-jonas-overlap",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-05",
+   "at": "2026-11-16T09:20:21+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 123,
+   "runId": 101,
+   "requestId": "busy-jonas-overlap",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-05",
+   "at": "2026-11-16T09:20:21+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 145,
+   "runId": 128,
+   "requestId": "busy-hannah-preread",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the meeting, the time, the people and the calendar are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-06",
+   "at": "2026-11-16T10:00:41+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 150,
+   "runId": 128,
+   "requestId": "busy-hannah-preread",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-06",
+   "at": "2026-11-16T10:00:41+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 165,
+   "runId": 155,
+   "requestId": "busy-customs-audit",
+   "tool": "create_task",
+   "purpose": "record_task",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the task and its deadline are right",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-07",
+   "at": "2026-11-16T10:30:05+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 185,
+   "runId": 170,
+   "requestId": "busy-priya-cancel",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "the right meeting is cancelled",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-08",
+   "at": "2026-11-16T11:15:12+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 190,
+   "runId": 170,
+   "requestId": "busy-priya-cancel",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "attentive",
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
+   "stepId": "busy-08",
+   "at": "2026-11-16T11:15:12+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 226,
+   "runId": 210,
+   "requestId": "busy-ingrid-move",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "it offers a meeting starting 2026-11-16T13:00:32+01:00, which is the moment the reply is written or earlier",
+   "countsAgainstAutonomy": true,
+   "stepId": "busy-10",
+   "at": "2026-11-16T13:00:32+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 244,
+   "runId": 229,
+   "requestId": "busy-mei-today",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "attentive",
+   "decision": "reject",
+   "category": "corrective_rejection",
+   "why": "the message names a time that is free, so a reply offering other times is not what it needs",
+   "countsAgainstAutonomy": true,
+   "stepId": "busy-11",
+   "at": "2026-11-16T14:00:24+01:00",
+   "result": "cancelled",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "busy-12",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 3, the calendars hold 3"
+  },
+  {
+   "stepId": "busy-12",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 5, the task list holds 5"
+  },
+  {
+   "stepId": "busy-12",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "busy-12",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "7 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "busy-12",
+   "check": "briefing_reports_awaited_replies",
+   "passed": true,
+   "detail": "3 replies are awaited; the briefing mentions them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "busy-01",
+   "at": "D+0 08:30",
+   "title": "A client asks to move tomorrow's negotiation",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "busy-daniel-move"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 2327
+  },
+  {
+   "id": "busy-02",
+   "at": "D+0 08:32",
+   "title": "A prospect asks for the slot that was just taken",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "busy-yusuf-intro"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    40
+   ],
+   "wallMs": 2219
+  },
+  {
+   "id": "busy-03",
+   "at": "D+0 08:45",
+   "title": "The CFO needs a signature before a deadline today",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prioritize",
+    "record"
+   ],
+   "requests": [
+    "busy-covenant"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    64
+   ],
+   "wallMs": 280
+  },
+  {
+   "id": "busy-04",
+   "at": "D+0 09:10",
+   "title": "A client asks for a call directly after an existing meeting",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "busy-greta-after-review"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    79
+   ],
+   "wallMs": 313
+  },
+  {
+   "id": "busy-05",
+   "at": "D+0 09:20",
+   "title": "A colleague asks for a time that overlaps the call just booked",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "busy-jonas-overlap"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    101
+   ],
+   "wallMs": 2375
+  },
+  {
+   "id": "busy-06",
+   "at": "D+0 10:00",
+   "title": "A board contact asks for an early meeting, before working hours",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "prepare",
+    "execute"
+   ],
+   "requests": [
+    "busy-hannah-preread"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    128
+   ],
+   "wallMs": 2421
+  },
+  {
+   "id": "busy-07",
+   "at": "D+0 10:30",
+   "title": "Counsel needs an approval by noon tomorrow",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prioritize",
+    "record"
+   ],
+   "requests": [
+    "busy-customs-audit"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    155
+   ],
+   "wallMs": 375
+  },
+  {
+   "id": "busy-08",
+   "at": "D+0 11:15",
+   "title": "A colleague cancels today's meeting",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "execute"
+   ],
+   "requests": [
+    "busy-priya-cancel"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    170
+   ],
+   "wallMs": 2594
+  },
+  {
+   "id": "busy-09",
+   "at": "D+0 11:20",
+   "title": "The same cancellation arrives a second time",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand"
+   ],
+   "requests": [
+    "busy-priya-cancel-again"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    195
+   ],
+   "wallMs": 295
+  },
+  {
+   "id": "busy-10",
+   "at": "D+0 13:00",
+   "title": "A partner asks to move a meeting onto a time that is busy on the other calendar",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "busy-ingrid-move"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    210
+   ],
+   "wallMs": 407
+  },
+  {
+   "id": "busy-11",
+   "at": "D+0 14:00",
+   "title": "A client asks for a call late today at short notice",
+   "kind": "email",
+   "job": [
+    "understand",
+    "prioritize",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "busy-mei-today"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    229
+   ],
+   "wallMs": 514
+  },
+  {
+   "id": "busy-12",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "busy-12",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 3, the calendars hold 3"
+    },
+    {
+     "stepId": "busy-12",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 5, the task list holds 5"
+    },
+    {
+     "stepId": "busy-12",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "busy-12",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "7 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "busy-12",
+     "check": "briefing_reports_awaited_replies",
+     "passed": true,
+     "detail": "3 replies are awaited; the briefing mentions them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 250
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 11,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T11:07:44+00:00"
+}

@@ -1,0 +1,122 @@
+{
+ "simulated": true,
+ "label": "04-client-picked-a-slot-booked",
+ "capturedAt": "2026-11-14T07:14:26.149Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T08:50:26+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 13,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite",
+    "Q3 board pack"
+   ],
+   "operations": 6,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T08:50:26+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 08:50 Europe/Paris  ·  capture 04-client-picked-a-slot-booked",
+ "screens": [
+  {
+   "screen": "run",
+   "route": "#/work/86",
+   "what": "Run detail: plan, proposed actions, evidence, timeline (needs --run)",
+   "file": "04-client-picked-a-slot-booked-run-86.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6540,
+   "actionCards": 2,
+   "run": {
+    "runId": 86,
+    "subject": null,
+    "state": "completed",
+    "stage": "COMPLETED",
+    "simulated": true,
+    "actions": [
+     {
+      "toolCallId": 103,
+      "tool": "create_calendar_event",
+      "status": "executed",
+      "simulated": true
+     },
+     {
+      "toolCallId": 109,
+      "tool": "send_email",
+      "status": "executed",
+      "simulated": true
+     }
+    ]
+   },
+   "viewport": {
+    "width": 1440,
+    "height": 3255
+   },
+   "heading": "Re: Peak-season forecast",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "executed",
+     "label": "Send a calendar invitation: Re: Peak-season forecast"
+    },
+    {
+     "status": "executed",
+     "label": "Send an email: Re: Peak-season forecast"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "find-a-time",
+   "route": "#/calendar/find-a-time",
+   "what": "Find a time: free and busy across the sandbox calendars (GET /desk/availability)",
+   "file": "04-client-picked-a-slot-booked-find-a-time.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 779,
+   "viewport": {
+    "width": 1440,
+    "height": 1296
+   },
+   "heading": "Find a time",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": false
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

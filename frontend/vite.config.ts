@@ -11,7 +11,7 @@ export default defineConfig({
     strictPort: true,
     // File events from a Windows/macOS bind mount do not reach a Linux container, so the
     // Docker dev service sets VITE_USE_POLLING=1 to keep hot reload working.
-    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 300 } : undefined,
+    watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 1000 } : undefined,
   },
   preview: { port: 5173, strictPort: true },
   build: {

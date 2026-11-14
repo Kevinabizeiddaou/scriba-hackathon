@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuses a commit that would carry a secret, a token store or a database dump.
+# One-time setup per clone:  git config core.hooksPath .githooks
+root=$(git rev-parse --show-toplevel) || exit 1
+if command -v node >/dev/null 2>&1; then
+  exec node "$root/scripts/check-no-secrets.mjs"
+fi
+if command -v docker >/dev/null 2>&1; then
+  # The full node image (not -slim) has git, which the scan uses to list the files.
+  exec docker run --rm -v "$root:/repo" -w /repo node:22-bookworm \
+    sh -c "git config --global --add safe.directory /repo && node scripts/check-no-secrets.mjs"
+fi
+echo "pre-commit: neither node nor docker found; the secret scan did not run." >&2
+exit 1

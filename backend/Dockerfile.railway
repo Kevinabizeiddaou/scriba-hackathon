@@ -15,6 +15,7 @@
 #   docker build -f backend/Dockerfile.railway --build-context scriba-source=<export dir> .
 # A build context named scriba-source replaces the fetch stage of the same name.
 
+# Keep equal to backend/SCRIBA_REVISION, the revision the local api and backend-tests check for.
 ARG SCRIBA_REF=3ae3a2aa0c2dd2398f5a2e6b0d3ce1eaeeb0fdf7
 
 FROM alpine:3.21 AS scriba-fetch

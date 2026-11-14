@@ -1,4 +1,5 @@
-# Scriba's seeded test backend with the Desk overlay mounted (backend/dev/seeded_desk_server.py).
+# Scriba's seeded test backend with the Desk overlay mounted (backend/dev/seeded_desk_server.py),
+# and the image the backend tests run in, so both use the same Python and Scriba's pinned packages.
 #
 # Scriba's real FastAPI app with every storage boundary in memory: no database, no provider
 # network, no model. Seeded users are listed at the top of Scriba's e2e/seeded_server.py.
@@ -6,7 +7,12 @@
 # Scriba's code is NOT copied into the image. The image only holds Scriba's Python
 # dependencies (from the `scriba` build context, Scriba's Gmail/ directory); docker-compose
 # mounts the checkout at /scriba and this repository's backend/ at /desk at run time.
-FROM python:3.12-slim
+#
+# Targets:
+#   runtime  the API (docker compose up -d)
+#   test     the whole backend suite, including the overlay on the real Scriba app
+#            (docker compose --profile test run --rm backend-tests)
+FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -18,10 +24,24 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # compiler is installed (--only-binary makes a missing wheel fail loudly instead of compiling).
 COPY --from=scriba requirements.txt /tmp/scriba-requirements.txt
 RUN pip install --only-binary=:all: -r /tmp/scriba-requirements.txt
+# backend/dev/check_scriba.py compares this with the mounted checkout's requirements.txt at start.
+RUN sha256sum /tmp/scriba-requirements.txt | cut -d' ' -f1 > /etc/scriba-requirements.sha256
 
-# The checkout is mounted read-only; Scriba's file storage defaults to ./data inside it.
-ENV STORAGE_DIR=/tmp/scriba-data
+# Set after the install, so changing them does not invalidate the cached packages.
+#   STORAGE_DIR       the checkout is mounted read-only; Scriba's file storage defaults to ./data in it
+#   SCRIBA_REPO_PATH  the checkout's root (its .git), for the revision check
+ENV STORAGE_DIR=/tmp/scriba-data \
+    SCRIBA_REPO_PATH=/scriba-repo \
+    PIP_ROOT_USER_ACTION=ignore
 
 WORKDIR /scriba
 EXPOSE 8000
-CMD ["python", "/desk/dev/seeded_desk_server.py", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python /desk/dev/check_scriba.py && exec python /desk/dev/seeded_desk_server.py --host 0.0.0.0 --port 8000"]
+
+# --- test ----------------------------------------------------------------------------
+FROM runtime AS test
+RUN pip install --only-binary=:all: pytest==8.4.2
+# The suite writes Scriba's storage under the working directory (/desk is mounted read-only),
+# and reads the frontend's API types, mounted at /frontend beside /desk.
+WORKDIR /tmp/backend-tests
+CMD ["sh", "-c", "python /desk/dev/check_scriba.py && exec python -m pytest /desk/tests -q -p no:cacheprovider"]

@@ -8,6 +8,7 @@ overlay is attached to the application object just before it starts serving.
     set SCRIBA_BACKEND_PATH=<path to a Scriba checkout>\\Gmail
     <scriba python> backend/dev/seeded_desk_server.py --port 8788
     <scriba python> backend/dev/seeded_desk_server.py --port 8788 --demo
+    (or DESK_DEMO=on in the environment instead of --demo)
 
 ``--demo`` gives the seeded users Alice and Bob an isolated provider world
 each (``demo_world.py``): synthetic Gmail and Outlook mail, a Google and an
@@ -35,8 +36,9 @@ def main() -> None:
     if not scriba or not seeded.is_file():
         sys.exit("Set SCRIBA_BACKEND_PATH to the Gmail/ directory of a Scriba checkout.")
 
-    demo = "--demo" in sys.argv
-    if demo:
+    # --demo, or DESK_DEMO=on (how docker-compose switches it on: see .env.example).
+    demo = "--demo" in sys.argv or os.environ.get("DESK_DEMO", "").strip().lower() in ("1", "on", "true", "yes")
+    if "--demo" in sys.argv:
         sys.argv.remove("--demo")
     sys.path.insert(0, str(BACKEND))
     sys.path.insert(0, str(Path(__file__).resolve().parent))

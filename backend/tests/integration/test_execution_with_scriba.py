@@ -686,3 +686,27 @@ def test_a_placeholder_key_is_never_treated_as_a_model(monkeypatch):
     monkeypatch.setenv("DESK_MODEL", "off")
     assert gateway.model_configured() is False
     assert gateway.extract_meeting(None, {"subject": "x", "body": "y"}, "UTC") is None
+
+
+def test_the_executor_itself_refuses_a_real_write_if_the_approve_gate_were_passed():
+    """Defence in depth: the approve wrapper holds a real write first. If a
+    path ever reached Scriba's executor for a Desk card anyway, the executor
+    wrapper refuses too, and Scriba's engine is still not called."""
+    from desk_overlay import execution
+
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE, world=False)
+        from app import chat_service
+
+        row = {"id": 1, "tool_name": "send_email", "conversation_id": 1}
+        token = execution._call.set({"row": row, "world": None, "notes": {}})
+        try:
+            for action_type in ("send_email", "create_calendar_event", "draft_email_reply"):
+                result = chat_service.execute_action(
+                    account_email=ALICE, action={"action_type": action_type, "payload": {}})
+                assert result["status"] == "failed" and result["error_code"] == "external_writes_disabled"
+            retried = chat_service.retry_action(account_email=ALICE, action_id=5)
+            assert retried["error_code"] == "external_writes_disabled"
+        finally:
+            execution._call.reset(token)
+        assert desk["engine"].calls == []

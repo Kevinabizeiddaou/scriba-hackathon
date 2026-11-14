@@ -227,3 +227,14 @@ def test_a_reminder_needs_a_title_and_a_future_time(desk):
     assert [a["tool_name"] for a in run["actions"]] == ["create_reminder"]
     assert run["actions"][0]["input"] == {"title": "Call Hannah", "remind_at": "2026-11-17T09:00:00+00:00"}
     assert desk.agent.stats["rejectedProposals"] == 2
+
+
+def test_an_unknown_proposal_type_is_refused_even_when_it_looks_like_a_reminder(desk):
+    # Shaped like a reminder, named as something else: the type decides, not the fields.
+    desk.script({"step": "final", "explanation": "x", "proposals": [
+        {"type": "send_email", "title": "Call Hannah", "remind_at": "2026-11-17T09:00:00+00:00"},
+        {"type": "", "title": "Call Hannah", "remind_at": "2026-11-17T09:00:00+00:00"}]})
+    run = desk.mail(QUESTION)
+    assert run["actions"] == []
+    refused = [i["data"]["error"] for i in run["timeline"] if i["data"].get("tool") == "agent.proposal"]
+    assert refused == ["type_not_allowed", "type_not_allowed"]

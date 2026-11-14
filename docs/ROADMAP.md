@@ -51,6 +51,17 @@ does not have it; built as a small addition on top of Scriba's parts.
 | Cost tracking | Partly: model usage and cost are recorded per call and per user, not per run | Adapt | Attribute cost to a run | Not built | Final |
 | Evaluation on 20 real cases | No | New | Run the 20 cases on a real backend (cases and harness exist on the frontend branch, run so far on a mock only) | Not run | Final |
 
+**Update, 14 November 2026 (overlay 0.3, branch `agent1/autonomous-engine`).**
+The table above is the plan as written at Phase 1. Since then the backend has:
+approvals and execution through Scriba's own approve path behind an execution
+gate (sandbox or held, never a real provider); booking, moving and cancelling
+across both calendars; tasks; follow-up tracking; a background intake worker;
+action verification; one evidence timeline per run; per-run model usage from
+Scriba's telemetry; and sandbox evaluation routes. All of it is tested on the
+real Scriba application with providers replaced by an isolated world. None of
+it has run with a real model or a live provider. What is proven, what is not
+and what comes next: [handoff/AGENT1_BACKEND_STATUS.md](handoff/AGENT1_BACKEND_STATUS.md).
+
 Not part of the product: Slack, Teams, Google Drive, OneDrive, Jira and
 desktop automation. They remain in Scriba's backend as shared dependencies
 and are never shown or called by the Desk.

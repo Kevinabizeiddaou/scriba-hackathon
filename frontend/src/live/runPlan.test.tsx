@@ -14,7 +14,7 @@ import { groupOf, heldReasonInfo, nextStepOf } from './deskRuns'
 import { RunPlan } from './PlanView'
 import { ExecutionStep, RunTimeline } from './RunParts'
 import { LIFECYCLE, LIFECYCLE_REASON } from './runLifecycle'
-import { confidenceText, intentLabel, planFieldsOf, planOf, planSummary, plannerLabel, stepsOf, type RunPlanData } from './runPlan'
+import { confidenceText, intentLabel, planFieldsOf, planOf, planSummary, plannerLabel, standingOf, stepsOf, tallyOf, type RunPlanData } from './runPlan'
 
 afterEach(cleanup)
 
@@ -265,8 +265,64 @@ describe('reasons and codes the revised contract adds', () => {
     const second = deskRun({ lifecycle: { stage: 'AWAITING_APPROVAL', reason: null, final: false, outcomeUnknown: false, compensation: null }, actions: [executedAction({ toolCallId: 41, tool_name: 'cancel_calendar_event' }), deskAction({ toolCallId: 42, tool_name: 'send_email' })] })
     expect(nextStepOf(second).kind).toBe('approve')
     expect(nextStepOf(second).detail).not.toContain('Nothing has been sent or changed')
-    expect(nextStepOf(second).detail).toContain('1 earlier action of this run has already run')
+    // The run is half done, and says so: the first step counts, the second is the person's.
+    expect(nextStepOf(second).label).toBe('Review the next step and decide')
+    expect(nextStepOf(second).detail).toBe('1 of 2 steps verified · 1 awaiting your decision. One earlier step has already been executed. What is waiting now runs only if you approve it.')
+    // In a sandbox the earlier step is said to have been executed there.
+    expect(nextStepOf({ ...second, simulated: true }).detail).toContain('One earlier step has already been executed in the sandbox.')
     expect(LIFECYCLE.AWAITING_APPROVAL.blurb).not.toContain('Nothing has happened')
+  })
+})
+
+describe('how far a run has got', () => {
+  const withLifecycle = (action: DeskAction, lifecycle: string): DeskAction => planned(action, { lifecycle })
+
+  it('counts one verified step and one awaiting a decision as half done, never as done', () => {
+    const tally = tallyOf(deskRun({ actions: [executedAction({ toolCallId: 41, tool_name: 'create_calendar_event' }), deskAction({ toolCallId: 42, tool_name: 'send_email' })] }))
+    expect(tally.total).toBe(2)
+    expect(tally.summary).toBe('1 of 2 steps verified · 1 awaiting your decision')
+    expect(tally.allVerified).toBe(false)
+    expect(tally.counts).toMatchObject({ verified: 1, you: 1, unverified: 0, problem: 0 })
+    expect(tally.steps.map(step => step.kind)).toEqual(['verified', 'you'])
+  })
+
+  it('is complete only when every step ran and carries verification evidence', () => {
+    const all = tallyOf(runWith(rawPlan({ steps: [step({ state: 'executed' }), confirm({ state: 'executed', toolCallId: 42 })] }), { state: 'completed', actions: [executedAction({ toolCallId: 41 }), executedAction({ toolCallId: 42, tool_name: 'send_email' })] }))
+    expect(all.summary).toBe('2 of 2 steps verified')
+    expect(all.allVerified).toBe(true)
+    // The same run with one step executed and not verified is not complete.
+    const one = tallyOf(deskRun({ state: 'completed', actions: [executedAction({ toolCallId: 41 }), executedAction({ toolCallId: 42, verified: false, assistantActionId: null })] }))
+    expect(one.summary).toBe('1 of 2 steps verified · 1 ran, not verified')
+    expect(one.allVerified).toBe(false)
+    expect(tallyOf(deskRun({ actions: [] }))).toMatchObject({ total: 0, summary: 'No step is planned.', allVerified: false })
+  })
+
+  it('counts a step whose verification failed as a problem, on the word of the server', () => {
+    const failed = withLifecycle(executedAction({ toolCallId: 41, verified: false }), 'VERIFICATION_FAILED')
+    expect(standingOf('executed', failed, false)).toBe('verification_failed')
+    const tally = tallyOf(deskRun({ state: 'completed', actions: [failed] }))
+    expect(tally.counts.problem).toBe(1)
+    expect(tally.counts.verified).toBe(0)
+    expect(tally.summary).toBe('0 of 1 step verified · 1 did not finish cleanly')
+    expect(tally.allVerified).toBe(false)
+    // The server's state of the action wins over the card status, and "VERIFIED" still needs the evidence flag.
+    expect(standingOf('executed', withLifecycle(executedAction({ verified: true }), 'INTERRUPTED'), false)).toBe('interrupted')
+    expect(standingOf('executed', withLifecycle(executedAction({ verified: false }), 'VERIFIED'), false)).toBe('ran_unverified')
+    expect(standingOf('executed', withLifecycle(executedAction({ verified: true }), 'VERIFIED'), false)).toBe('verified')
+    expect(standingOf('executed', withLifecycle(executedAction(), 'SOMETHING_NEW'), false)).toBe('unknown')
+  })
+
+  it('counts a step blocked by the one it depends on, and does not call it awaiting anything', () => {
+    const tally = tallyOf(runWith(rawPlan({ steps: [step({ state: 'executed' }), confirm({ state: 'blocked' })] }), { actions: [withLifecycle(executedAction({ toolCallId: 41, verified: false }), 'VERIFICATION_FAILED')] }))
+    expect(tally.steps.map(entry => entry.standing)).toEqual(['verification_failed', 'blocked'])
+    expect(tally.counts).toMatchObject({ problem: 1, blocked: 1, you: 0, later: 0, verified: 0 })
+    expect(tally.summary).toBe('0 of 2 steps verified · 1 did not finish cleanly · 1 blocked')
+    expect(tally.allVerified).toBe(false)
+    // The plan shows the failed step with what happens next, and the dependent one as never proposed.
+    render(<RunPlan plan={planOf({ plan: rawPlan({ steps: [step({ state: 'executed' }), confirm({ state: 'blocked' })] }) }) as RunPlanData} actions={[withLifecycle(executedAction({ toolCallId: 41, verified: false }), 'VERIFICATION_FAILED')]} />)
+    expect(screen.getByTestId('plan-step-s1')).toHaveTextContent('Verification failed')
+    expect(screen.getByTestId('plan-step-s1')).toHaveTextContent('Dependent steps are not proposed; the run is handed to the person.')
+    expect(screen.getByTestId('plan-step-s2')).toHaveTextContent('Blocked: will not be proposed')
   })
 })
 

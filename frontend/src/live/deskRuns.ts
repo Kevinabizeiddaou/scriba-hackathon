@@ -30,6 +30,7 @@ import {
 import type { MailProvider } from '../api/contract'
 import { explainHold } from './deskHolds'
 import { HELD_REASON_REVISED, HELD_REASON_V3, LIFECYCLE, LIFECYCLE_REASON, isKnownStage, stageOfRun } from './runLifecycle'
+import { tallyOf } from './runPlan'
 import { stageOf, type WorkStage } from './workQueue'
 
 // ── the run list ────────────────────────────────────────────────────────────
@@ -124,7 +125,8 @@ async function pooled<T, R>(items: T[], limit: number, work: (item: T) => Promis
 }
 
 export async function loadRunQueue(): Promise<RunQueue> {
-  const listing = await fetchDeskRuns()
+  // Every run the backend will list: the list also says which action cards are the Desk's (ownership.ts).
+  const listing = await fetchDeskRuns(200)
   const rows = (listing?.runs ?? []).map(toRunRow).filter((row): row is RunRow => row !== null)
   const head = rows.slice(0, RUN_DETAIL_LIMIT)
   const details = await pooled(head, DETAIL_CONCURRENCY, row => fetchDeskRun(row.runId))
@@ -164,22 +166,34 @@ export function runQueueRefetchInterval(queue: RunQueue | undefined): number | f
 
 // ── where a run sits in the queue ───────────────────────────────────────────
 
-export type QueueGroup = 'decision' | 'input' | 'in_progress' | 'awaiting_reply' | 'problem' | 'done' | 'no_action' | 'cancelled' | 'unknown'
+export type QueueGroup = 'decision' | 'input' | 'in_progress' | 'awaiting_reply' | 'problem' | 'unverified' | 'done' | 'no_action' | 'cancelled' | 'unknown'
 
 export const QUEUE_GROUPS: Record<QueueGroup, { label: string; blurb: string; tone: 'neutral' | 'ok' | 'warn' | 'danger' | 'info' | 'accent' }> = {
   decision: { label: 'Awaiting your approval', blurb: 'The secretary has proposed an action and is waiting for your decision. Nothing has happened yet.', tone: 'warn' },
   input: { label: 'Needs your input', blurb: 'The secretary could not go further on its own: a time is taken or unverified, a detail is missing, or a reply has to be written.', tone: 'warn' },
   in_progress: { label: 'In progress', blurb: 'The secretary is working on it, or an approved action is running.', tone: 'info' },
-  awaiting_reply: { label: 'Awaiting a reply', blurb: 'A reply went out. The secretary is waiting for the other person and will propose a reminder if none comes.', tone: 'info' },
+  awaiting_reply: { label: 'Waiting for a response', blurb: 'A reply went out. The secretary is waiting for the other person and will propose a reminder if none comes.', tone: 'info' },
   problem: { label: 'Did not finish', blurb: 'An action failed, or only part of the work ran.', tone: 'danger' },
   unknown: { label: 'State not recognised', blurb: 'The backend reported a state this version of the Desk does not know. It is not treated as finished.', tone: 'danger' },
-  done: { label: 'Completed', blurb: 'Every proposed action ran.', tone: 'ok' },
+  unverified: { label: 'Executed, not verified', blurb: 'The server reports this finished, but an action that ran has no verification evidence. It is not shown as completed: check the result yourself.', tone: 'warn' },
+  done: { label: 'Completed and verified', blurb: 'Every proposed action took effect, with verification evidence on record.', tone: 'ok' },
   no_action: { label: 'No action needed', blurb: 'The secretary read the message and found nothing to do.', tone: 'neutral' },
   cancelled: { label: 'Cancelled', blurb: 'Every proposed action was cancelled. Nothing ran.', tone: 'neutral' },
 }
 
 /** The order the lists appear in: what needs the person first, finished work last. */
-export const QUEUE_ORDER: QueueGroup[] = ['decision', 'input', 'problem', 'unknown', 'in_progress', 'awaiting_reply', 'done', 'no_action', 'cancelled']
+export const QUEUE_ORDER: QueueGroup[] = ['decision', 'input', 'problem', 'unverified', 'unknown', 'in_progress', 'awaiting_reply', 'done', 'no_action', 'cancelled']
+
+/**
+ * A finished run is drawn as completed only when every step that ran carries verification
+ * evidence. The server's word alone is not evidence.
+ */
+function finished(run: DeskRun): QueueGroup {
+  if (run.actions.length === 0) return 'no_action'
+  const tally = tallyOf(run)
+  if (tally.counts.problem > 0) return 'problem'
+  return tally.counts.unverified > 0 || tally.counts.verified === 0 ? 'unverified' : 'done'
+}
 
 const stagesOf = (run: DeskRun): WorkStage[] => run.actions.map(action => stageOf(action.status))
 
@@ -187,9 +201,6 @@ const stagesOf = (run: DeskRun): WorkStage[] => run.actions.map(action => stageO
  * Where a run sits when the backend reports its lifecycle stage (overlay 0.3). Null when it does
  * not, so the caller falls back to the run state.
  */
-/** The typed client's stages plus `HELD`, which the revised contract adds. */
-type DeskLifecycleStageName = keyof typeof LIFECYCLE
-
 function groupOfStage(run: DeskRun): QueueGroup | null {
   const stage = stageOfRun(run)
   if (stage === null) return null
@@ -199,7 +210,7 @@ function groupOfStage(run: DeskRun): QueueGroup | null {
       return stagesOf(run).includes('awaiting_approval') ? 'decision' : 'input'
     case 'NEEDS_CLARIFICATION':
     case 'ESCALATED':
-    case 'HELD' as DeskLifecycleStageName:
+    case 'HELD':
       return 'input'
     case 'VERIFYING':
       // An outcome the provider did not confirm needs a person to look before anything is retried.
@@ -207,10 +218,10 @@ function groupOfStage(run: DeskRun): QueueGroup | null {
     case 'PARTIALLY_COMPLETED':
     case 'FAILED':
       return 'problem'
-    case 'AWAITING_REPLY':
+    case 'WAITING_FOR_RESPONSE':
       return 'awaiting_reply'
     case 'COMPLETED':
-      return run.actions.length === 0 ? 'no_action' : 'done'
+      return finished(run)
     case 'CANCELLED':
       return 'cancelled'
     default:
@@ -237,7 +248,7 @@ export function groupOf(run: DeskRun): QueueGroup {
       const stages = stagesOf(run)
       if (stages.includes('partially_completed') || stages.includes('failed')) return 'problem'
       // The event exists but the confirmation reply has not been proposed yet.
-      return run.next.includes('advance') ? 'input' : 'done'
+      return run.next.includes('advance') ? 'input' : finished(run)
     }
     case 'no_action_proposed':
       return run.held || run.next.includes('draft_reply') ? 'input' : 'no_action'
@@ -316,7 +327,7 @@ export function nextStepOf(run: DeskRun): NextStep {
     return { kind: 'inspect_failure', label: 'Check whether it happened before doing anything else', detail: 'The provider did not confirm an action, so it may or may not have taken effect. Look in the mailbox or calendar first. A retry in a sandbox reads the result back and does not repeat it; on a real provider it asks you to confirm you checked.' }
   }
   if (stage === 'VERIFYING') return { kind: 'wait', label: 'Nothing: the result is being verified', detail: 'An action ran and the secretary is confirming that it took effect.' }
-  if (stage === 'AWAITING_REPLY') {
+  if (stage === 'WAITING_FOR_RESPONSE') {
     const overdue = (run.followUps ?? []).some(followUp => followUp.state === 'overdue')
     return overdue
       ? { kind: 'approve', label: 'A reply is overdue: review the proposed reminder', detail: 'No answer came in two days. A reminder is proposed below; it is not sent unless you approve it.' }
@@ -341,10 +352,11 @@ export function nextStepOf(run: DeskRun): NextStep {
     const waiting = stages.filter(stage => stage === 'awaiting_approval').length
     // An earlier step of the same run may already have run: "nothing has changed" would then be false.
     const ran = stages.filter(stage => stage === 'completed' || stage === 'partially_completed').length
+    const where = run.simulated ? ' in the sandbox' : ''
     return {
       kind: 'approve',
-      label: waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`,
-      detail: ran > 0 ? `${ran} earlier action${ran === 1 ? ' of this run has' : 's of this run have'} already run. What is waiting now runs only if you approve it.` : 'Nothing has been sent or changed. Each action runs only if you approve it.',
+      label: ran > 0 ? (waiting === 1 ? 'Review the next step and decide' : `Review the next ${waiting} steps and decide`) : waiting === 1 ? 'Review the proposed action and decide' : `Review ${waiting} proposed actions and decide`,
+      detail: ran > 0 ? `${tallyOf(run).summary}. ${ran === 1 ? 'One earlier step has' : `${ran} earlier steps have`} already been executed${where}. What is waiting now runs only if you approve it.` : `Nothing has been ${run.simulated ? 'executed' : 'sent or changed'}. Each action runs only if you approve it${run.simulated ? ', and then only in the sandbox' : ''}.`,
     }
   }
   if (run.state === 'awaiting_approval') {
@@ -368,12 +380,12 @@ export function nextStepOf(run: DeskRun): NextStep {
       detail: 'What succeeded is real and is not undone. A retry on an action card runs immediately, without a second approval.',
     }
   }
-  if (group === 'done') {
+  if (group === 'done' || group === 'unverified') {
     const executed = run.actions.filter(action => stageOf(action.status) === 'completed')
     const unverified = executed.filter(action => !action.verified)
     return unverified.length > 0
-      ? { kind: 'check_result', label: 'Check the result yourself', detail: `${unverified.length === executed.length ? 'The action ran' : 'Part of the work ran'}, but Scriba has no action record to confirm it.` }
-      : { kind: 'none', label: 'Nothing', detail: 'Every action ran and Scriba recorded it.' }
+      ? { kind: 'check_result', label: 'Check the result yourself', detail: `${unverified.length === executed.length ? 'The action ran' : 'Part of the work ran'}, but there is no verification evidence that it took effect.` }
+      : { kind: 'none', label: 'Nothing', detail: run.simulated ? 'Every action was executed in the sandbox and read back there. Nothing real was sent or changed.' : 'Every action ran and its effect was verified.' }
   }
   if (group === 'cancelled') return { kind: 'none', label: 'Nothing', detail: 'The proposed actions were cancelled. Nothing was sent or changed.' }
   return { kind: 'none', label: 'Nothing', detail: 'The message was read and needs no action.' }

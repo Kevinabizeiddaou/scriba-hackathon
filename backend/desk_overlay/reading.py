@@ -77,6 +77,42 @@ _ACTION = re.compile(
     r"(?:\w+\s+){0,2}?your\s+(decision|approval|sign[- ]?off|signature|answer|input|confirmation|feedback|go[- ]?ahead)\b"
     r"|\bplease (?:approve|sign|review and (?:approve|sign)|confirm) (?:the|this|it)\b"
     r"|\bfor your (?:approval|sign[- ]?off|signature|decision)\b", re.I)
+# ── what must be read in full or not at all ────────────────────────────────
+# A day or a zone is read from a pattern. Words beside the pattern can change
+# what it means ("the day AFTER tomorrow", "Thursday WEEK", "GMT+3"). When
+# such a word is there and this reader cannot compute it, the time is not
+# read: a fragment of a phrase is never booked.
+_WD = "|".join(WEEKDAYS)
+_MN = "|".join(MONTHS)
+_UNREAD_DAY = re.compile(
+    r"\bday after tomorrow\b|\bthe day (?:after|before)\b|\bday before\b|\bafter next\b|"
+    r"\b(?:a|one|two|three|\d+) weeks? (?:from|on|after)\b|\bweek (?:on|from|after)\b|"
+    r"\b(?:" + _WD + r")\s+(?:week|fortnight)\b|\bfortnight\b|"
+    r"\bin (?:a|one|two|three|four|five|six|\d+) (?:days?|weeks?|months?)\b|"
+    r"\b(?:end|start|beginning|middle) of (?:the|this|next) (?:week|month)\b|"
+    r"\b(?:the )?(?:following|coming) (?:" + _WD + r")\b", re.I)
+_RELATIVE_WEEK = re.compile(r"\b(?:next|following|coming) week\b|\bthe week after\b", re.I)
+# "GMT+3", "UTC-05": a zone abbreviation with an offset is a different zone.
+_OFFSET_ZONE = re.compile(r"(?<![A-Za-z])(?:GMT|UTC)\s*([+-])\s*(\d{1,2})(?::?([0-5]\d))?(?!\d)")
+_WEEKDAY_WITH_DATE = re.compile(
+    r"\b(" + _WD + r")\b[,\s]+(?:the\s+)?"
+    r"(\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:" + _MN + r")|(?:" + _MN + r")\s+\d{1,2}(?:st|nd|rd|th)?|20\d{2}-\d{2}-\d{2})",
+    re.I)
+# An instruction taken back in the same message.
+_RETRACT = re.compile(
+    r"\bon second thou?ghts?\b|\bscratch that\b|\bnever ?mind\b|\bdisregard\b|\bas you were\b|"
+    r"\bignore (?:that|this|the above|my (?:last|previous|earlier))\b|"
+    r"\bactually,? (?:let'?s )?(?:keep|leave|don'?t|do not|no)\b|\b(?:let'?s )?keep it (?:as (?:it )?is|as planned|where it is|in)\b|"
+    r"\b(?:please )?(?:don'?t|do not) (?:cancel|move|reschedule|book|change) (?:it|that|this|anything)\b|"
+    r"\bchanged my mind\b|\bforget (?:that|it|what i said)\b", re.I)
+# The message speaks of a meeting that already exists, or of moving one.
+_EXISTING = re.compile(
+    r"\b(?:" + _WD + r"|today|tomorrow|this (?:morning|afternoon|evening)|next week)'s\b|"
+    r"\b(?:our|the|my|that|this)\s+(?:\w+\s+){0,2}?(?:meeting|call|demo|catch[- ]?up|session|review|sync|workshop|"
+    r"interview|appointment|1:1|one[- ]on[- ]one|briefing|stand[- ]?up|lunch|coffee)\b|"
+    r"\b(?:push|move|shift|bring|swap|switch|change|bump|slide)\b.{0,40}?\b(?:back|forward|to|until|from|instead)\b|"
+    r"\binstead\b|\brather than\b", re.I)
+
 _URGENT = re.compile(r"\b(urgent(?:ly)?|asap|as soon as possible|immediately|right away|today)\b", re.I)
 
 
@@ -100,6 +136,13 @@ def stated_zone(text: str) -> Tuple[Optional[str], bool]:
     if _AMBIGUOUS_ZONE.search(raw):
         return None, True
     found: List[str] = []
+    for match in _OFFSET_ZONE.finditer(raw):
+        hours = int(match.group(2))
+        if match.group(3) not in (None, "00") or hours > 14:
+            return None, True           # a half-hour offset has no name this reader can use
+        # IANA writes these with the sign reversed: GMT+3 is "Etc/GMT-3".
+        found.append("UTC" if hours == 0 else f"Etc/GMT{'-' if match.group(1) == '+' else '+'}{hours}")
+    raw = _OFFSET_ZONE.sub(" ", raw)
     for match in _CITY_TIME.finditer(raw):
         if match.group(1).split()[-1].lower() in _ZONE_WORDS:
             continue                    # "Pacific time": handled as a zone word below
@@ -201,11 +244,18 @@ def _one(text: str, now: dt.datetime) -> Optional[Dict[str, Any]]:
     lowered = " ".join(str(text or "").lower().split())
     if not lowered:
         return None
+    if _UNREAD_DAY.search(lowered):
+        return None                      # a word that moves the day, which this reader does not compute
     zone_name, ambiguous = stated_zone(text)
     if ambiguous:
         return None
     zone = ZoneInfo(zone_name) if zone_name else now.tzinfo
     today = now.astimezone(zone).date() if zone_name else now.date()
+    written_date = bool(_ISO_DATE.search(lowered) or _DAY_MONTH.search(lowered) or _MONTH_DAY.search(lowered))
+    if not written_date and _RELATIVE_WEEK.search(lowered):
+        return None                      # "Tuesday next week" is not the coming Tuesday
+    if weekday_contradicts_date(lowered, today):
+        return None                      # "Wednesday 9 March" when the 9th is a Tuesday: ask, never pick
     days = _days(lowered, today)
     times, written_range = _times(lowered)
     if len(days) != 1:
@@ -231,6 +281,43 @@ def _one(text: str, now: dt.datetime) -> Optional[Dict[str, Any]]:
         if minutes:
             found["duration_minutes"] = minutes
     return found
+
+
+def weekday_contradicts_date(text: str, today: dt.date) -> bool:
+    """A weekday written beside a date that falls on another weekday."""
+    lowered = " ".join(str(text or "").lower().split())
+    for match in _WEEKDAY_WITH_DATE.finditer(lowered):
+        dates = _days(match.group(2), today)
+        if len(dates) == 1 and WEEKDAYS[dates[0].weekday()] != match.group(1).lower():
+            return True
+    return False
+
+
+def days_named(text: str, now: dt.datetime) -> List[dt.date]:
+    """The days a text names (dates, today, tomorrow, weekday names)."""
+    return _days(" ".join(str(text or "").lower().split()), now.date())
+
+
+def retracted(text: str) -> bool:
+    """The message takes an instruction back ("cancel it. On second thought,
+    keep it"). Which of the two stands is the writer's to say, not a rule's."""
+    return bool(_RETRACT.search(str(text or "")))
+
+
+_REMINDER = re.compile(r"\bremind (?:me|yourself|you|us)\b|\bset (?:me |yourself )?a reminder\b", re.I)
+
+
+def reminder_request(text: str) -> bool:
+    """The message asks to be reminded of something. A reminder with a time
+    is not a meeting with whoever wrote it."""
+    return bool(_REMINDER.search(str(text or "")))
+
+
+def refers_to_existing(subject: str, text: str) -> bool:
+    """The message speaks of a meeting that exists ("Thursday's call", "our
+    review") or of moving one ("push ... back to Friday"). Whether the sender
+    really has such a meeting is for the calendar to say."""
+    return bool(_EXISTING.search(f"{subject or ''}\n{text or ''}"))
 
 
 def explicit_request(text: str, now: dt.datetime, *, change: bool = False) -> Optional[Dict[str, Any]]:

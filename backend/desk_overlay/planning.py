@@ -132,8 +132,41 @@ def _words(text: str) -> set:
     return {word for word in re.findall(r"[a-z0-9]+", str(text or "").lower()) if word not in stop}
 
 
+_NAMED_MEETING = re.compile(
+    r"\b(?:our|the|my|your)\s+((?:[\w:'-]+\s+){1,3}?)(?:meeting|call|demo|catch[- ]?up|session|review|sync|workshop|"
+    r"interview|appointment|briefing|stand[- ]?up|lunch|coffee)\b", re.I)
+_NOT_A_NAME = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "today", "tomorrow",
+               "todays", "tomorrows", "morning", "afternoon", "evening", "weekly", "daily", "monthly", "regular",
+               "usual", "scheduled", "upcoming", "planned", "last", "first", "second", "s", "am", "pm", "o", "clock",
+               "team", "video", "phone", "zoom", "quick", "short", "long"}
+
+
+def named_meeting(text: str) -> set:
+    """The words a message uses to NAME the meeting it is about ("our pricing
+    workshop" -> pricing). Days, times and generic words name nothing."""
+    names: set = set()
+    for match in _NAMED_MEETING.finditer(str(text or "")):
+        names |= {word for word in _words(match.group(1)) if word not in _NOT_A_NAME and not word.isdigit()}
+    return names
+
+
+def _over(event: Mapping[str, Any], now: Optional[dt.datetime]) -> bool:
+    """Cancelled, or already finished: not a meeting that can still be changed."""
+    if str(event.get("status") or "").lower() == "cancelled":
+        return True
+    if now is None:
+        return False
+    try:
+        end = dt.datetime.fromisoformat(str(event.get("end") or event.get("end_time") or ""))
+    except ValueError:
+        return False
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=now.tzinfo)
+    return end <= now
+
+
 def find_target_events(events: List[Mapping[str, Any]], *, sender: Optional[str], subject: str,
-                       hint: str = "") -> Dict[str, Any]:
+                       hint: str = "", now: Optional[dt.datetime] = None, text: str = "") -> Dict[str, Any]:
     """Which existing meeting a change request is about.
 
     Only meetings the SENDER is part of are considered (an attendee or the
@@ -149,11 +182,26 @@ def find_target_events(events: List[Mapping[str, Any]], *, sender: Optional[str]
         people.add(str(event.get("organizer_email") or "").lower())
         if sender and sender in people:
             theirs.append(event)
+    # A meeting that was cancelled or has already taken place cannot be moved
+    # or cancelled. It is not a candidate; and when the message names it better
+    # than any meeting still ahead, the request is about IT: falling back to
+    # the sender's other meeting would change the wrong one.
+    gone = [event for event in theirs if _over(event, now)]
+    theirs = [event for event in theirs if not _over(event, now)]
+    wanted = _words(subject) | _words(hint)
+    score = lambda event: len(wanted & _words(str(event.get("title") or "")))  # noqa: E731
+    if gone and max(score(e) for e in gone) > max([score(e) for e in theirs] or [0]):
+        return {"status": "target_gone", "candidates": theirs, "gone": gone}
     if not theirs:
-        return {"status": "sender_not_on_any_event", "candidates": []}
+        return {"status": "target_gone" if gone else "sender_not_on_any_event", "candidates": [], "gone": gone}
+    # The message names its meeting, and none of the sender's meetings carries
+    # that name: the one they mean is not on the calendar. Their only other
+    # meeting is not "the only meeting this can be about".
+    named = named_meeting(f"{subject}\n{text}\n{hint}")
+    if named and not any(named & _words(str(event.get("title") or "")) for event in theirs):
+        return {"status": "named_not_found", "candidates": theirs, "named": sorted(named)}
     if len(theirs) == 1:
         return {"status": "found", "event": theirs[0], "candidates": theirs}
-    wanted = _words(subject) | _words(hint)
     scored = sorted(((len(wanted & _words(str(e.get("title") or ""))), e) for e in theirs),
                     key=lambda pair: pair[0], reverse=True)
     if scored[0][0] > 0 and scored[0][0] > scored[1][0]:

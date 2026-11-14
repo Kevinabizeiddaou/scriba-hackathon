@@ -523,6 +523,22 @@ class DeskWorkflow:
                       intent: Optional[str] = None, extracted: Optional[Dict[str, Any]] = None) -> None:
         pre_read = extracted is not None
         intent = intent or (item.get("triage") or {}).get("meeting_intent") or "new"
+        subject, text = str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")
+        if reading.retracted(text):
+            # "Cancel it. On second thought, keep it." Which half stands is not
+            # for a rule or a model to pick, least of all for a cancellation.
+            self._hold(plan, user, item, calendar, "conflicting_instructions",
+                       "The message gives an instruction and then takes it back, so nothing is "
+                       "proposed. Read it and decide.")
+            return
+        if intent == "new" and reading.refers_to_existing(subject, text) and self._sender_has_meeting(user, item):
+            # New or change is decided from the calendar, not from the verb:
+            # the message speaks of an existing meeting and the sender is on
+            # one. Booking a second event beside it would be the wrong action.
+            intent = "reschedule"
+            plan["decisions"].append({"decision": "read_as_change", "reason": "refers_to_existing_meeting",
+                                      "explanation": "The message refers to a meeting the sender is "
+                                                     "already on, so it is read as a change to it."})
         try:
             zone_name, _, _, duration = self.service.working_context(user, None, None, None)
         except InvalidAvailabilityRequest:
@@ -552,8 +568,21 @@ class DeskWorkflow:
                 str(item.get("body") or item.get("snippet") or ""),
                 self.service.now(user).astimezone(resolve_zone(zone_name)),
                 change=intent in ("reschedule", "cancel"))
-            plan["reads"].append({"tool": "rules.extract_time", "ok": bool(written),
-                                  "error": None if written else "no_single_written_time"})
+            now_local = self.service.now(user).astimezone(resolve_zone(zone_name))
+            in_subject = reading.days_named(subject, now_local)
+            in_body = reading.days_named(text, now_local)
+            disagree = bool(in_subject and in_body and not set(in_subject) & set(in_body)
+                            and intent == "new") or reading.weekday_contradicts_date(
+                                f"{subject}\n{text}", now_local.date())
+            plan["reads"].append({"tool": "rules.extract_time", "ok": bool(written) and not disagree,
+                                  "error": "days_disagree" if disagree else
+                                  (None if written else "no_single_written_time")})
+            if disagree:
+                self._hold(plan, user, item, calendar, "conflicting_instructions",
+                           "The message names more than one day for the same thing (the subject and "
+                           "the text disagree, or a weekday does not match its date), so no time is "
+                           "picked. Ask which day is meant.")
+                return
             if written:
                 extracted = {**written, "calendar_action": "create" if intent == "new" else intent}
                 plan["planner"] = "rules"
@@ -646,6 +675,21 @@ class DeskWorkflow:
                                   "explanation": "The requested time is free, so the meeting is "
                                                  "proposed for your approval."})
 
+    def _sender_has_meeting(self, user: Any, item: Dict[str, Any]) -> bool:
+        """The sender is on a meeting that is still ahead. A calendar that
+        cannot be read says nothing: the request is then planned as written."""
+        sender = sender_address(str(item.get("from_addr") or ""))
+        now = self.service.now(user)
+        if not sender:
+            return False
+        try:
+            events = self.gateway.calendar_events(user, now, now + dt.timedelta(days=EVENT_SEARCH_DAYS))
+        except Exception:
+            return False
+        found = planning.find_target_events(events, sender=sender, subject=str(item.get("subject") or ""), now=now,
+                                            text=str(item.get("body") or item.get("snippet") or ""))
+        return found["status"] in ("found", "ambiguous")
+
     def _already_scheduled(self, user: Any, item: Dict[str, Any], check: Dict[str, Any],
                            plan: Dict[str, Any]) -> bool:
         """The "conflict" is this very meeting: the sender is already on an
@@ -710,7 +754,26 @@ class DeskWorkflow:
             return
         found = planning.find_target_events(
             events, sender=sender, subject=str(item.get("subject") or ""),
-            hint=str((extracted or {}).get("target_event_hint") or ""))
+            hint=str((extracted or {}).get("target_event_hint") or ""), now=now,
+            text=str(item.get("body") or item.get("snippet") or ""))
+        if found["status"] == "named_not_found":
+            self._hold(plan, user, item, calendar, "event_not_found",
+                       "The message names a meeting (" + ", ".join(found["named"]) + ") and no meeting "
+                       "with this sender carries that name, so nothing is changed. Their other "
+                       "meetings are not touched.",
+                       candidates=[{key: event.get(key) for key in ("id", "title", "start", "end", "provider")}
+                                   for event in found["candidates"]][:5])
+            return
+        if found["status"] == "target_gone":
+            # The meeting this is about was already cancelled or has taken
+            # place. The sender's other meetings are not a substitute for it.
+            plan["flags"].append("duplicate")
+            self._hold(plan, user, item, calendar, "event_not_found",
+                       "The meeting this seems to be about was already cancelled or has already taken "
+                       "place, so there is nothing to change. No other meeting is touched.",
+                       gone=[{key: event.get(key) for key in ("id", "title", "start", "end", "provider", "status")}
+                             for event in found.get("gone") or []][:5])
+            return
         candidates = [{key: event.get(key) for key in ("id", "title", "start", "end", "provider")}
                       for event in found["candidates"][:5]]
         if found["status"] == "sender_not_on_any_event":

@@ -59,6 +59,13 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
     # that never says "meeting", is still scheduling work.
     signal = reading.meeting_signal(subject, text)
     asks_action = reading.action_signal(text)
+    reminder = reading.reminder_request(text)
+    if reminder:
+        # "Remind yourself on Wednesday at 09:00 to call the chairman" has a
+        # day and a time and is not a request to meet the writer.
+        signal = None
+        reasons = [reason for reason in reasons if reason != "meeting_request"]
+        reasons.append("desk_reminder_requested")
     if signal and "meeting_request" not in reasons:
         reasons.append(f"desk_meeting_{signal}")
     if asks_action:
@@ -68,7 +75,7 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
         category = "automated"
     elif "meeting_request" in reasons or signal:
         category = "meeting_request"
-    elif asks_action or (has_deadline and classification != "requires_reply"):
+    elif asks_action or reminder or (has_deadline and classification != "requires_reply"):
         category = "action_item"
     elif classification == "requires_reply":
         category = "needs_reply"

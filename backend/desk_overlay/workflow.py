@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
-from . import files, lifecycle, planning, plans, reading, requests, understanding, workbooks
+from . import errands, files, lifecycle, planning, plans, reading, requests, understanding, workbooks
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
@@ -271,6 +271,10 @@ class DeskWorkflow:
         for proposal in plan["proposals"]:
             self._propose(user, run, proposal)
         self._apply_task_updates(ctx, user, run, plan)
+        if plan.get("errand"):
+            # A website errand: recorded first, then taken as far as it may go without the person.
+            self._record(user, run, "browser", {"phase": "planned", **plan["errand"]})
+            errands.advance(self, ctx, user, run)
         return run
 
     def _propose(self, user: Any, run: Dict[str, Any], proposal: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -432,6 +436,7 @@ class DeskWorkflow:
                                       "explanation": "No action is needed for this message."})
 
         self._plan_file_review(user, item, plan, attached)
+        errands.plan(self, user, item, plan, attached)
 
         if self.agent is not None:
             try:
@@ -853,6 +858,8 @@ class DeskWorkflow:
                if e.get("kind") == "read" and (e.get("data") or {}).get("tool") == "file.read_attachment"}
         own |= {str(((c.get("output") or {}).get("document") or {}).get("id")) for c in self.gateway.run_cards(user, run)}
         own |= {str(change.get("resultFileId")) for change in lifecycle.file_changes(events)}
+        own |= {str(d.get("fileId")) for e in events if e.get("kind") == "browser"
+                for d in (e.get("data") or {}).get("downloads") or []}
         lookup = getattr(self.gateway, "stored_file", None)
         found = lookup(user, str(file_id)) if callable(lookup) and str(file_id) in own else None
         if not found:
@@ -946,6 +953,7 @@ class DeskWorkflow:
                 "sizeBytes": stored.get("size_bytes"), "steps": done["steps"],
                 "verification": {**check, "method": "workbook_reopened", "verified": same},
                 "error": None if same else "kept_file_differs", "by": user.email})
+            errands.advance(self, ctx, user, run)        # what was waiting for this change may follow
         return self.view(ctx, user, run_id)
 
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
@@ -1511,8 +1519,11 @@ class DeskWorkflow:
                 ref = {"provider": item.get("provider"), "id": item.get("id"),
                        "subject": item.get("subject"),
                        "category": (item.get("triage") or {}).get("category")}
-                if ref["category"] not in SWEEP_CATEGORIES or not ref["id"] or not ref["provider"] \
-                        or _not_inbound(item):
+                # Scriba's triage can file "fetch the report from the portal and ..." as news. A
+                # message that asks for a website errand is work, whatever it was filed as.
+                wanted = ref["category"] in SWEEP_CATEGORIES or errands.request(
+                    str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")) is not None
+                if not wanted or not ref["id"] or not ref["provider"] or _not_inbound(item):
                     skipped += 1
                     continue
                 key = run_key(user.id, ref["provider"], item.get("provider_account_id"), ref["id"],
@@ -1586,6 +1597,7 @@ class DeskWorkflow:
                             "dependsOn": step["dependsOn"],
                             "explanation": "A step this one depends on did not take effect, or ran and could not be verified, so it "
                                            "is not proposed."})
+            errands.advance(self, ctx, user, run)
             self._track_follow_ups(ctx, user, run)
         return self.view(ctx, user, run_id)
 
@@ -1902,6 +1914,10 @@ class DeskWorkflow:
             "unresolved": unresolved,
             "fileChanges": [_file_change_view(change, bool(meta.get("sandbox")), run["id"]) for change in file_changes],
         }
+        browsing = errands.view(events, bool(meta.get("sandbox")))
+        if browsing is not None:
+            view["browser"] = browsing if detail else {k: browsing[k] for k in (
+                "state", "site", "stepsDone", "stepsTotal", "verified", "simulated")}
         if detail:
             view["plan"] = {**plan, "steps": steps} if plan is not None else None
             view["actions"] = actions
@@ -1914,7 +1930,12 @@ class DeskWorkflow:
                  "state": "VERIFIED" if c.get("state") == "applied" else "EXECUTED_UNVERIFIED",
                  "verified": c.get("state") == "applied", "simulated": bool(meta.get("sandbox")),
                  "download": {"method": "GET", "path": f"/desk/files/{c['resultFileId']}"}}
-                for c in file_changes if c.get("resultFileId")]
+                for c in file_changes if c.get("resultFileId")] + [
+                {"id": d["fileId"], "filename": d.get("filename"), "mimeType": workbooks.XLSX_MIME,
+                 "sizeBytes": d.get("sizeBytes"), "toolCallId": None, "stepId": None, "source": "browser",
+                 "state": "VERIFIED", "verified": True, "simulated": bool(meta.get("sandbox")),
+                 "download": {"method": "GET", "path": f"/desk/files/{d['fileId']}"}}
+                for d in (browsing or {}).get("downloads") or []]
             if meta.get("kind") == "command":
                 view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
                 view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))

@@ -138,6 +138,9 @@ class SandboxWorld:
         # world one (``add_desktop``). None: this world has no desktop, and
         # nothing can be run on a computer from it.
         self.desktop: Optional[Dict[str, Any]] = None
+        # The websites this world's person authorised the Desk to browse (``add_site``). Empty:
+        # nothing is browsed.
+        self.sites: Dict[str, Dict[str, Any]] = {}
         self.faults: List[Dict[str, Any]] = []
         self.unreadable: Dict[str, str] = {}       # "google:<account>" / "outlook" / "gmail_mail" -> code
         self.oplog: List[Dict[str, Any]] = []
@@ -541,6 +544,33 @@ class SandboxWorld:
         }
         return self.desktop
 
+    # ── websites ────────────────────────────────────────────────────────────
+    def add_site(self, *, name: str, origin: str, aliases: Optional[List[str]] = None, start: str = "/",
+                 sign_in: Optional[Mapping[str, Any]] = None, reports: Optional[Mapping[str, Any]] = None,
+                 synthetic: bool = True) -> Dict[str, Any]:
+        """Authorise a website for this world's person. ``synthetic`` marks a
+        made-up site on this machine (the only kind a loopback address is
+        accepted for); ``sign_in`` is its made-up account."""
+        with self._lock:
+            site = {"id": self._next("site"), "name": str(name), "origin": str(origin).rstrip("/"),
+                    "aliases": [str(a) for a in aliases or []], "start": str(start), "synthetic": bool(synthetic),
+                    "reports": dict(reports or {}),
+                    "signIn": {**dict(sign_in), "synthetic": bool(synthetic)} if sign_in else None}
+            self.sites[site["id"]] = site
+            return dict(site)
+
+    def store_download(self, *, filename: str, content: bytes, mime_type: str) -> Dict[str, Any]:
+        """Keep a file the browser retrieved. Always a new file."""
+        with self._lock:
+            file_id = self._next("file")
+            content = bytes(content or b"")
+            self.files[file_id] = {
+                "id": file_id, "origin": "download", "messageId": None, "filename": str(filename),
+                "mimeType": mime_type, "extension": "." + str(filename).rsplit(".", 1)[-1].lower(),
+                "sizeBytes": len(content), "sha256": hashlib.sha256(content).hexdigest(), "content": content,
+                "createdAt": self.now().astimezone(UTC).isoformat()}
+            return {"id": file_id, "filename": str(filename), "mime_type": mime_type, "size_bytes": len(content)}
+
     # ── files ───────────────────────────────────────────────────────────────
     def attachments_of(self, message_id: str) -> List[Dict[str, Any]]:
         """The attachments of one message: id, name and size. No bytes."""
@@ -905,6 +935,16 @@ class RoutedGateway:
         if world is None:
             return None
         return world.store_generated(filename=filename, content=content, mime_type=mime_type, extension=extension)
+
+    def sites(self, user: Any) -> List[Dict[str, Any]]:
+        """The websites this person authorised. None on a real backend, today."""
+        world = self.world_for(user)
+        return [dict(site) for site in world.sites.values()] if world is not None else []
+
+    def keep_download(self, user: Any, *, filename: str, content: bytes, mime_type: str) -> Optional[Dict[str, Any]]:
+        world = self.world_for(user)
+        return world.store_download(filename=filename, content=content, mime_type=mime_type) \
+            if world is not None else None
 
     def stored_file(self, user: Any, file_id: str) -> Optional[Dict[str, Any]]:
         """A file of the caller's own world, with its bytes. None for anyone else's."""

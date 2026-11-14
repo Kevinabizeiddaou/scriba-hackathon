@@ -1393,3 +1393,157 @@ is not attached to a reply.
 - A review is an extract by rule. No model summarises a file.
 - The reply after a review is a fixed text. The person edits or rejects it.
 - Attachments are not sent with a reply.
+
+## 15. Overlay 0.6: the browser as a tool of a run (Tested in a sandbox, on a real headless browser and a synthetic site)
+
+Typed in `frontend/src/api/desk.ts` (`DeskBrowserErrand`, `DeskBrowserStep`,
+`DeskBrowserDownload`, `DeskBrowserStatus`, `DeskBrowserState`). What is
+Scriba's and what the Desk adds: `docs/handoff/BROWSER_AGENT.md`. Measurements:
+`docs/handoff/BROWSER_BENCHMARK.md`.
+
+### 15.1 What is real and what is not
+
+| | State |
+| --- | --- |
+| The browser | A real Chromium, headless, with no profile, started by the backend on first use. Not the person's Chrome |
+| What acts on a page | Scriba's own page-side player, read from the Scriba checkout at run time. One exception: choosing an option of a native dropdown (Scriba's `select` step throws on one at this revision) |
+| The sites | **Only sites of a sandbox world**, which are synthetic. A real backend has no authorised sites: `available: false`, `reason: "no_authorised_sites"`, and nothing is browsed |
+| A real site, a real sign-in | **Not available.** The Desk holds no passwords and types none. Scriba's extension in the person's own Chrome is not connected to the Desk |
+| Model calls | None. Every decision of an errand is a rule (`modelCalls: 0`) |
+
+### 15.2 `GET /desk/browser`
+
+Never fails for "not available": read `available`.
+
+```json
+{"account": "alice@example.com", "available": true, "reason": null, "message": null,
+ "engine": "chromium", "pageActions": "scriba_player", "modelCalls": 0, "simulated": true,
+ "sites": [{"id": "site-w-alice-1", "name": "Northwind supplier portal",
+            "origin": "http://127.0.0.1:52947", "synthetic": true}]}
+```
+
+`reason`: `no_browser` (no Chromium on the backend), `scriba_player_missing`,
+`no_authorised_sites`. `health.browser` carries `available`, `reason` and
+`simulated`. Capability name: `browser`.
+
+### 15.3 A website errand in a run
+
+A message that asks for a report to be fetched from a website the person has
+authorised, by name, opens a run like any other. The run then carries, in one
+record:
+
+| Part | Gate | Where it shows |
+| --- | --- | --- |
+| Fetching: open, follow links, read, download | **None: it only reads.** Runs when the run is opened | `run.browser`; timeline items of kind `browser`; the file in `run.files[]` with `source: "browser"` |
+| The workbook change, when the message brings a workbook and asks for it to be updated | The person applies it (14.5) | `run.fileChanges[]`, `next` contains `apply_file_change` |
+| The email | Scriba's own `send_email` card, approved by the person. Proposed only after the workbook change is applied (or straight after the fetch when no workbook is involved). An address that only the message named is held as `unverified_recipient` until the person confirms it | `run.actions[]`, `purpose: "send_report"` |
+
+A site named in a message that is not one of the person's authorised sites is
+never opened: `held.reason: "site_not_authorised"`. An address written in the
+message does not make a site authorised.
+
+`run.browser` (on a list row: `state`, `site`, `stepsDone`, `stepsTotal`,
+`verified`, `simulated` only), from a real response, trimmed:
+
+```json
+{"state": "VERIFIED", "site": "Northwind supplier portal", "origin": "http://127.0.0.1:52947",
+ "goal": "Retrieve the latest report", "attempts": 1, "stepsDone": 5, "stepsTotal": 5,
+ "steps": [
+  {"index": 1, "op": "open", "name": "/home", "state": "done", "ms": 234.0, "recovered": ["signed_in"],
+   "url": "http://127.0.0.1:52947/home"},
+  {"index": 2, "op": "follow", "name": "Reports", "state": "done", "ms": 25.6, "how": "looked_up",
+   "matchedBy": "css", "navigated": true, "destination": "http://127.0.0.1:52947/reports"},
+  {"index": 3, "op": "follow", "name": "quarterly report", "state": "done", "ms": 11.4,
+   "picked": {"name": "Q3 2026 quarterly report", "from": 3}},
+  {"index": 4, "op": "read", "name": "period", "state": "done", "ms": 4.3, "how": "definition", "value": "Q3 2026"},
+  {"index": 5, "op": "download", "name": "Download", "state": "done", "ms": 45.4,
+   "filename": "northwind-q3-2026.xlsx", "sizeBytes": 4906, "sha256": "1fba…", "kind": "xlsx",
+   "verification": {"verified": true, "method": "file_opened", "checksum": "matches_the_page"}}],
+ "values": {"period": "Q3 2026"},
+ "downloads": [{"fileId": "file-w-alice-1", "filename": "northwind-q3-2026.xlsx", "sizeBytes": 4906,
+                "sha256": "1fba…", "kind": "xlsx", "from": "http://127.0.0.1:52947/files/q3-2026.xlsx",
+                "verified": true, "checksum": "matches_the_page",
+                "download": {"method": "GET", "path": "/desk/files/file-w-alice-1"}}],
+ "untrustedFindings": [], "ignored": [], "blockedOrigins": [],
+ "actions": 3, "requests": 7, "modelCalls": 0, "ms": 2134.1,
+ "error": null, "message": null, "verified": true, "simulated": true}
+```
+
+`state` (`DeskBrowserState`):
+
+| State | Meaning | Success? |
+| --- | --- | --- |
+| `PLANNED`, `RUNNING` | Not finished. `steps[]` grows as steps end | not yet |
+| `VERIFIED` | Every file it brought back was opened with Scriba's reader (and has the checksum the page states, when it states one); every submission was read back | **yes** |
+| `COMPLETED` | It only looked and read. Nothing to verify beyond the values | yes, with nothing verified |
+| `FAILED` | A step could not be done. `error`, `message`, the step's own `error`. Nothing was kept from a file that did not verify | no |
+| `HELD` | The site carries text written to an assistant; an approved change was not made | no |
+| `NEEDS_APPROVAL` | The task would fill in or submit something and has no approval of exactly that | no |
+| `NOT_APPLIED` | A submission was made or attempted and reading the site back shows no change. Not repeated | no |
+| `OUTCOME_UNKNOWN` | A submission got no answer and nothing can be read back. Not repeated | no |
+| `INTERRUPTED` | The browser stopped or a page did not answer in time. Taken up again once, from the record, by the next `advance` | no |
+| `CANCELLED` | Stopped on request | no |
+
+Step `error` codes: `target_not_found`, `ambiguous_target`, `target_disabled`,
+`blocked_by_dialog`, `no_effect`, `not_as_expected`, `value_not_found`,
+`table_not_found`, `row_not_found`, `download_not_verified`, `would_commit`,
+`password_field`, `field_not_set`, `step_refused`, `sign_in_required`,
+`sign_in_failed`, `untrusted_instructions`, `earlier_submission`, `no_answer`,
+`verification_failed`, `timeout`, `page_changed`, `browser_gone`,
+`task_budget_exceeded`, `cancelled`, `origin_not_allowed`.
+
+`recovered[]` on a step says what it did to get past an obstacle:
+`signed_in`, `closed_dialog:<name>`, `slow_page_tried_again`,
+`download_tried_again:<why>`, `kept_locator_no_longer_fits`,
+`answer_missing_or_unexpected_read_back_instead`.
+
+Lifecycle of a run with an errand, beside the reasons of 14.5:
+
+| `lifecycle.reason` | `stage` |
+| --- | --- |
+| `browser_running` | `EXECUTING` |
+| `browser_failed` | `ESCALATED` |
+| `browser_interrupted` | `ESCALATED` |
+| `browser_outcome_unknown` | `VERIFYING` |
+| `workbook_not_mapped` (the report was fetched; its columns are not the workbook's, so nothing was suggested) | `ESCALATED` |
+
+### 15.4 What the browser will and will not do
+
+- **Only the site's exact origin.** Every request of the page (documents,
+  scripts, images, redirects) passes one gate; anything for another origin is
+  refused before it leaves the machine and listed in `blockedOrigins`. A link
+  that matches a step and leads elsewhere is not used and is listed in
+  `ignored`.
+- **No internal addresses.** A site on a private, loopback, link-local or
+  cloud-metadata address is refused, by name too. A synthetic site on loopback
+  inside a sandbox world is the one exception.
+- **A page is data.** Its text is scanned by Scriba's content guard, shown and
+  hidden text separately; what is found is in `untrustedFindings` and changes
+  nothing. While a site carries such text, nothing is submitted to it.
+- **Reading is free; changing needs an approval** bound to the origin, the
+  fields, their values and the buttons, in order. A reading step that would
+  press something that submits, posts, or is labelled with one of Scriba's
+  committing words stops with `would_commit`.
+- **A password is never typed**, approved or not. The only sign-in is the
+  made-up account of a synthetic site.
+- **A submission is pressed once.** It is recorded before it is pressed. If no
+  answer comes, or the answer is not the expected one, the site is read back;
+  the press is never repeated, in the same attempt or a later one.
+- **A dialog in the way** is closed only by a button that says it closes and
+  commits nothing; otherwise the step stops with `blocked_by_dialog`.
+- No screenshots are taken. No cookie, password, query string or page text is
+  written to a run's record or a log. Cookies live in the browser's memory
+  and end with it.
+
+### 15.5 Limits of 0.6
+
+- Sites exist only in sandbox worlds. There is no route to authorise a real
+  site, and no real site has been browsed.
+- The errand the Desk plans by itself is one: fetch the latest report from an
+  authorised portal, optionally bring its rows into an attached workbook, and
+  tell someone. Tasks that change a site (fill, submit) work in the tool and
+  its tests, with an approval binding; no route starts one from a run yet.
+- The email does not carry the files as attachments.
+- Synthetic clicks only: a site that rejects them needs Scriba's desktop agent.
+- No frames, no shadow DOM, no file upload, no drag and drop.
+- One browser per backend process; an errand runs while the run is opened.

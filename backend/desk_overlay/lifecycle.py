@@ -31,7 +31,7 @@ FINAL_STAGES = ("COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
 
 # Kinds of evidence. One event is exactly one of these.
 KINDS = ("stage", "plan", "decision", "read", "proposal", "approval", "execution", "verification",
-         "human", "followup", "usage", "error")
+         "human", "followup", "usage", "error", "task")
 
 EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
@@ -83,6 +83,11 @@ def summary_of(item: Mapping[str, Any]) -> str:
         return f"{data.get('by')} chose to {data.get('action')} {data.get('tool') or ''}".strip() + "."
     if kind == "followup":
         return f"Follow-up {data.get('state')}."
+    if kind == "task":
+        return {"completed": "Task marked done", "suggested": "Marking a task done is suggested",
+                "dismissed": "The suggestion to mark a task done was dismissed",
+                "failed": "The task could not be marked done"}.get(str(data.get("state")), "Task update") \
+            + f": {data.get('title') or data.get('taskId')}."
     if kind == "usage":
         return f"Model call: {data.get('model')}."
     return str(data.get("message") or "An error was recorded.")
@@ -94,6 +99,19 @@ def record(gateway: Any, user: Any, run: Mapping[str, Any], kind: str, data: Map
     item = event(kind, data, at)
     gateway.record_event(user, run, item, summary_of(item))
     return item
+
+
+def task_updates(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Each existing task this run touched, in its latest state."""
+    latest: Dict[str, Dict[str, Any]] = {}
+    for item in events:
+        if item.get("kind") != "task":
+            continue
+        data = dict(item.get("data") or {})
+        key = str(data.get("taskId") or "")
+        latest[key] = {**latest.get(key, {}), **{k: v for k, v in data.items() if v is not None},
+                       "updatedAt": item.get("at")}
+    return list(latest.values())
 
 
 def follow_ups(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
@@ -155,7 +173,19 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
     unknown = any(action.get("outcomeUnknown") for action in actions)
     reason: Optional[str] = None
 
-    if not actions:
+    updates = task_updates(events)
+    if not actions and updates and not held:
+        states = {str(update.get("state")) for update in updates}
+        if "failed" in states:
+            stage, reason = "ESCALATED", "task_completion_failed"
+        elif "suggested" in states:
+            # Marking the person's task done is theirs to confirm here.
+            stage, reason = "ESCALATED", "task_completion_suggested"
+        elif "completed" in states:
+            stage, reason = "COMPLETED", "task_completed"
+        else:
+            stage, reason = "COMPLETED", "no_action_needed"
+    elif not actions:
         if held:
             reason = str(held.get("reason") or "")
             if reason in ALREADY_DONE_REASONS:

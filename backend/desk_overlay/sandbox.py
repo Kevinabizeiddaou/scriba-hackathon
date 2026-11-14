@@ -716,6 +716,22 @@ class RoutedGateway:
             return self.inner.open_tasks(request, user, limit)
         return [dict(t) for t in world.tasks if t.get("status") == "open"][:limit]
 
+    def complete_task(self, request: Any, user: Any, task_id: Any) -> Dict[str, Any]:
+        world = self.world_for(user)
+        if world is None:
+            return self.inner.complete_task(request, user, task_id)
+        with world._lock:
+            task = next((t for t in world.tasks if str(t.get("id")) == str(task_id)), None)
+            if task is None:
+                raise LookupError("task_not_found")
+            already = task.get("status") != "open"
+            task["status"] = "done"
+            task["completed_at"] = world.now().isoformat()
+            world.oplog.append({"seq": len(world.oplog) + 1, "at": world.now().isoformat(),
+                                "op": "task.complete", "status": "executed", "object_id": str(task_id),
+                                "error": None, "simulated": True})
+        return {"task": dict(task), "already_done": already}
+
     def upcoming_reminders(self, user: Any, limit: int) -> List[Dict[str, Any]]:
         world = self.world_for(user)
         if world is None:

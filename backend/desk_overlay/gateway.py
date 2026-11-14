@@ -414,6 +414,17 @@ class ScribaGateway:
             account=None, provider=None, limit=limit, order="actionable"))
         return [task for task in (payload.get("tasks") or []) if isinstance(task, dict)]
 
+    def complete_task(self, request: Any, user: DeskUser, task_id: Any) -> Dict[str, Any]:
+        """What ``POST /tasks/{id}/complete`` does: Scriba's own tasks runtime
+        marks one of the user's tasks done. Writes only Scriba's records."""
+        import asyncio
+        import inspect
+
+        result = request.app.state.tasks_runtime.complete(task_id=int(task_id), account=None)
+        if inspect.isawaitable(result):
+            result = asyncio.run(result)        # the Desk's routes run in worker threads
+        return _as_dict(result) if result is not None else {}
+
     def upcoming_reminders(self, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
         """The payload behind ``GET /reminders/upcoming``."""
         from apps.api import reminders as reminders_api

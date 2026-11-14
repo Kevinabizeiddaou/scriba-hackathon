@@ -234,6 +234,17 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.close_follow_up(request, user, run_id, follow_id))
 
+    @router.post("/runs/{run_id}/task-updates/{task_id}/apply")
+    def desk_task_update_apply(request: Request, run_id: int, task_id: str) -> Dict[str, Any]:
+        """Mark done the task this run matched. Writes only the person's own records."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id))
+
+    @router.post("/runs/{run_id}/task-updates/{task_id}/dismiss")
+    def desk_task_update_dismiss(request: Request, run_id: int, task_id: str) -> Dict[str, Any]:
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id, dismiss=True))
+
     @router.get("/sandbox")
     def desk_sandbox(request: Request) -> Dict[str, Any]:
         """The caller's isolated provider world and everything done in it."""

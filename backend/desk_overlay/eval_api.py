@@ -305,7 +305,7 @@ def _classification(view: Mapping[str, Any]) -> str:
         return {"new_meeting": "new_meeting", "reschedule": "reschedule", "cancellation": "cancellation",
                 "task": "action_required", "reminder": "action_required", "reply_needed": "reply_needed",
                 "information_request": "reply_needed", "follow_up": "follow_up",
-                "fyi": "fyi"}.get(str(understood["intents"][0].get("type")), "unclear")
+                "work_done": "fyi", "fyi": "fyi"}.get(str(understood["intents"][0].get("type")), "unclear")
     if category == "meeting_request":
         return {"reschedule": "reschedule", "cancel": "cancellation"}.get(str(intent), "new_meeting")
     return {"needs_reply": "reply_needed", "action_item": "action_required", "informational": "fyi",
@@ -472,7 +472,8 @@ def _outcome(view: Mapping[str, Any]) -> str:
         purpose = sent[-1].get("purpose")
         return {"offer_times": "alternatives_proposed", "clarify": "clarification_requested",
                 "nudge": "follow_up_sent"}.get(str(purpose), "replied")
-    if names & {"create_task", "create_reminder"}:
+    if names & {"create_task", "create_reminder"} or any(
+            update.get("state") == "completed" for update in view.get("taskUpdates") or []):
         return "task_recorded"
     actions = view.get("actions") or []
     if actions and all(a.get("status") == "cancelled" for a in actions):
@@ -523,6 +524,18 @@ def agent_run(record: Mapping[str, Any], view: Optional[Mapping[str, Any]]) -> D
                 "error": None if data.get("ok", True) else {
                     "code": str(data.get("error") or "read_failed"), "message": "The read did not complete.",
                     "source": "tool", "retryable": True},
+            })
+        elif item.get("kind") == "task" and data.get("state") in ("completed", "failed"):
+            actions.append({
+                "_order": order[id(item)], "tool": "task.complete", "sideEffect": False,
+                "status": "succeeded" if data.get("state") == "completed" else "failed",
+                "summary": lifecycle.summary_of(item), "input": {"taskId": data.get("taskId")},
+                "output": {"verified": data.get("verified")},
+                "startedAt": _stamp(item.get("at"), fallback), "finishedAt": _stamp(item.get("at"), fallback),
+                "durationMs": None, "approvalId": None, "idempotencyKey": f"task:{data.get('taskId')}",
+                "error": None if data.get("state") == "completed" else {
+                    "code": str(data.get("error") or "task_not_completed"),
+                    "message": "The task could not be marked done.", "source": "tool", "retryable": True},
             })
         elif item.get("kind") == "followup" and data.get("external") and data.get("state") == "satisfied":
             actions.append({

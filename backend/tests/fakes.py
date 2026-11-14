@@ -311,6 +311,14 @@ class FakeGateway:
     def upcoming_reminders(self, user: DeskUser, limit: int) -> List[Dict[str, Any]]:
         return self._section(user, "reminders")[:limit]
 
+    def complete_task(self, request: Any, user: DeskUser, task_id: Any) -> Dict[str, Any]:
+        self.calls.append(("complete_task", user.email, str(task_id)))
+        for task in self.users[user.email]["tasks"]:
+            if str(task.get("id")) == str(task_id):
+                self.users[user.email]["tasks"].remove(task)
+                return {"task": {**task, "status": "done"}}
+        raise LookupError("task_not_found")
+
     def google_busy(self, user: DeskUser, account: str, start: dt.datetime, end: dt.datetime,
                     timezone: str) -> List[Busy]:
         self.calls.append(("google_busy", user.email, account))

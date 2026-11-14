@@ -6,7 +6,7 @@ What the Executive Desk frontend does on live data (the default mode), and what 
 
 | Status | Meaning | Features |
 | --- | --- | --- |
-| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 19 |
+| Connected, verified on the seeded backend | Uses Scriba's real API, and was exercised in a browser against Scriba's seeded backend with the Desk overlay | 20 |
 | Connected, not verified end to end | Calls the real endpoint, but needs a model or a live provider to exercise. Covered by unit tests only | 9 |
 | Waiting for a backend | No backend exists for it. The live screen says so and shows nothing in its place | 7 |
 | Not implemented | Not built | 1 |
@@ -19,6 +19,7 @@ The seeded backend is Scriba's real application with in-memory storage: no datab
 | --- | --- | --- | --- |
 | Sign-in and session | Connected, verified on the seeded backend | Scriba session cookie; GET /providers/status; POST /auth/signin; POST /auth/logout | Google and Microsoft sign-in are navigations to Scriba and were not exercised here |
 | Executive overview and work queue | Connected, verified on the seeded backend | GET /desk/briefing, GET /desk/inbox, GET /desk/connections, chat action records | A backend work-queue listing, so the queue is not limited to recent conversations |
+| Overview: waiting on you, with the secretary, and finished work | Connected, verified on the seeded backend | Chat action records and GET /desk/runs: counts and the finished list come from server statuses only | A run for an actionable message on the seeded backend: in a browser only completed chat actions and a no-action run were seen |
 | Connected accounts (Gmail, Outlook Mail, Google Calendar, Outlook Calendar) | Connected, verified on the seeded backend | GET /desk/connections | Nothing for the Desk; reconnecting happens in Scriba |
 | Activity and execution history | Connected, verified on the seeded backend | GET /chat/conversations and their messages: every action card with its server status | The same work-queue listing; automation runs are not included yet |
 

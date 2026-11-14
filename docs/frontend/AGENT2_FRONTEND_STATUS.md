@@ -6,6 +6,9 @@ project lead.
 
 Nothing in this report is a result about the agent. No real model, mailbox or calendar was used.
 
+That branch is merged (`a006db0`). The later polish pass on `agent2/frontend-excellence` is
+reported in `docs/AGENT2_FRONTEND_HANDOFF.md`.
+
 ## 1. Commits on this branch
 
 | Commit | What |

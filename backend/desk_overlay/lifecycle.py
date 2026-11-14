@@ -31,7 +31,7 @@ FINAL_STAGES = ("COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
 
 # Kinds of evidence. One event is exactly one of these.
 KINDS = ("stage", "plan", "decision", "read", "proposal", "approval", "execution", "verification",
-         "human", "followup", "usage", "error", "task", "file")
+         "human", "followup", "usage", "error", "task", "file", "browser")
 
 EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
@@ -93,6 +93,18 @@ def summary_of(item: Mapping[str, Any]) -> str:
                 "unverified": "A changed copy was made and could not be verified",
                 "failed": "The workbook could not be changed", "dismissed": "The suggested change was dismissed",
                 }.get(str(data.get("state")), "Workbook change") + f": {data.get('filename') or data.get('changeId')}."
+    if kind == "browser":
+        phase = data.get("phase")
+        if phase == "planned":
+            return f"A website errand is planned on {data.get('siteName')}: {data.get('goal')}."
+        if phase == "started":
+            return f"The browser opened {data.get('site')}."
+        if phase == "step":
+            what = f"{data.get('op')} {data.get('name') or ''}".strip()
+            return f"Browser: {what}: {'done' if data.get('state') == 'done' else data.get('message') or data.get('state')}."
+        return {"VERIFIED": "The website errand is done and what it brought back was verified.",
+                "COMPLETED": "The website was read."}.get(
+            str(data.get("state")), f"The website errand stopped ({data.get('error')}): {data.get('message')}")
     if kind == "usage":
         return f"Model call: {data.get('model')}."
     return str(data.get("message") or "An error was recorded.")
@@ -263,6 +275,24 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
             stage, reason = "VERIFYING", "file_change_not_verified"
         else:
             stage, reason = "ESCALATED", "file_change_suggested"
+
+    # A website errand that has not brought back what it went for is work that is not finished.
+    planned = next((e.get("data") or {} for e in events if e.get("kind") == "browser"
+                    and (e.get("data") or {}).get("phase") == "planned"), None)
+    if planned is not None and stage == "COMPLETED":
+        last = next((e.get("data") or {} for e in reversed(events) if e.get("kind") == "browser"
+                     and (e.get("data") or {}).get("phase") == "result"), None)
+        decided = {(e.get("data") or {}).get("reason") for e in events if e.get("kind") == "decision"}
+        if last is None:
+            stage, reason = "EXECUTING", "browser_running"
+        elif last.get("state") == "OUTCOME_UNKNOWN":
+            stage, reason = "VERIFYING", "browser_outcome_unknown"
+        elif last.get("state") == "INTERRUPTED":
+            stage, reason = "ESCALATED", "browser_interrupted"
+        elif last.get("state") not in ("VERIFIED", "COMPLETED"):
+            stage, reason = "ESCALATED", "browser_failed"
+        elif "workbook_not_mapped" in decided:
+            stage, reason = "ESCALATED", "workbook_not_mapped"
 
     compensation = None
     if stage == "PARTIALLY_COMPLETED":

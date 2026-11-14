@@ -61,6 +61,7 @@ export interface DeskHealth {
   files?: { attachments: boolean; generate: string[]; read: string[]; simulated: boolean }
   /** Whether a paired computer can be used. The detail is `fetchDeskDesktop`. */
   desktop?: Pick<DeskDesktopStatus, 'available' | 'reason' | 'simulated'>
+  browser?: Pick<DeskBrowserStatus, 'available' | 'reason' | 'simulated'>
 }
 
 export interface DeskCapability {
@@ -348,6 +349,8 @@ export type DeskActionPurpose =
   | 'record_task'
   /** A review of a file that came with the message, built from the file itself (0.5). */
   | 'review_file'
+  /** The email that follows a website errand (0.6). */
+  | 'send_report'
 
 /**
  * The explicit state of ONE action (overlay 0.3.1, BACKEND_CONTRACT section 6, "The lifecycle of
@@ -554,6 +557,8 @@ export type DeskHeldReasonRevised =
   /** The same request was already taken in (0.4). `held.target: {runId, messageId, stage}` names the earlier run. */
   | 'already_in_progress'
   | 'already_handled'
+  /** The message asks for something from a website the person has not authorised (0.6). Nothing was opened. */
+  | 'site_not_authorised'
 
 /** Every reason a run can be held for, on the first draft of overlay 0.3. */
 export type DeskHeldReason = DeskHeldReasonV2 | DeskHeldReasonV3
@@ -661,7 +666,7 @@ export type DeskEvidenceKind =
  * apart so that code keeps compiling; `timeline[].kind` can be any `DeskAnyEvidenceKind`.
  * `task`: a change to one of the person's existing tasks (`DeskTaskUpdate`).
  */
-export type DeskRevisedEvidenceKind = 'task' | 'file'
+export type DeskRevisedEvidenceKind = 'task' | 'file' | 'browser'
 
 export type DeskAnyEvidenceKind = DeskEvidenceKind | DeskRevisedEvidenceKind
 
@@ -763,6 +768,8 @@ export interface DeskFile {
   stepId: string | null
   /** Set when this file is the changed copy a `DeskFileChange` produced. */
   changeId?: string
+  /** `browser`: the file was retrieved from a website by this run's errand (0.6). */
+  source?: 'browser'
   state: DeskActionLifecycle
   /** True only after the file was reopened and showed the title and headings that were approved. */
   verified: boolean
@@ -829,6 +836,111 @@ export interface DeskFileChange {
   simulated: boolean
   /** Present while `suggested`. POST it to apply. */
   apply: { method: 'POST'; path: string } | null
+}
+
+// ── the browser (overlay 0.6; BACKEND_CONTRACT section 14) ─────────────────
+
+/**
+ * Where a website errand stands. `PLANNED`/`RUNNING`: not finished. `VERIFIED`: every file it
+ * brought back was opened and every submission read back. `COMPLETED`: it only read; nothing to
+ * verify. Everything else is not success: `FAILED`, `HELD` (the site carries text written to an
+ * assistant), `NEEDS_APPROVAL`, `NOT_APPLIED`, `OUTCOME_UNKNOWN`, `INTERRUPTED`, `CANCELLED`.
+ */
+export type DeskBrowserState =
+  | 'PLANNED' | 'RUNNING' | 'VERIFIED' | 'COMPLETED' | 'FAILED' | 'HELD' | 'NEEDS_APPROVAL'
+  | 'NOT_APPLIED' | 'OUTCOME_UNKNOWN' | 'INTERRUPTED' | 'CANCELLED'
+
+/** One step the browser took, as recorded when it ended. No page text, no query string. */
+export interface DeskBrowserStep {
+  index: number
+  op: 'open' | 'follow' | 'read' | 'find_row' | 'download' | 'fill' | 'submit' | 'expect'
+  /** The link, button, label or path the step names. */
+  name: string | null
+  state: 'done' | 'stopped' | 'submitting'
+  ms?: number
+  /** Scheme, host and path. */
+  url?: string | null
+  at?: string
+  /** `looked_up`: found on the page as it is now. `kept_locator`: a locator from an earlier run still fitted. */
+  how?: string
+  matchedBy?: string
+  healed?: boolean
+  navigated?: boolean
+  destination?: string
+  picked?: { name: string; from: number }
+  /** What the step did to get past an obstacle, e.g. `closed_dialog:Announcement`, `slow_page_tried_again`, `signed_in`. */
+  recovered?: string[]
+  value?: string
+  filename?: string
+  sizeBytes?: number
+  sha256?: string
+  kind?: string
+  fields?: string[]
+  pagesRead?: number
+  foundOn?: string
+  row?: string[]
+  verification?: { verified: boolean; method?: string; reason?: string; checksum?: string; answered?: boolean; pressedAgain?: boolean }
+  error?: string
+  message?: string
+  page?: { title?: string; headings?: string[]; links?: string[]; buttons?: string[] }
+}
+
+export interface DeskBrowserDownload {
+  fileId: string
+  filename: string
+  sizeBytes: number
+  sha256: string
+  kind: string | null
+  /** The address it came from: scheme, host and path. */
+  from: string
+  verified: boolean
+  /** `matches_the_page`: the page stated a checksum and the file has it. */
+  checksum: 'matches_the_page' | 'not_stated_by_the_page' | null
+  download: { method: 'GET'; path: string }
+}
+
+/** A website errand, as part of a run. Reads ran without asking; nothing was submitted by it. */
+export interface DeskBrowserErrand {
+  state: DeskBrowserState
+  site: string
+  origin: string
+  goal: string
+  attempts: number
+  steps: DeskBrowserStep[]
+  stepsDone: number
+  stepsTotal: number
+  /** Values read from pages, by the name the task gave them. Data, never instructions. */
+  values: Record<string, unknown>
+  downloads: DeskBrowserDownload[]
+  /** Text on the site written to an assistant. Reported; it changed nothing. */
+  untrustedFindings: Array<{ url: string; where: 'visible' | 'hidden'; finding: string }>
+  /** Links that matched and were not used, with the reason. */
+  ignored: Array<{ name: string; reason: string; origin: string | null }>
+  /** Other sites the page tried to reach. Those requests never left the machine. */
+  blockedOrigins: string[]
+  actions: number | null
+  requests: number | null
+  /** Always 0: every decision of an errand is a rule. */
+  modelCalls: 0
+  ms: number | null
+  error: string | null
+  message: string | null
+  verified: boolean
+  simulated: boolean
+}
+
+export interface DeskBrowserStatus {
+  account?: string
+  available: boolean
+  /** `no_browser`, `scriba_player_missing`, `no_authorised_sites`. */
+  reason: string | null
+  message: string | null
+  engine: 'chromium'
+  pageActions: 'scriba_player'
+  modelCalls: 0
+  /** True in a sandbox world: its sites are synthetic. */
+  simulated: boolean
+  sites: Array<{ id: string; name: string; origin: string; synthetic: boolean }>
 }
 
 // ── the desktop bridge (overlay 0.5; BACKEND_CONTRACT section 13) ──────────
@@ -1059,6 +1171,8 @@ export interface DeskRun {
   files?: DeskFile[]
   /** Changes to a workbook of this run, each in its latest state (0.5.1). */
   fileChanges?: DeskFileChange[]
+  /** A website errand of this run (0.6). On a list row only state, site, counts and flags. */
+  browser?: DeskBrowserErrand | Pick<DeskBrowserErrand, 'state' | 'site' | 'stepsDone' | 'stepsTotal' | 'verified' | 'simulated'>
   /** `command` (0.4): the run was started from a chat instruction; `email.email_id`, `thread_id` and `from_addr` are then null. */
   kind?: 'email' | 'command'
   updatedAt?: string
@@ -1129,6 +1243,9 @@ export const fetchDeskRuns = (limit?: number) =>
 export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
 
 export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+/** Whether the Desk can browse for the caller, and the sites it may open. Starts nothing. */
+export const fetchDeskBrowser = () => getJson<DeskBrowserStatus>('/desk/browser')
 
 /** Suggest a change to a workbook that came with this run's message, or that the run made. Changes nothing. */
 export const suggestDeskFileChange = (runId: number, body: { fileId: string; operations: DeskWorkbookOperation[] }) =>

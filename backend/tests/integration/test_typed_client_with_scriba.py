@@ -206,3 +206,52 @@ def test_a_workbook_change_is_declared_too():
         assert {"suggested", "applied", "unverified", "failed", "dismissed"} == states
         for op in ("update_cell", "append_row", "upsert_row"):
             assert f"op: '{op}'" in CLIENT
+
+
+def test_a_website_errand_is_declared_too(monkeypatch):
+    import os
+
+    import pytest
+
+    from desk_overlay import browser, browser_cdp
+
+    if browser_cdp.find_binary() is None:
+        pytest.skip("no Chromium on this machine")
+    from .test_browser_with_scriba import ASK, desk_with_portal, sp
+    from .test_files_with_scriba import mail_with
+    from .test_workbooks_with_scriba import budget
+
+    portal, stop = sp.start()
+    sessions = browser.Sessions(os.environ["SCRIBA_BACKEND_PATH"])
+    try:
+        with sandbox_desk() as desk:
+            desk["sign_in"](ALICE)
+            desk_with_portal(desk, portal, sessions, monkeypatch)
+            portal.set(injection=True, modal=True)
+            run = mail_with(desk, [{"filename": "budget.xlsx", "content": budget()}], body=ASK)
+            problems = [f"DeskRun.{k}" for k in undeclared(run, "DeskRun")]
+            problems += [f"DeskBrowserErrand.{k}" for k in undeclared(run["browser"], "DeskBrowserErrand")]
+            for step in run["browser"]["steps"]:
+                problems += [f"DeskBrowserStep.{k}" for k in undeclared(step, "DeskBrowserStep")]
+            for item in run["browser"]["downloads"]:
+                problems += [f"DeskBrowserDownload.{k}" for k in undeclared(item, "DeskBrowserDownload")]
+            for item in run["files"]:
+                problems += [f"DeskFile.{k}" for k in undeclared(item, "DeskFile")]
+            status = desk["client"].get(f"{desk['prefix']}/desk/browser").json()
+            problems += [f"DeskBrowserStatus.{k}" for k in undeclared(status, "DeskBrowserStatus")]
+            assert sorted(set(problems)) == []
+            assert status["available"] and status["simulated"] and status["sites"][0]["synthetic"]
+            assert run["browser"]["state"] in members("DeskBrowserState")
+            assert {s["op"] for s in run["browser"]["steps"]} <= set(browser.OPS)
+            for op in browser.OPS:
+                assert f"'{op}'" in CLIENT
+            for state in browser.STATES:
+                assert state in members("DeskBrowserState")
+            assert {i["kind"] for i in run["timeline"]} <= members("DeskEvidenceKind") | members("DeskRevisedEvidenceKind")
+            health = desk["client"].get(f"{desk['prefix']}/desk/health").json()
+            assert health["browser"] == {"available": True, "reason": None, "simulated": True}
+            assert "'send_report'" in CLIENT and "'site_not_authorised'" in CLIENT and "/desk/browser" in CLIENT
+    finally:
+        sessions.stop()
+        stop()
+

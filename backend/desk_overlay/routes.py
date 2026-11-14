@@ -40,7 +40,7 @@ from .workflow import Conflict, DeskWorkflow, IntakeBusy, InvalidRequest
 DESK_CAPABILITIES = ["connections", "inbox", "triage", "availability", "slot_check", "briefing",
                      "intake", "intake_sweep", "runs", "run_state", "run_lifecycle", "follow_ups",
                      "worker_status", "external_write_readiness", "sandbox_execution",
-                     "files", "desktop_bridge"]
+                     "files", "desktop_bridge", "browser"]
 
 
 class SlotCheckBody(BaseModel):
@@ -174,6 +174,8 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
             "files": {"attachments": world is not None, "generate": ["docx", "xlsx"],
                       "read": ["pdf", "docx", "xlsx", "pptx", "csv", "txt"], "simulated": world is not None},
             "desktop": {key: value for key, value in desktop.status(user).items()
+                        if key in ("available", "reason", "simulated")},
+            "browser": {key: value for key, value in _browser_status(user).items()
                         if key in ("available", "reason", "simulated")},
         }
         if callable(extra_health):
@@ -354,6 +356,34 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
             # the stable code travels in a header a client can switch on.
             raise HTTPException(status_code=exc.status, detail=exc.message,
                                 headers={"X-Desk-Error-Code": exc.code})
+
+    def _browser_status(user: Any) -> Dict[str, Any]:
+        """Can the Desk browse for this person, and where. Starts nothing."""
+        from . import errands
+
+        listing = getattr(gateway, "sites", None)
+        sites = (listing(user) if callable(listing) else None) or []
+        engine = errands._sessions(workflow).status()
+        available = bool(engine["available"] and sites)
+        return {
+            "available": available,
+            "reason": None if available else (engine["reason"] or "no_authorised_sites"),
+            "message": None if available else (engine["message"] or "No website is authorised for the Desk to "
+                                               "browse on this account."),
+            # The browser is a real Chromium, isolated and headless. The sites of a sandbox world are synthetic.
+            "engine": "chromium", "pageActions": "scriba_player", "modelCalls": 0,
+            "simulated": gateway.world_for(user) is not None,
+            "sites": [{"id": s.get("id"), "name": s.get("name"), "origin": s.get("origin"),
+                       "synthetic": bool(s.get("synthetic"))} for s in sites],
+        }
+
+    @router.get("/browser")
+    def desk_browser(request: Request) -> Dict[str, Any]:
+        """Whether the Desk can browse for the caller, and the sites it may
+        open. ``available: false`` with a reason when not. A website errand
+        itself is part of a run: see ``run.browser``."""
+        user = gateway.current_user(request)
+        return {"account": user.email, **_browser_status(user)}
 
     @router.get("/desktop")
     def desk_desktop(request: Request) -> Dict[str, Any]:

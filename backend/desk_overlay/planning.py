@@ -44,7 +44,17 @@ _INJECTION = re.compile(
     r"|(?:auto(?:matically)?[- ]?approve|approve (?:this|it) (?:automatically|without (?:asking|review)))"
     r"|without (?:asking|telling|notifying) (?:the |your )?(?:user|executive|principal|boss)"
     r"|do not (?:ask|tell|notify) (?:the |your )?(?:user|executive|principal|boss)"
-    r"|forward (?:all|every|this entire) (?:emails?|mail|messages?|inbox))",
+    r"|forward (?:all|every|this entire) (?:emails?|mail|messages?|inbox)"
+    # Asking for the approval to be left out, in whatever words.
+    r"|(?:skip|bypass|omit|disable|leave out|do away with)\s+(?:the\s+|any\s+|your\s+)?"
+    r"(?:approval|sign-?off|review|confirmation|human|manual)(?:\s+(?:step|check|stage|process))?"
+    # Asking for the executive's data wholesale.
+    r"|(?:send|mail|e-?mail|forward|export|share|upload)\s+(?:me\s+|us\s+|over\s+)?"
+    r"(?:the\s+|your\s+|her\s+|his\s+|their\s+)?(?:full|entire|whole|complete)\s+"
+    r"(?:calendar|inbox|mailbox|contact list|contacts|address book|diary)"
+    # Addressing whatever software reads the mail.
+    r"|(?:whichever|whatever|any)\s+(?:tool|system|software|program|automation|bot|assistant)\s+"
+    r"(?:handles|reads|processes|manages|is reading))",
     re.I)
 
 

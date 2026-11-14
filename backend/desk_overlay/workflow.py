@@ -57,6 +57,15 @@ EVENT_SEARCH_DAYS = 45
 REPLY_PURPOSES_AWAITING = ("offer_times", "clarify")
 
 
+# A person saying outright that nothing is asked of the reader.
+_NEWS = re.compile(
+    r"\b(?:fyi|for (?:your )?info(?:rmation)?|no (?:further )?action (?:is )?(?:needed|required|necessary)|"
+    r"nothing (?:is )?(?:needed|required) (?:from|of) you|no need to (?:reply|respond|do anything)|"
+    r"just (?:an update|a heads[- ]up|to let you know|keeping you (?:posted|in the loop)|so you know)|"
+    r"for the record|keeping you (?:posted|in the loop)|thank you|thanks(?: again)?|"
+    r"received,? (?:with )?thanks|noted|sounds good|see you (?:then|there|on))\b", re.I)
+
+
 class IntakeBusy(RuntimeError):
     """Another worker holds the claim for this message right now."""
 
@@ -351,6 +360,16 @@ class DeskWorkflow:
             plan["decisions"].append({"decision": "escalate", "reason": "reply_needs_author",
                                       "explanation": "This needs a reply in your words. A draft can "
                                                      "be prepared for you to review."})
+        elif triage["category"] == "informational" and not self._is_plainly_news(item, plan):
+            # Written by a person, and the rules cannot say what it needs.
+            # Filing it as dealt with would hide it: it is handed over.
+            plan["held"] = {
+                "reason": "needs_review", "slots": [], "calendars": [],
+                "message": "This was written by a person and it is not clear what, if anything, it "
+                           "needs from you. It was not filed as dealt with: read it and decide."}
+            plan["decisions"].append({"decision": "escalate", "reason": "needs_review",
+                                      "explanation": "The Desk could not place this message, so it "
+                                                     "was handed to you instead of being filed."})
         else:
             plan["decisions"].append({"decision": "none", "reason": triage["category"],
                                       "explanation": "No action is needed for this message."})
@@ -378,6 +397,16 @@ class DeskWorkflow:
             decision["evidence"] = list(evidence)
         plan["decisions"].append(decision)
         return plan
+
+    @staticmethod
+    def _is_plainly_news(item: Mapping[str, Any], plan: Mapping[str, Any]) -> bool:
+        """"No action" has to be earned: the message says it is for
+        information, or the Desk already recorded what it reports (a task it
+        finished, an awaited answer it brought)."""
+        if plan.get("task_updates") or plan.get("closed_follow_ups"):
+            return True
+        text = f"{item.get('subject') or ''}\n{item.get('body') or item.get('snippet') or ''}"
+        return bool(_NEWS.search(text))
 
     def thread_context(self, user: Any, item: Mapping[str, Any],
                        detail: Mapping[str, Any]) -> List[Dict[str, Any]]:

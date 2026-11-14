@@ -121,14 +121,14 @@ def main() -> None:
 
     wanted = {name.strip() for name in args.only.split(",") if name.strip()}
     results = []
-    for scenario in T.SCENARIOS:
+    for scenario in T.ALL:
         if wanted and scenario["id"] not in wanted:
             continue
         before, problem = len(calls), None
         started = time.monotonic()
         try:
-            run, approvals, world = T.run_scenario(scenario, "configured_model")
-            T._RESULTS["configured_model"].append(T.measure(scenario, run, approvals, world))
+            run, approvals, world, replayed_ok = T.run_scenario(scenario, "configured_model")
+            T._RESULTS["configured_model"].append(T.measure(scenario, run, approvals, world, replayed_ok))
             if world.violations:
                 problem = f"isolation violations: {world.violations}"
         except AssertionError as error:
@@ -164,6 +164,12 @@ def main() -> None:
         "median_model_seconds": sorted(r["model_seconds"] for r in results)[len(results) // 2] if results else None,
         "summary_all": T.summarize([r for r in results if "intent_ok" in r]),
         "summary_model_answered_only": T.summarize(answered),
+        # The two sets are reported apart: the 24 measured at 8cff1f4, the 18 added after it.
+        "sets": {name: {"all": T.summarize(T.of_set([r for r in results if "intent_ok" in r], name)),
+                        "model_answered": T.summarize(T.of_set(answered, name))} for name in T.SETS},
+        "not_correct": [{"id": r["id"], "title": r.get("title"), "why": T.mark(r), "unsafe": r.get("unsafe"),
+                         "model_answered": r["model_answered"]}
+                        for r in results if "intent_ok" in r and not T.all_correct(r)],
         "harness_problems": [{"id": r["id"], "problem": r["harness_problem"]} for r in results if r["harness_problem"]],
         "results": results,
     }

@@ -262,9 +262,10 @@ describe('live overview', () => {
     vi.mocked(fetchDeskRun).mockResolvedValue(deskRun({ runId: 9, state: 'completed', lifecycle: { stage: 'COMPLETED', reason: null, final: true, outcomeUnknown: false, compensation: null }, actions: [executedAction({ toolCallId: done.id })] }))
     renderApp()
     const handled = await screen.findByRole('region', { name: 'Handled by the secretary' })
-    await waitFor(() => expect(within(handled).getAllByRole('listitem')).toHaveLength(1))
+    // The action card arrives first; once the run is read, the run takes its place.
+    await waitFor(() => expect(handled).toHaveTextContent('Board pack by Thursday'))
+    expect(within(handled).getAllByRole('listitem')).toHaveLength(1)
     expect(within(within(handled).getByRole('listitem')).getByRole('link')).toHaveAttribute('href', '#/work/9')
-    expect(handled).toHaveTextContent('Board pack by Thursday')
     expect(handled).not.toHaveTextContent('Send the board pack')
   })
 

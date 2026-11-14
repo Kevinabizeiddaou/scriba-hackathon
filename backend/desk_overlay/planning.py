@@ -220,7 +220,8 @@ def confirmation_reply(*, title: str, start: str, end: str, timezone: str, moved
             zone = ZoneInfo(other_timezone)
             theirs = {"start": dt.datetime.fromisoformat(start).astimezone(zone).isoformat(),
                       "end": dt.datetime.fromisoformat(end).astimezone(zone).isoformat()}
-            both = f", which is {slot_label(theirs)} ({other_timezone})"
+            place = other_timezone.split("/")[-1].replace("_", " ")
+            both = f", which is {slot_label(theirs)} {place} time ({other_timezone})"
         except Exception:
             both = ""
     return (f"Thank you for your message. I have {verb} \"{title}\" {'to' if moved else 'for'} {when} "

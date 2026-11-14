@@ -489,15 +489,25 @@ def _outcome(view: Mapping[str, Any]) -> str:
         return "rescheduled"
     if "cancel_calendar_event" in names:
         return "cancelled_meeting"
+    actions = view.get("actions") or []
     sent = [a for a in done if a["tool_name"] == "send_email"]
-    if sent:
-        purpose = sent[-1].get("purpose")
+    special = next((a.get("purpose") for a in reversed(sent)
+                    if a.get("purpose") in ("offer_times", "clarify", "nudge")), None)
+    if special:
         return {"offer_times": "alternatives_proposed", "clarify": "clarification_requested",
-                "nudge": "follow_up_sent"}.get(str(purpose), "replied")
+                "nudge": "follow_up_sent"}[str(special)]
+    external = ("send_email", "create_calendar_event", "update_calendar_event", "cancel_calendar_event")
+    refused = [a for a in actions if a["tool_name"] in external and a.get("status") == "cancelled"]
+    if refused and not any(a["tool_name"] in external for a in done):
+        # The person said no to what would have gone out, and nothing went out.
+        return "declined"
     if names & {"create_task", "create_reminder"} or any(
             update.get("state") == "completed" for update in view.get("taskUpdates") or []):
+        # Work was recorded. An acknowledgement sent beside it does not make
+        # the run "a reply": the record is what the run was for.
         return "task_recorded"
-    actions = view.get("actions") or []
+    if sent:
+        return "replied"
     if actions and all(a.get("status") == "cancelled" for a in actions):
         return "declined"
     stage = (view.get("lifecycle") or {}).get("stage")

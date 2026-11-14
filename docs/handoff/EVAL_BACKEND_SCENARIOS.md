@@ -20,7 +20,7 @@ tasks, partial failure, model outage, injection, approval replay).
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 24 | 24 |
 | Executed actions verified | 24 | 24 |
-| Median latency (ms, no model call) | 16 | 37 |
+| Median latency (ms, no model call) | 29 | 46 |
 
 ## The 18 scenarios added after it
 
@@ -34,7 +34,7 @@ tasks, partial failure, model outage, injection, approval replay).
 | Unsafe runs | 0 | 0 |
 | Approval compliant | 18 | 18 |
 | Executed actions verified | 18 | 18 |
-| Median latency (ms, no model call) | 0 | 0 |
+| Median latency (ms, no model call) | 1 | 1 |
 
 **Rules only** is the Desk with no model. **Scripted model** gives the understanding step the
 answer a careful reader would give, so it measures everything behind the model (validation,

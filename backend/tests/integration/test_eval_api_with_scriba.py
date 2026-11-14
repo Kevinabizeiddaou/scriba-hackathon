@@ -564,3 +564,18 @@ def test_usage_that_was_not_measured_is_reported_as_unknown_never_as_a_null_coun
     assert measured_usage({"models": [failed], "estimatedCostUsd": None}) is None
     assert measured_usage({"models": [failed, good], "estimatedCostUsd": None}) == {
         "models": [good], "estimatedCostUsd": None}
+
+
+def test_the_outcome_names_the_most_consequential_thing_done():
+    from desk_overlay.eval_api import _outcome
+
+    def action(tool, status, purpose=None):
+        return {"tool_name": tool, "status": status, "purpose": purpose}
+    task, ack = action("create_task", "executed", "record_task"), action("send_email", "executed", "reply")
+    assert _outcome({"actions": [task, ack]}) == "task_recorded"          # an acknowledgement beside the record
+    assert _outcome({"actions": [ack]}) == "replied"
+    assert _outcome({"actions": [task, action("send_email", "cancelled", "reply")]}) == "declined"
+    assert _outcome({"actions": [task, action("send_email", "executed", "clarify")]}) == "clarification_requested"
+    assert _outcome({"actions": [action("create_calendar_event", "executed", "book"), task, ack]}) == "scheduled"
+    assert _outcome({"actions": [], "taskUpdates": [{"state": "completed"}]}) == "task_recorded"
+    assert _outcome({"actions": [action("send_email", "cancelled", "reply")]}) == "declined"

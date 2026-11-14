@@ -785,7 +785,7 @@ def test_a_time_in_another_zone_is_booked_at_the_right_instant_and_confirmed_in_
     desk.gateway.settle(event["toolCallId"], "executed")
     reply = desk.post(f"/runs/{run['runId']}/advance").json()["actions"][1]
     assert "17:00 to 17:30 (Asia/Beirut)" in reply["input"]["body"]
-    assert "10:00 to 10:30 (America/New_York)" in reply["input"]["body"]
+    assert "10:00 to 10:30 New York time (America/New_York)" in reply["input"]["body"]
 
 
 def test_moving_a_meeting_reads_the_new_time_and_keeps_the_length(desk):

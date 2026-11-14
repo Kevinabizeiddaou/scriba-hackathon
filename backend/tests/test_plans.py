@@ -515,3 +515,43 @@ def test_ordinary_business_mail_is_not_mistaken_for_instructions(text):
     from desk_overlay import planning
 
     assert not planning.injection_suspected("Update", text)
+
+
+# ── a time the reader itself doubts ─────────────────────────────────────────
+
+def test_a_time_given_together_with_doubt_about_the_time_is_not_booked(desk):
+    """Found with a real model: it listed "which date and time to use" as
+    missing, returned a time anyway, and the meeting was booked."""
+    modelled(desk, {"intents": [{**intent("new_meeting", "make it Wednesday at 15:00",
+                                          requested_start="2026-11-18T15:00:00+00:00"),
+                                 "missing": ["which date and time to use", "duration"]}]})
+    meeting_mail(desk, body="Let us meet Tuesday at 10:00. Actually no, make it Wednesday at 15:00. Or Tuesday is fine too.")
+    run = desk.intake("m1").json()
+    assert not [a for a in run["actions"] if a["tool_name"] == "create_calendar_event"]
+    assert run["held"]["reason"] == "time_not_understood" and "which time" in run["plan"]["missing"]
+
+
+def test_two_days_quoted_for_one_meeting_are_a_question_even_without_stated_doubt(desk):
+    modelled(desk, {"intents": [{**intent("new_meeting", "Let us meet Tuesday at 10:00",
+                                          requested_start="2026-11-18T15:00:00+00:00"),
+                                 "evidence": ["Let us meet Tuesday at 10:00", "make it Wednesday at 15:00"]}]})
+    meeting_mail(desk, body="Let us meet Tuesday at 10:00. Actually no, make it Wednesday at 15:00.")
+    run = desk.intake("m1").json()
+    assert not [a for a in run["actions"] if a["tool_name"] == "create_calendar_event"]
+    assert "time_ambiguous" in [i["data"].get("reason") for i in run["timeline"] if i["kind"] == "decision"]
+
+
+def test_a_missing_duration_alone_does_not_stop_a_booking(desk):
+    modelled(desk, {"intents": [{**intent("new_meeting", "Could we meet Tuesday at 10:00",
+                                          requested_start=TUE10[0]), "missing": ["duration", "end time"]}]})
+    meeting_mail(desk, body="Could we meet Tuesday at 10:00?")
+    run = desk.intake("m1").json()
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"]
+
+
+def test_the_senders_zone_is_named_as_a_place():
+    from desk_overlay import planning
+
+    body = planning.confirmation_reply(title="Pilot", timezone="Asia/Beirut", start="2026-11-18T17:00:00+02:00",
+                                       end="2026-11-18T17:30:00+02:00", other_timezone="America/New_York")
+    assert "New York time" in body and "10:00" in body and "17:00" in body

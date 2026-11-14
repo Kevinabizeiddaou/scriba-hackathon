@@ -196,4 +196,4 @@ def test_a_confirmation_states_the_time_in_both_zones_when_they_differ():
                                        end="2026-11-18T17:30:00+02:00", timezone="Asia/Beirut",
                                        other_timezone="America/New_York")
     assert "Wednesday 18 November, 17:00 to 17:30 (Asia/Beirut)" in body
-    assert "Wednesday 18 November, 10:00 to 10:30 (America/New_York)" in body
+    assert "Wednesday 18 November, 10:00 to 10:30 New York time (America/New_York)" in body

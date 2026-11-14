@@ -399,6 +399,25 @@ class DeskWorkflow:
         return plan
 
     @staticmethod
+    def _time_in_doubt(intent: Mapping[str, Any], now: dt.datetime) -> Optional[str]:
+        """Why a scheduling intent's time must not be used, or None."""
+        details = intent.get("details") or {}
+        if not details.get("requested_start"):
+            return None
+        for missing in intent.get("missing") or []:
+            if re.search(r"\b(which|when|date|day)\b|\btime\b(?!\s*zone)", str(missing), re.I) \
+                    and not re.search(r"\b(duration|length|end)\b", str(missing), re.I):
+                return ("The reader gave a time and also reported the time as unclear "
+                        f"(\"{missing}\"), so it was not used.")
+        if intent.get("type") == "new_meeting":
+            quoted = " ".join(str(quote) for quote in intent.get("evidence") or []).lower()
+            days = reading._days(quoted, now.date())
+            times, written_range = reading._times(quoted)
+            if len(set(days)) > 1 or (len(set(times)) > 1 and not written_range):
+                return "The message names more than one day or time for this meeting, so none was picked."
+        return None
+
+    @staticmethod
     def _is_plainly_news(item: Mapping[str, Any], plan: Mapping[str, Any]) -> bool:
         """"No action" has to be earned: the message says it is for
         information, or the Desk already recorded what it reports (a task it
@@ -493,6 +512,16 @@ class DeskWorkflow:
                     continue
                 scheduled = True
                 wanted = {"new_meeting": "new", "reschedule": "reschedule", "cancellation": "cancel"}[kind]
+                doubt = self._time_in_doubt(intent, self.service.now(user))
+                if doubt and kind != "cancellation":
+                    # The reader named a time AND said the time is unclear, or
+                    # quoted two days or two times for one meeting. Picking
+                    # one is a guess; the sender is asked instead.
+                    intent = {**intent, "details": {key: value for key, value in details.items()
+                                                    if key not in ("requested_start", "requested_end")}}
+                    plan.setdefault("missing", []).append("which time")
+                    plan["decisions"].append({"decision": "hold", "reason": "time_ambiguous",
+                                              "explanation": doubt})
                 # The rules' reading is the floor: a change request stays one.
                 if floor in ("reschedule", "cancel"):
                     wanted = floor

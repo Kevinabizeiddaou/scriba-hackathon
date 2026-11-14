@@ -299,9 +299,9 @@ export const FOLLOW_UP_STATE: Record<DeskFollowUp['state'], { label: string; ton
 
 export const FOLLOW_UP_ORDER: DeskFollowUp['state'][] = ['overdue', 'waiting', 'satisfied', 'closed']
 
-/** States added after the typed client was written (overlay 0.4). */
-const FOLLOW_UP_STATE_REVISED: Record<string, { label: string; tone: Tone; blurb: string }> = {
-  escalated: { label: 'Reminded once, still no answer', tone: 'danger', blurb: 'One reminder went out and no answer came. The secretary never sends a second one: this is yours now.' },
+/** States the backend sends since overlay 0.4 that the typed `state` does not list (so the table above stays exhaustive). */
+export const FOLLOW_UP_STATE_REVISED: Record<string, { label: string; tone: Tone; blurb: string }> = {
+  escalated: { label: 'Reminded once, still no answer', tone: 'danger', blurb: 'One reminder went out and two more days passed. The secretary will not write again: this one is yours.' },
 }
 
 export function followUpInfo(state: string): { label: string; tone: Tone; blurb: string } {

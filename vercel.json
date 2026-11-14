@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://RAILWAY_API_HOST/:path*"
+      "destination": "https://scriba-hackathon-production.up.railway.app/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

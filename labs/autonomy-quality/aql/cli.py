@@ -1,0 +1,186 @@
+"""Command line.
+
+    python -m aql probe     --api http://127.0.0.1:8811
+    python -m aql corpus    [--seed N] [--out fixtures/corpus-v1.json]
+    python -m aql run       --api URL [--seed N] [--families semantic,metamorphic,adversarial,scenario]
+                            [--repeat N] [--only PREFIX,...] [--label TEXT] [--out DIR]
+    python -m aql selftest
+    python -m aql gates     --report DIR/report.json
+    python -m aql compare   --before DIR/report.json --after DIR/report.json [--out FILE.md]
+    python -m aql baseline  --api URL --agent2-desk FILE --agent2-holdout FILE --agent1-scenarios FILE --out FILE
+
+Exit codes: 0 when the command did its work and (for ``run`` and ``gates``)
+every hard gate passed; 1 when a hard gate failed or the self-test found a
+defect in the lab; 2 for a usage or connection problem.
+
+Sign-in uses the seeded development users of Scriba's test backend. To use
+another account set AQL_EMAIL and AQL_PASSWORD in the environment; they are
+never taken as arguments and never written anywhere.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, List, Optional
+
+from . import RUNNER_VERSION
+from .backend import BackendError, connect
+
+HERE = Path(__file__).resolve().parents[1]
+
+
+def _connect(api: str) -> Any:
+    try:
+        return connect(api)
+    except BackendError as exc:
+        print(f"Cannot use {api}: {exc.code}: {exc}", file=sys.stderr)
+        raise SystemExit(2)
+
+
+def cmd_probe(args: argparse.Namespace) -> int:
+    backend = _connect(args.api)
+    print(json.dumps(backend.identity(), indent=1))
+    return 0
+
+
+def cmd_corpus(args: argparse.Namespace) -> int:
+    from . import adversarial, corpus, metamorphic
+
+    cases = corpus.build(args.seed)
+    relations = metamorphic.build(args.seed)
+    hostile = adversarial.build(args.seed)
+    payload = {"format": "autonomy-quality-lab.corpus/1", "manifest": corpus.manifest(cases, args.seed),
+               "metamorphic": {"relations": len(relations), "cases": len(metamorphic.members(relations))},
+               "adversarial": {"cases": len(hostile)}, "cases": cases,
+               "relations": [{"id": r["id"], "relation": r["relation"], "title": r["title"], "expect": r["expect"],
+                              "base": r["base"]["id"], "followUps": [c["id"] for c in r["followUps"]]} for r in relations],
+               "metamorphicCases": metamorphic.members(relations), "adversarialCases": hostile}
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(payload, indent=1, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps({k: payload[k] for k in ("manifest", "metamorphic", "adversarial")}, indent=1))
+    return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    from .campaign import FAMILIES, run_campaign, write_report
+
+    backend = _connect(args.api)
+    families = [f for f in (args.families.split(",") if args.families else FAMILIES) if f]
+    unknown = [f for f in families if f not in FAMILIES]
+    if unknown:
+        print(f"Unknown families: {unknown}. Known: {FAMILIES}", file=sys.stderr)
+        return 2
+    if not backend.caps.get("eval"):
+        print("This backend has no sandbox evaluation routes; nothing can be run against it:", file=sys.stderr)
+        for missing in backend.missing:
+            print(f"  missing {missing['endpoint']}: needed for {missing['neededFor']}", file=sys.stderr)
+        return 2
+    for missing in backend.missing:
+        print(f"note: the backend lacks {missing['endpoint']} ({missing['neededFor']})", file=sys.stderr)
+    only: Optional[List[str]] = [p for p in args.only.split(",") if p] if args.only else None
+    report = run_campaign(backend, seed=args.seed, families=families, repeat=args.repeat, label=args.label,
+                          only=only, progress=None if args.quiet else lambda line: print(line, flush=True))
+    out = Path(args.out) if args.out else HERE / "reports" / report["label"]
+    paths = write_report(report, out)
+    s = report["summary"]
+    print(f"\n{report['evidence']['statement']}")
+    print(f"{s['cases']} cases: " + ", ".join(f"{k} {v}" for k, v in sorted(s["byVerdict"].items())))
+    print(f"complete job success {s['completeJobSuccessRate']}, safety violations {s['safetyViolations']}, "
+          f"false successes {s['falseSuccesses']}")
+    for gate in report["gates"]["hard"]:
+        print(f"  gate {gate['status'].upper():<14} {gate['title']} ({gate['violations']} violations / {gate['checksEvaluated']} checks)")
+    print(f"report: {paths['json']}\ndashboard: {paths['html']}")
+    return 0 if report["gates"]["hardGatesPassed"] else 1
+
+
+def cmd_selftest(args: argparse.Namespace) -> int:
+    from .selftest import run_selftest
+
+    outcome = run_selftest()
+    for row in outcome["results"]:
+        print(f"{'ok  ' if row['ok'] else 'FAIL'} {row['id']:<44} expected {row['expected']:<28} got {row['got']}")
+    print(f"\n{outcome['passed']} of {outcome['total']} self-test traces judged as they must be.")
+    if args.out:
+        Path(args.out).write_text(json.dumps(outcome, indent=1), encoding="utf-8")
+    return 0 if outcome["passed"] == outcome["total"] else 1
+
+
+def cmd_gates(args: argparse.Namespace) -> int:
+    report = json.loads(Path(args.report).read_text(encoding="utf-8"))
+    for gate in report["gates"]["hard"]:
+        print(f"{gate['status'].upper():<14} {gate['title']}: {gate['violations']} violations in {gate['checksEvaluated']} checks")
+    return 0 if report["gates"]["hardGatesPassed"] else 1
+
+
+def cmd_compare(args: argparse.Namespace) -> int:
+    from .compare import compare_reports, render_comparison
+
+    before = json.loads(Path(args.before).read_text(encoding="utf-8"))
+    after = json.loads(Path(args.after).read_text(encoding="utf-8"))
+    comparison = compare_reports(before, after)
+    text = render_comparison(comparison)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        Path(args.out).with_suffix(".json").write_text(json.dumps(comparison, indent=1), encoding="utf-8")
+    print(text)
+    return 0
+
+
+def cmd_baseline(args: argparse.Namespace) -> int:
+    from .baseline import build_baseline
+
+    backend = _connect(args.api)
+    baseline = build_baseline(backend, agent2_desk=args.agent2_desk, agent2_holdout=args.agent2_holdout,
+                              agent1_scenarios=args.agent1_scenarios, lab_report=args.lab_report)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(json.dumps(baseline, indent=1), encoding="utf-8")
+    print(json.dumps(baseline["summary"], indent=1))
+    return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(prog="aql", description=f"Autonomy Quality Lab {RUNNER_VERSION}")
+    sub = parser.add_subparsers(dest="command", required=True)
+    from .corpus import DEFAULT_SEED
+
+    p = sub.add_parser("probe", help="what the backend offers, and what it lacks")
+    p.add_argument("--api", required=True)
+    p.set_defaults(func=cmd_probe)
+    p = sub.add_parser("corpus", help="generate the deterministic corpus")
+    p.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    p.add_argument("--out")
+    p.set_defaults(func=cmd_corpus)
+    p = sub.add_parser("run", help="run a campaign")
+    p.add_argument("--api", required=True)
+    p.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    p.add_argument("--families")
+    p.add_argument("--repeat", type=int, default=1)
+    p.add_argument("--only")
+    p.add_argument("--label", default="")
+    p.add_argument("--out")
+    p.add_argument("--quiet", action="store_true")
+    p.set_defaults(func=cmd_run)
+    p = sub.add_parser("selftest", help="deliberately wrong traces the oracle must reject")
+    p.add_argument("--out")
+    p.set_defaults(func=cmd_selftest)
+    p = sub.add_parser("gates", help="the hard gates of a written report")
+    p.add_argument("--report", required=True)
+    p.set_defaults(func=cmd_gates)
+    p = sub.add_parser("compare", help="before and after, by commit and model configuration")
+    p.add_argument("--before", required=True)
+    p.add_argument("--after", required=True)
+    p.add_argument("--out")
+    p.set_defaults(func=cmd_compare)
+    p = sub.add_parser("baseline", help="the machine-readable baseline, by evidence class")
+    p.add_argument("--api", required=True)
+    p.add_argument("--agent2-desk", required=True)
+    p.add_argument("--agent2-holdout", required=True)
+    p.add_argument("--agent1-scenarios", required=True)
+    p.add_argument("--lab-report")
+    p.add_argument("--out", required=True)
+    p.set_defaults(func=cmd_baseline)
+    args = parser.parse_args(argv)
+    return int(args.func(args) or 0)

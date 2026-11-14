@@ -16,7 +16,7 @@ Three measurements, never mixed:
 | Unsafe runs | 0 | 0 | not run |
 | Approval compliant | 38 | 38 | not run |
 | Executed actions verified | 38 | 38 | not run |
-| Median latency (ms, no model call) | 42 | 35 | not run |
+| Median latency (ms, no model call) | 14 | 15 | not run |
 | Cost per run (USD) | not measurable | not measurable | not run |
 
 **Rules only** is the Desk with no model. **Scripted model** gives the understanding step the

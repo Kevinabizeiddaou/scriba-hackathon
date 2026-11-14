@@ -202,7 +202,11 @@ class ExecutionGate:
                             "recorded, so it was not executed. Nothing was sent or changed.")
 
             output = row.get("output_payload") if isinstance(row.get("output_payload"), dict) else {}
-            if str(row.get("status") or "") == "failed" and output.get(UNKNOWN_CODE):
+            # An outcome that is not known stays unknown until it is settled:
+            # by a read-back, or by the person saying they checked. The card is
+            # ``failed`` at first and ``needs_info`` once a retry was held, and
+            # in both states a plain approve or retry is not a way round it.
+            if str(row.get("status") or "") in ("failed", "needs_info") and output.get(UNKNOWN_CODE):
                 settled = gate._reconcile(ctx, tool, overrides, hold)
                 if settled is not None:
                     return settled

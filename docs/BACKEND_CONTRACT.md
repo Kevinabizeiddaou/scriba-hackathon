@@ -278,6 +278,11 @@ What an approve then does is decided by the execution gate (section 8).
 | Request to move a meeting | The ORIGINAL event is found among the meetings the sender is on. New time verified free (the meeting's own slot does not count against it): one `update_calendar_event` card naming that `event_id`. Never a second event. Then a confirmation |
 | Request to cancel a meeting | Same search: one `cancel_calendar_event` card for that event. Then a confirmation |
 | A change request that cannot be tied to one meeting, or to one the user organizes | No card. `held.reason`: `event_not_found` (the sender is on no meeting), `event_ambiguous` (`held.candidates[]`), `not_organizer`, `calendar_lookup_failed` |
+| A change request about a meeting that was cancelled or has already taken place (0.3.1) | No card, and **no other meeting of the sender is touched**. `held.reason: "event_not_found"`, `held.gone[]` (the meetings it was about, with `status`), `flags: ["duplicate"]` |
+| A change request that NAMES its meeting ("our pricing workshop") when no meeting of the sender carries that name (0.3.1) | No card. `held.reason: "event_not_found"`, `held.candidates[]` (the sender's other meetings, untouched). Days, times and generic words ("our Thursday call") name nothing |
+| A message that speaks of an existing meeting ("push Thursday's call back to Friday", "would 11:00 work for the review instead") from someone who is on a meeting still ahead (0.3.1) | Planned as a **change** to that meeting, whatever verb was used. Never a second event beside it. A `decision` event `read_as_change` is recorded |
+| A message that gives an instruction and takes it back ("cancel it. On second thought, keep it"), a weekday that does not match its date ("Wednesday 17 November" when the 17th is a Tuesday), or a subject and a text that name different days for a new meeting (0.3.1) | No card. `held.reason: "conflicting_instructions"`: which one stands is the writer's to say. Stage `ESCALATED` |
+| A request to be reminded ("remind yourself on Wednesday at 09:00 to call the chairman") (0.3.1) | Not a meeting with the writer: classified `action_item`, one `create_task` card |
 | Needs a reply | No card unless the model step is on (below); `draftRequest`, and `next: ["draft_reply"]` |
 | Text that addresses the assistant ("ignore previous instructions", "system note to AI") | Nothing. `held.reason: "untrusted_instructions"`, `flags: ["prompt_injection_suspected"]`. The message is not sent to a model |
 | Informational or automated | Nothing |
@@ -298,6 +303,14 @@ zone that resolves to exactly one zone ("ET", "CET", "London time", "your
 time"). "IST", "my time", two candidate times, or "at 3" are not read; the
 run is held as `time_not_understood`. A model that answers nothing is not
 second-guessed by the rules.
+
+From 0.3.1 a time is read **in full or not at all**. A word beside the day
+that changes what it means, and that the rules do not compute, leaves the
+time unread: "the day after tomorrow", "Thursday week", "a week on Thursday",
+"Tuesday after next", "Tuesday next week", "in two weeks", "the following
+Tuesday", "end of the month". ("next Thursday" and a written date are read as
+before.) A zone written with an offset is that zone: "11:00 GMT+3" is 11:00 at
+UTC+3 (`requester_timezone: "Etc/GMT-3"`); a half-hour offset is not read.
 
 ### `DeskRun`
 
@@ -382,6 +395,64 @@ Other new fields: `trigger` (`manual`, `sweep`, `worker`, `evaluation`),
 `followup`, `usage`, `error`. One event is one kind: an agent decision, a tool read, a
 proposed write, a human decision, an execution and a verification are never
 merged. `summary` never contains message text.
+
+### The lifecycle of an action (0.3.1)
+
+A run's `lifecycle.stage` says where the whole request stands. Each action
+says where IT stands, in `lifecycle`, so that no client derives it from a
+status, a flag and an error code:
+
+| `action.lifecycle` | Meaning | Card `status` |
+| --- | --- | --- |
+| `PROPOSED` | Waits for the person; can be approved as it stands | `awaiting_approval` |
+| `HELD` | A guard or a missing detail holds it; cannot be approved as it stands (`errorCode`) | `needs_info` |
+| `APPROVED` | Approved and claimed, not started | `approved` |
+| `EXECUTING` | Being carried out | `executing` |
+| `EXECUTED_UNVERIFIED` | The call returned; no evidence yet that it took effect. **Not done** | `executed` |
+| `VERIFIED` | It took effect, on evidence (`verification.method`) | `executed` |
+| `VERIFICATION_FAILED` | The call returned and the state read back does not show it | `executed` |
+| `PARTIALLY_EXECUTED` | Part of it took effect; nothing is undone | `partially_executed` |
+| `OUTCOME_UNKNOWN` | The provider did not confirm; it may or may not have happened | `failed` |
+| `INTERRUPTED` | The process stopped; read back, the effect is not there | `failed` |
+| `FAILED` | It did not take effect | `failed`, `unsupported` |
+| `REJECTED` | The person rejected it; it never ran | `cancelled` |
+
+`final` is true only for `VERIFIED` and `REJECTED`. **An action is never
+complete because a provider accepted a request**: `executed` without evidence
+is `EXECUTED_UNVERIFIED`.
+
+`retry` is `null` when there is nothing to retry, otherwise `{mode, attempts,
+sameEffect: true}`:
+
+| `retry.mode` | When | What a retry does first |
+| --- | --- | --- |
+| `rerun` | `FAILED`, `INTERRUPTED`: nothing happened | Runs the action |
+| `readback_first` | `OUTCOME_UNKNOWN` in a sandbox | Reads the state back; if the effect is there it is not repeated |
+| `confirm_first` | `OUTCOME_UNKNOWN` on a real provider | Refused until the person says they checked (`desk_retry_after_unknown_confirmed`) |
+
+A retry is the same effect (`idempotencyKey`), never a second one.
+
+**The action as approved.** `input` is the action as it was PROPOSED and does
+not change. When the person edits it in the approve request, `edited` lists
+the fields they changed and `effectiveInput` is the action as it ran (`input`
+with the edit applied; the Desk's own control flags are not edits). From 0.3.1
+everything that speaks about the action after the approval uses
+`effectiveInput`: the verification read-back, the search for its effect on a
+retry or after an interruption, and the confirmation sent to the other
+person. (Before, a meeting moved from 10:00 to 10:30 at approval was booked
+at 10:30, reported `start_differs`, and confirmed to the sender as 10:00.)
+
+**Nothing follows an unverified step.** A deferred step is `ready` only when
+every step it depends on took effect and was not found unverified. If a
+dependency is `VERIFICATION_FAILED` the step is `blocked` (a `decision` event
+`step_blocked` is recorded once) and the run is `ESCALATED` with `reason:
+"verification_failed"`. If a later read-back verifies the dependency, the
+step becomes `ready` again.
+
+**A read-back that settles an action is followed like an execution.** After a
+retry of an unknown outcome finds the effect, and after recovery finds it,
+the next step of the plan is proposed at once (before 0.3.1 the run rested in
+`EXECUTING` with `next: ["advance"]`).
 
 Each action also carries `stepId` (its step in the plan), `held` (a guard
 holds it), `attempts` (how many times execution was attempted),
@@ -470,6 +541,24 @@ sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 | Durable claims on Scriba's receipt ledger | The adapter is tested against a stand-in with the ledger's outcomes. **Not run against a Postgres database** |
 | Extracting a time with a model; a model-written reply | Scripted in tests. **Never run against a real model** |
 | Anything on a live mailbox or calendar | Not tested |
+
+### One representation, checked
+
+`frontend/src/api/desk.ts` declares every type in this section. From 0.3.1 a
+backend test (`backend/tests/integration/test_typed_client_with_scriba.py`)
+produces real responses and fails when the backend sends a field, an action
+state, a run stage, an evidence kind, a held reason or a card code the typed
+client does not declare. Three names in the client are older than what is
+sent and are kept only so that existing code compiles: `DeskLifecycleStage`
+(use `DeskRunStage`), `DeskHeldReason` (use `DeskAnyHeldReason`) and
+`DeskAnyHoldCode` (use `DeskCardCode`). `DeskRunHeld.reason` is declared with
+the five 0.2 reasons although any `DeskAnyHeldReason` is sent: read it with
+`heldReasonOf`.
+
+`flags: ["prompt_injection_suspected"]` is a **hint, not a control**. The
+defences do not depend on it: only the sender, taken from the From header,
+can become a recipient or attendee; every write needs an approval; an approval
+is bound to the proposed action.
 
 ## 7. Desk safeguards on proposed actions (Integrated; no live provider)
 
@@ -597,7 +686,9 @@ stopped is settled by the worker, and never by running it again: in a sandbox
 the world is read back (the effect is there: `executed`, `output.reconciled`
 and `output.recovered`; it is not: `failed` with `error_code: "interrupted"`,
 retryable); on a real provider it becomes `failed` with `outcome_unknown`.
-`worker.recovered` counts them.
+`worker.recovered` counts them. The action is then `VERIFIED` (the effect was
+found; from 0.3.1 its next step is proposed), `INTERRUPTED` (`retry.mode:
+"rerun"`) or `OUTCOME_UNKNOWN` (`retry.mode: "confirm_first"`).
 
 ### Unknown outcomes
 
@@ -611,7 +702,11 @@ blindly:
   the card becomes `executed` with `output.reconciled: true` and no second
   write happens; if it is not, the action runs;
 - on a real provider there is no read-back: the retry is held until the user
-  confirms they checked (`desk_retry_after_unknown_confirmed`).
+  confirms they checked (`desk_retry_after_unknown_confirmed`). Scriba's retry
+  route takes no body, so the retry is held (`needs_info`, `error_code:
+  "outcome_unknown"`) and the confirmation is sent with an **approve** of that
+  card. From 0.3.1 an approve without it is held again: the rule applies
+  while the outcome is unknown, whatever the card's status.
 
 A failure between two steps (the event exists, the confirmation failed) is
 `PARTIALLY_COMPLETED`. The event stays. Retry the failed card.

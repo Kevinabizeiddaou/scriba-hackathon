@@ -78,6 +78,26 @@ done.
 | **3. Scheduling, tasks, reminders, automations and approvals** | Availability and conflict checks across both calendars; slot proposals; approval centre; approved replies and calendar changes; tasks and reminders; follow-up tracking; automations from the received-mail trigger; scheduled briefing | Send and reply, calendar writes, tasks, reminders, approvals, automations, verification records | Availability service; follow-up tracking; calendar action for automations; backend fixes made in Scriba's repository | Not started |
 | **Final. Reliable integrated product** | The whole job end to end on real mail and calendars; 20 real cases executed and scored; reliability, cost per run and latency reported; audit history across chat and automations; demo | Everything above | Cost per run; unified audit history; evaluation on a real backend | Not started |
 
+## Where the engine stands (14 November 2026, overlay 0.3.1)
+
+On branch `agent1/engine-reconciliation`, not merged. Sandbox only; no
+external write is possible. Detail: [handoff/ENGINE_RECONCILIATION.md](handoff/ENGINE_RECONCILIATION.md).
+
+| Capability | State |
+| --- | --- |
+| Rescheduling and cancelling a meeting | Works end to end in the sandbox, with approval and read-back verification. Fixed here: a reworded move no longer books a second event; a cancelled or finished meeting, or one the message names and the calendar does not have, is never replaced by another |
+| Tracking awaited replies, and following up | Works for replies the Desk sent (waiting, overdue with a proposed reminder, satisfied, closed). Open: replies awaited before the Desk; the reminder's recipient; an answer in any category closing the follow-up |
+| Tasks and reminders from correspondence | Tasks work; a request to be reminded is now recorded as work instead of booked as a meeting. A reminder card needs a model reading |
+| Multi-step email-to-calendar workflows | A typed plan with dependent steps. Fixed here: an edit at approval is what is verified and confirmed; a read-back that settles a step is followed by the next one; nothing follows a step that failed verification |
+| Escalating ambiguous or conflicting requests | Held with a reason. New here: `conflicting_instructions` for a retraction or days that disagree; a half-read date is not booked |
+| Daily briefing | On demand, as on the base. Not extended here |
+| Execution costs and outcomes | Model usage and estimated cost per run, null when not known; every action has an explicit lifecycle and evidence. No cost without a model call |
+| Evaluation | 38 backend scenarios, rules only 34 correct and scripted reading 37, 0 unsafe. The 14 new ones have not been run with a real model |
+
+Next, in order: run the two labs against this branch; decide whether mail the
+rules cannot place is escalated instead of filed; run the 38 scenarios with a
+real model; sandbox control routes for a driven demo.
+
 ## Missing capabilities
 
 Scriba does not have these today; they are the real new work.

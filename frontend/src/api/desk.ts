@@ -335,13 +335,60 @@ export type DeskActionPurpose =
   | 'offer_times'
   | 'clarify'
   | 'nudge'
+  | 'reply'
   | 'record_task'
+
+/**
+ * The explicit state of ONE action (overlay 0.3.1, BACKEND_CONTRACT section 6, "The lifecycle of
+ * an action"). Sent as `DeskAction.lifecycle`, so a client does not work it out from a status, a
+ * flag and an error code. `EXECUTED_UNVERIFIED` is "the call returned": only `VERIFIED` is done.
+ */
+export type DeskActionLifecycle =
+  /** Waits for the person and can be approved as it stands. */
+  | 'PROPOSED'
+  /** A guard or a missing detail holds it: it cannot be approved as it stands (`errorCode` says why). */
+  | 'HELD'
+  | 'APPROVED'
+  | 'EXECUTING'
+  /** The call returned and there is no evidence yet that it took effect. Not done. */
+  | 'EXECUTED_UNVERIFIED'
+  /** It took effect, on evidence (`verification.method`). */
+  | 'VERIFIED'
+  /** The call returned and the state read back does not show it. Steps that depend on it are blocked. */
+  | 'VERIFICATION_FAILED'
+  /** Part of it took effect. Nothing is undone. */
+  | 'PARTIALLY_EXECUTED'
+  /** The provider did not confirm: it may or may not have happened. */
+  | 'OUTCOME_UNKNOWN'
+  /** The process stopped mid-action; the state was read back and the effect is not there. */
+  | 'INTERRUPTED'
+  | 'FAILED'
+  /** The person rejected it. It never ran. */
+  | 'REJECTED'
+
+/**
+ * What a retry of this action does first. Null on the action when there is nothing to retry.
+ * - `rerun`: nothing happened, so it is run.
+ * - `readback_first`: the outcome is unknown and the state can be read (a sandbox): the retry
+ *   looks for the effect and does not repeat it.
+ * - `confirm_first`: the outcome is unknown and cannot be read (a real provider): the retry is
+ *   refused until the person says they checked (`DESK_RETRY_AFTER_UNKNOWN`).
+ */
+export interface DeskActionRetry {
+  mode: 'rerun' | 'readback_first' | 'confirm_first'
+  /** Execution attempts so far. */
+  attempts: number
+  /** Always true: a retry is the same effect (`idempotencyKey`), never a second one. */
+  sameEffect: true
+}
 
 /** One recorded fact about an action, with the time it was recorded. `simulated` is true in a sandbox. */
 export interface DeskActionDecision {
   decision: 'approve' | 'reject'
   by: string
   at: string
+  toolCallId?: number
+  tool?: string
   /** `held`: the approve was refused by the execution gate (see `code`). */
   result?: 'held'
   code?: string
@@ -356,6 +403,13 @@ export interface DeskActionExecution {
   error?: string | null
   durationMs?: number
   simulated?: boolean
+  toolCallId?: number
+  tool?: string
+  /** For `held`: the code of the guard that held it. */
+  code?: string | null
+  assistantActionId?: number | null
+  /** True when the worker settled this after an interruption (BACKEND_CONTRACT section 8). */
+  recovered?: boolean
 }
 
 export interface DeskActionVerification {
@@ -366,6 +420,13 @@ export interface DeskActionVerification {
   at: string
   /** True when a retry found the effect already there and did not repeat it. */
   reconciled?: boolean
+  toolCallId?: number
+  tool?: string
+  simulated?: boolean
+  /** True when the worker's recovery found the effect after an interruption. */
+  recovered?: boolean
+  /** The id of the object the effect was found as (an event, a sent message, a task). */
+  objectId?: string | null
 }
 
 export interface DeskAction {
@@ -410,6 +471,25 @@ export interface DeskAction {
   /** One identity per real-world effect. A retry of the card reuses it. */
   idempotencyKey?: string
   verification?: DeskActionVerification | null
+
+  // ── overlay 0.3.0 at 0282558 and later ──────────────────────────────────
+  /** Its step in `DeskRun.plan.steps`. */
+  stepId?: string | null
+  /** A guard holds it: it cannot be approved as it stands. */
+  held?: boolean
+  /** How many times execution was attempted. A retry is one more. */
+  attempts?: number
+
+  // ── overlay 0.3.1 and later ─────────────────────────────────────────────
+  /** The explicit state of this action. Prefer it to working the state out from `status`. */
+  lifecycle?: DeskActionLifecycle
+  /** True only for `VERIFIED` and `REJECTED`: nothing more can happen to this action. */
+  final?: boolean
+  retry?: DeskActionRetry | null
+  /** The fields the person changed in the approve request. `input` stays as proposed. */
+  edited?: string[]
+  /** The action as it ran, or will run: `input` with the person's edit applied. */
+  effectiveInput?: Record<string, unknown>
   /** The provider did not confirm: it may or may not have happened. Check before retrying. */
   outcomeUnknown?: boolean
   /** True when the action ran, or would run, against an isolated provider world. */
@@ -429,21 +509,46 @@ export type DeskHeldReasonV3 =
   | 'task_exists'
   | 'untrusted_instructions'
 
-/** Every reason a run can be held for, on overlay 0.3. */
-export type DeskHeldReason = DeskRunHeld['reason'] | DeskHeldReasonV3
+/** The reasons of overlay 0.2. */
+export type DeskHeldReasonV2 =
+  | 'calendar_conflict'
+  | 'availability_unknown'
+  | 'time_not_understood'
+  | 'change_request'
+  | 'invalid_preferences'
+
+/**
+ * Reasons added after the first draft of 0.3. Kept apart so that a `Record<DeskHeldReason, ...>`
+ * written before them still compiles; `DeskRunHeld.reason` can be any of `DeskAnyHeldReason`.
+ */
+export type DeskHeldReasonRevised =
+  /** A model's reading was below the confidence needed to act. `held.missing` lists what is absent. */
+  | 'intent_unclear'
+  /** A detail needed to act is not in the message. Nothing is filled in. */
+  | 'details_missing'
+  /** The message contradicts itself or takes an instruction back (0.3.1). Nothing is picked. */
+  | 'conflicting_instructions'
+
+/** Every reason a run can be held for, on the first draft of overlay 0.3. */
+export type DeskHeldReason = DeskHeldReasonV2 | DeskHeldReasonV3
+
+/** Every reason the backend sends in `held.reason` today. */
+export type DeskAnyHeldReason = DeskHeldReason | DeskHeldReasonRevised
+
+/** The reason a run is held for, as the backend sends it (wider than the declared field). */
+export const heldReasonOf = (held: { reason: string } | null | undefined): DeskAnyHeldReason | string | null =>
+  held ? held.reason : null
 
 export interface DeskRunHeld {
   /**
-   * The reasons of overlay 0.2. Overlay 0.3 ALSO sends the `DeskHeldReasonV3` values here; the
-   * declared type is kept narrow until the screens have a label for each (see
-   * docs/handoff/AGENT1_BACKEND_STATUS.md). Treat an unknown reason as held, never as done.
+   * DECLARED NARROW ON PURPOSE. The backend sends any `DeskAnyHeldReason` here. The field keeps
+   * the five reasons of 0.2 because the frontend on `main` builds a `Record` over this exact
+   * type; widening it breaks that build. Read it as `DeskAnyHeldReason` (`heldReasonOf`), and
+   * treat a reason this client does not know as held, never as done. To be widened to
+   * `DeskAnyHeldReason` once the frontend that labels every reason is merged (see
+   * docs/handoff/AGENT2_INTEGRATION_HANDOFF.md).
    */
-  reason:
-    | 'calendar_conflict'
-    | 'availability_unknown'
-    | 'time_not_understood'
-    | 'change_request'
-    | 'invalid_preferences'
+  reason: DeskHeldReasonV2
   message: string
   /** Verified free times to offer instead. Empty when calendars could not be read. */
   slots: Slot[]
@@ -452,8 +557,12 @@ export interface DeskRunHeld {
   conflicts?: BusyInterval[]
   /** The existing meeting a change request is about, when one was found. */
   target?: { id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' }
-  /** For `event_ambiguous`: the meetings that match. */
+  /** For `event_ambiguous`: the meetings that match. For `event_not_found` with a named meeting: the sender's other meetings, none of which was touched. */
   candidates?: Array<{ id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' }>
+  /** For `intent_unclear` and `details_missing`: what the message does not state. */
+  missing?: string[]
+  /** For `event_not_found` when the meeting meant was already cancelled or has taken place (0.3.1). */
+  gone?: Array<{ id: string; title: string; start: string; end: string; provider: 'google' | 'outlook'; status?: string }>
 }
 
 /** Where a run stands (overlay 0.3). Derived from the cards and the recorded evidence. */
@@ -473,8 +582,32 @@ export type DeskLifecycleStage =
   | 'FAILED'
   | 'CANCELLED'
 
+/**
+ * The stage names the backend SENDS (BACKEND_CONTRACT section 6). `DeskLifecycleStage` above
+ * keeps the three names of the first draft (`CLASSIFIED`, `CONTEXT_GATHERING`, `AWAITING_REPLY`),
+ * which were never sent, only so that code written against them still compiles. New code should
+ * use this type; the old one is removed once nothing reads it.
+ */
+export type DeskRunStage =
+  | 'RECEIVED'
+  | 'UNDERSTANDING'
+  | 'INVESTIGATING'
+  | 'PLANNING'
+  | 'AWAITING_APPROVAL'
+  /** Every open action is held by a guard. `lifecycle.reason` is the first one's `errorCode`. */
+  | 'HELD'
+  | 'EXECUTING'
+  | 'VERIFYING'
+  | 'COMPLETED'
+  | 'WAITING_FOR_RESPONSE'
+  | 'NEEDS_CLARIFICATION'
+  | 'ESCALATED'
+  | 'PARTIALLY_COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
 export interface DeskLifecycle {
-  stage: DeskLifecycleStage
+  stage: DeskLifecycleStage | DeskRunStage
   reason: string | null
   final: boolean
   outcomeUnknown: boolean
@@ -486,6 +619,8 @@ export type DeskEvidenceKind =
   | 'stage'
   | 'decision'
   | 'read'
+  /** The plan, written once when the run is opened. `data` is the plan. */
+  | 'plan'
   | 'proposal'
   | 'approval'
   | 'execution'
@@ -514,7 +649,87 @@ export interface DeskFollowUp {
   satisfiedBy?: string
   updatedAt?: string
   runId?: number
+  /** The reply card this follow-up was opened for. */
+  toolCallId?: number
+  /** True for an awaited reply Scriba tracked before the Desk (not opened by a Desk run). */
+  external?: boolean
 }
+
+// ── the plan of a run (BACKEND_CONTRACT section 6, "The plan") ─────────────
+
+export type DeskIntentType =
+  | 'new_meeting'
+  | 'reschedule'
+  | 'cancellation'
+  | 'reply_needed'
+  | 'information_request'
+  | 'task'
+  | 'reminder'
+  | 'follow_up'
+  | 'fyi'
+
+/** What a message asks for, with where the reading came from. */
+export interface DeskPlanIntent {
+  type: DeskIntentType | string
+  /** Null from the rules, which do not measure confidence. A model's is 0 to 1; below 0.6 nothing is proposed. */
+  confidence: number | null
+  /** From the rules: the names of the rules that matched. From a model: quotes of the message. */
+  evidence: string[]
+  /** What this intent needs and the message does not state. */
+  missing: string[]
+  source: 'rules' | 'model' | string | null
+}
+
+/**
+ * Where a step stands. Once the step has a card this is the card's Scriba status; before that it
+ * is `ready` (every step it depends on took effect and was not found unverified), `waiting`, or
+ * `blocked` (a step it depends on failed, was rejected, or ran and failed verification). A
+ * blocked step is never proposed.
+ */
+export type DeskPlanStepState = 'ready' | 'waiting' | 'blocked' | string
+
+export interface DeskPlanStep {
+  id: string
+  /** Scriba tool name, as on the action card. */
+  tool: string
+  purpose: DeskActionPurpose | null
+  dependsOn: string[]
+  /** Its content depends on another step's result, so it is proposed only after that step took effect. */
+  deferred: boolean
+  requiresApproval: boolean
+  /** A mail or calendar write, as opposed to the executive's own records. */
+  external: boolean
+  /** What is true when this step is done. */
+  expected: string
+  onFailure: string
+  state: DeskPlanStepState
+  /** The step's action card, once it is proposed. */
+  toolCallId: number | null
+}
+
+export interface DeskPlan {
+  version: number
+  message: { provider: MailProvider; provider_account_id: string | null; email_id: string; thread_id: string | null }
+  planner: 'rules' | 'rules+model' | 'model+rules' | 'rules+agent' | string | null
+  intents: DeskPlanIntent[]
+  /** Intents a model reported without a quote that is in the message. They were dropped. */
+  unsupported: Array<{ type: string; why: string }>
+  /** What the Desk verified by reading (a calendar, the thread). */
+  facts: string[]
+  /** What it filled in because the message did not say. */
+  assumptions: string[]
+  /** What is needed and absent. It leads to a question or a hand-over, never to an invented detail. */
+  missing: string[]
+  /** The reads that were made. */
+  tools: string[]
+  steps: DeskPlanStep[]
+  /** How many steps a person must approve. */
+  approvals: number
+  /** The conditions under which the Desk stops and hands over. */
+  escalation: string[]
+}
+
+export type DeskRunFlag = 'prompt_injection_suspected' | 'duplicate' | 'outside_working_hours'
 
 /** Model usage of a run, from Scriba's own telemetry and price table. Null: no model call was recorded. */
 export interface DeskRunUsage {
@@ -536,6 +751,8 @@ export interface DeskRun {
     provider_account_id: string | null
     from_addr: string
     subject: string
+    /** When the message arrived, where the mailbox says. */
+    received_at?: string | null
   }
   category: TriageCategory
   outcome: Triage['outcome']
@@ -553,7 +770,9 @@ export interface DeskRun {
   trigger?: 'manual' | 'sweep' | 'worker' | 'evaluation'
   /** True when the run lives in an isolated provider world: nothing real is read or written. */
   simulated?: boolean
-  flags?: Array<'prompt_injection_suspected' | 'duplicate'>
+  flags?: DeskRunFlag[]
+  /** Written once when the run is opened. Null for a run opened before plans existed. */
+  plan?: DeskPlan | null
   updatedAt?: string
   /** Number of actions by Scriba status. */
   actionCounts?: Record<string, number>
@@ -573,11 +792,11 @@ export interface DeskRunRow {
   created_at: string
   // ── overlay 0.3 and later ───────────────────────────────────────────────
   state?: RunState
-  lifecycle?: DeskLifecycleStage
+  lifecycle?: DeskLifecycleStage | DeskRunStage
   next?: Array<'advance' | 'draft_reply'>
   trigger?: DeskRun['trigger']
   simulated?: boolean
-  held?: { reason: DeskHeldReason } | null
+  held?: { reason: DeskAnyHeldReason } | null
   actionCounts?: Record<string, number>
   updatedAt?: string
   followUps?: Array<{ id: string; state: DeskFollowUp['state'] }>
@@ -734,6 +953,16 @@ export type DeskGateHoldCode =
   | 'sandbox_world_gone'
 
 export type DeskAnyHoldCode = DeskHoldCode | DeskGateHoldCode
+
+/**
+ * Codes added after the first draft of 0.3, kept apart for the same reason as the held reasons.
+ * `proposal_changed` holds a card (it cannot be approved past). `interrupted` is on a FAILED card
+ * the worker settled after an interruption: read back, the effect is not there; a retry runs it.
+ */
+export type DeskRevisedCardCode = 'proposal_changed' | 'interrupted'
+
+/** Every `errorCode` the Desk itself puts on an action. Scriba's own error codes can appear too. */
+export type DeskCardCode = DeskAnyHoldCode | DeskRevisedCardCode
 
 /** Approve body for a card whose outcome is unknown, on a real provider, after the user checked. */
 export const DESK_RETRY_AFTER_UNKNOWN = { payload_overrides: { desk_retry_after_unknown_confirmed: true } } as const

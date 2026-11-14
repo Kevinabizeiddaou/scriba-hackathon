@@ -955,3 +955,39 @@ def test_every_action_names_its_state_from_proposal_to_rejection():
         assert cancelled.status_code == 200
         rejected = get(desk, f"/runs/{other['runId']}").json()["actions"][0]
         assert rejected["lifecycle"] == "REJECTED" and rejected["final"] is True and rejected["retry"] is None
+
+
+def test_on_a_real_provider_an_unknown_outcome_is_not_run_again_until_the_person_says_they_checked():
+    """No sandbox, writes switched on for this test only. Nothing can be read
+    back, so neither a retry nor a second approve may run the action again
+    without the confirmation. The provider client is a tripwire throughout."""
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        run = meeting(desk)
+        card_id = run["actions"][0]["toolCallId"]
+        row = stuck(desk, run)
+        row["updated_at"] = (dt.datetime.now(UTC) - dt.timedelta(minutes=10)).isoformat()
+        user, desk_run = user_and_run(desk, run)
+        desk_run["meta"]["sandbox"] = None
+        desk["registry"].remove("w-alice")
+        assert desk["gate"].recover_stale(user, desk_run) == 1            # failed, outcome unknown
+
+        events = lambda: desk["routed"].run_events(user, desk["routed"].get_run(user, run["runId"]))  # noqa: E731
+        ran = lambda: [e for e in events() if e["kind"] == "execution"    # noqa: E731
+                       and e["data"].get("status") in ("executed", "failed", "partially_executed")]
+        before = len(ran())
+        with patch.object(desk["gate"], "writes_enabled", lambda: True), \
+                patch.object(desk["gate"], "world_for_run", lambda user, run: None):
+            retried = desk["client"].post(f"/chat/tool-calls/{card_id}/retry", headers=ORIGIN)
+            held = desk["store"].rows[card_id]
+            assert held["status"] == "needs_info" and held["output_payload"]["error_code"] == "outcome_unknown", retried.text
+            # A plain approve of the held card is not a way round the check.
+            desk["client"].post(f"/chat/tool-calls/{card_id}/approve", json={}, headers=ORIGIN)
+            again = desk["store"].rows[card_id]
+            assert again["status"] == "needs_info" and again["output_payload"]["error_code"] == "outcome_unknown"
+            assert len(ran()) == before, "the action was attempted without the confirmation"
+            assert not [e for e in events() if e["kind"] == "verification" and e["data"].get("method") == "user_confirmed"]
+            # With the confirmation it goes on, and the confirmation is on the record.
+            desk["client"].post(f"/chat/tool-calls/{card_id}/approve", headers=ORIGIN,
+                                json={"payload_overrides": {"desk_retry_after_unknown_confirmed": True}})
+            assert [e for e in events() if e["kind"] == "verification" and e["data"].get("method") == "user_confirmed"]

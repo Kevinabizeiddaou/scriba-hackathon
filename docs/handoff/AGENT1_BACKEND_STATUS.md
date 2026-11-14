@@ -9,6 +9,15 @@ sections 6 to 11; this report says what stands behind it.
 through the sandbox. Its results are in [EVAL_CONFIGURED_MODEL.md](EVAL_CONFIGURED_MODEL.md)
 and summarised in section 4.3; the rest of this report predates that run.
 
+**Update, branch `agent1/engine-reconciliation` (overlay 0.3.1):** the typed
+client now declares everything the backend sends and a test keeps it so;
+every action has an explicit lifecycle; twelve defects found by the quality
+lab, the office simulation and new scenarios are fixed; the backend scenarios
+went from 24 to 38. That work is described in
+[ENGINE_RECONCILIATION.md](ENGINE_RECONCILIATION.md) and
+[AGENT2_INTEGRATION_HANDOFF.md](AGENT2_INTEGRATION_HANDOFF.md). The rest of
+this report describes the base it was cut from.
+
 No real mailbox or
 calendar was used. No external write was made or is possible. Nothing in
 ScribaAssist/Scriba was changed: it was read from a clone with push disabled.

@@ -109,3 +109,14 @@ def test_a_dependent_step_is_ready_only_when_its_dependency_is_not_known_to_be_u
     assert states({"id": 7, "status": "executed"}, {8}) == ["executed", "ready"]
     assert states({"id": 7, "status": "awaiting_approval"}, {7}) == ["awaiting_approval", "waiting"]
     assert states({"id": 7, "status": "failed"}) == ["failed", "blocked"]
+
+
+def test_a_later_verification_lifts_the_block():
+    from desk_overlay.workflow import _unverified
+
+    failed = {"kind": "verification", "data": {"toolCallId": 7, "verified": False}}
+    passed = {"kind": "verification", "data": {"toolCallId": 7, "verified": True}}
+    assert _unverified([failed]) == {7}
+    assert _unverified([failed, passed]) == set()          # the latest evidence decides
+    assert _unverified([passed, failed]) == {7}
+    assert _unverified([{"kind": "execution", "data": {"toolCallId": 7, "verified": False}}]) == set()

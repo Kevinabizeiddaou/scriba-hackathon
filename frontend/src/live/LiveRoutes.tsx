@@ -12,6 +12,7 @@ import { useRoute } from '../lib/router'
 import { CalendarPage } from '../pages/CalendarPage'
 import { InboxPage } from '../pages/InboxPage'
 import { TasksPage } from '../pages/TasksPage'
+import { JiraPage } from './jira/JiraPage'
 import { LiveChatPage } from './LiveChatPage'
 import { LiveOverviewPage } from './LiveOverviewPage'
 import { LiveSchedulingPage } from './LiveSchedulingPage'
@@ -37,6 +38,7 @@ export function LiveRoutes() {
       {route.page === 'chat' && <LiveChatPage conversationId={route.param} />}
       {route.page === 'approvals' && <LiveApprovalsPage />}
       {route.page === 'activity' && <LiveActivityPage />}
+      {route.page === 'jira' && <JiraPage param={route.param} />}
       {route.page === 'evaluation' && (
         <Suspense fallback={<div className="px-4 py-6 sm:px-6 lg:px-8" role="status" aria-label="Loading the evaluation screen"><SkeletonRows rows={5} /></div>}>
           <EvaluationPage />

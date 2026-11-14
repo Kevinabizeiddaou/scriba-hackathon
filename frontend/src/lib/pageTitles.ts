@@ -9,6 +9,7 @@ export const PAGE_TITLES: Record<Page, string> = {
   chat: 'Chat',
   approvals: 'Approvals',
   activity: 'Activity',
+  jira: 'Jira',
   evaluation: 'Evaluation',
 };
 

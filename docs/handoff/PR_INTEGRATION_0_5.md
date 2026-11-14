@@ -22,10 +22,12 @@ being told. Full account: `docs/handoff/INTEGRATION_0_5.md`.
 - **Eight defects found while testing the merged tree**, by Agent 3's lab,
   Agent 4's simulation and a real model, each fixed with a test.
 - **The frontend on main passes against it.** The typed client declares
-  everything the backend sends (checked by a backend test). Three small
-  frontend edits, listed in `docs/handoff/AGENT2_INTEGRATION_0_5.md`:
-  wording for new held reasons and the escalated follow-up state, and the
-  three tests that pin the backend's source text.
+  everything the backend sends (checked by a backend test). Against `main`
+  three frontend files differ: `api/desk.ts` (additive: commands, memory,
+  `unresolved`, follow-up fields), `live/runLifecycle.ts` (wording for
+  `unresolved_requests` and the escalated follow-up state) and
+  `live/LiveFollowUps.tsx` (escalated follow-ups get their own section).
+  Main's own held-reason wording is kept.
 
 ## Measured on the head of this branch, `5b3a1d0`
 
@@ -62,10 +64,12 @@ execution held.
 
 - **More runs are handed to the person on a rules-only backend.** That is
   the policy: unknown is not "done".
-- **Not verified:** a live provider, Postgres, more than one model run per
-  case, the lab and the simulation with a model (both are rules-only tools).
-- **Frontend wording** for six held reasons and the escalated follow-up
-  state is the backend owner's first draft and wants Agent 2's eye.
+- **Not verified:** a live provider (writes stay off), the 56 backend
+  scenarios over more than one model run, the lab and the simulation with a
+  model (both are rules-only tools), the 0.5 engine on the hosted Desk.
+- **Frontend wording** for `unresolved_requests` and the escalated follow-up
+  state is the backend owner's first draft and wants Agent 2's eye. Nothing
+  in the frontend shows `unresolved[]` yet; such a run reads as escalated.
 - Two behaviours change for a client compared with `main`: repeats are
   `COMPLETED`, and unplaced mail is `ESCALATED`.
 

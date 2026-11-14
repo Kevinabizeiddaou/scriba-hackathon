@@ -118,6 +118,10 @@ def build_world(body: Mapping[str, Any], owner_email: str) -> SandboxWorld:
             "waitingOn": follow.get("waitingOn"), "sentAt": follow.get("sentAt"),
             "expectedBy": follow.get("expectedBy"),
             "status": "waiting" if follow.get("status") == "waiting" else "closed"})
+    # Beyond contract 1.1.0, for the backend's own scenarios: a calendar or
+    # mailbox the world should refuse to read ({"google": "<error code>"}).
+    for key, code in (context.get("unreadableCalendars") or {}).items():
+        world.unreadable[f"{key}:{address}" if key == "google" else str(key)] = str(code)
     for fault in context.get("faults") or []:
         error = fault.get("error") or {}
         world.add_fault(str(fault.get("tool")), mode=str(fault.get("mode") or "fail_always"),
@@ -286,6 +290,14 @@ def _classification(view: Mapping[str, Any]) -> str:
                    if i.get("kind") == "stage" and i["data"].get("stage") == "UNDERSTANDING"), None)
     if any(f.get("external") and f.get("state") == "satisfied" for f in view.get("followUps") or []):
         return "follow_up"
+    understood = next((i["data"] for i in view.get("timeline") or []
+                       if i.get("kind") == "stage" and i["data"].get("stage") == "UNDERSTANDING"), {})
+    if understood.get("source") == "model" and understood.get("intents") and not view.get("flags"):
+        # A model read the message: report what it found, not the rules' category.
+        return {"new_meeting": "new_meeting", "reschedule": "reschedule", "cancellation": "cancellation",
+                "task": "action_required", "reminder": "action_required", "reply_needed": "reply_needed",
+                "information_request": "reply_needed", "follow_up": "follow_up",
+                "fyi": "fyi"}.get(str(understood["intents"][0].get("type")), "unclear")
     if category == "meeting_request":
         return {"reschedule": "reschedule", "cancel": "cancellation"}.get(str(intent), "new_meeting")
     return {"needs_reply": "reply_needed", "action_item": "action_required", "informational": "fyi",

@@ -54,9 +54,24 @@ suite does not notice is a guard no test stands behind.
   shaped like a reminder but named as something else would have been accepted. Now tested
   (`test_an_unknown_proposal_type_is_refused_even_when_it_looks_like_a_reminder`).
 
+## Second pass: the guards added afterwards
+
+8 planted, 8 caught.
+
+| Planted defect | Result |
+| --- | --- |
+| binding: a changed action is approved anyway | caught |
+| retry: runs the unedited proposal | caught |
+| recovery: settles an action still in flight | caught |
+| plan: a blocked step counts as ready | caught |
+| understanding: an unquoted intent is kept | caught |
+| understanding: low confidence acted on | caught |
+| lifecycle: failed verification not escalated | caught |
+| understanding: a time without an offset is used | caught |
+
 ## What it does not cover
 
-Thirty defects in the guards I judged most important: the write gate, the tripwire, unknown
+Thirty-eight defects in the guards I judged most important: the write gate, the tripwire, unknown
 outcomes, readiness, claims, the worker's limits, the model step's bounds, sandbox ownership,
 the evaluation routes and time-zone reading. It is not exhaustive, and it says nothing about
 Scriba's own code.

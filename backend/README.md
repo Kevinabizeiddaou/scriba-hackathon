@@ -29,6 +29,10 @@ in force, and is otherwise held (`external_writes_disabled`). See
 | `desk_overlay/workflow.py` | One incoming email to proposed, approvable Scriba action cards: booking, moving, cancelling, replies, tasks, follow-ups |
 | `desk_overlay/lifecycle.py` | The stages of a run and its evidence, derived from the cards and recorded events (pure) |
 | `desk_overlay/reading.py`, `planning.py` | Reading a message by rule: scheduling and action signals, a time written in full, deadlines, text addressed to the assistant (pure) |
+| `desk_overlay/plans.py` | The typed plan of a run: intents, facts, assumptions, steps and what each depends on (pure) |
+| `desk_overlay/understanding.py` | A message's intents with confidence and evidence, from the rules or from one validated model call |
+| `eval/scenarios.py` | The backend's own 24 evaluation scenarios; measured by `tests/integration/test_scenarios_with_scriba.py` |
+| `dev/mutation_check.py` | Plants one defect at a time in a safety guard and checks the suite notices |
 | `desk_overlay/claims.py` | One run per message across processes and restarts: Scriba's receipt ledger, a SQLite file, or memory |
 | `desk_overlay/worker.py` | The opt-in background intake worker |
 | `desk_overlay/sandbox.py` | Isolated provider worlds, and the gateway that routes reads to them |
@@ -96,8 +100,8 @@ Without `--demo` the server behaves as before: Scriba's seeded inbox, where
 nothing needs work.
 
 To put a real model behind it (none has been, from this repository): a real
-key in the environment, `DESK_MODEL=on`, and `DESK_AGENT=on` for the bounded
-model step. Mail in a sandbox world is synthetic; that is all a model sees.
+key in the environment, `DESK_MODEL=on`, `DESK_UNDERSTANDING=model` for intent
+understanding and `DESK_AGENT=on` for the bounded model step. Mail in a sandbox world is synthetic; that is all a model sees.
 
 ### With a real local Scriba backend
 

@@ -14,145 +14,200 @@ ScribaAssist/Scriba was changed: it was read from a clone with push disabled.
 | | |
 | --- | --- |
 | `main` | `2d70a29` |
-| This branch | `agent1/autonomous-engine`, pushed. **Not merged; no pull request opened** (this environment has no GitHub CLI). The description to paste is [PR_AGENT1_AUTONOMOUS_ENGINE.md](PR_AGENT1_AUTONOMOUS_ENGINE.md) |
-| Merged earlier | PR 1 (`agent1/backend`), 2 (`agent1/chat-workflow`), 4 (`agent1/intake-loop`), 3 and 5 (Agent 2) |
-| `agent1/next` | Named in the directive. It does not exist on the remote and no local copy was found, so there was nothing to preserve |
+| This branch | `agent1/autonomous-engine`, pushed. **Not merged.** No pull request is open: this environment has no GitHub sign-in. The text to paste is [PR_AGENT1_AUTONOMOUS_ENGINE.md](PR_AGENT1_AUTONOMOUS_ENGINE.md) |
 | Overlay version | 0.3.0 |
 
 **Do not merge this branch on its own.** Three of Agent 2's pinned
-compatibility tests fail against it, by design (section 5). It should land
-together with Agent 2's mapping update.
+compatibility tests fail against it, by design (section 5).
 
 ## 2. What works now
 
-"Scriba app" means: Scriba's real application, routes, card validation,
+"Scriba app" means Scriba's real application, routes, card validation,
 approve, retry and cancel paths at `3ae3a2a`, with chat storage in memory and
-providers replaced by an isolated world. "HTTP" means: seen through real
+providers replaced by an isolated world. "HTTP" means seen through real
 requests against `backend/dev/seeded_desk_server.py --demo`.
 
 | Capability | Where | Evidence |
 | --- | --- | --- |
 | Mail becomes a run with no client open | `worker.py` | Unit, Scriba app, HTTP |
 | One run per message across polls, threads and restarts | `claims.py` | Unit (3 stores, 12-thread race, restart on a file store) |
-| Run lifecycle, with separate evidence for decisions, reads, proposals, approvals, executions, verifications | `lifecycle.py`, `workflow.py` | Unit, Scriba app |
-| Run list rows carry `state`, `lifecycle`, `next`, `held.reason`, `actionCounts` | `workflow.list_runs` | Unit, HTTP |
-| Booking, then a confirmation only after the event exists | `workflow.py` | Scriba app, HTTP |
-| Reschedule: the original event is moved, never a second one. Organizer and sender checked | `workflow._plan_change` + Scriba's `chat_calendar_edit` | Scriba app (Google and Outlook) |
-| Cancellation of the one event the sender is on | same | Scriba app, HTTP |
-| Reply offering only times verified free on every calendar | `workflow._offer` | Unit, Scriba app |
-| Task with a written deadline; no second task for the same thing | `workflow._plan_task` | Unit, Scriba app |
-| Follow-ups: waiting, satisfied by the awaited reply, overdue with a PROPOSED reminder, closed | `workflow._track_follow_ups` | Unit, HTTP |
+| Lifecycle with separate evidence for plan, decisions, reads, proposals, approvals, executions, verifications | `lifecycle.py`, `workflow.py` | Unit, Scriba app |
+| **A typed plan per run**: intents with confidence and evidence, facts, assumptions, missing details, steps with dependencies | `plans.py` | Unit |
+| **Dependent steps**: a step is proposed only after what it depends on took effect, and is blocked if that failed or was rejected | `plans.step_states`, `workflow.advance` | Unit, Scriba app |
+| **Several requests in one message**, each planned by the same checked code | `understanding.py`, `workflow._plan_from_intents` | Scripted model only |
+| Booking, then confirmation only after the event exists; both zones stated when they differ | `workflow.py` | Scriba app, HTTP |
+| Reschedule moves the original event; cancellation cancels the one the sender is on | `workflow._plan_change` + Scriba's `chat_calendar_edit` | Scriba app |
+| A repeated request for a booked meeting is recognised; a time outside working hours is flagged | `workflow.py` | Unit, scenarios |
+| Replies offering only verified free times; tasks with written deadlines; follow-ups | `workflow.py` | Unit, Scriba app, HTTP |
 | Real mail and calendar writes held in the server | `execution.py`, `readiness.py` | Scriba app |
-| Approved actions executed against an isolated world; tripwire on real provider clients | `sandbox.py`, `execution.py` | Scriba app |
-| Unknown outcome stays unknown; a retry reads back first and does not repeat | `execution._reconcile` | Scriba app |
-| Failure between event and confirmation: partial, escalated, nothing undone | `lifecycle.derive` | Scriba app |
-| Double and concurrent approvals book once | Scriba's claim, under the gate | Scriba app (6 threads) |
-| `/desk/eval/v1` | `eval_api.py` | Scriba app; Agent 2's own runner over HTTP: 20 executed, 0 skipped, no contract violation |
+| Sandbox execution with a tripwire on real provider clients | `sandbox.py`, `execution.py` | Scriba app |
+| **An approval is bound to the proposed action**; a card changed behind it is held | `execution._binding_changed` | Scriba app |
+| **A retry runs what the person approved**, their edit included | `execution.py` | Scriba app |
+| Unknown outcome stays unknown; a retry reads back first | `execution._reconcile` | Scriba app |
+| **Actions left in flight by a stopped process are settled by a read-back, never re-run** | `execution.recover_stale`, worker | Scriba app |
+| **A failed verification escalates**; a run held by a guard is `HELD` | `lifecycle.derive` | Unit, Scriba app |
+| `/desk/eval/v1` | `eval_api.py` | Scriba app; Agent 2's runner over HTTP |
 | Per-run model usage and cost from Scriba's telemetry and price table | `gateway.model_usage` | Scripted only |
-| Bounded model step | `agent.py` | Scripted only, off by default |
+| Bounded model step (reply, task, reminder) | `agent.py` | Scripted only, off by default |
 
 ## 3. What is missing or unproven
 
 1. **No real model has been run.** There is no model credential in this
-   environment. Time extraction, a model-written reply and the bounded model
-   step are scripted in every test. To run them: start the dev backend with
-   `DESK_MODEL=on DESK_AGENT=on` and a real key; `meta.agent` then reports
-   `real` and the runner's report is no longer labelled simulated.
-2. **Durable claims are not proven on Postgres.** `ScribaReceiptClaims` calls
-   Scriba's `claim_action_receipt` / `finish_action_receipt`; it is tested
-   against a stand-in that returns the ledger's outcomes. The SQLite store is
-   proven across a restart and a 12-thread race.
-3. **The worker reads the newest inbox page.** It does not yet use Scriba's
-   per-user trigger cursor (`db.list_trigger_candidates`), so a burst of more
-   than one page between ticks can be missed until a later tick or a manual
-   sweep. Its "not inbound" filter depends on labels a row carries.
-4. **Chat-started work is not driven by the Desk.** `/desk/eval/v1` refuses
-   `input.kind: "conversation"` (3 of the 20 cases).
-5. **Not built:** closing an existing task from news that work is done
-   (`task.complete`); a reply that needs facts from the thread without a
-   model; a meeting plus a promised document without the model step.
-6. **Message bodies.** On a real backend the Desk reads the subject and the
-   snippet. A sandbox row carries the full body.
-7. **Follow-ups and evidence are stored as messages on the run's Scriba
-   conversation.** Listing follow-ups reads up to 50 runs.
-8. **Live providers:** nothing was read from or written to one.
+   environment. `DESK_UNDERSTANDING=model`, `DESK_AGENT=on` and Scriba's time
+   extraction are scripted in every test.
+2. **Durable claims are not proven on Postgres.** The receipt-ledger adapter
+   is tested against a stand-in with the ledger's outcomes.
+3. **The worker reads the newest inbox page**, not Scriba's trigger cursor.
+4. **Chat-started work is not driven by the Desk** (3 of the harness's 20 cases).
+5. **Rule-based reading is brittle to wording** (section 4).
+6. Not built: closing an existing task from news that work is done; a reply
+   that needs facts from the thread without a model.
+7. On a real backend the Desk reads the subject and the snippet, not the body.
+8. Recovery on a real provider cannot read back: the card becomes
+   `outcome_unknown` and waits for the person.
+9. **Live providers:** nothing was read from or written to one.
 
-## 4. Evaluation, as it stands
+## 4. Evaluation: three measurements, never mixed
 
-Run with Agent 2's runner against the dev backend, rules only (no model), so
-every number below is labelled **simulated** by the harness and says nothing
-about the product's agent.
+### 4.1 The backend's own scenarios
+
+24 scenarios (`backend/eval/scenarios.py`): reworded requests, ambiguity,
+several intents, contradictory times, a sender on no meeting, time zones,
+conflicts, a duplicate, provider failure, partial execution, an injected
+recipient, text addressed to the assistant, an unreadable calendar. Full
+table: [EVAL_BACKEND_SCENARIOS.md](EVAL_BACKEND_SCENARIOS.md).
+
+| | Rules only | Scripted model | Configured model |
+| --- | --- | --- | --- |
+| Intent correct | 21 of 24 | 23 of 24 | not run |
+| Plan and tools correct | 21 of 24 | 24 of 24 | not run |
+| Outcome correct | 21 of 24 | 24 of 24 | not run |
+| Everything correct | 20 of 24 | 23 of 24 | not run |
+| Unsafe runs | 0 | 0 | not run |
+| Approval compliant | 24 of 24 | 24 of 24 | not run |
+| Executed actions verified | 24 of 24 | 24 of 24 | not run |
+| Median latency | 21 ms | 33 ms | not run |
+| Cost per run | not measurable | not measurable | not run |
+
+- **Rules only**: the Desk with no model.
+- **Scripted model**: the understanding step is handed the answer a careful
+  reader would give. It measures everything BEHIND the model. It is an upper
+  bound for this pipeline, not a model's score.
+- **Configured model**: not run. No number exists for it.
+- Latency is the pipeline's own time in a sandbox with no model call.
+- I wrote these scenarios and the rules; the rules-only figure is therefore
+  optimistic. The held-out figure below is the honest one for the rules.
+- The one scenario not fully correct with a scripted model (S20) is my
+  expectation list not allowing the category the run reported; I left the
+  expectation as written.
+
+### 4.2 The harness's twenty cases (Agent 2's runner, rules only, labelled simulated)
 
 | Suite | First run | After fixing general causes found in that run |
 | --- | --- | --- |
-| `desk-v1` (20 cases) | 4 as expected | 10 as expected, 7 not, 3 errors (the chat cases) |
-| `desk-holdout-v1` (the same cases reworded) | not run | **5 as expected**, 12 not, 3 errors |
+| `desk-v1` | 4 as expected | 10 as expected, 7 not, 3 errors (the chat cases) |
+| `desk-holdout-v1` (reworded; I have not read its texts) | not run | **5 as expected**, 12 not, 3 errors |
 
-The gap between 10 and 5 is the finding: the rule-based reading recognises
-the wording it was improved on and does not generalise. I did not read the
-held-out texts and did not tune on them. Closing the gap is a model's job,
-not more patterns.
+Re-run on the final code of this branch: unchanged. The gap between 10 and 5 is
+the finding: the rules recognise the wording they were improved on.
 
-Causes fixed after the first run, each with its own tests in other wording
-(`tests/test_reading.py`): a request to meet that never says "meeting"; a
-cancellation stated as news; a time range; a time in a named zone; "move X
-to Y" naming both times; a request repeated for a meeting already booked; a
-decision needed by a time; more ways of addressing the assistant.
+## 5. Exact frontend integration requirements
 
-## 5. Contract changes Agent 2 needs to adopt
+This branch does not edit frontend files beyond `frontend/src/api/desk.ts`,
+which was widened before the rule "Agent 2 owns all frontend files" was set;
+the changes made after it are listed here for Agent 2 to apply instead.
 
-`frontend/src/api/desk.ts` is updated; every 0.3 field is optional, so the
-frontend compiles unchanged (typecheck clean, build passes, 369 tests pass).
-Three pinned tests in `frontend/src/live/deskRuns.test.ts` fail, each because
-the backend now does what was asked:
+**Three pinned tests fail on this branch** (`frontend/src/live/deskRuns.test.ts`),
+each because the backend now does what was asked:
 
-| Pinned test | Why it fails now | What it needs |
+| Pinned test | Why it fails | What it needs |
 | --- | --- | --- |
-| "reads only list fields the backend emits" | `GET /desk/runs` rows now carry `state` | Drop the per-run detail reads; use `DeskRunRow` |
-| "agrees ... on what counts as done" | `_DONE` is `("executed",)`; a partly executed action is `partial` and not `verified` | Update the pin; `groupOf` can trust `state` |
-| "knows every reason a meeting request can be held for" | New reasons: `event_not_found`, `event_ambiguous`, `not_organizer`, `calendar_lookup_failed`, `already_scheduled`, `task_exists`, `untrusted_instructions`. `change_request` is no longer sent | A label per reason; then widen `DeskRunHeld.reason` to `DeskHeldReason` |
+| "reads only list fields the backend emits" | `GET /desk/runs` rows carry `state` | Drop the per-run reads; use `DeskRunRow` |
+| "agrees ... on what counts as done" | `_DONE` is `("executed",)`; a partly executed action is `partial` and not `verified` | Update the pin |
+| "knows every reason a meeting request can be held for" | New reasons | A label for each (below) |
 
-Also new for the screens: `DeskGateHoldCode` (`external_writes_disabled`,
-`outcome_unknown`, `sandbox_world_gone`, `reply_target_missing`);
-`health.externalWrites` with `reason` and `checks`; `health.executionMode`;
-`lifecycle`, `timeline`, `followUps`, `usage` on a run; `fetchDeskWorker`,
-`fetchDeskFollowUps`, `closeDeskFollowUp`, `fetchDeskSandbox`,
-`deliverToDeskSandbox`.
+**Types to change in `frontend/src/api/desk.ts`** (the file currently has the
+first-draft names):
 
-Behaviour that changed under existing screens:
+```ts
+export type DeskLifecycleStage =
+  | 'RECEIVED' | 'UNDERSTANDING' | 'INVESTIGATING' | 'PLANNING'
+  | 'AWAITING_APPROVAL' | 'EXECUTING' | 'VERIFYING' | 'COMPLETED'
+  | 'WAITING_FOR_RESPONSE' | 'NEEDS_CLARIFICATION' | 'HELD' | 'ESCALATED'
+  | 'PARTIALLY_COMPLETED' | 'FAILED' | 'CANCELLED'
+// replaces CLASSIFIED, CONTEXT_GATHERING, AWAITING_REPLY; HELD is new
+
+export type DeskEvidenceKind = /* existing */ | 'plan'
+
+export type DeskHeldReasonV3 = /* existing */ | 'intent_unclear'
+export type DeskGateHoldCode = /* existing */ | 'proposal_changed'
+
+export interface DeskPlanStep {
+  id: string; tool: string; purpose: DeskActionPurpose | 'reply' | null
+  dependsOn: string[]; deferred: boolean; requiresApproval: true; external: boolean
+  expected: string; onFailure: string
+  /** A Scriba card status once proposed; else 'ready' | 'waiting' | 'blocked'. */
+  state: string; toolCallId: number | null
+}
+export interface DeskPlan {
+  version: 1
+  message: { provider: MailProvider; provider_account_id: string | null; email_id: string; thread_id: string | null }
+  planner: 'rules' | 'rules+model' | 'model+rules' | 'rules+agent'
+  intents: Array<{ type: string; confidence: number | null; evidence: string[]; missing: string[]; source: 'rules' | 'model' }>
+  unsupported: Array<{ type: string; why: string }>
+  facts: string[]; assumptions: string[]; missing: string[]; tools: string[]
+  steps: DeskPlanStep[]; approvals: number; escalation: string[]
+}
+// DeskRun gains:      plan?: DeskPlan | null
+// DeskRun.flags gains 'outside_working_hours'
+// DeskAction gains:   stepId?: string | null; held?: boolean; attempts?: number
+// DeskRunHeld gains:  missing?: string[]
+// DeskWorkerStatus gains: recovered?: number
+```
+
+**Labels needed** for `held.reason`: `event_not_found`, `event_ambiguous`
+(`held.candidates[]`), `not_organizer`, `calendar_lookup_failed`,
+`already_scheduled`, `task_exists`, `untrusted_instructions`,
+`intent_unclear` (`held.missing[]`). `change_request` is no longer sent.
+For `output.error_code`: `external_writes_disabled`, `proposal_changed`,
+`outcome_unknown`, `sandbox_world_gone`, `reply_target_missing`.
+
+**Behaviour that changed under existing screens:**
 
 - A busy or unread meeting time now produces a `send_email` card
-  (`purpose: "offer_times"` or `"clarify"`) beside `held`. `next` no longer
-  contains `draft_reply` for such a run.
-- The confirmation reply is proposed by the backend as soon as the event
-  executes. `next: ["advance"]` is rarely seen; calling advance stays safe.
-- With `executionMode: "sandbox"` an approve of a mail or calendar card
-  executes, simulated. The frontend's rule "mail and calendar approvals stay
-  disabled unless `externalWrites.enabled`" should also allow them when
-  `executionMode === "sandbox"`, showing `simulated`.
+  (`purpose: "offer_times"` or `"clarify"`) beside `held`; `next` has no
+  `draft_reply` for such a run.
+- The confirmation is proposed by the backend as soon as its prerequisite
+  executes. `next: ["advance"]` is rare; calling advance stays safe.
+- With `health.executionMode === "sandbox"` an approve of a mail or calendar
+  card executes, simulated. The rule "mail and calendar approvals stay
+  disabled unless `externalWrites.enabled`" should also allow that case and
+  show `simulated`.
+- `lifecycle.stage === "HELD"` means no card of the run can be approved as it
+  stands; show the card's hold explanation, not an Approve button.
+- A retry after an edited approve failed re-applies the person's edit.
 
-Answers to the two open questions in `LIVE_INTEGRATION.md` 9.1:
-`draft_email_reply` stores a draft in Scriba (it does not send), and the Desk
-holds it like a send while writes are off. Retry does execute at once in
-Scriba; for a card with an unknown outcome the Desk reads back or asks first.
+Answers to `LIVE_INTEGRATION.md` 9.1: `draft_email_reply` stores a draft in
+Scriba (it does not send) and is held like a send while writes are off.
+Retry executes at once in Scriba; for an unknown outcome the Desk reads back
+or asks first.
 
-One point for the lead to decide: contract 1.1.0 says tasks and reminders
-need no approval; the product asks for one (they are Scriba approval cards).
-Evaluation worlds run them automatically so the harness can finish, and say
-so in `meta.desk.internalWrites`. Which is the product's rule?
+For the lead: contract 1.1.0 says tasks and reminders need no approval; the
+product asks for one. Evaluation worlds run them automatically and say so in
+`meta.desk.internalWrites`. Which is the product's rule?
 
 ## 6. Tests and results (14 November 2026, Windows 11, Python 3.13, Node 22)
 
 | What | Result |
 | --- | --- |
-| Backend unit and route tests | 375 passed |
-| Backend with integration on the real Scriba app at `3ae3a2a` | 505 passed (was 196 on `main`) |
-| Outbound-connection guard | On for every backend test: a test that opens a socket to another host fails |
-| Mutation check on the safety guards | 30 planted: 28 caught at once, 2 survived and now have tests ([MUTATION_CHECK.md](MUTATION_CHECK.md)) |
-| API smoke on the seeded demo backend (`--desk-demo`) | 33 of 33, including mail to worker to approval to sandbox execution to verified |
+| Backend, with integration on the real Scriba app at `3ae3a2a` | 590 passed, 24 skipped (the configured-model scenarios). `main` had 196 |
+| Backend unit and route tests | 402 passed |
+| Outbound-connection guard | On for every backend test |
+| Mutation check on the safety guards | 38 planted in two passes: 36 caught at once, 2 survived the first pass and now have tests ([MUTATION_CHECK.md](MUTATION_CHECK.md)) |
+| Every `/desk` route against the contract | 22 implemented, 22 documented, none missing either way |
+| API smoke on the seeded demo backend (`--desk-demo`) | 33 of 33 on the final code, with zero model requests logged |
 | Frontend type check and build | Clean; passes |
-| Frontend tests | 369 passed, 3 failed (section 5) |
-| Agent 2's runner against `/desk/eval/v1` | 20 executed, 0 skipped, on both suites (section 4) |
+| Frontend tests | 380 passed, 3 failed: the pinned tests of section 5 |
 | Secret scan | No secret found in tracked files |
 
 Not run: anything with a real model, a live mailbox, a live calendar, or a
@@ -162,29 +217,41 @@ Postgres database.
 
 Scriba's test harness sets a placeholder model key. My first demo server
 therefore attempted 8 model calls to the provider. All were refused (401);
-the bodies were synthetic demo emails written for this repository, with no
-user data. Since then: the Desk makes no model call unless a model is really
-configured (`DESK_MODEL`, and a placeholder key never counts), the dev
-backend defaults to `DESK_MODEL=off`, and the test suite fails any test that
-connects to another host. The later demo runs logged zero model requests.
+the bodies were synthetic demo emails, with no user data. Since then the Desk
+makes no model call unless a model is really configured (`DESK_MODEL`, and a
+placeholder key never counts), the dev backend defaults to `DESK_MODEL=off`,
+and the test suite fails any test that connects to another host.
 
-## 8. Blocking issues
+## 8. Remaining security risks
 
-- **No model credential**, so no real-agent result of any kind exists.
-- **This branch and the frontend must land together** (section 5).
-- **External writes** stay off until a Scriba revision with the outbound
-  fixes is verified by isolated provider tests and the lead authorizes it.
-  The list of verified revisions is empty, in code.
+- **Scriba's own retry ignores an edit made at approval.** The Desk's gate now
+  re-applies it for Desk runs; plain Scriba chat cards outside the Desk scope
+  keep Scriba's behaviour.
+- **The approval binding covers cards the Desk proposed.** A card proposed in
+  chat has no recorded digest and is not bound.
+- **Injection detection is pattern-based.** It stops the wording it knows.
+  The structural defences do not depend on it: a model cannot choose a
+  recipient or approve, a recipient that did not come from the user or the
+  From header is held, and an intent must quote the message.
+- **A model's quoted evidence can be real and still misread.** Every action
+  still passes the availability checks and a human approval.
+- **Sandbox isolation is enforced at named provider entry points** and at the
+  executor. A provider client added to Scriba later is not covered until it
+  is added to the tripwire list.
+- **External writes** stay off: the list of verified Scriba revisions is
+  empty, in code.
 
-## 9. Three highest-impact improvements
+## 9. Blocking issues
 
-1. **Run a real model through the sandbox.** Everything is in place: the
-   evaluation routes, usage and cost capture, and the bounded step. It turns
-   every "scripted" above into a measured result, and it is what the
-   held-out number says is needed.
+- No model credential, so no real-agent result exists.
+- This branch and the frontend must land together.
+
+## 10. Three highest-impact improvements
+
+1. **Run a real model through the sandbox**: `DESK_MODEL=on
+   DESK_UNDERSTANDING=model DESK_AGENT=on` on the dev backend, then Agent 2's
+   runner on both suites and the 24 scenarios. It fills the third column.
 2. **Move the worker onto Scriba's trigger cursor and prove the receipt
-   ledger on a throwaway Postgres.** That is the difference between "tested"
-   and "durable" for autonomous intake.
-3. **Drive chat-started work through the Desk** (Scriba's chat agent inside a
-   sandbox world), which unblocks the three conversation cases and reminders
-   asked for in chat.
+   ledger on a throwaway Postgres.**
+3. **Drive chat-started work through the Desk**, which unblocks the three
+   conversation cases.

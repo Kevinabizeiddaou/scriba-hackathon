@@ -272,6 +272,7 @@ What an approve then does is decided by the execution gate (section 8).
 | New meeting request, time verified free on every calendar | One `create_calendar_event` card: attendee = the sender from the From header; `calendar_provider` and `provider_account_id` = the calendar of the mailbox the request reached. After it executes, one `send_email` confirmation in the original thread (`purpose: "confirm"`) |
 | The same request again, when the sender is already on an event at that exact time | No card. `held.reason: "already_scheduled"`, `flags: ["duplicate"]` |
 | Meeting request, time busy | No event. One `send_email` reply (`purpose: "offer_times"`) offering up to three times verified free on every calendar; `proposedSlots` lists them. `held.reason: "calendar_conflict"` |
+| Meeting request at a free time outside working hours | Proposed as usual, with `flags: ["outside_working_hours"]` and the fact stated in the card's `reason`: the person decides |
 | Meeting request, no time could be read | The same reply with `purpose: "clarify"`, when verified free times exist. `held.reason: "time_not_understood"` |
 | Meeting request, a calendar could not be read | No card at all: nothing is verified, so nothing is offered. `held.reason: "availability_unknown"` |
 | Request to move a meeting | The ORIGINAL event is found among the meetings the sender is on. New time verified free (the meeting's own slot does not count against it): one `update_calendar_event` card naming that `event_id`. Never a second event. Then a confirmation |
@@ -309,26 +310,82 @@ makes the run `partial`**, and such an action is not `verified`.
 | `stage` | Meaning |
 | --- | --- |
 | `RECEIVED`, `UNDERSTANDING`, `INVESTIGATING`, `PLANNING` | Recorded as the run is opened; they appear in `timeline`, never as a resting stage |
-| `AWAITING_APPROVAL` | A card waits for the person (including a held card) |
+| `AWAITING_APPROVAL` | At least one card can be approved |
+| `HELD` | Every open card is held by a guard (`action.held: true`): nothing can be approved as it stands. `lifecycle.reason` is the first card's `errorCode` (`external_writes_disabled`, `proposal_changed`, `unverified_recipient`, ...) |
 | `EXECUTING` | A card is running, or a step executed and the next one is about to be proposed |
-| `VERIFYING` | Executed but not yet verified, or `outcomeUnknown`: the provider did not confirm and it may or may not have happened |
+| `VERIFYING` | Executed and not yet verified, or `outcomeUnknown`: the provider did not confirm and it may or may not have happened |
 | `COMPLETED` | Everything proposed took effect and was verified, or nothing was needed |
 | `WAITING_FOR_RESPONSE` | A reply went out and its follow-up is `waiting` or `overdue` |
-| `NEEDS_CLARIFICATION` | Cannot be acted on as written (`time_not_understood`, `event_not_found`, `event_ambiguous`) and nothing could be proposed |
-| `ESCALATED` | Handed to the person; the Desk proposes nothing |
+| `NEEDS_CLARIFICATION` | Cannot be acted on as written (`time_not_understood`, `event_not_found`, `event_ambiguous`, `intent_unclear`, `details_missing`) and nothing could be proposed |
+| `ESCALATED` | Handed to the person; the Desk proposes nothing. Also when an action executed and its verification FAILED (`reason: "verification_failed"`): an action is never reported complete because a call returned without an error |
 | `PARTIALLY_COMPLETED` | Some actions took effect and some did not. `compensation.policy` is `escalate`: the Desk never undoes an executed action by itself |
 | `FAILED`, `CANCELLED` | |
+
+The fourteen values of `lifecycle.stage`, exactly: `RECEIVED`, `UNDERSTANDING`,
+`INVESTIGATING`, `PLANNING`, `AWAITING_APPROVAL`, `EXECUTING`, `VERIFYING`,
+`COMPLETED`, `WAITING_FOR_RESPONSE`, `NEEDS_CLARIFICATION`, `HELD`,
+`ESCALATED`, `PARTIALLY_COMPLETED`, `FAILED`, `CANCELLED`. (The first draft
+of 0.3 called three of them `CLASSIFIED`, `CONTEXT_GATHERING` and
+`AWAITING_REPLY`; those names were never merged and are not sent.)
+
+### The plan (`DeskRun.plan`)
+
+Written once, when the run is opened, and stored as a `plan` event:
+
+```json
+{
+  "version": 1,
+  "message": {"provider": "gmail", "provider_account_id": "...", "email_id": "...", "thread_id": "..."},
+  "planner": "rules" | "rules+model" | "model+rules" | "rules+agent",
+  "intents": [{"type": "new_meeting", "confidence": 0.9, "evidence": ["Could we meet Tuesday at 10:00"],
+               "missing": [], "source": "model"}],
+  "unsupported": [{"type": "task", "why": "evidence_not_in_message"}],
+  "facts": ["The requested time is free on every connected calendar (2 read)."],
+  "assumptions": ["The length was not stated; your default of 30 minutes is used."],
+  "missing": ["time"],
+  "tools": ["calendar.check_availability", "calendar.find_free_slots"],
+  "steps": [
+    {"id": "s1", "tool": "create_calendar_event", "purpose": "book", "dependsOn": [], "deferred": false,
+     "requiresApproval": true, "external": true, "expected": "...", "onFailure": "...",
+     "state": "awaiting_approval", "toolCallId": 41},
+    {"id": "s2", "tool": "send_email", "purpose": "confirm", "dependsOn": ["s1"], "deferred": true,
+     "requiresApproval": true, "external": true, "expected": "...", "onFailure": "...",
+     "state": "waiting", "toolCallId": null}
+  ],
+  "approvals": 2,
+  "escalation": ["A calendar cannot be read: availability is unknown and nothing is booked.", "..."]
+}
+```
+
+- `intents[].type`: `new_meeting`, `reschedule`, `cancellation`,
+  `reply_needed`, `information_request`, `task`, `reminder`, `follow_up`,
+  `fyi`. From the rules there is one intent, `confidence: null` (rules do not
+  measure it) and `evidence` holds the rule names. From a model there can be
+  up to four, each with a confidence and quotes.
+- `facts` are things the Desk verified by reading. `assumptions` are things
+  it filled in because the message did not say. `missing` is what is needed
+  and absent: it leads to a question or a hand-over, never to an invented
+  detail. `unsupported` lists intents a model reported without a quote that
+  is in the message; they were dropped.
+- `steps[].state`: the card's Scriba status once the step has a card;
+  otherwise `ready` (every step it depends on took effect), `waiting`, or
+  `blocked` (a step it depends on failed or was rejected). **A blocked step
+  is never proposed**, and a `decision` event `step_blocked` is recorded once.
+  `next` contains `advance` exactly when a deferred step is `ready`.
+- A run opened before 0.3 has `plan: null`.
 
 Other new fields: `trigger` (`manual`, `sweep`, `worker`, `evaluation`),
 `simulated` (the run lives in an isolated provider world), `flags`,
 `updatedAt`, `actionCounts`, `followUps[]`, `usage`, and `timeline[]`:
 `{at, kind, summary, data}` with `kind` one of `stage`, `decision`, `read`,
-`proposal`, `approval`, `execution`, `verification`, `human`, `followup`,
-`usage`, `error`. One event is one kind: an agent decision, a tool read, a
+`plan`, `proposal`, `approval`, `execution`, `verification`, `human`,
+`followup`, `usage`, `error`. One event is one kind: an agent decision, a tool read, a
 proposed write, a human decision, an execution and a verification are never
 merged. `summary` never contains message text.
 
-Each action also carries `purpose`, `reason`, `proposedSlots`, `output` (the
+Each action also carries `stepId` (its step in the plan), `held` (a guard
+holds it), `attempts` (how many times execution was attempted),
+`purpose`, `reason`, `proposedSlots`, `output` (the
 whole card output: no second request per action), `errorCode`,
 `idempotencyKey`, `proposedAt`, `decisions[]`, `execution`, `verification`,
 `outcomeUnknown`, `simulated`. **`verified` is true only on evidence**: a
@@ -374,6 +431,20 @@ provider, receiving account and provider message id. `worker.claims.store`:
 user and key; `durable: true`), `sqlite` (a local file; durable) or `memory`
 (this process; the seeded backend, whose runs are in memory too).
 
+### Model understanding (off by default)
+
+`DESK_UNDERSTANDING=model`, with a model really configured, replaces Scriba's
+single-request extraction with one structured call that reads up to four
+intents from a message (`backend/desk_overlay/understanding.py`). What a
+model contributes is WHAT is asked. It never decides that a time is free, who
+is on a meeting, or that something may be sent: each intent is planned by the
+same checked code as a single request. An intent is kept only if it quotes
+the message; a time must carry an offset; below 0.6 confidence nothing is
+proposed (`held.reason: "intent_unclear"`, with `held.missing[]`). A message
+classed as automated is not upgraded, a change request is never turned into
+a new booking, and a message that addresses the assistant is not sent to a
+model. Its tests script the model. **No real model has been run through it.**
+
 ### The model step (off by default)
 
 `DESK_AGENT=on`, with a configured model, adds one bounded planning step
@@ -414,6 +485,7 @@ Scriba the Desk runs on. A held card has `status: "needs_info"`,
 | `calendar_conflict`, `availability_unknown` | The booking gate (section 5). It now covers **moving** an event too: the new time is checked on every calendar, and the event's own current slot does not count against it | As in section 5 |
 | `desk_check_failed` | A Desk check itself failed. The card is held, never passed | Retry later |
 | `external_writes_disabled` | The execution gate (section 8): mail and calendar writes are off on this backend. Nothing was claimed or executed | Nothing to offer. The card can be approved once writes are enabled |
+| `proposal_changed` | The stored action is no longer what was proposed and no edit by the person is recorded (section 8, "An approval is bound") | Nothing to offer. Open the run; do not approve as is |
 | `outcome_unknown` | A provider did not confirm the action. It may or may not have happened (`output.outcome_unknown: true`, card `status: "failed"`) | See "Unknown outcomes" in section 8 |
 | `sandbox_world_gone` | The card was prepared in a sandbox that no longer exists | Nothing to offer |
 
@@ -500,6 +572,28 @@ or retry of `send_email`, `draft_email_reply`, `create_calendar_event`,
 They are not held; they still need an approval, except in a world that sets
 the internal-write policy to automatic (evaluation worlds do: section 10).
 
+### An approval is bound to the proposed action
+
+When the Desk proposes a card it records a digest of what the action will do:
+recipients and attendees, subject, text, title, start, end, event, thread,
+reminder and due times. An approve or retry first compares the stored card
+with that digest. If they differ and no edit by the person is on record, the
+card is held with `proposal_changed` and nothing runs. An edit the person
+makes in an approve request (`payload_overrides` touching those fields) is
+recorded as a `human` event (`action: "edit"`, `fields[]`) and becomes the
+new binding. A retry after such an attempt failed runs the action **as the
+person approved it**, edit included (Scriba's own retry would run the first
+proposal). Cards proposed in chat, outside a Desk run, are not bound.
+
+### Recovery after an interruption
+
+A card left `approved` or `executing` for five minutes by a process that
+stopped is settled by the worker, and never by running it again: in a sandbox
+the world is read back (the effect is there: `executed`, `output.reconciled`
+and `output.recovered`; it is not: `failed` with `error_code: "interrupted"`,
+retryable); on a real provider it becomes `failed` with `outcome_unknown`.
+`worker.recovered` counts them.
+
 ### Unknown outcomes
 
 A provider call that times out may have taken effect. The card is then
@@ -570,6 +664,10 @@ Things a harness should know:
 - All timestamps of a run are on the case's clock (`context.now`), which is
   fixed; order within a run is `sequence`.
 - `usage` is null unless a model call was recorded.
+- `triage.classification` is the model's first intent when a model read the
+  message, otherwise the rules' category.
+- Beyond the contract, for the backend's own scenarios: `context.unreadableCalendars`
+  (`{"google": "<error code>"}`) makes that calendar unreadable in the case's world.
 
 ## 11. Environment
 
@@ -582,6 +680,7 @@ Read by the Desk only. None of these is a credential.
 | `DESK_INTAKE_WORKER`, `DESK_INTAKE_USERS` | `on`, and the Scriba users the worker serves | off |
 | `DESK_INTAKE_INTERVAL`, `DESK_INTAKE_MAX_NEW`, `DESK_INTAKE_MAX_PER_HOUR`, `DESK_INTAKE_MAX_PENDING` | Seconds between ticks (min 15), runs per user per tick, per hour, and the number awaiting the person at which intake pauses | 60, 3, 30, 20 |
 | `DESK_MODEL` | `off`: the Desk makes no model call, whatever Scriba is configured with. A placeholder key (`test-key`) is never treated as a model | `auto` (the seeded dev backend: `off`) |
+| `DESK_UNDERSTANDING` | `model`: one structured call reads a message's intents | off |
 | `DESK_AGENT` | `on`: the bounded model step | off |
 | `DESK_EVAL_SANDBOX` | `on`: mount `/desk/eval/v1` | off (the seeded dev backend: on) |
 | `DESK_EXTERNAL_WRITES`, `DESK_EXTERNAL_WRITES_AUTHORIZED_BY`, `DESK_ISOLATED_PROVIDER_TEST_REPORT` | The lead's switch and the record of isolated provider tests. Necessary, not sufficient (section 8) | unset |

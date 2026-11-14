@@ -33,6 +33,9 @@ vendor/scriba/
 .claude/worktrees/
 .claude/settings.local.json
 
+# Vercel CLI project link
+.vercel/
+
 # Editors / OS
 .vscode/
 .idea/

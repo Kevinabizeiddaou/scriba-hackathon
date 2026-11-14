@@ -129,6 +129,10 @@ signed-in Scriba user. No new OAuth client, redirect URI or cloud setup.
 Running the overlay on a hosted Scriba API is a deployment change and needs
 explicit authorization. It is not done from this repository.
 
+The Desk's own hosted API is a separate deployment: `Dockerfile.railway` builds
+Scriba at a pinned commit with the overlay mounted, for Railway. See
+[../docs/DEPLOY.md](../docs/DEPLOY.md).
+
 ## Test it
 
 **Use Docker:** `docker compose --profile test run --rm backend-tests` from the

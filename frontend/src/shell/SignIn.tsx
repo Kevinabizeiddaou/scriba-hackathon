@@ -20,6 +20,58 @@ interface Props {
  * callbacks; the Desk never sees a code or a token. Email and password is
  * Scriba's existing POST /auth/signin.
  */
+/**
+ * Three sheets in space: the message that came in, the plan made from it, and the approval that
+ * is needed before anything happens. Decorative only: hidden from assistive technology, shown on
+ * wide screens, and still when the system asks for reduced motion. It carries no text.
+ */
+function DeskScene() {
+  const bar = (width: string, tint = '') => <div className={`scene-bar ${tint}`} style={{ width }} />;
+  return (
+    <div aria-hidden className="scene hidden shrink-0 lg:block">
+      <div className="scene-floor" />
+      <div className="scene-stack">
+        <div className="scene-layer scene-layer-1">
+          <div className="scene-sheet space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="h-7 w-7 rounded-full bg-info/25" />
+              {bar('46%')}
+            </div>
+            {bar('88%')}
+            {bar('72%')}
+            {bar('80%')}
+            {bar('38%')}
+          </div>
+        </div>
+        <div className="scene-layer scene-layer-2">
+          <div className="scene-sheet space-y-3.5">
+            {['62%', '78%', '54%'].map((width, index) => (
+              <div key={width} className="flex items-center gap-2.5">
+                <span className={`h-4 w-4 shrink-0 rounded-full border-2 ${index === 0 ? 'border-ok bg-ok/30' : 'border-mute/60'}`} />
+                {bar(width)}
+              </div>
+            ))}
+            <div className="ml-[7px] h-6 w-px bg-mute/40" />
+          </div>
+        </div>
+        <div className="scene-layer scene-layer-3">
+          <div className="scene-sheet flex flex-col justify-between">
+            <div className="space-y-3">
+              {bar('56%', '!bg-accent/40')}
+              {bar('84%')}
+              {bar('66%')}
+            </div>
+            <div className="flex justify-end gap-2">
+              <span className="h-8 w-20 rounded-[10px] border border-line-strong" />
+              <span className="h-8 w-24 rounded-[10px] bg-brand-500 shadow-[0_6px_18px_rgba(79,91,213,0.55)]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SignIn({ apiError, status }: Props) {
   const queryClient = useQueryClient()
   const [email, setEmail] = useState('')
@@ -45,7 +97,8 @@ export function SignIn({ apiError, status }: Props) {
   }
 
   return (
-    <main className="grid min-h-full place-items-center p-5">
+    <main className="flex min-h-full items-center justify-center gap-10 p-5 xl:gap-20">
+      <DeskScene />
       <section className="card w-full max-w-md space-y-4 p-6">
         <div>
           <p className="text-[12px] font-semibold text-accent">Scriba</p>

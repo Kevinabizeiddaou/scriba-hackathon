@@ -7,10 +7,13 @@ mailbox or calendar was involved and nothing here is a result about the agent.
 
 These replace the look of the earlier sets, not their content: the other folders under
 `docs/frontend/screenshots/` still show the previous dark burgundy colours. Only colours, shadows
-and the favicon changed; no screen, wording or behaviour did.
+and the favicon changed, and depth and motion were added (a lit top edge on cards, a lift on rows
+that are links, press feedback on buttons, two slow lights behind the page, a short entrance when
+a page opens, and the sign-in scene). No screen content, wording or behaviour did.
 
 | File | Screen |
 | --- | --- |
+| `sign-in.png`, `sign-in-phone.png` | Sign-in, with the 3D scene on wide screens (three sheets: the message, the plan, the approval). It is decorative, hidden from assistive technology, absent on a phone, and still under reduced motion |
 | `overview.png`, `overview-phone.png` | Overview |
 | `work.png` | Work queue |
 | `run.png`, `run-phone.png` | A completed run with its plan |

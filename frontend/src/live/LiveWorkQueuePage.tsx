@@ -98,7 +98,7 @@ function RunRow({ entry }: { entry: RunEntry }) {
       <a
         href={hrefFor('work', String(row.runId))}
         aria-label={`Run ${row.runId}: ${subject}`}
-        className="card group block px-4 py-3.5 transition-colors duration-150 hover:border-line-strong hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+        className="card group block px-4 py-3.5 hover:bg-white/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
         <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
           <div className="min-w-0 flex-1">

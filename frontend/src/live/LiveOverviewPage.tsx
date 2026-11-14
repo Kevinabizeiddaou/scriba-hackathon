@@ -228,7 +228,7 @@ export function LiveOverviewPage() {
                 <ul className="space-y-2">
                   {runsForUser.slice(0, 5).map(({ row, run }) => (
                     <li key={row.runId}>
-                      <a href={link('work', String(row.runId))} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
+                      <a href={link('work', String(row.runId))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{run!.email.subject || 'No subject'}</span>
                           <span className="block truncate text-[12px] text-soft">{nextStepOf(run!).label}</span>
@@ -251,7 +251,7 @@ export function LiveOverviewPage() {
                   const stage = WORK_STAGES[stageOf(card.toolCall.status)]
                   return (
                     <li key={card.toolCall.id}>
-                      <a href={link('approvals')} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
+                      <a href={link('approvals')} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
                         <span className="min-w-0 flex-1">
                           <span className="block text-[12px] text-mute">{description.title}</span>
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{description.headline || 'No title on the card'}</span>
@@ -274,7 +274,7 @@ export function LiveOverviewPage() {
                   const priority = toPriority(line.priority)
                   return (
                     <li key={`${line.provider}:${line.id}`}>
-                      <a href={link('inbox', emailKey(line.provider, line.id))} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-transparent px-3 py-2 hover:border-line hover:bg-white/[0.04]">
+                      <a href={link('inbox', emailKey(line.provider, line.id))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-transparent px-3 py-2 hover:border-line hover:bg-white/[0.04]">
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{parseSender(line.from_addr).name}</span>
                           <span className="block truncate text-[12.5px] text-soft">{line.subject || '(no subject)'}</span>

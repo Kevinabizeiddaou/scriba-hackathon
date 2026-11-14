@@ -201,6 +201,7 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
   const unread = session && agenda.data ? session.workspace.lastCalendarErrors : [];
   const days = weekDays(tz);
   const today = localParts(new Date(nowMs()).toISOString(), tz).date;
+  const nowMinutes = minutesOf(new Date(nowMs()).toISOString(), tz);
   const wide = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 768px)').matches : true;
   const [view, setView] = useState<'week' | 'day'>(wide ? 'week' : 'day');
   const [day, setDay] = useState(days.includes(today) ? today : days[0]);
@@ -210,6 +211,7 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
   const onDay = (date: string) => events.filter((e) => localParts(e.start, tz).date === date);
   const conflicts = events.filter((e) => e.kind === 'event' && e.conflictsWith.length > 0).length / 2;
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+  const nowTop = nowMinutes >= START_HOUR * 60 && nowMinutes <= END_HOUR * 60 ? ((nowMinutes - START_HOUR * 60) / 60) * HOUR_PX : null;
   const select = (id: string | null) => navigate('calendar', id);
 
   return (
@@ -275,16 +277,23 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
                       <div className="grid grid-cols-[52px_repeat(5,minmax(0,1fr))]">
                         <div aria-hidden>
                           {hours.map((hour) => (
-                            <div key={hour} style={{ height: HOUR_PX }} className="pr-2 text-right text-[11px] tabular-nums leading-none text-mute">
+                            <div key={hour} style={{ height: HOUR_PX }} className="pr-2 text-right text-xs tabular-nums leading-none text-mute">
                               <span className="relative -top-1.5">{String(hour).padStart(2, '0')}:00</span>
                             </div>
                           ))}
                         </div>
                         {days.map((date) => (
-                          <div key={date} className="relative border-l border-line" style={{ height: hours.length * HOUR_PX }}>
+                          <div key={date} className={clsx('relative border-l border-line', date === today && 'bg-accent/[0.035]')} style={{ height: hours.length * HOUR_PX }}>
                             {hours.map((hour) => (
                               <div key={hour} aria-hidden style={{ top: (hour - START_HOUR) * HOUR_PX }} className="absolute inset-x-0 border-t border-line" />
                             ))}
+                            {/* Where the day has got to, on today's column only and only inside the hours shown. */}
+                            {date === today && nowTop !== null && (
+                              <div aria-hidden data-testid="now-line" style={{ top: nowTop }} className="pointer-events-none absolute inset-x-0 z-10 flex items-center">
+                                <span className="-ml-1 h-2 w-2 rounded-full bg-accent" />
+                                <span className="h-px flex-1 bg-accent" />
+                              </div>
+                            )}
                             {layout(onDay(date)).map(({ event, lane, lanes }) => {
                               const top = ((minutesOf(event.start, tz) - START_HOUR * 60) / 60) * HOUR_PX;
                               const height = Math.max(((Date.parse(event.end) - Date.parse(event.start)) / 3_600_000) * HOUR_PX, 24);
@@ -298,8 +307,11 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
                                   style={{ top: top + 1, height: height - 2, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 4px)` }}
                                   className={clsx('absolute cursor-pointer overflow-hidden rounded-lg px-1.5 py-1', blockStyle(event), event.id === eventId && 'outline outline-2 outline-accent')}
                                 >
-                                  <span className="block truncate text-[11.5px] font-semibold leading-4">{event.title}</span>
-                                  <span className="block truncate text-[10.5px] tabular-nums leading-4 opacity-80">
+                                  <span className="flex items-center gap-1 text-xs font-semibold leading-4">
+                                    {event.conflictsWith.length > 0 && <AlertTriangle aria-hidden className="h-3 w-3 shrink-0 text-danger" />}
+                                    <span className="truncate">{event.title}</span>
+                                  </span>
+                                  <span className="block truncate text-xs tabular-nums leading-4 opacity-80">
                                     {fmtTime(event.start, tz)} to {fmtTime(event.end, tz)}
                                   </span>
                                 </button>
@@ -312,7 +324,7 @@ export function CalendarPage({ eventId }: { eventId: string | null }) {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div role="group" aria-label="Day" className="flex gap-1.5 overflow-x-auto">
+                    <div role="group" aria-label="Day" className="flex gap-1.5 overflow-x-auto scroll-fade">
                       {days.map((date) => (
                         <button key={date} type="button" aria-pressed={day === date} onClick={() => setDay(date)} className={clsx('tap inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150', day === date ? 'bg-brand-500/40 text-ink' : 'text-soft hover:bg-white/[0.06]')}>
                           {fmtDay(`${date}T12:00:00Z`, 'UTC')}

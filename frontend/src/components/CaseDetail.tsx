@@ -70,7 +70,7 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
               <li key={event.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 text-[12.5px]">
                 <span className="w-[178px] shrink-0 tabular-nums text-mute">{fmtRange(event.start, event.end, tz)}</span>
                 <span className="min-w-0 flex-1 text-ink">{event.title}</span>
-                <span className="font-mono text-[11px] text-mute">{event.id}</span>
+                <span className="font-mono text-xs text-mute">{event.id}</span>
               </li>
             ))}
           </ul>
@@ -80,7 +80,7 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
                 <li key={task.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 text-[12.5px]">
                   <span className="w-[178px] shrink-0 text-mute">Task, {task.status}{task.dueAt ? `, due ${fmtDayTime(task.dueAt, tz)}` : ''}</span>
                   <span className="min-w-0 flex-1 text-ink">{task.title}</span>
-                  <span className="font-mono text-[11px] text-mute">{task.id}</span>
+                  <span className="font-mono text-xs text-mute">{task.id}</span>
                 </li>
               ))}
             </ul>
@@ -93,7 +93,7 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
                   <span className="min-w-0 flex-1 text-ink">
                     {followUp.subject}, from {followUp.waitingOn.name}
                   </span>
-                  <span className="font-mono text-[11px] text-mute">{followUp.id}</span>
+                  <span className="font-mono text-xs text-mute">{followUp.id}</span>
                 </li>
               ))}
             </ul>
@@ -176,7 +176,7 @@ export function CaseSpecification({ testCase }: { testCase: EvaluationCase }) {
                     {assertion.must === 'exist' ? 'must exist' : 'must not exist'}: {assertion.entity.replace('_', '-')}
                   </span>
                   <span className="block text-soft">{assertion.why}</span>
-                  <span className="block font-mono text-[11.5px] text-mute">{describeArgs(assertion.where)}</span>
+                  <span className="block font-mono text-xs text-mute">{describeArgs(assertion.where)}</span>
                 </li>
               ))}
             </ul>
@@ -265,7 +265,7 @@ export function CaseResult({ result, timeZone }: { result: EvaluationResult; tim
           <ul className="space-y-1">
             {result.errors.map((error, i) => (
               <li key={i} className="rounded-lg border border-warn/25 bg-warn/[0.07] px-3 py-1.5 text-[12.5px] text-warn">
-                <span className="font-mono text-[11.5px]">
+                <span className="font-mono text-xs">
                   {error.source}/{error.code}
                 </span>{' '}
                 {error.message}

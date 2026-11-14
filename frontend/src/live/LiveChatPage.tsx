@@ -19,7 +19,7 @@ import {
   type ChatMessagesResponse,
 } from './scribaApi'
 import { ToolCallCard, chatMessagesKey } from './ToolCallCard'
-import { IN_FLIGHT, WORK_QUEUE_KEY } from './workQueue'
+import { IN_FLIGHT, WORK_QUEUE_KEY, WORK_STAGES, stageOf, type WorkStage } from './workQueue'
 
 const CONVERSATIONS_KEY = ['desk', 'chat', 'conversations'] as const
 
@@ -52,23 +52,40 @@ interface Turn {
   error: string | null
 }
 
+/**
+ * One line for a reply that carries several actions: how many there are and where each stands,
+ * in the order the stages happen. Counts come from the server's statuses and nothing else.
+ */
+export function summariseSteps(statuses: string[]): string {
+  const counts = new Map<WorkStage, number>()
+  for (const status of statuses) counts.set(stageOf(status), (counts.get(stageOf(status)) ?? 0) + 1)
+  const order: WorkStage[] = ['needs_info', 'awaiting_approval', 'planning', 'executing', 'failed', 'partially_completed', 'completed', 'cancelled', 'unsupported']
+  const parts = order.filter(stage => counts.has(stage)).map(stage => `${counts.get(stage)} ${WORK_STAGES[stage].label.toLowerCase()}`)
+  return `${statuses.length} actions in this reply: ${parts.join(', ')}.`
+}
+
 function Bubble({ message, tz }: { message: ChatMessage; tz: string }) {
   const mine = message.role === 'user'
   const toolCalls = message.tool_calls ?? []
   return (
     <li className={clsx('flex flex-col gap-2', mine ? 'items-end' : 'items-start')}>
+      {mine ? <span className="sr-only">You said:</span> : <span className="eyebrow px-1">Secretary</span>}
       {(message.content || toolCalls.length === 0) && (
         <div className={clsx('max-w-[min(680px,92%)] rounded-2xl px-4 py-2.5 text-[13.5px] leading-[21px]', mine ? 'bg-brand-500/70 text-white' : 'border border-line bg-surface text-ink', message.status === 'error' && 'border-danger/40')}>
           <p className="whitespace-pre-wrap break-words">{message.content || (message.status === 'error' ? 'This reply failed.' : '')}</p>
           {message.status === 'error' && <p className="mt-1 text-[12px] text-danger">The server marked this message as failed.</p>}
         </div>
       )}
-      {toolCalls.map(toolCall => (
+      {toolCalls.length > 1 && (
+        <p className="px-1 text-[12.5px] text-soft" data-testid="steps-summary">{summariseSteps(toolCalls.map(toolCall => toolCall.status))} Each one is decided on its own card.</p>
+      )}
+      {toolCalls.map((toolCall, index) => (
         <div key={toolCall.id} className="w-full max-w-[680px]">
+          {toolCalls.length > 1 && <p className="eyebrow mb-1 px-1">Action {index + 1} of {toolCalls.length}</p>}
           <ToolCallCard toolCall={toolCall} reason={message.content} />
         </div>
       ))}
-      {message.created_at && isInstant(message.created_at) && <span className="px-1 text-[11px] tabular-nums text-mute">{fmtDayTime(message.created_at, tz)}</span>}
+      {message.created_at && isInstant(message.created_at) && <span className="px-1 text-xs tabular-nums text-mute">{fmtDayTime(message.created_at, tz)}</span>}
     </li>
   )
 }
@@ -251,7 +268,7 @@ export function LiveChatPage({ conversationId: param }: { conversationId: string
                 <li key={conversation.id}>
                   <a href={hrefFor('chat', String(conversation.id))} aria-current={active ? 'true' : undefined} className={clsx('block rounded-xl border px-3 py-2.5 transition-colors duration-150', active ? 'border-accent/40 bg-brand-500/20' : 'border-transparent hover:border-line hover:bg-white/[0.04]')}>
                     <span className="block truncate text-[13.5px] font-semibold text-ink">{conversation.title || 'Untitled conversation'}</span>
-                    {at && isInstant(at) && <span className="text-[11.5px] tabular-nums text-mute">{fmtDayTime(at, tz)}</span>}
+                    {at && isInstant(at) && <span className="text-xs tabular-nums text-mute">{fmtDayTime(at, tz)}</span>}
                   </a>
                 </li>
               )
@@ -359,7 +376,7 @@ export function LiveChatPage({ conversationId: param }: { conversationId: string
                   <Button variant="primary" icon={Send} type="submit" disabled={!text.trim()}>Send</Button>
                 )}
               </div>
-              {busy && <p className="mt-1.5 text-[11.5px] text-mute">Stop only stops showing the reply. The server finishes the turn, and it appears when you reopen the conversation.</p>}
+              {busy && <p className="mt-1.5 text-xs text-mute">Stop only stops showing the reply. The server finishes the turn, and it appears when you reopen the conversation.</p>}
             </div>
           </form>
         </section>

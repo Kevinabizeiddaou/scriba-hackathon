@@ -103,7 +103,7 @@ SURVIVORS: Dict[str, str] = {
         "Defence in depth. With the Desk's own organizer check removed, Scriba's calendar-edit validation still refuses "
         "the card, so no approvable action reaches the person. The lab sees the same safe outcome and is right not to fail.",
     "a second run is opened for a message already taken in":
-        "Blind spot, by nature. Sequential repeats are stopped earlier, by the lookup of the existing run; the claim only "
+        "Blind spot, by nature (the only difference seen is the run's number). Sequential repeats are stopped earlier, by the lookup of the existing run; the claim only "
         "matters in a race between two workers. The lab's race of eight requests did not hit the window. A race cannot be "
         "forced over HTTP; Agent 1's unit test drives the claim store directly with twelve threads.",
     "the same event can be created twice in the sandbox":
@@ -114,11 +114,13 @@ SURVIVORS: Dict[str, str] = {
         "Blind spot. The lab's one ambiguous-zone case (IST) is asked about with or without this guard. Other "
         "ambiguous abbreviations are not in the corpus yet.",
     "a stranger's request to change a meeting is acted on":
-        "See the behaviour change, if any: the stranger cases are held before this check when the wording is not read "
-        "as a change request.",
+        "Defence in depth. With the 'is the sender on this meeting' filter removed, the stranger's request is matched "
+        "against every meeting and the run is held as event_ambiguous instead of event_not_found. Nothing is proposed, "
+        "nothing changes in the office, so no check fails. The hold reason is the only thing that differs.",
     "a step whose prerequisite failed is proposed anyway":
-        "Under the evaluation routes nothing asks for the next step after a failure. The product-route scenario "
-        "SCN-failed-step-advance does.",
+        "Defence in depth, as far as the lab can see. Even when a client asks for the next step after the booking "
+        "failed (SCN-failed-step-advance), no confirmation is proposed: the step is proposed only once the card it "
+        "depends on is executed, whatever the plan's own 'blocked' state says.",
 }
 
 
@@ -206,9 +208,10 @@ def main() -> int:
             try:
                 mutant_report = measure(copy, only, f"mutant-{index:02d}")
                 broken = failing(mutant_report)
-            except Exception as exc:                      # the planted defect broke the server itself
-                rows.append({"mutant": name, "file": rel, "status": "noticed", "how": f"the backend copy failed: {exc}"})
-                print(f"NOTICED      {name} (the backend did not survive it)", flush=True)
+            except Exception as exc:
+                # Not evidence either way: the copy did not start or stopped answering.
+                rows.append({"mutant": name, "file": rel, "status": "not_run", "how": f"the backend copy could not be measured: {exc}"})
+                print(f"NOT RUN      {name}: {exc}", flush=True)
                 continue
             new_failures = {case: sorted(set(checks) - set(baseline.get(case, []))) for case, checks in broken.items()}
             new_failures = {case: checks for case, checks in new_failures.items() if checks}
@@ -225,12 +228,13 @@ def main() -> int:
             shutil.rmtree(copy.parent, ignore_errors=True)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
-    applied = [r for r in rows if r["status"] != "not_applied"]
+    applied = [r for r in rows if r["status"] not in ("not_applied", "not_run")]
     summary = {"format": "autonomy-quality-lab.mutation-probe/1", "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
                "backendCommit": commit, "runnerVersion": RUNNER_VERSION, "seed": DEFAULT_SEED,
                "planted": len(applied), "noticed": sum(1 for r in applied if r["status"] == "noticed"),
                "missed": [r["mutant"] for r in applied if r["status"] != "noticed"],
-               "notApplied": [r["mutant"] for r in rows if r["status"] == "not_applied"], "mutants": rows,
+               "notApplied": [r["mutant"] for r in rows if r["status"] == "not_applied"],
+               "notRun": [r["mutant"] for r in rows if r["status"] == "not_run"], "mutants": rows,
                "note": "Defects are planted in a temporary copy of the backend. The checkout under test is never edited."}
     (out / "mutation-probe.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     lines = ["# Does the lab notice a broken backend?", "",

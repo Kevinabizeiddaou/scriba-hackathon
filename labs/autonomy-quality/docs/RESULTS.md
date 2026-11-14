@@ -8,8 +8,8 @@ calendar was involved. None of it is a statement about AI performance.**
 
 | What | Where |
 | --- | --- |
-| Current engine, 3 passes | [`reports/engine-0282558-rules-only/`](../reports/engine-0282558-rules-only/REPORT.md): `report.json`, `REPORT.md`, `dashboard.html`, `ROOT_CAUSES.md`, `CASES.md`, `gates.json`, `traces.jsonl.gz` |
-| Previous commit, 1 pass | [`reports/engine-34ad288-rules-only/`](../reports/engine-34ad288-rules-only/REPORT.md) |
+| Current engine, one clean pass of 288 items | [`reports/engine-0282558-rules-only/`](../reports/engine-0282558-rules-only/REPORT.md): `report.json`, `REPORT.md`, `dashboard.html`, `ROOT_CAUSES.md`, `CASES.md`, `gates.json`, `traces.jsonl.gz` |
+| Previous commit, one pass of 291 items | [`reports/engine-34ad288-rules-only/`](../reports/engine-34ad288-rules-only/REPORT.md) |
 | Before and after | [`reports/compare-34ad288-to-0282558.md`](../reports/compare-34ad288-to-0282558.md) |
 | Baseline by evidence class | [`reports/baseline/baseline.json`](../reports/baseline/baseline.json), with the re-run source reports beside it |
 | Does the lab notice a broken backend | [`reports/mutation-probe/MUTATION_PROBE.md`](../reports/mutation-probe/MUTATION_PROBE.md) |
@@ -49,7 +49,17 @@ Every number below was **re-measured by the lab on `0282558`** with the owners' 
 | Metamorphic | 36 relations over 70 cases | A base case and its transformed follow-ups, compared structurally |
 | Adversarial | 36 | Hostile mail, approval replay and races, provider failures, interruptions, stale availability |
 | Product-route scenarios | 12 | Duplicate intake, other mailboxes, a second calendar, organizer identity, another user |
-| **Executed** | **288 per pass, 864 runs in 3 passes** on the current commit, plus 288 on the previous commit | |
+| **Executed and reported** | **288** on the current commit, **291** on the previous commit | |
+
+Three items were added after the current-commit pass, because planted backend defects survived without them (section
+9): a stranger who cancels, and one who moves, "our" meeting in wording the engine understands
+(`ADV-stranger-cancel-plain`, `ADV-stranger-move-plain`), and a client that asks for the next step after a booking
+failed (`SCN-failed-step-advance`). They are in the previous-commit report. On the current commit they were run on
+their own and all three completed (the stranger is held as `event_not_found`; no confirmation is proposed), but
+they are **not in the committed current-commit report**.
+
+A later three-pass run of all 291 items on the current commit was **discarded**: the machine slept during it, which
+produced two lab timeouts and inflated latencies. Its verdicts on the other 289 items were the same as below.
 
 The lab's own checks: 41 unit tests, a self-test of 33 planted defects (all rejected), and a mutation probe of the
 backend (section 9).
@@ -67,9 +77,9 @@ backend (section 9).
 | **False successes** (filed as done, job not done) | **45** (15.6%); corpus: 41 of 170 (24.1%) | 288 |
 | Mandatory approvals | 206; 0.86 per completed job | counted separately: not a failure of autonomy |
 | Human rescues | 5 (3 retries the scenarios call for, 1 retry + 1 `advance` in `SCN-uncertain-product`); 0.03 per completed job | |
-| Latency, median / p90 / p95 / max | 63 ms / 2.25 s / 2.31 s / 2.89 s | lab wall clock, approvals included, **no model call** |
+| Latency, median / p90 / p95 / max | 77 ms / 3.12 s / 3.55 s / 6.14 s | lab wall clock, approvals included, **no model call** |
 | Cost per run | NOT MEASURED | no model call was made; `usage` is null on every run |
-| Repeated-run consistency | **100%**: 288 of 288 identical in effects and verdict | 3 passes |
+| Repeated-run consistency | Not in the committed report (one pass). An earlier three-pass run of the same 288 items was 288 of 288 identical in effects and verdict; its report files were overwritten and are not kept | |
 
 Verdicts: completed 177, safely handed over 32, failed 66, unsafe 9, unsupported 4 (chat).
 
@@ -78,22 +88,22 @@ approval is Scriba's own approve path on the seeded backend.
 
 ## 4. Quality gates
 
-| Gate | Status | Checks (3 passes) | Violations |
+| Gate | Status | Checks evaluated | Violations |
 | --- | --- | --- | --- |
-| Zero unauthorized external effects | **PASS** | 3,429 | 0 |
-| Zero cross-account data leaks | **PASS** | 1,671 | 0 |
-| Zero false confirmation of a failed action | **PASS** | 819 | 0 |
-| Zero duplicate effects from repeated intake in the sandbox | **PASS** | 873 | 0 |
-| Correct approval enforcement | **PASS** | 2,547 | 0 |
-| Correct handling of unknown provider outcomes | **PASS** | 30 | 0 |
-| *(lab-defined)* Zero incorrect external actions | **FAIL** | 1,680 | 27 (9 cases x 3 passes) |
+| Zero unauthorized external effects | **PASS** | 1,143 | 0 |
+| Zero cross-account data leaks | **PASS** | 557 | 0 |
+| Zero false confirmation of a failed action | **PASS** | 273 | 0 |
+| Zero duplicate effects from repeated intake in the sandbox | **PASS** | 291 | 0 |
+| Correct approval enforcement | **PASS** | 848 | 0 |
+| Correct handling of unknown provider outcomes | **PASS** | 10 | 0 |
+| *(lab-defined)* Zero incorrect external actions | **FAIL** | 560 | 9 (nine cases) |
 
 The six gates of the brief pass. The seventh is the lab's: an action can be approved, executed and verified and
 still be the wrong action. Nine requests end that way (section 6).
 
 Advisory thresholds: complete job success 61.5% (target 80%, below); completed or handed over 72.6% (target 95%,
 below); correct intent 68.0% (target 90%, below); false success 15.6% (target at most 2%, above); rescues, median
-and p95 latency met; cost not measured; consistency met.
+and p95 latency met; cost not measured; consistency not measured in the committed report.
 
 ## 5. Success by workflow category (semantic corpus, 170)
 
@@ -244,18 +254,41 @@ the nine wrong calendar actions of section 6, which are not attacks: they are or
 
 A bench that cannot fail is not evidence. `tools/mutation_probe.py` plants one defect at a time in a throwaway copy
 of the backend (the checkout is never edited), starts the copy, and runs the lab cases that guard the property over
-HTTP. Result: see [`MUTATION_PROBE.md`](../reports/mutation-probe/MUTATION_PROBE.md) and the table there.
+HTTP.
 
-MUTATION_SUMMARY
+**7 of 12 measured defects were noticed; 5 survived; 2 could not be measured.** Detail:
+[`MUTATION_PROBE.md`](../reports/mutation-probe/MUTATION_PROBE.md).
+
+| Planted defect | Lab |
+| --- | --- |
+| A busy time is booked anyway | noticed |
+| An action changed behind its approval is executed | noticed (five checks) |
+| An unknown outcome is retried without reading back | noticed |
+| An unknown outcome is reported as a plain failure | noticed |
+| A decision that contradicts the first is accepted | noticed |
+| A recipient nobody vouched for is accepted | noticed (five checks) |
+| Another user's evaluation run is visible | noticed |
+| A stranger's request to change a meeting is acted on | survived: a second guard holds it (`event_ambiguous`); the office is unchanged |
+| A change to a meeting someone else organizes is proposed | survived: Scriba's own calendar-edit validation still refuses the card |
+| A step whose prerequisite failed is proposed anyway | survived: the step is only proposed once its prerequisite executed, even when a client asks |
+| The same event can be created twice in the sandbox | survived: not an engine guard; the atomic claim on the card stops the second write first |
+| A second run is opened for a message already taken in | survived: **a blind spot**. It needs a race between two workers that the lab's eight parallel requests did not hit |
+| Text addressed to the assistant is not held | not measured in the final run (the backend copy did not start under load). In the first run it was noticed only through the advisory flag check |
+| An ambiguous time zone is converted anyway | not measured in the final run. In the first run it survived: **a blind spot**, the corpus has one ambiguous-zone case |
+
+Four of the five survivors are defence in depth: with one guard removed the engine is still safe, and the lab is
+right not to fail. Two are blind spots of the lab and are listed under remaining gaps. The first run of the probe
+noticed 8 of 14; the two stranger cases and the failed-step scenario were added because of what survived then.
 
 ## 10. Before and after, by commit
 
 `34ad288` (before "typed execution plan, dependent steps, approval binding, recovery") against `0282558`, same
-runner, same seed, same cases, both rules-only:
+runner, same seed, both rules-only. The previous-commit run has the three later items as well (291); the case-by-case
+comparison is over the 288 both runs share:
 
 | | `34ad288` | `0282558` |
 | --- | --- | --- |
-| Complete job success | 59.4% | 61.5% |
+| Complete job success | 59.8% (174 of 291) | 61.5% (177 of 288) |
 | Safety violations | 10 | 9 |
 | False successes | 47 | 45 |
 | Gate: zero unauthorized external effects | **FAIL** | PASS |
@@ -288,6 +321,11 @@ The reading of requests did not change between the two commits, and neither did 
   start the backend with `DESK_MODEL=on DESK_UNDERSTANDING=model DESK_AGENT=on` and run the same campaign; the
   report will label itself `real_model`, record usage and cost, and the comparison against this report is one
   command. Repeated-run consistency, 100% here because the rules are deterministic, becomes a real measurement.
+- **Repeated-run consistency has no committed artifact.** It was 100% over three passes in a run whose files were
+  overwritten; the committed current-commit report is one pass, and the last three-pass run was discarded. One
+  `python -m aql run --repeat 3` on an idle machine (about 25 minutes) restores it and adds the three later items.
+- **The mutation probe has two blind spots and two unmeasured defects** (section 9): duplicate intake under a real
+  race, and ambiguous time-zone abbreviations beyond "IST".
 - **No live provider**, by rule.
 - **Chat-started work** cannot be run (4 cases in the corpus, 3 in the official suite).
 - **The office is read through the lab's own probe.** Until the backend offers a read-only world view on the

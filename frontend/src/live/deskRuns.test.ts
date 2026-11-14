@@ -282,8 +282,8 @@ describe('compatibility with backend/desk_overlay/workflow.py', () => {
   it('reads only list fields the backend emits', () => {
     const listRuns = source.slice(source.indexOf('def list_runs'), source.indexOf('def _reply_subject'))
     for (const key of ['runId', 'provider', 'email_id', 'subject', 'from_addr', 'category', 'created_at']) expect(listRuns, key).toContain(`"${key}"`)
-    // The list carries no state: the reason the queue reads each run. Remove the detail reads when this fails.
-    expect(listRuns).not.toContain('"state"')
+    // Since overlay 0.3 each row says where the run stands, so the queue needs no second read per run.
+    for (const key of ['state', 'lifecycle', 'next', 'held', 'actionCounts', 'updatedAt']) expect(listRuns, key).toContain(`"${key}"`)
   })
 
   it('knows every run state and every field of the run view', () => {
@@ -296,18 +296,21 @@ describe('compatibility with backend/desk_overlay/workflow.py', () => {
 
   it('agrees on which mail a sweep takes and on what counts as done', () => {
     expect(tuple('SWEEP_CATEGORIES')).toEqual([...INTAKE_CATEGORIES])
-    // The backend treats partially_executed as done. The Desk does not show it as finished (groupOf).
-    expect(tuple('_DONE')).toEqual(['executed', 'partially_executed'])
+    // The backend keeps "done" and "partly done" apart (overlay 0.3). The Desk does not show a partial one as finished (groupOf).
+    expect(tuple('_DONE')).toEqual(['executed'])
+    expect(tuple('_PARTIAL')).toEqual(['partially_executed'])
   })
 
   it('knows every reason a meeting request can be held for', () => {
-    const reasons = new Set([...[...source.matchAll(/"reason": "([a-z_]+)"/g)].map(match => match[1]), 'calendar_conflict', 'availability_unknown'])
-    expect(reasons.size).toBeGreaterThanOrEqual(5)
+    // Held reasons only: `"reason"` is also the key of a decision in the timeline, which is not a hold.
+    const held = [...source.matchAll(/plan\["held"\] = \{\s*"reason": "([a-z_]+)"/g), ...source.matchAll(/_hold\(plan, user, item, calendar,\s*"([a-z_]+)"/g)].map(match => match[1])
+    const reasons = new Set([...held, 'calendar_conflict', 'availability_unknown', 'already_in_progress', 'already_handled'])
+    expect(reasons.size).toBeGreaterThanOrEqual(12)
     for (const reason of reasons) {
       const held = { reason, message: 'x', slots: [], calendars: [] } as NonNullable<DeskRun['held']>
       expect(nextStepOf(run({ state: 'no_action_proposed', actions: [], held })).label, reason).not.toBe('The meeting request is held')
     }
-    expect(source).toContain('"calendar_conflict" if check["free"] is False else "availability_unknown"')
+    expect(source).toContain('"calendar_conflict" if conflict else "availability_unknown"')
   })
 
   it('reads only action fields the backend emits', () => {

@@ -858,6 +858,12 @@ export interface DeskRun {
   plan?: DeskPlan | null
   /** Changes this run suggests to existing tasks, each in its latest state (0.3.1). */
   taskUpdates?: DeskTaskUpdate[]
+  /**
+   * 0.5: requests the Desk identified in the message and could not act on. While one is not
+   * `resolved` the run is not complete (`lifecycle.reason: 'unresolved_requests'`), and `next`
+   * contains 'resolve_unresolved': POST /desk/runs/{runId}/unresolved/resolve when the person takes them over.
+   */
+  unresolved?: Array<{ id: string; text: string; why: string; resolved: boolean }>
   updatedAt?: string
   /** Number of actions by Scriba status. */
   actionCounts?: Record<string, number>

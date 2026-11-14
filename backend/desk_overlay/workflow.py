@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
-from . import lifecycle, planning, plans, reading, understanding
+from . import lifecycle, planning, plans, reading, requests, understanding
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
@@ -52,6 +52,7 @@ SWEEP_MAX_NEW = 5
 TRIGGERS = ("manual", "sweep", "worker", "evaluation", "chat")
 # How long the Desk waits for an answer before it proposes a reminder.
 FOLLOW_UP_DAYS = 2
+MAX_REQUESTED_TASKS = 3
 EVENT_SEARCH_DAYS = 45
 # A reminder (nudge) is not a new wait: it belongs to the follow-up it chases.
 REPLY_PURPOSES_AWAITING = ("offer_times", "clarify")
@@ -219,6 +220,11 @@ class DeskWorkflow:
         found = plan.get("understanding") or understanding.from_rules(item)
         typed = plans.build(meta=meta, understanding=found, plan=plan)
         meta["held"] = plan["held"]
+        if plan.get("unresolved"):
+            # Requests that were identified and not acted on. While any is
+            # open the run is not complete, whatever else was done.
+            meta["unresolved"] = [{"id": f"u{index}", **entry}
+                                  for index, entry in enumerate(plan["unresolved"], start=1)]
         if plan.get("flags"):
             meta["flags"] = plan["flags"]
         if plan.get("requester_timezone"):
@@ -246,7 +252,7 @@ class DeskWorkflow:
                                          "count": (detail.get("thread") or {}).get("count")})
         for read in plan["reads"]:
             self._record(user, run, "read", read)
-        for closed in plan.get("closed_follow_ups") or []:
+        for closed in [*(plan.get("closed_follow_ups") or []), *(plan.get("kept_follow_ups") or [])]:
             self._record(user, run, "followup", closed)
         self._record(user, run, "stage", {"stage": "PLANNING", "planner": plan["planner"]})
         self._record(user, run, "plan", typed)
@@ -353,9 +359,22 @@ class DeskWorkflow:
         if found["source"] == "model" and triage["category"] != "automated":
             self._plan_from_intents(ctx, user, item, calendar, plan, found)
         elif triage["category"] == "action_item":
-            self._plan_task(ctx, user, item, plan)
+            asked = [u for u in requests.units(item.get("subject"), text) if u["kind"] == "action"]
+            if len(asked) >= 2:
+                # Two things to do are two tasks, each with its own date.
+                self._plan_requested_tasks(ctx, user, item, plan, asked)
+            else:
+                self._plan_task(ctx, user, item, plan)
         elif triage["category"] == "meeting_request":
+            asked = [u for u in requests.units(item.get("subject"), text) if u["kind"] == "action"]
+            if asked:
+                # The meeting's time is read from the sentences about the
+                # meeting. Another request's date is not the meeting's.
+                plan["meeting_text"] = requests.without(text, [u["text"] for u in asked])
             self._plan_meeting(ctx, user, item, calendar, plan)
+            if asked and (plan.get("held") or {}).get("reason") not in ("untrusted_instructions",
+                                                                         "conflicting_instructions"):
+                self._plan_requested_tasks(ctx, user, item, plan, asked)
         elif triage["category"] == "needs_reply":
             plan["decisions"].append({"decision": "escalate", "reason": "reply_needs_author",
                                       "explanation": "This needs a reply in your words. A draft can "
@@ -384,6 +403,14 @@ class DeskWorkflow:
         asked = {str(i.get("type")) for i in found.get("intents") or []
                  if (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE}
         if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
+                and plan["held"] is None and plan["proposals"] \
+                and not any(p.get("tool_name") == "send_email" for p in plan["proposals"]):
+            # Something else in the message was acted on, and the reply it
+            # also needs was not drafted. The run is not complete without it.
+            needing = next(i for i in found["intents"] if i.get("type") in ("reply_needed", "information_request"))
+            plan.setdefault("unresolved", []).append({
+                "text": str((needing.get("evidence") or ["a reply"])[0])[:300], "why": "reply_needs_author"})
+        if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
                 and plan["held"] is None and not plan["proposals"] and not plan.get("task_updates"):
             # A reply is needed and none was drafted. That is not "done":
             # the message is handed to the person, who writes it.
@@ -392,6 +419,23 @@ class DeskWorkflow:
                 "message": "This needs a reply in your words, and none could be drafted from what "
                            "the Desk can verify. It is yours to answer."}
         return plan
+
+    def _plan_requested_tasks(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                              asked: List[Dict[str, Any]]) -> None:
+        """One task per sentence that asks the executive to do something. What
+        is identified and cannot be recorded is listed as unresolved: the run
+        is then not complete until the person has seen it."""
+        held_before = plan["held"]
+        for unit in asked[:MAX_REQUESTED_TASKS]:
+            title = requests.title_of(unit["text"])
+            if any(_same_title(p.get("tool_input", {}).get("title"), title) for p in plan["proposals"]
+                   if p.get("tool_name") == "create_task"):
+                continue
+            self._plan_task(ctx, user, item, plan, title=title, evidence=[unit["text"]], alone=False)
+            if (plan["held"] or {}).get("reason") == "task_exists":
+                plan["held"] = held_before       # that one is already recorded; the others still count
+        for unit in asked[MAX_REQUESTED_TASKS:]:
+            plan.setdefault("unresolved", []).append({"text": unit["text"][:300], "why": "not_recorded"})
 
     @staticmethod
     def _hand_over_untrusted(plan: Dict[str, Any], *, source: str,
@@ -432,10 +476,9 @@ class DeskWorkflow:
         """"No action" has to be earned: the message says it is for
         information, or the Desk already recorded what it reports (a task it
         finished, an awaited answer it brought)."""
-        if plan.get("task_updates") or plan.get("closed_follow_ups"):
+        if plan.get("task_updates") or plan.get("closed_follow_ups") or plan.get("kept_follow_ups"):
             return True
-        text = f"{item.get('subject') or ''}\n{item.get('body') or item.get('snippet') or ''}"
-        return bool(_NEWS.search(text))
+        return requests.no_work_established(item.get("subject"), item.get("body") or item.get("snippet"))
 
     def thread_context(self, user: Any, item: Mapping[str, Any],
                        detail: Mapping[str, Any]) -> List[Dict[str, Any]]:
@@ -516,6 +559,8 @@ class DeskWorkflow:
             kind, details = intent["type"], intent.get("details") or {}
             if kind in understanding.SCHEDULING:
                 if scheduled:
+                    plan.setdefault("unresolved", []).append({
+                        "text": str((intent.get("evidence") or [kind])[0])[:300], "why": "second_scheduling_request"})
                     plan["decisions"].append({"decision": "none", "reason": "second_scheduling_request",
                                               "explanation": "A second scheduling request in the same "
                                                              "message was left for you."})
@@ -548,6 +593,8 @@ class DeskWorkflow:
                         "reason": "The message asks to be reminded.",
                         "tool_input": {"title": str(details["title"])[:160], "remind_at": when.isoformat()}})
                 else:
+                    plan.setdefault("unresolved", []).append({
+                        "text": str((intent.get("evidence") or ["a reminder"])[0])[:300], "why": "details_missing"})
                     plan.setdefault("missing", []).append("reminder time")
                     plan["decisions"].append({"decision": "hold", "reason": "details_missing",
                                               "explanation": "A reminder was asked for with no time "
@@ -661,6 +708,18 @@ class DeskWorkflow:
                 self._complete_task(ctx, user, run, str(task_id), by=user.email)
         return self.view(ctx, user, run_id)
 
+    def resolve_unresolved(self, ctx: Any, user: Any, run_id: int) -> Dict[str, Any]:
+        """The person has seen the requests the Desk could not act on and
+        takes them from here. Until then the run is not complete."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            open_ones = [entry for entry in lifecycle.unresolved_of(run["meta"], self.gateway.run_events(user, run))
+                         if not entry["resolved"]]
+            if open_ones:
+                self._record(user, run, "human", {"action": "resolve_unresolved", "by": user.email,
+                                                  "ids": [entry["id"] for entry in open_ones]})
+        return self.view(ctx, user, run_id)
+
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         """This message may be the answer someone was being waited on for."""
         waiting = getattr(self.gateway, "waiting_follow_ups", None)
@@ -671,6 +730,17 @@ class DeskWorkflow:
             awaited = follow.get("waitingOn") or {}
             address = str(awaited.get("email") if isinstance(awaited, dict) else awaited or "").lower()
             if str(follow.get("threadId") or "") == str(item.get("threadId") or "") and address == sender:
+                if requests.is_holding_reply(item.get("body") or item.get("snippet")):
+                    # They wrote, and what they wrote is that it is not there
+                    # yet. The wait stays open.
+                    plan.setdefault("kept_follow_ups", []).append({
+                        "id": follow["id"], "state": "waiting", "external": True, "reason": "holding_reply",
+                        "lastHoldingReplyId": item.get("id"), "lastHoldingReplyAt": item.get("timestamp"),
+                        "waitingOn": address, "threadId": follow.get("threadId")})
+                    plan["decisions"].append({
+                        "decision": "keep_follow_up_open", "reason": "holding_reply",
+                        "explanation": "This says the answer is still to come, so the follow-up stays open."})
+                    continue
                 if self.gateway.close_waiting_follow_up(user, follow["id"]):
                     plan.setdefault("closed_follow_ups", []).append({
                         "id": follow["id"], "state": "satisfied", "external": True,
@@ -835,7 +905,7 @@ class DeskWorkflow:
             # that is written out in full is read by rule; anything less
             # exact is left unread, never guessed.
             written = reading.explicit_request(
-                str(item.get("body") or item.get("snippet") or ""),
+                str(plan.get("meeting_text") or item.get("body") or item.get("snippet") or ""),
                 self.service.now(user).astimezone(resolve_zone(zone_name)),
                 change=intent in ("reschedule", "cancel"))
             now_local = self.service.now(user).astimezone(resolve_zone(zone_name))
@@ -1350,12 +1420,19 @@ class DeskWorkflow:
             return      # unknown is not "no reply": leave the follow-up as it is
         for follow in waiting:
             sent_at = _moment(follow.get("sentAt"))
-            answer = next((row for row in rows
-                           if str(row.get("threadId") or "") == str(follow.get("threadId") or "")
-                           and sender_address(str(row.get("from_addr") or "")) == follow.get("waitingOn")
-                           and str(row.get("id")) != str(meta.get("email_id"))
-                           and sent_at is not None and (_moment(row.get("timestamp")) or sent_at) > sent_at),
-                          None)
+            replies = [row for row in rows
+                       if str(row.get("threadId") or "") == str(follow.get("threadId") or "")
+                       and sender_address(str(row.get("from_addr") or "")) == follow.get("waitingOn")
+                       and str(row.get("id")) != str(meta.get("email_id"))
+                       and sent_at is not None and (_moment(row.get("timestamp")) or sent_at) > sent_at]
+            # A reply that only says the answer is coming is not the answer.
+            answer = next((row for row in replies
+                           if not requests.is_holding_reply(row.get("body") or row.get("snippet"))), None)
+            holding = replies[-1] if replies and answer is None else None
+            if holding is not None and str(follow.get("lastHoldingReplyId")) != str(holding.get("id")):
+                self._record(user, run, "followup", {
+                    "id": follow["id"], "reason": "holding_reply", "lastHoldingReplyId": holding.get("id"),
+                    "lastHoldingReplyAt": holding.get("timestamp")})
             if answer is not None:
                 self._record(user, run, "followup", {
                     "id": follow["id"], "state": "satisfied", "satisfiedBy": answer.get("id"),
@@ -1525,6 +1602,9 @@ class DeskWorkflow:
         task_updates = lifecycle.task_updates(events)
         if any(update.get("state") == "suggested" for update in task_updates):
             next_steps.append("complete_task")    # POST /desk/runs/{id}/task-updates/{taskId}/apply
+        unresolved = lifecycle.unresolved_of(meta, events)
+        if any(not entry["resolved"] for entry in unresolved):
+            next_steps.append("resolve_unresolved")   # POST /desk/runs/{id}/unresolved/resolve
         counts: Dict[str, int] = {}
         for status in statuses:
             counts[status] = counts.get(status, 0) + 1
@@ -1550,6 +1630,7 @@ class DeskWorkflow:
             "next": next_steps,
             "followUps": follow,
             "taskUpdates": task_updates,
+            "unresolved": unresolved,
         }
         if detail:
             view["plan"] = {**plan, "steps": steps} if plan is not None else None

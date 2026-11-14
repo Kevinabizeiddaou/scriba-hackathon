@@ -260,6 +260,12 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id, dismiss=True))
 
+    @router.post("/runs/{run_id}/unresolved/resolve")
+    def desk_unresolved_resolve(request: Request, run_id: int) -> Dict[str, Any]:
+        """The person takes over the requests the Desk identified and could not act on."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.resolve_unresolved(request, user, run_id))
+
     @router.get("/memory")
     def desk_memory(request: Request, thread: Optional[str] = None,
                     sender: Optional[str] = None) -> Dict[str, Any]:

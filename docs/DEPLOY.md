@@ -72,6 +72,30 @@ while the API keeps serving. The Desk's execution gate holds mail and calendar a
 approved through it (`external_writes_enabled=False` in the startup log), but it does not
 govern what Scriba's own schedulers do.
 
+**The model (the agent).** Without a key the API runs on rules only: triage, planning and
+the proposals still work, but Scriba's chat agent and the Desk's model steps do not. Add
+these on the Railway service (Variables), never in this repository; Railway redeploys:
+
+| Variable | Value | Effect |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | The OpenAI key | Scriba's chat agent, and the Desk may call the model through Scriba's gateway |
+| `DESK_UNDERSTANDING` | `model` | One structured call reads each message's or instruction's intents (otherwise rules only) |
+| `DESK_AGENT` | `on` | The bounded model step: read tools from a fixed list, a reply, task or reminder as proposals |
+
+The model and reasoning effort are Scriba's policy (`gpt-6-luna` unless `AI_MODEL` /
+`AI_CHAT_MODEL` override it; see `env.template` in the Scriba checkout). Leave `DESK_MODEL`
+unset (`auto`): `off` blocks every Desk model call whatever the key. Signed in, open
+`DESK/api/desk/health`: `"model": {"configured": true}` confirms it.
+
+Before switching it on:
+
+- With Google connected, the agent sends the content of real mail to OpenAI. Up to then
+  the Desk has only been measured on synthetic mail.
+- Scriba's schedulers in this process (daily briefs, automations) use the key too and add
+  to the cost; `RUN_SCHEDULERS=false` keeps only the Desk. Set a spending limit on the key.
+- None of these variables enables sending mail or changing a calendar: approved actions
+  stay held by the execution gate (contract, section 8).
+
 **Checked locally** (the image built from an export of Scriba at the pinned commit, with a
 throwaway Postgres and `APP_ENV=production`): Scriba creates its tables and starts, `/health`
 and `/ready` answer, `/ready` reports the production profile ready, the 69 `/desk` routes are

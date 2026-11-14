@@ -35,7 +35,7 @@ import runpy
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 LAB_SERVER_VERSION = "1.0.0"
 

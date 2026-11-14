@@ -159,7 +159,10 @@ class CaseRunner:
                     log("stalled", **obs["stalled"])
                     return run
             if time.monotonic() > deadline:
-                raise BackendError("case_timeout", f"The run was still {run.get('status')} after {self.timeout:.0f}s.")
+                obs["stalled"] = {"status": run.get("status"), "stage": (run.get("lifecycle") or {}).get("stage"),
+                                  "next": None, "afterMs": int((time.monotonic() - began) * 1000), "timedOut": True}
+                log("stalled", **obs["stalled"])
+                return run
             time.sleep(self.poll)
 
     # ── the person decides ──────────────────────────────────────────────────

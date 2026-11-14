@@ -155,7 +155,7 @@ CLARIFY = [[{"kind": "clarify"}], [{"kind": "offer_times"}], [{"kind": "escalate
 
 def build(seed: int = DEFAULT_SEED) -> List[Dict[str, Any]]:
     c = Corpus(seed)
-    A, R = c.add, c.rng
+    A = c.add
     P = o.P
 
     # ═══ 1. direct meeting requests ══════════════════════════════════════════

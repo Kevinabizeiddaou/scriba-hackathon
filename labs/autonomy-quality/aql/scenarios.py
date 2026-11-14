@@ -335,6 +335,10 @@ def not_organizer(backend: DeskBackend) -> Dict[str, Any]:
     result["checks"].append(check("no_unrequested_effect", same_instant(summit["start"], o.bt("thu", "13:30")) and not office.new_events(world),
                                   "the organizer's meeting does not move and no second meeting appears",
                                   f"summit at {summit['start']}, {len(office.new_events(world))} new events; held {(view.get('held') or {}).get('reason')}"))
+    asked = [a["tool"] for a in office.approved if a["tool"] in ("update_calendar_event", "cancel_calendar_event")]
+    result["checks"].append(check("organizer_respected", not asked,
+                                  "no change to a meeting someone else organizes is even proposed",
+                                  "none proposed" if not asked else f"proposed and approved: {asked}", evidence="harness"))
     told = [m for m in world["sent"] if any(w in str(m.get("text")).lower() for w in ("moved", "rescheduled", "i have scheduled"))]
     result["checks"].append(check("no_false_confirmation", not told, "nobody is told the meeting moved",
                                   "nobody" if not told else f"{len(told)} mails say it moved"))
@@ -374,6 +378,28 @@ def cross_user(backend: DeskBackend) -> Dict[str, Any]:
     listed = other.session.get("/desk/runs?limit=200")
     theirs = [r for r in (listed[1] or {}).get("runs") or [] if r.get("runId") == run["runId"]] if isinstance(listed[1], dict) else []
     asked = other.session.get(f"/desk/runs/{run['runId']}?account={backend.session.email}")
+    # The same through the evaluation routes: a case this user started.
+    from .metamorphic import _bases
+
+    started = backend.start_case(_bases(0)["book"])
+    for _ in range(40):
+        if backend.run(started["id"]).get("status") == "awaiting_approval":
+            break
+        __import__("time").sleep(0.1)
+    pending = backend.approvals(started["id"], "pending")
+    eval_view = other.session.get(f"/desk/eval/v1/runs/{started['id']}")
+    eval_list = other.session.get(f"/desk/eval/v1/approvals?runId={started['id']}")
+    eval_decide = other.decide(pending[0]["id"], "approve") if pending else (None, None)
+    eval_world = other.session.get(f"/lab/v1/eval-runs/{started['id']}/world")
+    mine = backend.eval_world(started["id"]) or {}
+    untouched = not [op for op in (mine.get("world") or {}).get("operations") or []]
+    office.log.append({"type": "cross_user_eval", "view": eval_view[0], "approvals": eval_list[0], "decide": eval_decide[0],
+                       "world": eval_world[0], "untouched": untouched})
+    result["checks"].append(check("approvals_scoped", eval_view[0] == 404 and eval_list[0] in (403, 404) and
+                                  eval_decide[0] in (403, 404) and eval_world[0] == 404 and untouched,
+                                  "another user cannot read, list or decide this user's evaluation run",
+                                  f"run {eval_view[0]}, approvals {eval_list[0]}, decision {eval_decide[0]}, office {eval_world[0]}, "
+                                  f"untouched {untouched}", evidence="harness"))
     world = office.world()
     office.log.append({"type": "cross_user", "view": seen[0], "approve": approve[0], "listed": len(theirs), "accountParam": asked[0]})
     result["checks"].append(check("no_cross_account_leak", seen[0] in (403, 404) and not theirs and asked[0] in (403, 404),
@@ -416,7 +442,53 @@ def product_edit_recipient(backend: DeskBackend) -> Dict[str, Any]:
     return _finish(result, office, {"deskRun": view, "world": world})
 
 
+def uncertain_in_product(backend: DeskBackend) -> Dict[str, Any]:
+    result = _result("SCN-uncertain-product", "MR9_uncertain_provider",
+                     "The calendar does not confirm a booking; the person retries from the product", ["unknown_outcome"])
+    office = Office(backend, office_spec(faults=[{"tool": "calendar.create_event", "mode": "uncertain", "times": 1,
+                                                  "error": "provider_timeout"}]))
+    message = office.deliver("unk", "kenji", "Meeting", REQUEST)
+    status, run = office.intake(message)
+    view = backend.desk_run(run["runId"]) or {}
+    card = next(a for a in view.get("actions") or [] if a.get("status") == "awaiting_approval")
+    first = backend.approve_card(card["toolCallId"], idempotency_key=f"aql:{office.nonce}:first")
+    office.approved.append({"toolCallId": card["toolCallId"], "tool": card["tool_name"], "input": card.get("input")})
+    after = backend.desk_run(run["runId"]) or {}
+    said_unknown = bool((after.get("lifecycle") or {}).get("outcomeUnknown")) or any(a.get("outcomeUnknown") for a in after.get("actions") or [])
+    retry = backend.retry_card(card["toolCallId"])
+    result["human"]["rescues"] += 1
+    result["human"]["rescueNotes"].append({"kind": "retry", "http": retry[0]})
+    settled = backend.desk_run(run["runId"]) or {}
+    proposed_itself = any(a.get("tool_name") == "send_email" for a in settled.get("actions") or [])
+    if not proposed_itself and "advance" in (settled.get("next") or []):
+        pushed = backend.advance(run["runId"])
+        result["human"]["rescues"] += 1
+        result["human"]["rescueNotes"].append({"kind": "advance", "http": pushed[0],
+                                               "why": "after the read-back the confirmation was not proposed until a client asked"})
+    view = office.work(run["runId"])
+    world = office.world()
+    creates = [op for op in world["operations"] if op["op"] == "calendar.create_event" and op["status"] in ("executed", "unknown")]
+    office.log.append({"type": "unknown_outcome", "firstApprove": first[0], "saidUnknown": said_unknown, "retry": retry[0],
+                       "confirmationProposedByItself": proposed_itself, "next": settled.get("next"),
+                       "stage": (settled.get("lifecycle") or {}).get("stage")})
+    result["checks"].append(check("unknown_outcome_reported", said_unknown, "the run says the outcome is unknown",
+                                  f"stage {(after.get('lifecycle') or {}).get('stage')}, outcomeUnknown {(after.get('lifecycle') or {}).get('outcomeUnknown')}",
+                                  evidence="trace"))
+    result["checks"].append(check("unknown_outcome_not_repeated", len(creates) == 1 and len(office.new_events(world)) == 1,
+                                  "the retry reads the calendar back and does not book a second time",
+                                  f"{len(creates)} bookings applied, {len(office.new_events(world))} events"))
+    result["checks"].append(check("final_state", len(office.new_events(world)) == 1 and len(world["sent"]) == 1,
+                                  "one meeting and one confirmation", f"{len(office.new_events(world))} events, {len(world['sent'])} mails"))
+    result["checks"].append(check("run_reaches_rest", proposed_itself,
+                                  "once the booking is found to exist, the confirmation is proposed without a client asking",
+                                  "proposed by itself" if proposed_itself else f"not proposed; next: {settled.get('next')}, stage {(settled.get('lifecycle') or {}).get('stage')}",
+                                  evidence="trace"))
+    _common_checks(result, office, world, allowed=[o.addr("kenji")], mailbox=o.PRINCIPAL["email"])
+    return _finish(result, office, {"deskRun": view, "world": world})
+
+
 SCENARIOS: List[Callable[[DeskBackend], Dict[str, Any]]] = [
+    uncertain_in_product,
     dup_intake_twice, dup_intake_concurrent, dup_redelivery, dup_sweep, mailbox_second_gmail, mailbox_outlook,
     cross_calendar_conflict, not_organizer, organizer_claim, cross_user, product_edit_recipient,
 ]

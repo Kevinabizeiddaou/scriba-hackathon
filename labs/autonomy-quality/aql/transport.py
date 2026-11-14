@@ -14,7 +14,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from . import CONTRACT_VERSION
 

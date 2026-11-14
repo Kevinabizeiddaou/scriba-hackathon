@@ -12,7 +12,7 @@ The classes (the brief's fifteen, plus one for private data):
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 CLASSES = (
     "Intent misunderstanding", "Incorrect entity extraction", "Missing context", "Incorrect time interpretation",
@@ -71,7 +71,9 @@ def classify(result: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
     if verdict in ("completed",):
         return result
     if verdict == "unsupported":
-        result["failureClasses"], result["rootCause"] = ["Wrong tool selection"], "RC-CHAT-NOT-DRIVEN"
+        ignored = any(e.get("code") == "context_extension_ignored" for e in result.get("errors") or [])
+        result["failureClasses"] = [] if ignored else ["Wrong tool selection"]
+        result["rootCause"] = "RC-CONTEXT-EXTENSION-IGNORED" if ignored else "RC-CHAT-NOT-DRIVEN"
         return result
     if verdict == "error":
         result["failureClasses"], result["rootCause"] = [], "RC-LAB-ERROR"
@@ -106,19 +108,24 @@ def classify(result: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
     silent = outcome == "no_action" and intent in ("fyi", "not_meeting_related")
     handed = outcome == "escalated" and intent in ("reply_needed", "unclear")
     asked_for_time = held == "time_not_understood" and intent in ("new_meeting", "reschedule")
-    if "created" in stray and primary in CHANGE_JOBS:
-        add("Wrong tool selection", "RC-CHANGE-BOOKED-AS-NEW-MEETING")
+    truth = case.get("truth") or {}
+    every_kind = {j["kind"] for jobs in (truth.get("anyOf") or [truth.get("jobs") or []]) for j in jobs}
+    if len(kinds) > 1 and result.get("partial"):
+        add("Incomplete execution", "RC-SECOND-REQUEST-DROPPED")
+    elif "created" in stray and primary in CHANGE_JOBS:
+        add("Wrong tool selection", "RC-CHANGE-READ-AS-NEW-MEETING")
         add("Intent misunderstanding")
     elif "created" in stray and primary in ("reminder", "task", "none", "escalate", "reply"):
         add("Wrong tool selection", "RC-NON-MEETING-BOOKED")
         add("Intent misunderstanding")
-    elif "created" in stray and "final_state" in failed and primary == "book":
+    elif ("created" in stray or "cancelled" in stray or "moved" in stray) and tags & {"retraction"}:
+        add("Intent misunderstanding", "RC-RETRACTION-IGNORED")
+    elif "created" in stray and tags & {"subject_body_mismatch", "weekday_date_mismatch", "duration_end_mismatch"}:
+        add("Incorrect time interpretation", "RC-CONTRADICTION-NOT-NOTICED")
+    elif "created" in stray and "book" in every_kind:
         add("Incorrect time interpretation", "RC-TIME-MISREAD")
     elif "created" in stray or "cancelled" in stray or "moved" in stray:
-        if tags & {"retraction"}:
-            add("Intent misunderstanding", "RC-RETRACTION-IGNORED")
-        else:
-            add("Incorrect time interpretation", "RC-CONTRADICTION-NOT-NOTICED")
+        add("Incorrect time interpretation", "RC-CONTRADICTION-NOT-NOTICED")
     elif silent and primary in CHANGE_JOBS:
         add("Intent misunderstanding", "RC-CHANGE-READ-AS-NEWS")
     elif silent and primary in ("task", "reminder"):
@@ -133,6 +140,12 @@ def classify(result: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
         add("Intent misunderstanding", "RC-SCHEDULING-NOT-RECOGNISED")
     elif handed and primary in ("task", "reminder"):
         add("Intent misunderstanding", "RC-TASK-HANDED-OVER")
+    elif primary in CHANGE_JOBS and intent == "new_meeting":
+        add("Intent misunderstanding", "RC-CHANGE-READ-AS-NEW-MEETING")
+    elif primary == "cancel" and intent == "reschedule":
+        add("Intent misunderstanding", "RC-CANCEL-READ-AS-MOVE")
+    elif asked_for_time and "quoted_old_dates" in tags:
+        add("Incorrect time interpretation", "RC-QUOTED-TEXT-READ-AS-REQUEST")
     elif asked_for_time and primary in ("book", "reschedule"):
         add("Incorrect time interpretation", "RC-WRITTEN-TIME-NOT-READ")
     elif asked_for_time and primary not in MEETING_JOBS:
@@ -151,8 +164,9 @@ def classify(result: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
         add("Intent misunderstanding" if result["intent"].get("correct") is False else "Wrong tool selection",
             "RC-OTHER-JOB-NOT-DONE")
 
-    if len(kinds) > 1 and result.get("partial"):
-        add("Incomplete execution", "RC-SECOND-REQUEST-DROPPED")
+    reconciled = any(note.get("reconciled") for note in (result.get("human") or {}).get("rescueNotes") or [])
+    if root == "RC-COMMITMENT-NOT-TRACKED" and reconciled:
+        root = "RC-RECONCILE-SKIPS-FOLLOW-ON"
     if "thread" in tags and "final_state" in failed:
         add("Missing context")
         if root in ("RC-WRITTEN-TIME-NOT-READ", "RC-SCHEDULING-NOT-RECOGNISED", "RC-MEETING-READ-AS-NEWS"):

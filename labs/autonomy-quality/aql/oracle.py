@@ -332,6 +332,21 @@ def judge(case: Dict[str, Any], obs: Dict[str, Any]) -> Dict[str, Any]:
         result["errors"].append({"code": error.get("code"), "message": error.get("message")})
         return result
 
+    world = obs.get("world")
+    asked = case.get("context") or {}
+    if world is not None:
+        ignored = []
+        if asked.get("unreadableCalendars") and not world.get("unreadable"):
+            ignored.append("context.unreadableCalendars")
+        if asked.get("faults") and not world.get("faults"):
+            ignored.append("context.faults")
+        if ignored:
+            result["verdict"] = "unsupported"
+            result["errors"].append({"code": "context_extension_ignored",
+                                     "message": f"This backend ignored {', '.join(ignored)}: the condition the case needs "
+                                                f"never existed in its world, so the case says nothing about it."})
+            return result
+
     checks = result["checks"]
     fx = observe_effects(case, obs)
     ev = fx["evidence"]
@@ -608,8 +623,10 @@ def judge(case: Dict[str, Any], obs: Dict[str, Any]) -> Dict[str, Any]:
     if obs.get("stalled"):
         stalled = obs["stalled"]
         checks.append(check("run_reaches_rest", False, "the run reaches a resting state by itself",
-                            f"still '{stalled['status']}' in stage {stalled['stage']}: a step is ready and the Desk waits "
-                            f"for a client to call advance (next: {stalled['next']})", evidence="harness"))
+                            (f"still '{stalled['status']}' in stage {stalled['stage']}: a step is ready and the Desk waits "
+                             f"for a client to call advance (next: {stalled['next']})") if not stalled.get("timedOut") else
+                            f"still '{stalled['status']}' in stage {stalled['stage']} after {stalled['afterMs']} ms",
+                            evidence="harness"))
     crashes = [f"{d['tool']} {r['decision']} -> HTTP {r['http']}" for d in decisions for r in d["responses"] if r["http"] >= 500]
     if decisions:
         checks.append(check("no_server_error", not crashes, "a decision is answered with 200, or refused with a 4xx",

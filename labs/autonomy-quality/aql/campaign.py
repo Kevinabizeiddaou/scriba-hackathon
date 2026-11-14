@@ -43,7 +43,7 @@ def build_items(seed: int, families: List[str]) -> Dict[str, Any]:
 
 def run_campaign(backend: DeskBackend, *, seed: int, families: List[str], repeat: int = 1, label: str = "",
                  only: Optional[List[str]] = None, progress: Optional[Callable[[str], None]] = None,
-                 timeout: float = 60.0) -> Dict[str, Any]:
+                 timeout: float = 25.0) -> Dict[str, Any]:
     say = progress or (lambda line: None)
     started = dt.datetime.now(dt.timezone.utc)
     items = build_items(seed, families)

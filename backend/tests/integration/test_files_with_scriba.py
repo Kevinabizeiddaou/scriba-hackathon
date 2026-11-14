@@ -264,3 +264,35 @@ def test_figures_are_computed_over_every_row_of_a_large_sheet_without_holding_it
     document = files.summary_document(analysis, sender="x", subject="y")
     assert len(str(document)) < 6_000
     assert chat_file_tools.normalize_document(document)["title"] == "Review of ledger.xlsx"
+
+
+@pytest.mark.parametrize("stored, reason", [
+    ("another_document", "content_missing"),        # a real Word file, but not the one that was approved
+    ("garbage", None),                              # not a document at all
+])
+def test_a_generated_file_that_is_not_what_was_approved_is_not_verified_and_nothing_follows(stored, reason):
+    """The store accepts the write and returns a row. Only reopening the file
+    shows that it is wrong."""
+    with sandbox_desk() as desk:
+        desk["sign_in"](ALICE)
+        world = desk["world"]()
+        run = mail_with(desk, [{"filename": "budget.xlsx", "content": workbook()}])
+        keep = world.store_generated
+        wrong = letter(["Something else entirely."]) if stored == "another_document" else b"PK\x03\x04 not a real file"
+
+        def swapped(**kwargs):
+            return keep(**{**kwargs, "content": wrong})
+
+        world.store_generated = swapped
+        card = approve(desk, run["actions"][0])
+        assert card["status"] == "executed"                    # Scriba's store said yes
+        after = get(desk, f"/runs/{run['runId']}").json()
+        [review] = after["actions"]                            # the reply was NOT proposed
+        assert review["lifecycle"] == "VERIFICATION_FAILED" and review["verified"] is False
+        assert review["verification"]["method"] == "file_reopened"
+        if reason:
+            assert review["verification"]["reason"] == reason
+        assert after["files"][0]["verified"] is False
+        assert after["plan"]["steps"][1]["state"] == "blocked"
+        assert after["lifecycle"]["stage"] == "ESCALATED" and after["lifecycle"]["reason"] == "verification_failed"
+        assert world.sent == []

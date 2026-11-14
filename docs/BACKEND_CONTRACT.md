@@ -443,7 +443,8 @@ the message; a time must carry an offset; below 0.6 confidence nothing is
 proposed (`held.reason: "intent_unclear"`, with `held.missing[]`). A message
 classed as automated is not upgraded, a change request is never turned into
 a new booking, and a message that addresses the assistant is not sent to a
-model. Its tests script the model. **No real model has been run through it.**
+model. Its tests script the model. One real model has been run through it in
+the sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 
 ### The model step (off by default)
 
@@ -452,7 +453,11 @@ after the rules (`backend/desk_overlay/agent.py`): at most 4 model calls, 4
 tool calls and 45 seconds. It may read through four read tools and may
 propose a reply to the sender in the message's thread, a task or a reminder.
 It cannot choose a recipient, propose a calendar change or approve anything.
-Its tests script the model. **No real model has been run through it.**
+A reply it writes is refused when the plan contains a calendar change
+(`confirmation_follows_calendar_change`): the sender is told once, by the
+plan's confirmation step, after the change took effect.
+Its tests script the model. One real model has been run through it in the
+sandbox: `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 
 ### Readiness
 

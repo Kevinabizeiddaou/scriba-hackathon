@@ -278,7 +278,15 @@ class EvalRuns:
                 except ValueError as exc:
                     raise EvalError(409, "already_decided", str(exc))
             fresh = self._desk_view(record)
-            return next(a for a in approvals_of(record, fresh) if a["id"] == approval_id)
+            after = next((a for a in approvals_of(record, fresh) if a["id"] == approval_id), None)
+            if after is not None:
+                return after
+            # A guard held the card at approval: it did not run and is no
+            # longer offered. Say so instead of failing.
+            card = next((a for a in (fresh or {}).get("actions") or [] if a.get("toolCallId") == card_id), {})
+            record["decisions"].pop(approval_id, None)
+            raise EvalError(409, "approval_held",
+                            f"The action was held and did not run: {card.get('errorCode') or card.get('status') or 'unknown'}.")
         raise EvalError(404, "not_found", "Approval not found.")
 
 

@@ -45,6 +45,7 @@ MAX_REPLY_CHARS = 4000
 MAX_EXPLANATION_CHARS = 300
 READ_TOOLS = ("read_thread", "find_free_slots", "check_availability", "list_open_tasks")
 PROPOSAL_TYPES = ("reply", "task", "reminder")
+CALENDAR_CHANGES = frozenset({"create_calendar_event", "update_calendar_event", "cancel_calendar_event"})
 
 SYSTEM_PROMPT = """You are the planning step of an executive's secretary desk. You never act. You read, and then you propose; a person approves every proposal.
 
@@ -227,6 +228,12 @@ class DeskAgent:
                     reason = "reply_body_invalid"
                 elif "send_email" in existing:
                     reason = "reply_already_planned"
+                elif existing & CALENDAR_CHANGES:
+                    # The sender is told AFTER the calendar change took effect,
+                    # by the plan's own confirmation step. A reply written now
+                    # would state something that has not happened yet, and
+                    # would be a second message in the same thread.
+                    reason = "confirmation_follows_calendar_change"
                 elif not sender_address(str(item.get("from_addr") or "")):
                     reason = "no_sender_address"
                 else:

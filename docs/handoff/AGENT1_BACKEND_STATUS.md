@@ -5,7 +5,11 @@ Written 14 November 2026 on branch `agent1/autonomous-engine`, which contains
 lead. The contract is [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md),
 sections 6 to 11; this report says what stands behind it.
 
-**Nothing here is a result about a real agent.** No real model, mailbox or
+**Update, later on 14 November:** a real model (`gpt-6-luna`) has now been run
+through the sandbox. Its results are in [EVAL_CONFIGURED_MODEL.md](EVAL_CONFIGURED_MODEL.md)
+and summarised in section 4.3; the rest of this report predates that run.
+
+No real mailbox or
 calendar was used. No external write was made or is possible. Nothing in
 ScribaAssist/Scriba was changed: it was read from a clone with push disabled.
 
@@ -52,9 +56,9 @@ requests against `backend/dev/seeded_desk_server.py --demo`.
 
 ## 3. What is missing or unproven
 
-1. **No real model has been run.** There is no model credential in this
-   environment. `DESK_UNDERSTANDING=model`, `DESK_AGENT=on` and Scriba's time
-   extraction are scripted in every test.
+1. **One real model, one run per case.** `gpt-6-luna` was run through the
+   sandbox (section 4.3). In every automated test `DESK_UNDERSTANDING=model`,
+   `DESK_AGENT=on` and Scriba's time extraction are still scripted.
 2. **Durable claims are not proven on Postgres.** The receipt-ledger adapter
    is tested against a stand-in with the ledger's outcomes.
 3. **The worker reads the newest inbox page**, not Scriba's trigger cursor.
@@ -93,7 +97,8 @@ table: [EVAL_BACKEND_SCENARIOS.md](EVAL_BACKEND_SCENARIOS.md).
 - **Scripted model**: the understanding step is handed the answer a careful
   reader would give. It measures everything BEHIND the model. It is an upper
   bound for this pipeline, not a model's score.
-- **Configured model**: not run. No number exists for it.
+- **Configured model**: measured later with `gpt-6-luna`: 22 of 24 fully
+  correct, 0 unsafe. See section 4.3; the column above is as first written.
 - Latency is the pipeline's own time in a sandbox with no model call.
 - I wrote these scenarios and the rules; the rules-only figure is therefore
   optimistic. The held-out figure below is the honest one for the rules.
@@ -110,6 +115,23 @@ table: [EVAL_BACKEND_SCENARIOS.md](EVAL_BACKEND_SCENARIOS.md).
 
 Re-run on the final code of this branch: unchanged. The gap between 10 and 5 is
 the finding: the rules recognise the wording they were improved on.
+
+### 4.3 With a real model (`gpt-6-luna`, one run per case, sandbox only)
+
+Full account: [EVAL_CONFIGURED_MODEL.md](EVAL_CONFIGURED_MODEL.md).
+
+| | Rules only | Scripted model | Configured model |
+| --- | --- | --- | --- |
+| Backend scenarios, everything correct | 20 of 24 | 23 of 24 | 22 of 24 |
+| Backend scenarios, unsafe runs | 0 | 0 | 0 |
+| `desk-v1` (Agent 2's runner) | 10 of 20 | n/a | 10 of 20 |
+| `desk-holdout-v1` (reworded) | 5 of 20 | n/a | 9 of 20 |
+
+The model closes most of the gap on unseen wording and does not raise the
+ceiling: the remaining failures are things the engine does not do (chat-started
+cases, replies that need thread facts, completing a task, a second request
+beside a booking). The reworded prompt-injection case was not flagged, though
+nothing reached a third party. Two defects the run exposed are fixed.
 
 ## 5. Exact frontend integration requirements
 
@@ -210,8 +232,8 @@ product asks for one. Evaluation worlds run them automatically and say so in
 | Frontend tests | 380 passed, 3 failed: the pinned tests of section 5 |
 | Secret scan | No secret found in tracked files |
 
-Not run: anything with a real model, a live mailbox, a live calendar, or a
-Postgres database.
+Not run: anything with a live mailbox, a live calendar, or a Postgres
+database. A real model was run in the sandbox only (section 4.3).
 
 ## 7. One incident, fixed
 

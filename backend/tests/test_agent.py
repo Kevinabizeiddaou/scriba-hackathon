@@ -238,3 +238,19 @@ def test_an_unknown_proposal_type_is_refused_even_when_it_looks_like_a_reminder(
     assert run["actions"] == []
     refused = [i["data"]["error"] for i in run["timeline"] if i["data"].get("tool") == "agent.proposal"]
     assert refused == ["type_not_allowed", "type_not_allowed"]
+
+
+def test_a_reply_is_not_added_beside_a_calendar_change_the_confirmation_follows_it(desk):
+    # Found with a real model: it wrote "Tuesday works for me" next to the
+    # booking. That states something not yet true, and the plan's own
+    # confirmation would then be a second message in the same thread.
+    desk.gateway.world(EXEC)["meeting_plan"] = {
+        "calendar_action": "create", "summary": "Intro",
+        "requested_start": "2026-11-17T10:00:00+00:00", "requested_end": "2026-11-17T10:30:00+00:00"}
+    desk.script({"step": "final", "explanation": "x",
+                 "proposals": [{"type": "reply", "body": "Tuesday at 10:00 works for me. See you then."}]})
+    run = desk.mail("Could we meet Tuesday at 10:00?", subject="Intro")
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"]
+    refused = [i["data"] for i in run["timeline"] if i["kind"] == "read" and i["data"].get("tool") == "agent.proposal"]
+    assert [r.get("error") for r in refused] == ["confirmation_follows_calendar_change"]
+    assert desk.agent.stats["rejectedProposals"] == 1

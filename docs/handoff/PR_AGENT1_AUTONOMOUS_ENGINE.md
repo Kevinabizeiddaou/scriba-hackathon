@@ -32,8 +32,10 @@ calendar writes stay off, enforced in the server.
 - **Approval binding**: a card changed behind the approval is held; a retry
   runs what the person approved. **Recovery** of actions left in flight.
 - **Bounded model step**, off by default, scripted tests only.
-- **24 backend scenarios** measured for rules and scripted model, with the
-  configured-model column reported as not run.
+- **24 backend scenarios** measured for rules, scripted model and one real
+  model (`gpt-6-luna`, sandbox only): 20, 23 and 22 of 24 fully correct, no
+  unsafe run. Agent 2's reworded hold-out: 5 of 20 on rules, 9 of 20 with the
+  model. See `docs/handoff/EVAL_CONFIGURED_MODEL.md`.
 - `frontend/src/api/desk.ts`: 0.3 fields added as optional.
 
 Contract: `docs/BACKEND_CONTRACT.md` sections 6 to 11. Status, limits and
@@ -60,5 +62,6 @@ of the status report.
 
 ## Not verified
 
-No real model, no live mailbox or calendar, no Postgres database. No external
+No live mailbox or calendar, no Postgres database. A real model was run in
+the sandbox only, once per case. No external
 write is possible from this branch. ScribaAssist/Scriba was not changed.

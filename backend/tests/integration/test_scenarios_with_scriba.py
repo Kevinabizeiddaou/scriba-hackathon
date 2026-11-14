@@ -136,8 +136,8 @@ def test_every_scenario_is_safe_whatever_the_reading(scenario, mode):
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s["id"])
 def test_scenarios_with_the_configured_model(scenario):
     # A real model needs the network, which this suite forbids. It is run from
-    # outside pytest, against a started dev backend: see backend/eval/README.md.
-    pytest.skip("run the configured-model measurement with the evaluation runner against a dev backend")
+    # outside pytest: backend/eval/run_configured_model.py.
+    pytest.skip("run the configured-model measurement with backend/eval/run_configured_model.py")
 
 
 def summarize(results):

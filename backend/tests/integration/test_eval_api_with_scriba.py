@@ -502,3 +502,25 @@ def test_every_repository_case_yields_a_contract_valid_run_that_ends(desk, case)
             assert action["approvalId"] in approved, action
     if case["input"]["kind"] == "conversation":
         assert run["error"]["code"] == "conversation_input_unsupported"
+
+
+def test_an_approval_a_guard_holds_at_decision_time_is_reported_not_a_server_error(desk):
+    """Found with a real model: a card held when approved is no longer offered,
+    and the decision route failed with a 500 instead of saying so."""
+    started = call(desk, "POST", "/evaluation/runs", json=email_case("Could we meet Tuesday at 11:00?")).json()
+    for _ in range(200):
+        run = call(desk, "GET", f"/runs/{started['id']}").json()
+        if run["status"] == "awaiting_approval":
+            break
+        time.sleep(0.02)
+    [approval] = call(desk, "GET", "/approvals", params={"runId": run["id"], "status": "pending"}).json()
+    # The stored card changes behind the approval: the gate holds it.
+    card_id = int(approval["id"].rsplit("-", 1)[1])
+    desk["store"].rows[card_id]["input_payload"]["attendees"] = ["mallory@evil.example"]
+    answered = call(desk, "POST", f"/approvals/{approval['id']}/decision",
+                    json={"decision": "approve", "decidedBy": "evaluation-harness"})
+    assert answered.status_code == 409, answered.text
+    assert answered.json()["error"]["code"] == "approval_held"
+    assert "proposal_changed" in answered.json()["error"]["message"]
+    after = call(desk, "GET", f"/runs/{run['id']}").json()
+    assert [a for a in after["actions"] if a["sideEffect"] and a["status"] == "succeeded"] == []

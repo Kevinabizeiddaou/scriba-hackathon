@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `trusting` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `0162cd0a01b6e020`
+- Replay fingerprint: `53905dd5195e47ca`
 
 ## Result
 
@@ -136,7 +136,7 @@ At Wed 16:30: "5 meeting requests, 0 messages need a reply, 2 meetings today, 0 
 
 ## Time and cost
 
-- The whole day ran in 17.06 s of real time (211 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 17.09 s of real time (211 API calls). Median intake pass: 14 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement

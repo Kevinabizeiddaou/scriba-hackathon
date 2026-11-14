@@ -111,6 +111,7 @@
     "updatedAt": "2026-11-16T08:30:32+01:00"
    }
   ],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -173,6 +174,9 @@
     "toolCallId": 27,
     "tool_name": "send_email",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "offer_times",
     "reason": "Only times verified free on every connected calendar are offered.",
@@ -194,6 +198,20 @@
      }
     ],
     "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "ingrid.solberg@bluewatershipping.example",
+     "subject": "Re: Our sync and the term sheet",
+     "body": "Thank you for your message. I would be glad to find a time.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-ingrid-two-things",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-ingrid-two-things",
+     "desk_verified_recipients": [
+      "ingrid.solberg@bluewatershipping.example"
+     ]
+    },
+    "edited": [],
+    "effectiveInput": {
      "provider": "gmail",
      "mode": "reply",
      "to": "ingrid.solberg@bluewatershipping.example",
@@ -255,7 +273,7 @@
        }
       ],
       "summary": "Email sent from layla.mansour@meridianfreight.example to ingrid.solberg@bluewatershipping.example ('Re: Our sync and the term sheet').",
-      "recorded_at": "2026-11-14T07:34:16.262422+00:00"
+      "recorded_at": "2026-11-14T11:12:48.936362+00:00"
      }
     },
     "message": null,
@@ -657,6 +675,7 @@
   },
   "next": [],
   "followUps": [],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -736,6 +755,9 @@
     "toolCallId": 50,
     "tool_name": "create_calendar_event",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "book",
     "reason": "The requested time is free on every connected calendar.",
@@ -744,6 +766,25 @@
     "attempts": 1,
     "proposedSlots": null,
     "input": {
+     "title": "Pricing annex",
+     "start": "2026-11-19T11:00:00+01:00",
+     "end": "2026-11-19T12:00:00+01:00",
+     "timezone": "Europe/Paris",
+     "attendees": [
+      "daniel.okafor@atlaspharma.example"
+     ],
+     "description": "Requested by Daniel Okafor <daniel.okafor@atlaspharma.example> by email.",
+     "calendar_provider": "google",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-daniel-annex",
+     "thread_id": "thread-daniel-annex",
+     "provider": "gmail",
+     "desk_verified_recipients": [
+      "daniel.okafor@atlaspharma.example"
+     ]
+    },
+    "edited": [],
+    "effectiveInput": {
      "title": "Pricing annex",
      "start": "2026-11-19T11:00:00+01:00",
      "end": "2026-11-19T12:00:00+01:00",
@@ -894,7 +935,7 @@
        }
       ],
       "summary": "Calendar invitation sent by Google Calendar from layla.mansour@meridianfreight.example to daniel.okafor@atlaspharma.example: event 'Pricing annex' created. No separate Gmail message was sent.",
-      "recorded_at": "2026-11-14T07:34:16.410075+00:00"
+      "recorded_at": "2026-11-14T11:12:49.137477+00:00"
      }
     },
     "message": null,
@@ -977,6 +1018,9 @@
     "toolCallId": 55,
     "tool_name": "send_email",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "confirm",
     "reason": "The calendar change has taken effect, so the sender is told.",
@@ -985,6 +1029,20 @@
     "attempts": 1,
     "proposedSlots": null,
     "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "daniel.okafor@atlaspharma.example",
+     "subject": "Re: Pricing annex",
+     "body": "Thank you for your message. I have scheduled \"Pricing annex\" for Thursday 19 November, 11:00 to 12:00 (Europe/Paris). You should receive a calendar invitation separately.",
+     "thread_id": "thread-daniel-annex",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-daniel-annex",
+     "desk_verified_recipients": [
+      "daniel.okafor@atlaspharma.example"
+     ]
+    },
+    "edited": [],
+    "effectiveInput": {
      "provider": "gmail",
      "mode": "reply",
      "to": "daniel.okafor@atlaspharma.example",
@@ -1046,7 +1104,7 @@
        }
       ],
       "summary": "Email sent from layla.mansour@meridianfreight.example to daniel.okafor@atlaspharma.example ('Re: Pricing annex').",
-      "recorded_at": "2026-11-14T07:34:18.509299+00:00"
+      "recorded_at": "2026-11-14T11:12:51.221444+00:00"
      }
     },
     "message": null,
@@ -1512,6 +1570,7 @@
    "draft_reply"
   ],
   "followUps": [],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -1591,6 +1650,9 @@
     "toolCallId": 77,
     "tool_name": "create_calendar_event",
     "status": "cancelled",
+    "lifecycle": "REJECTED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "book",
     "reason": "The requested time is free on every connected calendar.",
@@ -1599,6 +1661,25 @@
     "attempts": 0,
     "proposedSlots": null,
     "input": {
+     "title": "Cold-chain lanes: intro call",
+     "start": "2026-11-18T14:00:00+01:00",
+     "end": "2026-11-18T14:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "attendees": [
+      "mei.tanaka@brightwavefoods.example"
+     ],
+     "description": "Requested by Mei Tanaka <mei.tanaka@brightwavefoods.example> by email.",
+     "calendar_provider": "google",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-mei-declined",
+     "thread_id": "thread-mei-declined",
+     "provider": "gmail",
+     "desk_verified_recipients": [
+      "mei.tanaka@brightwavefoods.example"
+     ]
+    },
+    "edited": [],
+    "effectiveInput": {
      "title": "Cold-chain lanes: intro call",
      "start": "2026-11-18T14:00:00+01:00",
      "end": "2026-11-18T14:30:00+01:00",
@@ -2020,7 +2101,7 @@
    {
     "at": "2026-11-16T10:30:43+01:00",
     "kind": "decision",
-    "summary": "A step this one depends on did not take effect, so it is not proposed.",
+    "summary": "A step this one depends on did not take effect, or ran and could not be verified, so it is not proposed.",
     "data": {
      "decision": "step_blocked",
      "stepId": "s2",
@@ -2028,7 +2109,7 @@
      "dependsOn": [
       "s1"
      ],
-     "explanation": "A step this one depends on did not take effect, so it is not proposed."
+     "explanation": "A step this one depends on did not take effect, or ran and could not be verified, so it is not proposed."
     }
    }
   ],
@@ -2108,7 +2189,15 @@
      "busy_count": 2
     }
    ],
-   "message": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+   "message": "They ask to move this meeting but no new time could be read. Offer free times in a reply.",
+   "target": {
+    "id": "evt-nordlicht-qbr",
+    "title": "Nordlicht quarterly review",
+    "start": "2026-11-16T11:00:00+01:00",
+    "end": "2026-11-16T12:00:00+01:00",
+    "provider": "google",
+    "provider_account_id": "layla.mansour@meridianfreight.example"
+   }
   },
   "draftRequest": {
    "method": "POST",
@@ -2127,9 +2216,9 @@
   "next": [],
   "followUps": [
    {
-    "id": "fu-81-96",
+    "id": "fu-81-98",
     "state": "waiting",
-    "toolCallId": 96,
+    "toolCallId": 98,
     "threadId": "thread-greta-next-steps",
     "waitingOn": "greta.lindqvist@nordlicht-retail.example",
     "subject": "Next steps after the review",
@@ -2138,6 +2227,7 @@
     "updatedAt": "2026-11-16T11:30:41+01:00"
    }
   ],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -2162,11 +2252,14 @@
     }
    ],
    "unsupported": [],
-   "facts": [],
+   "facts": [
+    "The sender is on \"Nordlicht quarterly review\", the only meeting this can be about."
+   ],
    "assumptions": [],
    "missing": [],
    "tools": [
     "calendar.find_free_slots",
+    "calendar.list_events",
     "model.extract_request",
     "rules.extract_time"
    ],
@@ -2174,15 +2267,15 @@
     {
      "id": "s1",
      "tool": "send_email",
-     "purpose": "clarify",
+     "purpose": "offer_times",
      "dependsOn": [],
      "requiresApproval": true,
      "external": true,
      "deferred": false,
-     "expected": "The sender has been asked for the missing detail.",
+     "expected": "The sender has a reply offering only times verified free.",
      "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
      "state": "executed",
-     "toolCallId": 96
+     "toolCallId": 98
     }
    ],
    "approvals": 1,
@@ -2195,11 +2288,14 @@
   },
   "actions": [
    {
-    "toolCallId": 96,
+    "toolCallId": 98,
     "tool_name": "send_email",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
-    "purpose": "clarify",
+    "purpose": "offer_times",
     "reason": "Only times verified free on every connected calendar are offered.",
     "stepId": "s1",
     "held": false,
@@ -2231,6 +2327,20 @@
       "greta.lindqvist@nordlicht-retail.example"
      ]
     },
+    "edited": [],
+    "effectiveInput": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "greta.lindqvist@nordlicht-retail.example",
+     "subject": "Re: Next steps after the review",
+     "body": "Thank you for your message. I would be glad to find a time.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 12:00 to 12:30\n- Monday 16 November, 12:30 to 13:00\n- Monday 16 November, 13:00 to 13:30\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-greta-next-steps",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-greta-next-steps",
+     "desk_verified_recipients": [
+      "greta.lindqvist@nordlicht-retail.example"
+     ]
+    },
     "output": {
      "operation": {
       "kind": "email_reply",
@@ -2240,7 +2350,7 @@
       "subject": "Re: Next steps after the review",
       "thread_id": "thread-greta-next-steps"
      },
-     "desk_approval_key": "sim:compound:96:1",
+     "desk_approval_key": "sim:compound:98:1",
      "approved_overrides": {},
      "final_payload": {
       "provider": "gmail",
@@ -2280,18 +2390,18 @@
        }
       ],
       "summary": "Email sent from layla.mansour@meridianfreight.example to greta.lindqvist@nordlicht-retail.example ('Re: Next steps after the review').",
-      "recorded_at": "2026-11-14T07:34:21.109539+00:00"
+      "recorded_at": "2026-11-14T11:12:53.800014+00:00"
      }
     },
     "message": null,
     "error": null,
     "errorCode": null,
     "availability": null,
-    "idempotencyKey": "desk:17b78e8856753a1f4d6390b1fc385df2:96",
+    "idempotencyKey": "desk:17b78e8856753a1f4d6390b1fc385df2:98",
     "assistantActionId": 500004,
     "verified": true,
     "verification": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",
@@ -2304,7 +2414,7 @@
     "proposedAt": "2026-11-16T11:30:41+01:00",
     "decisions": [
      {
-      "toolCallId": 96,
+      "toolCallId": 98,
       "tool": "send_email",
       "decision": "approve",
       "by": "alice@example.com",
@@ -2314,7 +2424,7 @@
      }
     ],
     "execution": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -2454,6 +2564,18 @@
    },
    {
     "at": "2026-11-16T11:30:41+01:00",
+    "kind": "read",
+    "summary": "calendar.list_events: read.",
+    "data": {
+     "tool": "calendar.list_events",
+     "ok": true,
+     "count": 12,
+     "timeMin": "2026-11-15T11:30:41+01:00",
+     "timeMax": "2026-12-31T11:30:41+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T11:30:41+01:00",
     "kind": "stage",
     "summary": "Plan made.",
     "data": {
@@ -2489,11 +2611,14 @@
       }
      ],
      "unsupported": [],
-     "facts": [],
+     "facts": [
+      "The sender is on \"Nordlicht quarterly review\", the only meeting this can be about."
+     ],
      "assumptions": [],
      "missing": [],
      "tools": [
       "calendar.find_free_slots",
+      "calendar.list_events",
       "model.extract_request",
       "rules.extract_time"
      ],
@@ -2501,12 +2626,12 @@
       {
        "id": "s1",
        "tool": "send_email",
-       "purpose": "clarify",
+       "purpose": "offer_times",
        "dependsOn": [],
        "requiresApproval": true,
        "external": true,
        "deferred": false,
-       "expected": "The sender has been asked for the missing detail.",
+       "expected": "The sender has a reply offering only times verified free.",
        "onFailure": "Dependent steps are not proposed; the run is handed to the person."
       }
      ],
@@ -2522,11 +2647,21 @@
    {
     "at": "2026-11-16T11:30:41+01:00",
     "kind": "decision",
-    "summary": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply.",
+    "summary": "The message refers to a meeting the sender is already on, so it is read as a change to it.",
+    "data": {
+     "decision": "read_as_change",
+     "reason": "refers_to_existing_meeting",
+     "explanation": "The message refers to a meeting the sender is already on, so it is read as a change to it."
+    }
+   },
+   {
+    "at": "2026-11-16T11:30:41+01:00",
+    "kind": "decision",
+    "summary": "They ask to move this meeting but no new time could be read. Offer free times in a reply.",
     "data": {
      "decision": "hold",
      "reason": "time_not_understood",
-     "explanation": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+     "explanation": "They ask to move this meeting but no new time could be read. Offer free times in a reply."
     }
    },
    {
@@ -2535,7 +2670,7 @@
     "summary": "A reply offering verified free times is proposed.",
     "data": {
      "decision": "propose",
-     "reason": "clarify",
+     "reason": "offer_times",
      "explanation": "A reply offering verified free times is proposed."
     }
    },
@@ -2544,11 +2679,11 @@
     "kind": "proposal",
     "summary": "Proposed send_email for approval.",
     "data": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "stepId": "s1",
      "binding": "8013e04b0ab5fb55ddb7d9b1",
-     "purpose": "clarify",
+     "purpose": "offer_times",
      "reason": "Only times verified free on every connected calendar are offered.",
      "proposedSlots": [
       {
@@ -2572,7 +2707,7 @@
     "kind": "approval",
     "summary": "alice@example.com approved send_email.",
     "data": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "decision": "approve",
      "by": "alice@example.com",
@@ -2585,7 +2720,7 @@
     "kind": "execution",
     "summary": "send_email: executed.",
     "data": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -2599,7 +2734,7 @@
     "kind": "verification",
     "summary": "send_email: verified (sandbox_readback).",
     "data": {
-     "toolCallId": 96,
+     "toolCallId": 98,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",
@@ -2612,9 +2747,9 @@
     "kind": "followup",
     "summary": "Follow-up waiting.",
     "data": {
-     "id": "fu-81-96",
+     "id": "fu-81-98",
      "state": "waiting",
-     "toolCallId": 96,
+     "toolCallId": 98,
      "threadId": "thread-greta-next-steps",
      "waitingOn": "greta.lindqvist@nordlicht-retail.example",
      "subject": "Next steps after the review",
@@ -2625,8 +2760,8 @@
   ],
   "usage": null
  },
- "102": {
-  "runId": 102,
+ "104": {
+  "runId": 104,
   "duplicate": false,
   "state": "completed",
   "lifecycle": {
@@ -2699,7 +2834,15 @@
      "busy_count": 2
     }
    ],
-   "message": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+   "message": "They ask to move this meeting but no new time could be read. Offer free times in a reply.",
+   "target": {
+    "id": "evt-budget-fy27",
+    "title": "Budget review FY27",
+    "start": "2026-11-17T14:00:00+01:00",
+    "end": "2026-11-17T15:00:00+01:00",
+    "provider": "google",
+    "provider_account_id": "layla.mansour@meridianfreight.example"
+   }
   },
   "draftRequest": {
    "method": "POST",
@@ -2718,9 +2861,9 @@
   "next": [],
   "followUps": [
    {
-    "id": "fu-102-117",
+    "id": "fu-104-121",
     "state": "waiting",
-    "toolCallId": 117,
+    "toolCallId": 121,
     "threadId": "thread-omar-prep",
     "waitingOn": "omar.haddad@meridianfreight.example",
     "subject": "Budget review prep",
@@ -2729,6 +2872,7 @@
     "updatedAt": "2026-11-16T13:00:50+01:00"
    }
   ],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -2753,11 +2897,14 @@
     }
    ],
    "unsupported": [],
-   "facts": [],
+   "facts": [
+    "The sender is on \"Budget review FY27\", the only meeting this can be about."
+   ],
    "assumptions": [],
    "missing": [],
    "tools": [
     "calendar.find_free_slots",
+    "calendar.list_events",
     "model.extract_request",
     "rules.extract_time"
    ],
@@ -2765,15 +2912,15 @@
     {
      "id": "s1",
      "tool": "send_email",
-     "purpose": "clarify",
+     "purpose": "offer_times",
      "dependsOn": [],
      "requiresApproval": true,
      "external": true,
      "deferred": false,
-     "expected": "The sender has been asked for the missing detail.",
+     "expected": "The sender has a reply offering only times verified free.",
      "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
      "state": "executed",
-     "toolCallId": 117
+     "toolCallId": 121
     }
    ],
    "approvals": 1,
@@ -2786,11 +2933,14 @@
   },
   "actions": [
    {
-    "toolCallId": 117,
+    "toolCallId": 121,
     "tool_name": "send_email",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
-    "purpose": "clarify",
+    "purpose": "offer_times",
     "reason": "Only times verified free on every connected calendar are offered.",
     "stepId": "s1",
     "held": false,
@@ -2822,6 +2972,20 @@
       "omar.haddad@meridianfreight.example"
      ]
     },
+    "edited": [],
+    "effectiveInput": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "omar.haddad@meridianfreight.example",
+     "subject": "Re: Budget review prep",
+     "body": "Thank you for your message. I would be glad to find a time.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 13:00 to 13:30\n- Monday 16 November, 13:30 to 14:00\n- Monday 16 November, 14:00 to 14:30\n\nPlease let me know which suits you, or suggest another.",
+     "thread_id": "thread-omar-prep",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-omar-prep",
+     "desk_verified_recipients": [
+      "omar.haddad@meridianfreight.example"
+     ]
+    },
     "output": {
      "operation": {
       "kind": "email_reply",
@@ -2831,7 +2995,7 @@
       "subject": "Re: Budget review prep",
       "thread_id": "thread-omar-prep"
      },
-     "desk_approval_key": "sim:compound:117:1",
+     "desk_approval_key": "sim:compound:121:1",
      "approved_overrides": {},
      "final_payload": {
       "provider": "gmail",
@@ -2871,18 +3035,18 @@
        }
       ],
       "summary": "Email sent from layla.mansour@meridianfreight.example to omar.haddad@meridianfreight.example ('Re: Budget review prep').",
-      "recorded_at": "2026-11-14T07:34:23.380409+00:00"
+      "recorded_at": "2026-11-14T11:12:56.073702+00:00"
      }
     },
     "message": null,
     "error": null,
     "errorCode": null,
     "availability": null,
-    "idempotencyKey": "desk:4e9c91594fce20c70249db87e94d633e:117",
+    "idempotencyKey": "desk:4e9c91594fce20c70249db87e94d633e:121",
     "assistantActionId": 500005,
     "verified": true,
     "verification": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",
@@ -2895,7 +3059,7 @@
     "proposedAt": "2026-11-16T13:00:50+01:00",
     "decisions": [
      {
-      "toolCallId": 117,
+      "toolCallId": 121,
       "tool": "send_email",
       "decision": "approve",
       "by": "alice@example.com",
@@ -2905,7 +3069,7 @@
      }
     ],
     "execution": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -3045,6 +3209,18 @@
    },
    {
     "at": "2026-11-16T13:00:50+01:00",
+    "kind": "read",
+    "summary": "calendar.list_events: read.",
+    "data": {
+     "tool": "calendar.list_events",
+     "ok": true,
+     "count": 12,
+     "timeMin": "2026-11-15T13:00:50+01:00",
+     "timeMax": "2026-12-31T13:00:50+01:00"
+    }
+   },
+   {
+    "at": "2026-11-16T13:00:50+01:00",
     "kind": "stage",
     "summary": "Plan made.",
     "data": {
@@ -3080,11 +3256,14 @@
       }
      ],
      "unsupported": [],
-     "facts": [],
+     "facts": [
+      "The sender is on \"Budget review FY27\", the only meeting this can be about."
+     ],
      "assumptions": [],
      "missing": [],
      "tools": [
       "calendar.find_free_slots",
+      "calendar.list_events",
       "model.extract_request",
       "rules.extract_time"
      ],
@@ -3092,12 +3271,12 @@
       {
        "id": "s1",
        "tool": "send_email",
-       "purpose": "clarify",
+       "purpose": "offer_times",
        "dependsOn": [],
        "requiresApproval": true,
        "external": true,
        "deferred": false,
-       "expected": "The sender has been asked for the missing detail.",
+       "expected": "The sender has a reply offering only times verified free.",
        "onFailure": "Dependent steps are not proposed; the run is handed to the person."
       }
      ],
@@ -3113,11 +3292,21 @@
    {
     "at": "2026-11-16T13:00:50+01:00",
     "kind": "decision",
-    "summary": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply.",
+    "summary": "The message refers to a meeting the sender is already on, so it is read as a change to it.",
+    "data": {
+     "decision": "read_as_change",
+     "reason": "refers_to_existing_meeting",
+     "explanation": "The message refers to a meeting the sender is already on, so it is read as a change to it."
+    }
+   },
+   {
+    "at": "2026-11-16T13:00:50+01:00",
+    "kind": "decision",
+    "summary": "They ask to move this meeting but no new time could be read. Offer free times in a reply.",
     "data": {
      "decision": "hold",
      "reason": "time_not_understood",
-     "explanation": "No specific time could be read from the message, so no event is proposed. Offer the free times in a reply."
+     "explanation": "They ask to move this meeting but no new time could be read. Offer free times in a reply."
     }
    },
    {
@@ -3126,7 +3315,7 @@
     "summary": "A reply offering verified free times is proposed.",
     "data": {
      "decision": "propose",
-     "reason": "clarify",
+     "reason": "offer_times",
      "explanation": "A reply offering verified free times is proposed."
     }
    },
@@ -3135,11 +3324,11 @@
     "kind": "proposal",
     "summary": "Proposed send_email for approval.",
     "data": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "stepId": "s1",
      "binding": "72b32abe80b9ac753cf1d3d1",
-     "purpose": "clarify",
+     "purpose": "offer_times",
      "reason": "Only times verified free on every connected calendar are offered.",
      "proposedSlots": [
       {
@@ -3163,7 +3352,7 @@
     "kind": "approval",
     "summary": "alice@example.com approved send_email.",
     "data": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "decision": "approve",
      "by": "alice@example.com",
@@ -3176,7 +3365,7 @@
     "kind": "execution",
     "summary": "send_email: executed.",
     "data": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -3190,7 +3379,7 @@
     "kind": "verification",
     "summary": "send_email: verified (sandbox_readback).",
     "data": {
-     "toolCallId": 117,
+     "toolCallId": 121,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",
@@ -3203,9 +3392,9 @@
     "kind": "followup",
     "summary": "Follow-up waiting.",
     "data": {
-     "id": "fu-102-117",
+     "id": "fu-104-121",
      "state": "waiting",
-     "toolCallId": 117,
+     "toolCallId": 121,
      "threadId": "thread-omar-prep",
      "waitingOn": "omar.haddad@meridianfreight.example",
      "subject": "Budget review prep",
@@ -3216,8 +3405,8 @@
   ],
   "usage": null
  },
- "123": {
-  "runId": 123,
+ "127": {
+  "runId": 127,
   "duplicate": false,
   "state": "completed",
   "lifecycle": {
@@ -3260,6 +3449,7 @@
   },
   "next": [],
   "followUps": [],
+  "taskUpdates": [],
   "plan": {
    "version": 1,
    "message": {
@@ -3306,7 +3496,7 @@
      "expected": "The original event is cancelled.",
      "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
      "state": "executed",
-     "toolCallId": 138
+     "toolCallId": 142
     },
     {
      "id": "s2",
@@ -3321,7 +3511,7 @@
      "expected": "The sender has a reply in the original thread stating what was done.",
      "onFailure": "Dependent steps are not proposed; the run is handed to the person.",
      "state": "executed",
-     "toolCallId": 143
+     "toolCallId": 147
     }
    ],
    "approvals": 2,
@@ -3334,9 +3524,12 @@
   },
   "actions": [
    {
-    "toolCallId": 138,
+    "toolCallId": 142,
     "tool_name": "cancel_calendar_event",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "cancel",
     "reason": "tomas.vega@kestrelinsurance.example is on this meeting and asked to cancel it.",
@@ -3345,6 +3538,18 @@
     "attempts": 1,
     "proposedSlots": null,
     "input": {
+     "event_id": "evt-insurance-renewal",
+     "calendar_provider": "google",
+     "timezone": "Europe/Paris",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-tomas-rebook",
+     "thread_id": "thread-tomas-rebook",
+     "provider": "gmail",
+     "planned_change": {},
+     "event_title": "Insurance renewal call"
+    },
+    "edited": [],
+    "effectiveInput": {
      "event_id": "evt-insurance-renewal",
      "calendar_provider": "google",
      "timezone": "Europe/Paris",
@@ -3384,7 +3589,7 @@
       "message": null,
       "message_delivery": "none"
      },
-     "desk_approval_key": "sim:compound:138:1",
+     "desk_approval_key": "sim:compound:142:1",
      "execution_status": "executed",
      "result": {
       "event": {
@@ -3432,7 +3637,7 @@
        }
       ],
       "summary": "Cancelled “Insurance renewal call” (Fri, Nov 20 · 10:00 AM – 10:30 AM (Europe/Paris)). Google Calendar emailed a cancellation to tomas.vega@kestrelinsurance.example.",
-      "recorded_at": "2026-11-14T07:34:23.740520+00:00"
+      "recorded_at": "2026-11-14T11:12:56.217764+00:00"
      },
      "approved_overrides": {},
      "final_payload": {
@@ -3450,11 +3655,11 @@
     "error": null,
     "errorCode": null,
     "availability": null,
-    "idempotencyKey": "desk:76329b96823e0f10c78ed3a3f1e07668:138",
+    "idempotencyKey": "desk:76329b96823e0f10c78ed3a3f1e07668:142",
     "assistantActionId": 500006,
     "verified": true,
     "verification": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "verified": true,
      "method": "sandbox_readback",
@@ -3467,7 +3672,7 @@
     "proposedAt": "2026-11-16T14:30:44+01:00",
     "decisions": [
      {
-      "toolCallId": 138,
+      "toolCallId": 142,
       "tool": "cancel_calendar_event",
       "decision": "approve",
       "by": "alice@example.com",
@@ -3477,7 +3682,7 @@
      }
     ],
     "execution": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "status": "executed",
      "error": null,
@@ -3489,9 +3694,12 @@
     "approve": null
    },
    {
-    "toolCallId": 143,
+    "toolCallId": 147,
     "tool_name": "send_email",
     "status": "executed",
+    "lifecycle": "VERIFIED",
+    "final": true,
+    "retry": null,
     "requiresApproval": true,
     "purpose": "confirm",
     "reason": "The calendar change has taken effect, so the sender is told.",
@@ -3500,6 +3708,20 @@
     "attempts": 1,
     "proposedSlots": null,
     "input": {
+     "provider": "gmail",
+     "mode": "reply",
+     "to": "tomas.vega@kestrelinsurance.example",
+     "subject": "Re: Friday's renewal call",
+     "body": "Thank you for letting me know. \"Insurance renewal call\" has been cancelled, and a calendar cancellation has been sent separately.",
+     "thread_id": "thread-tomas-rebook",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "email_id": "compound-tomas-rebook",
+     "desk_verified_recipients": [
+      "tomas.vega@kestrelinsurance.example"
+     ]
+    },
+    "edited": [],
+    "effectiveInput": {
      "provider": "gmail",
      "mode": "reply",
      "to": "tomas.vega@kestrelinsurance.example",
@@ -3521,7 +3743,7 @@
       "subject": "Re: Friday's renewal call",
       "thread_id": "thread-tomas-rebook"
      },
-     "desk_approval_key": "sim:compound:143:1",
+     "desk_approval_key": "sim:compound:147:1",
      "approved_overrides": {},
      "final_payload": {
       "provider": "gmail",
@@ -3561,18 +3783,18 @@
        }
       ],
       "summary": "Email sent from layla.mansour@meridianfreight.example to tomas.vega@kestrelinsurance.example ('Re: Friday's renewal call').",
-      "recorded_at": "2026-11-14T07:34:25.838843+00:00"
+      "recorded_at": "2026-11-14T11:12:58.296762+00:00"
      }
     },
     "message": null,
     "error": null,
     "errorCode": null,
     "availability": null,
-    "idempotencyKey": "desk:76329b96823e0f10c78ed3a3f1e07668:143",
+    "idempotencyKey": "desk:76329b96823e0f10c78ed3a3f1e07668:147",
     "assistantActionId": 500007,
     "verified": true,
     "verification": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",
@@ -3585,7 +3807,7 @@
     "proposedAt": "2026-11-16T14:30:44+01:00",
     "decisions": [
      {
-      "toolCallId": 143,
+      "toolCallId": 147,
       "tool": "send_email",
       "decision": "approve",
       "by": "alice@example.com",
@@ -3595,7 +3817,7 @@
      }
     ],
     "execution": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -3841,7 +4063,7 @@
     "kind": "proposal",
     "summary": "Proposed cancel_calendar_event for approval.",
     "data": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "stepId": "s1",
      "binding": "ffc183bd330154a2a985c39c",
@@ -3856,7 +4078,7 @@
     "kind": "approval",
     "summary": "alice@example.com approved cancel_calendar_event.",
     "data": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "decision": "approve",
      "by": "alice@example.com",
@@ -3869,7 +4091,7 @@
     "kind": "execution",
     "summary": "cancel_calendar_event: executed.",
     "data": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "status": "executed",
      "error": null,
@@ -3883,7 +4105,7 @@
     "kind": "verification",
     "summary": "cancel_calendar_event: verified (sandbox_readback).",
     "data": {
-     "toolCallId": 138,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "verified": true,
      "method": "sandbox_readback",
@@ -3896,7 +4118,7 @@
     "kind": "proposal",
     "summary": "Proposed send_email for approval.",
     "data": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "stepId": "s2",
      "binding": "a7aee9d72dc90e4e2c09d6d1",
@@ -3911,7 +4133,7 @@
     "kind": "approval",
     "summary": "alice@example.com approved send_email.",
     "data": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "decision": "approve",
      "by": "alice@example.com",
@@ -3924,7 +4146,7 @@
     "kind": "execution",
     "summary": "send_email: executed.",
     "data": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "status": "executed",
      "error": null,
@@ -3938,7 +4160,7 @@
     "kind": "verification",
     "summary": "send_email: verified (sandbox_readback).",
     "data": {
-     "toolCallId": 143,
+     "toolCallId": 147,
      "tool": "send_email",
      "verified": true,
      "method": "sandbox_readback",

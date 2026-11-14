@@ -706,7 +706,7 @@
    "id": "task-office-meridian-2",
    "title": "Q3 board pack",
    "description": "From Omar Haddad <omar.haddad@meridianfreight.example>, received 2026-11-13T17:40:00+00:00 (gmail). Layla, I need your sign-off on the Q3 board pack by Thursday so that we can circulate it to the board on Friday morning. The pack is in the shared folder.",
-   "due_at": "2026-11-19T17:00:00+01:00",
+   "due_at": "2026-11-19T09:00:00+01:00",
    "priority": "low",
    "status": "open",
    "created_at": "2026-11-16T08:30:31+01:00"

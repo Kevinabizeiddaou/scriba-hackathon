@@ -253,6 +253,20 @@
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
    "to": [
+    "mei.tanaka@brightwavefoods.example"
+   ],
+   "subject": "Re: Cold-chain lanes: intro call",
+   "text": "Thank you for your message. I have scheduled \"Cold-chain lanes: intro call\" for Wednesday 18 November, 14:30 to 15:00 (Europe/Paris). You should receive a calendar invitation separately.",
+   "thread_id": "thread-mei-intro",
+   "mode": "reply",
+   "in_reply_to": "human_in_loop-mei-intro",
+   "sent_at": "2026-11-16T09:00:31+00:00"
+  },
+  {
+   "id": "sent-office-meridian-6",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
     "jonas.weber@meridianfreight.example"
    ],
    "subject": "Re: Pipeline catch-up",
@@ -263,7 +277,7 @@
    "sent_at": "2026-11-16T09:30:43+00:00"
   },
   {
-   "id": "sent-office-meridian-7",
+   "id": "sent-office-meridian-8",
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
    "to": [
@@ -277,7 +291,7 @@
    "sent_at": "2026-11-16T09:45:12+00:00"
   },
   {
-   "id": "sent-office-meridian-8",
+   "id": "sent-office-meridian-9",
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
    "to": [
@@ -330,7 +344,7 @@
    "updated_at": "2026-11-16T08:00:00+01:00"
   },
   {
-   "id": "evt-office-meridian-6",
+   "id": "evt-office-meridian-7",
    "provider": "google",
    "account": "layla.mansour@meridianfreight.example",
    "title": "Re: Pipeline catch-up",
@@ -659,7 +673,7 @@
   },
   {
    "seq": 5,
-   "at": "2026-11-16T09:30:43+00:00",
+   "at": "2026-11-16T09:00:31+00:00",
    "op": "email.send",
    "status": "executed",
    "object_id": "sent-office-meridian-5",
@@ -668,24 +682,33 @@
   },
   {
    "seq": 6,
-   "at": "2026-11-16T09:45:12+00:00",
-   "op": "calendar.create_event",
+   "at": "2026-11-16T09:30:43+00:00",
+   "op": "email.send",
    "status": "executed",
-   "object_id": "evt-office-meridian-6",
+   "object_id": "sent-office-meridian-6",
    "error": null,
    "simulated": true
   },
   {
    "seq": 7,
    "at": "2026-11-16T09:45:12+00:00",
-   "op": "email.send",
+   "op": "calendar.create_event",
    "status": "executed",
-   "object_id": "sent-office-meridian-7",
+   "object_id": "evt-office-meridian-7",
    "error": null,
    "simulated": true
   },
   {
    "seq": 8,
+   "at": "2026-11-16T09:45:12+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-8",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 9,
    "at": "2026-11-16T12:00:30+00:00",
    "op": "calendar.cancel_event",
    "status": "executed",
@@ -694,11 +717,11 @@
    "simulated": true
   },
   {
-   "seq": 9,
+   "seq": 10,
    "at": "2026-11-16T12:00:30+00:00",
    "op": "email.send",
    "status": "executed",
-   "object_id": "sent-office-meridian-8",
+   "object_id": "sent-office-meridian-9",
    "error": null,
    "simulated": true
   }

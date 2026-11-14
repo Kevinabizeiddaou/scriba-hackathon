@@ -9,10 +9,10 @@
  "executive": "attentive",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "9f67ba0902a8a133",
+ "replayFingerprint": "f944c95b9d2d2b14",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -30,28 +30,27 @@
   },
   "outcomes": {
    "byVerdict": {
-    "correct": 5,
+    "correct": 6,
     "correct_escalation": 1,
-    "declined": 1,
-    "partial": 1
+    "declined": 1
    },
-   "completedCorrectly": 5,
+   "completedCorrectly": 6,
    "correctlyHandedToExecutive": 1,
    "declinedByExecutive": 1,
    "completedAfterHumanCorrection": 0,
-   "partlyCompleted": 1,
+   "partlyCompleted": 0,
    "leftForHuman": 0,
    "incorrect": 0,
    "incorrectRequests": []
   },
   "verifiedWork": {
    "calendarChanges": 4,
-   "emailReplies": 4,
+   "emailReplies": 5,
    "tasksAndReminders": 1,
    "byKind": {
     "calendar event cancelled": 1,
     "calendar event created": 3,
-    "confirmation reply": 3,
+    "confirmation reply": 4,
     "reply offering times": 1,
     "task created": 1
    },
@@ -63,7 +62,7 @@
    "actionsFailedAtEndOfDay": 0,
    "providerFailuresInjectedAndHit": 0,
    "outcomesUnknownAtEndOfDay": 0,
-   "executedButNotVerifiedByDesk": 1,
+   "executedButNotVerifiedByDesk": 0,
    "invariantViolations": 0,
    "backendErrors": 0,
    "checksFailed": 2,
@@ -72,16 +71,15 @@
   "human": {
    "decisions": 11,
    "byCategory": {
-    "approval": 7,
-    "corrective_rejection": 1,
+    "approval": 8,
     "preference_edit": 2,
     "preference_rejection": 1
    },
-   "mandatoryApprovals": 7,
+   "mandatoryApprovals": 8,
    "preferenceRejections": 1,
    "preferenceEdits": 2,
    "manualCorrections": 0,
-   "manualRescues": 1,
+   "manualRescues": 0,
    "missingInformationSupplied": 0,
    "recoveryRetries": 0,
    "fullTakeovers": 0,
@@ -89,8 +87,8 @@
   },
   "autonomy": {
    "actionableRequests": 8,
-   "handledWithApprovalsOnly": 7,
-   "rate": 0.875,
+   "handledWithApprovalsOnly": 8,
+   "rate": 1.0,
    "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
   },
   "outstanding": {
@@ -108,14 +106,14 @@
    ],
    "openTasks": 4,
    "runsAwaitingApproval": 0,
-   "runsHandedToExecutive": 2
+   "runsHandedToExecutive": 1
   },
   "time": {
-   "wallSecondsForWholeDay": 12.2,
+   "wallSecondsForWholeDay": 13.48,
    "apiCalls": 236,
-   "intakePassMsMedian": 16,
-   "intakePassMsMax": 46,
-   "executionMsTotal": 8058,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 32,
+   "executionMsTotal": 10030,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -263,12 +261,8 @@
     "confirm": true,
     "withinWorkingHours": true
    },
-   "verdict": "partial",
-   "notes": [
-    "the event is on the calendar as approved, but the Desk reports it as NOT verified (start_differs)",
-    "the meeting is booked",
-    "no confirmation was sent to the requester (the executive stopped a wrong one: the confirmation states a time that is not the time on the calendar)"
-   ],
+   "verdict": "correct",
+   "notes": [],
    "evidence": [
     {
      "what": "calendar event created",
@@ -276,7 +270,20 @@
      "toolCallId": 91,
      "tool": "create_calendar_event",
      "status": "executed",
-     "verifiedByDesk": false,
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 74,
+     "toolCallId": 97,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
      "verificationMethod": "sandbox_readback",
      "attempts": 1,
      "approvedBy": [
@@ -285,14 +292,12 @@
     }
    ],
    "parts": [],
-   "unverifiedActions": [
-    91
-   ],
+   "unverifiedActions": [],
    "runIds": [
     74
    ],
    "stages": [
-    "ESCALATED"
+    "COMPLETED"
    ]
   },
   "human_in_loop-jonas-catchup": {
@@ -309,8 +314,8 @@
    "evidence": [
     {
      "what": "reply offering times",
-     "runId": 100,
-     "toolCallId": 115,
+     "runId": 102,
+     "toolCallId": 117,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -324,7 +329,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    100
+    102
    ],
    "stages": [
     "COMPLETED"
@@ -352,8 +357,8 @@
    "evidence": [
     {
      "what": "calendar event created",
-     "runId": 121,
-     "toolCallId": 138,
+     "runId": 123,
+     "toolCallId": 140,
      "tool": "create_calendar_event",
      "status": "executed",
      "verifiedByDesk": true,
@@ -365,8 +370,8 @@
     },
     {
      "what": "confirmation reply",
-     "runId": 121,
-     "toolCallId": 144,
+     "runId": 123,
+     "toolCallId": 146,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -380,7 +385,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    121
+    123
    ],
    "stages": [
     "COMPLETED"
@@ -401,8 +406,8 @@
    "evidence": [
     {
      "what": "calendar event cancelled",
-     "runId": 157,
-     "toolCallId": 172,
+     "runId": 159,
+     "toolCallId": 174,
      "tool": "cancel_calendar_event",
      "status": "executed",
      "verifiedByDesk": true,
@@ -414,8 +419,8 @@
     },
     {
      "what": "confirmation reply",
-     "runId": 157,
-     "toolCallId": 177,
+     "runId": 159,
+     "toolCallId": 179,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -429,7 +434,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    157
+    159
    ],
    "stages": [
     "COMPLETED"
@@ -448,7 +453,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    182
+    184
    ],
    "stages": [
     "ESCALATED"
@@ -556,19 +561,19 @@
    "tool": "send_email",
    "purpose": "confirm",
    "mode": "attentive",
-   "decision": "reject",
-   "category": "corrective_rejection",
-   "why": "the confirmation states a time that is not the time on the calendar",
-   "countsAgainstAutonomy": true,
+   "decision": "approve",
+   "category": "approval",
+   "why": "it confirms the calendar change that was just made",
+   "countsAgainstAutonomy": false,
    "stepId": "human_in_loop-04",
    "at": "2026-11-16T10:00:31+01:00",
-   "result": "cancelled",
+   "result": "executed",
    "error": null,
    "errorCode": null
   },
   {
-   "toolCallId": 115,
-   "runId": 100,
+   "toolCallId": 117,
+   "runId": 102,
    "requestId": "human_in_loop-jonas-catchup",
    "tool": "send_email",
    "purpose": "clarify",
@@ -584,8 +589,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 138,
-   "runId": 121,
+   "toolCallId": 140,
+   "runId": 123,
    "requestId": "human_in_loop-jonas-picks",
    "tool": "create_calendar_event",
    "purpose": "book",
@@ -601,8 +606,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 144,
-   "runId": 121,
+   "toolCallId": 146,
+   "runId": 123,
    "requestId": "human_in_loop-jonas-picks",
    "tool": "send_email",
    "purpose": "confirm",
@@ -618,8 +623,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 172,
-   "runId": 157,
+   "toolCallId": 174,
+   "runId": 159,
    "requestId": "human_in_loop-tomas-cancel",
    "tool": "cancel_calendar_event",
    "purpose": "cancel",
@@ -635,8 +640,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 177,
-   "runId": 157,
+   "toolCallId": 179,
+   "runId": 159,
    "requestId": "human_in_loop-tomas-cancel",
    "tool": "send_email",
    "purpose": "confirm",
@@ -710,7 +715,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 280
+   "wallMs": 235
   },
   {
    "id": "human_in_loop-02",
@@ -730,7 +735,7 @@
    "runsOpened": [
     31
    ],
-   "wallMs": 202
+   "wallMs": 250
   },
   {
    "id": "human_in_loop-03",
@@ -750,7 +755,7 @@
    "runsOpened": [
     47
    ],
-   "wallMs": 2344
+   "wallMs": 2264
   },
   {
    "id": "human_in_loop-04",
@@ -770,7 +775,7 @@
    "runsOpened": [
     74
    ],
-   "wallMs": 328
+   "wallMs": 2344
   },
   {
    "id": "human_in_loop-05",
@@ -789,9 +794,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    100
+    102
    ],
-   "wallMs": 2390
+   "wallMs": 2280
   },
   {
    "id": "human_in_loop-06",
@@ -811,9 +816,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    121
+    123
    ],
-   "wallMs": 2500
+   "wallMs": 2422
   },
   {
    "id": "human_in_loop-07",
@@ -835,7 +840,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 344
+   "wallMs": 265
   },
   {
    "id": "human_in_loop-08",
@@ -853,9 +858,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    157
+    159
    ],
-   "wallMs": 2640
+   "wallMs": 2436
   },
   {
    "id": "human_in_loop-09",
@@ -873,9 +878,9 @@
    "checks": [],
    "opened": 1,
    "runsOpened": [
-    182
+    184
    ],
-   "wallMs": 327
+   "wallMs": 313
   },
   {
    "id": "human_in_loop-10",
@@ -921,13 +926,13 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 266
+   "wallMs": 250
   }
  ],
  "gate": {
   "held": 0,
-  "sandboxExecutions": 9,
+  "sandboxExecutions": 10,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:40:57+00:00"
+ "generatedAt": "2026-11-14T11:19:37+00:00"
 }

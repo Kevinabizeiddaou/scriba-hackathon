@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `trusting` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `4dde71ca60cce3f8`
+- Replay fingerprint: `4ba98bf22dd3ed30`
 
 ## Result
 
@@ -33,9 +33,9 @@
 | Mon 08:30 | Ingrid Solberg | Our sync and the term sheet | move evt-bluewater-sync to Fri 20 Nov 11:00, confirm AND task about term sheet, due 2026-11-18 | **INCORRECT**<br>part 1 (reschedule): missed: moving the meeting was needed and the Desk decided nothing was; part 2 (task): missed: the task was needed and the Desk decided nothing was; unexpected action took effect: send_email (offer_times) | run 11 WAITING_FOR_RESPONSE |  |
 | Mon 09:30 | Daniel Okafor | Pricing annex | book Thu 19 Nov 11:00 with daniel.okafor@atlaspharma.example on google:meridianfreight.example, confirm | **Done correctly** | run 33 COMPLETED | calendar event created: action 50 (executed, Desk-verified); confirmation reply: action 55 (executed, Desk-verified) |
 | Mon 10:30 | Mei Tanaka | Cold-chain lanes: intro call | propose create_calendar_event; the executive declines; write nothing | **Declined by the executive** | run 60 CANCELLED |  |
-| Mon 11:30 | Greta Lindqvist | Next steps after the review | book Fri 20 Nov 15:00 with greta.lindqvist@nordlicht-retail.example on google:meridianfreight.example, confirm AND task about Q1 volumes/volumes, due 2026-11-19 | **INCORRECT**<br>part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was; part 2 (task): missed: the task was needed and the Desk decided nothing was; unexpected action took effect: send_email (clarify) | run 81 WAITING_FOR_RESPONSE |  |
-| Mon 13:00 | Omar Haddad | Budget review prep | book Mon 16 Nov 16:00 with omar.haddad@meridianfreight.example on google:meridianfreight.example, confirm AND reminder about headcount OR task about headcount, due 2026-11-16 | **INCORRECT**<br>part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was; part 2 (reminder): missed: the reminder was needed and the Desk decided nothing was; unexpected action took effect: send_email (clarify) | run 102 WAITING_FOR_RESPONSE |  |
-| Mon 14:30 | Tomas Vega | Friday's renewal call | move evt-insurance-renewal to Mon 23 Nov 10:00, confirm OR cancel evt-insurance-renewal, confirm AND book Mon 23 Nov 10:00 with tomas.vega@kestrelinsurance.example on google:meridianfreight.example, confirm | **Partly done**<br>part 1 (cancel): correct; part 2 (schedule): missed: the meeting was needed and the Desk decided nothing was | run 123 COMPLETED | calendar event cancelled: action 138 (executed, Desk-verified); confirmation reply: action 143 (executed, Desk-verified) |
+| Mon 11:30 | Greta Lindqvist | Next steps after the review | book Fri 20 Nov 15:00 with greta.lindqvist@nordlicht-retail.example on google:meridianfreight.example, confirm AND task about Q1 volumes/volumes, due 2026-11-19 | **INCORRECT**<br>part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was; part 2 (task): missed: the task was needed and the Desk decided nothing was; unexpected action took effect: send_email (offer_times) | run 81 WAITING_FOR_RESPONSE |  |
+| Mon 13:00 | Omar Haddad | Budget review prep | book Mon 16 Nov 16:00 with omar.haddad@meridianfreight.example on google:meridianfreight.example, confirm AND reminder about headcount OR task about headcount, due 2026-11-16 | **INCORRECT**<br>part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was; part 2 (reminder): missed: the reminder was needed and the Desk decided nothing was; unexpected action took effect: send_email (offer_times) | run 104 WAITING_FOR_RESPONSE |  |
+| Mon 14:30 | Tomas Vega | Friday's renewal call | move evt-insurance-renewal to Mon 23 Nov 10:00, confirm OR cancel evt-insurance-renewal, confirm AND book Mon 23 Nov 10:00 with tomas.vega@kestrelinsurance.example on google:meridianfreight.example, confirm | **Partly done**<br>part 1 (cancel): correct; part 2 (schedule): missed: the meeting was needed and the Desk decided nothing was | run 127 COMPLETED | calendar event cancelled: action 142 (executed, Desk-verified); confirmation reply: action 147 (executed, Desk-verified) |
 
 ## Human decisions
 
@@ -47,10 +47,10 @@
 | compound-02 | create_calendar_event (book) #50 | approve | unreviewed_approval | executed | approved without review |
 | compound-02 | send_email (confirm) #55 | approve | unreviewed_approval | executed | approved without review |
 | compound-03 | create_calendar_event (book) #77 | reject | preference_rejection | cancelled | The executive will be travelling that afternoon. |
-| compound-04 | send_email (clarify) #96 | approve | unreviewed_approval | executed | approved without review |
-| compound-05 | send_email (clarify) #117 | approve | unreviewed_approval | executed | approved without review |
-| compound-06 | cancel_calendar_event (cancel) #138 | approve | unreviewed_approval | executed | approved without review |
-| compound-06 | send_email (confirm) #143 | approve | unreviewed_approval | executed | approved without review |
+| compound-04 | send_email (offer_times) #98 | approve | unreviewed_approval | executed | approved without review |
+| compound-05 | send_email (offer_times) #121 | approve | unreviewed_approval | executed | approved without review |
+| compound-06 | cancel_calendar_event (cancel) #142 | approve | unreviewed_approval | executed | approved without review |
+| compound-06 | send_email (confirm) #147 | approve | unreviewed_approval | executed | approved without review |
 
 ## Checks
 
@@ -122,7 +122,7 @@ At Mon 16:30: "6 meeting requests, 0 messages need a reply, 3 meetings today, 0 
 
 ## Time and cost
 
-- The whole day ran in 12.41 s of real time (165 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 12.25 s of real time (165 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement

@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `attentive` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `fa283cbe9180e5f8`
+- Replay fingerprint: `53b9770f686bf275`
 
 ## Result
 
@@ -34,8 +34,8 @@
 | Mon 09:30 | Daniel Okafor | Pricing annex | book Thu 19 Nov 11:00 with daniel.okafor@atlaspharma.example on google:meridianfreight.example, confirm | **Done correctly** | run 30 COMPLETED | calendar event created: action 47 (executed, Desk-verified); confirmation reply: action 52 (executed, Desk-verified) |
 | Mon 10:30 | Mei Tanaka | Cold-chain lanes: intro call | propose create_calendar_event; the executive declines; write nothing | **Declined by the executive** | run 57 CANCELLED |  |
 | Mon 11:30 | Greta Lindqvist | Next steps after the review | book Fri 20 Nov 15:00 with greta.lindqvist@nordlicht-retail.example on google:meridianfreight.example, confirm AND task about Q1 volumes/volumes, due 2026-11-19 | **Wrong proposal stopped by the executive**<br>part 1 (schedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs; part 2 (task): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs | run 78 CANCELLED |  |
-| Mon 13:00 | Omar Haddad | Budget review prep | book Mon 16 Nov 16:00 with omar.haddad@meridianfreight.example on google:meridianfreight.example, confirm AND reminder about headcount OR task about headcount, due 2026-11-16 | **Wrong proposal stopped by the executive**<br>part 1 (schedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs; part 2 (reminder): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs | run 96 CANCELLED |  |
-| Mon 14:30 | Tomas Vega | Friday's renewal call | move evt-insurance-renewal to Mon 23 Nov 10:00, confirm OR cancel evt-insurance-renewal, confirm AND book Mon 23 Nov 10:00 with tomas.vega@kestrelinsurance.example on google:meridianfreight.example, confirm | **Partly done**<br>part 1 (cancel): correct; part 2 (schedule): missed: the meeting was needed and the Desk decided nothing was | run 114 COMPLETED | calendar event cancelled: action 129 (executed, Desk-verified); confirmation reply: action 134 (executed, Desk-verified) |
+| Mon 13:00 | Omar Haddad | Budget review prep | book Mon 16 Nov 16:00 with omar.haddad@meridianfreight.example on google:meridianfreight.example, confirm AND reminder about headcount OR task about headcount, due 2026-11-16 | **Wrong proposal stopped by the executive**<br>part 1 (schedule): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs; part 2 (reminder): rescued: the executive rejected a wrong proposal: the message names a time that is free, so a reply offering other times is not what it needs | run 98 CANCELLED |  |
+| Mon 14:30 | Tomas Vega | Friday's renewal call | move evt-insurance-renewal to Mon 23 Nov 10:00, confirm OR cancel evt-insurance-renewal, confirm AND book Mon 23 Nov 10:00 with tomas.vega@kestrelinsurance.example on google:meridianfreight.example, confirm | **Partly done**<br>part 1 (cancel): correct; part 2 (schedule): missed: the meeting was needed and the Desk decided nothing was | run 118 COMPLETED | calendar event cancelled: action 133 (executed, Desk-verified); confirmation reply: action 138 (executed, Desk-verified) |
 
 ## Human decisions
 
@@ -47,10 +47,10 @@
 | compound-02 | create_calendar_event (book) #47 | approve | approval | executed | the meeting, the time, the people and the calendar are right |
 | compound-02 | send_email (confirm) #52 | approve | approval | executed | it confirms the calendar change that was just made |
 | compound-03 | create_calendar_event (book) #74 | reject | preference_rejection | cancelled | The executive will be travelling that afternoon. |
-| compound-04 | send_email (clarify) #93 | reject | corrective_rejection **(counts against autonomy)** | cancelled | the message names a time that is free, so a reply offering other times is not what it needs |
-| compound-05 | send_email (clarify) #111 | reject | corrective_rejection **(counts against autonomy)** | cancelled | the message names a time that is free, so a reply offering other times is not what it needs |
-| compound-06 | cancel_calendar_event (cancel) #129 | approve | approval | executed | the right meeting is cancelled |
-| compound-06 | send_email (confirm) #134 | approve | approval | executed | it confirms the calendar change that was just made |
+| compound-04 | send_email (offer_times) #95 | reject | corrective_rejection **(counts against autonomy)** | cancelled | the message names a time that is free, so a reply offering other times is not what it needs |
+| compound-05 | send_email (offer_times) #115 | reject | corrective_rejection **(counts against autonomy)** | cancelled | the message names a time that is free, so a reply offering other times is not what it needs |
+| compound-06 | cancel_calendar_event (cancel) #133 | approve | approval | executed | the right meeting is cancelled |
+| compound-06 | send_email (confirm) #138 | approve | approval | executed | it confirms the calendar change that was just made |
 
 ## Checks
 
@@ -116,7 +116,7 @@ At Mon 16:30: "6 meeting requests, 0 messages need a reply, 3 meetings today, 0 
 
 ## Time and cost
 
-- The whole day ran in 6.3 s of real time (165 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 7.0 s of real time (165 API calls). Median intake pass: 30 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement

@@ -17,7 +17,7 @@
    {
     "case": "replaying a complete day reproduces it",
     "status": "pass",
-    "detail": "105 log entries each; fingerprints bbe9e922fb71b42a and bbe9e922fb71b42a",
+    "detail": "105 log entries each; fingerprints 3732999aac460e3f and 3732999aac460e3f",
     "variance": {
      "entriesCompared": 105,
      "entriesDiffering": 0
@@ -31,7 +31,7 @@
    {
     "case": "another seed: the same office, other arrival seconds and counterpart choices",
     "status": "pass",
-    "detail": "world 1f74da2c66f545e8 (same); replay 799d83e5f4ca203c (different, as expected); verdicts that changed with the seed: none",
+    "detail": "world 1f74da2c66f545e8 (same); replay b65e4c46f99a9cfc (different, as expected); verdicts that changed with the seed: none",
     "variance": {
      "verdictsChangedWithSeed": []
     }

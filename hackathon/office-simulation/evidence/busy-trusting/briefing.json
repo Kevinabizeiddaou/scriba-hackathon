@@ -75,7 +75,7 @@
    "meetings_today": [
     {
      "event_id": null,
-     "title": "Nordlicht quarterly review",
+     "title": "Leadership stand-up",
      "start_time": null,
      "end_time": null,
      "provider": "google",
@@ -86,7 +86,7 @@
     },
     {
      "event_id": null,
-     "title": "Follow-up after the review",
+     "title": "Nordlicht quarterly review",
      "start_time": null,
      "end_time": null,
      "provider": "google",
@@ -117,13 +117,13 @@
      "effective_priority": null
     },
     {
-     "id": "task-office-meridian-4",
+     "id": "task-office-meridian-3",
      "title": "Bank covenant certificate",
      "due_at": "2026-11-16T16:00:00+01:00",
      "effective_priority": null
     },
     {
-     "id": "task-office-meridian-10",
+     "id": "task-office-meridian-8",
      "title": "Customs audit notice: response due tomorrow",
      "due_at": "2026-11-17T12:00:00+01:00",
      "effective_priority": null

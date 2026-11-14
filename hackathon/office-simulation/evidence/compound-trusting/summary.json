@@ -9,10 +9,10 @@
  "executive": "trusting",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "4dde71ca60cce3f8",
+ "replayFingerprint": "4ba98bf22dd3ed30",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -126,10 +126,10 @@
    "runsHandedToExecutive": 0
   },
   "time": {
-   "wallSecondsForWholeDay": 12.41,
+   "wallSecondsForWholeDay": 12.25,
    "apiCalls": 165,
    "intakePassMsMedian": 15,
-   "intakePassMsMax": 30,
+   "intakePassMsMax": 32,
    "executionMsTotal": 10030,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
@@ -307,7 +307,7 @@
    "notes": [
     "part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was",
     "part 2 (task): missed: the task was needed and the Desk decided nothing was",
-    "unexpected action took effect: send_email (clarify)"
+    "unexpected action took effect: send_email (offer_times)"
    ],
    "evidence": [],
    "parts": [
@@ -374,7 +374,7 @@
    "notes": [
     "part 1 (schedule): missed: the meeting was needed and the Desk decided nothing was",
     "part 2 (reminder): missed: the reminder was needed and the Desk decided nothing was",
-    "unexpected action took effect: send_email (clarify)"
+    "unexpected action took effect: send_email (offer_times)"
    ],
    "evidence": [],
    "parts": [
@@ -389,7 +389,7 @@
    ],
    "unverifiedActions": [],
    "runIds": [
-    102
+    104
    ],
    "stages": [
     "WAITING_FOR_RESPONSE"
@@ -446,8 +446,8 @@
    "evidence": [
     {
      "what": "calendar event cancelled",
-     "runId": 123,
-     "toolCallId": 138,
+     "runId": 127,
+     "toolCallId": 142,
      "tool": "cancel_calendar_event",
      "status": "executed",
      "verifiedByDesk": true,
@@ -459,8 +459,8 @@
     },
     {
      "what": "confirmation reply",
-     "runId": 123,
-     "toolCallId": 143,
+     "runId": 127,
+     "toolCallId": 147,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -483,7 +483,7 @@
    ],
    "unverifiedActions": [],
    "runIds": [
-    123
+    127
    ],
    "stages": [
     "COMPLETED"
@@ -561,11 +561,11 @@
    "errorCode": null
   },
   {
-   "toolCallId": 96,
+   "toolCallId": 98,
    "runId": 81,
    "requestId": "compound-greta-next-steps",
    "tool": "send_email",
-   "purpose": "clarify",
+   "purpose": "offer_times",
    "mode": "trusting",
    "decision": "approve",
    "category": "unreviewed_approval",
@@ -578,11 +578,11 @@
    "errorCode": null
   },
   {
-   "toolCallId": 117,
-   "runId": 102,
+   "toolCallId": 121,
+   "runId": 104,
    "requestId": "compound-omar-prep",
    "tool": "send_email",
-   "purpose": "clarify",
+   "purpose": "offer_times",
    "mode": "trusting",
    "decision": "approve",
    "category": "unreviewed_approval",
@@ -595,8 +595,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 138,
-   "runId": 123,
+   "toolCallId": 142,
+   "runId": 127,
    "requestId": "compound-tomas-rebook",
    "tool": "cancel_calendar_event",
    "purpose": "cancel",
@@ -612,8 +612,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 143,
-   "runId": 123,
+   "toolCallId": 147,
+   "runId": 127,
    "requestId": "compound-tomas-rebook",
    "tool": "send_email",
    "purpose": "confirm",
@@ -702,7 +702,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 2139
+   "wallMs": 2295
   },
   {
    "id": "compound-02",
@@ -729,7 +729,7 @@
    "runsOpened": [
     33
    ],
-   "wallMs": 2266
+   "wallMs": 2282
   },
   {
    "id": "compound-03",
@@ -762,7 +762,7 @@
    "runsOpened": [
     60
    ],
-   "wallMs": 344
+   "wallMs": 327
   },
   {
    "id": "compound-04",
@@ -784,7 +784,7 @@
    "runsOpened": [
     81
    ],
-   "wallMs": 2296
+   "wallMs": 2264
   },
   {
    "id": "compound-05",
@@ -804,9 +804,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    102
+    104
    ],
-   "wallMs": 2311
+   "wallMs": 2219
   },
   {
    "id": "compound-06",
@@ -825,9 +825,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    123
+    127
    ],
-   "wallMs": 2422
+   "wallMs": 2265
   },
   {
    "id": "compound-07",
@@ -873,7 +873,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 233
+   "wallMs": 219
   }
  ],
  "gate": {
@@ -881,5 +881,5 @@
   "sandboxExecutions": 7,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:34:26+00:00"
+ "generatedAt": "2026-11-14T11:12:59+00:00"
 }

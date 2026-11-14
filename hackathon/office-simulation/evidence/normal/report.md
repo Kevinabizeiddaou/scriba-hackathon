@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `attentive` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `bbe9e922fb71b42a`
+- Replay fingerprint: `3732999aac460e3f`
 
 ## Result
 
@@ -95,7 +95,7 @@ No violation.
 - Insurance renewal call (evt-insurance-renewal), was Fri 20 Nov 10:00
 
 **Tasks recorded:** 2
-- Q3 board pack (due 2026-11-19T17:00:00+01:00, priority low)
+- Q3 board pack (due 2026-11-19T09:00:00+01:00, priority low)
 - URGENT: Rotterdam settlement offer expires today (due 2026-11-16T17:00:00+01:00, priority high)
 
 **Mail sent:** 5
@@ -134,7 +134,7 @@ At Mon 16:30: "7 meeting requests, 1 message needs a reply, 4 meetings today, 0 
 
 ## Time and cost
 
-- The whole day ran in 14.09 s of real time (294 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 14.88 s of real time (294 API calls). Median intake pass: 31 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement

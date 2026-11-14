@@ -9,10 +9,10 @@
  "executive": "attentive",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "b9e47451020e7d38",
+ "replayFingerprint": "7edb9e01988201f7",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -118,14 +118,14 @@
    ],
    "openTasks": 4,
    "runsAwaitingApproval": 0,
-   "runsHandedToExecutive": 2
+   "runsHandedToExecutive": 1
   },
   "time": {
-   "wallSecondsForWholeDay": 28.25,
+   "wallSecondsForWholeDay": 26.34,
    "apiCalls": 436,
-   "intakePassMsMedian": 16,
-   "intakePassMsMax": 109,
-   "executionMsTotal": 16123,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 63,
+   "executionMsTotal": 16014,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -597,7 +597,7 @@
     245
    ],
    "stages": [
-    "ESCALATED"
+    "COMPLETED"
    ]
   },
   "unreliable-hannah-interrupted": {
@@ -1155,7 +1155,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 217
+   "wallMs": 170
   },
   {
    "id": "unreliable-03",
@@ -1170,7 +1170,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 140
+   "wallMs": 125
   },
   {
    "id": "unreliable-04",
@@ -1192,7 +1192,7 @@
    "runsOpened": [
     28
    ],
-   "wallMs": 2453
+   "wallMs": 2329
   },
   {
    "id": "unreliable-05",
@@ -1209,7 +1209,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 155
+   "wallMs": 139
   },
   {
    "id": "unreliable-06",
@@ -1230,7 +1230,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 140
+   "wallMs": 155
   },
   {
    "id": "unreliable-07",
@@ -1245,7 +1245,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 328
+   "wallMs": 172
   },
   {
    "id": "unreliable-08",
@@ -1264,7 +1264,7 @@
    "runsOpened": [
     70
    ],
-   "wallMs": 2484
+   "wallMs": 2515
   },
   {
    "id": "unreliable-09",
@@ -1290,7 +1290,7 @@
    "runsOpened": [
     102
    ],
-   "wallMs": 2703
+   "wallMs": 2484
   },
   {
    "id": "unreliable-10",
@@ -1317,7 +1317,7 @@
    "runsOpened": [
     130
    ],
-   "wallMs": 2608
+   "wallMs": 2406
   },
   {
    "id": "unreliable-11",
@@ -1344,7 +1344,7 @@
    "runsOpened": [
     155
    ],
-   "wallMs": 4780
+   "wallMs": 4514
   },
   {
    "id": "unreliable-12",
@@ -1359,7 +1359,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 2328
+   "wallMs": 2265
   },
   {
    "id": "unreliable-13",
@@ -1385,7 +1385,7 @@
    "runsOpened": [
     191
    ],
-   "wallMs": 2782
+   "wallMs": 2578
   },
   {
    "id": "unreliable-14",
@@ -1407,7 +1407,7 @@
    "runsOpened": [
     218
    ],
-   "wallMs": 2561
+   "wallMs": 2500
   },
   {
    "id": "unreliable-15",
@@ -1427,7 +1427,7 @@
    "runsOpened": [
     245
    ],
-   "wallMs": 405
+   "wallMs": 344
   },
   {
    "id": "unreliable-16",
@@ -1449,7 +1449,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 359
+   "wallMs": 342
   },
   {
    "id": "unreliable-17",
@@ -1475,7 +1475,7 @@
    "runsOpened": [
     262
    ],
-   "wallMs": 2734
+   "wallMs": 2500
   },
   {
    "id": "unreliable-18",
@@ -1521,7 +1521,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 359
+   "wallMs": 266
   }
  ],
  "gate": {
@@ -1529,5 +1529,5 @@
   "sandboxExecutions": 20,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:40:36+00:00"
+ "generatedAt": "2026-11-14T11:19:15+00:00"
 }

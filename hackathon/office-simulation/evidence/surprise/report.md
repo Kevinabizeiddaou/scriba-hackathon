@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `attentive` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `2838b6af22bbebec`
+- Replay fingerprint: `ee7290c19cdcaef6`
 
 ## Result
 
@@ -16,15 +16,15 @@
 | | Count |
 | --- | --- |
 | Actionable requests the Desk opened a run for | 13 of 15 |
-| Completed correctly (verified in the world) | 3 |
+| Completed correctly (verified in the world) | 2 |
 | Correctly handed to the executive | 4 |
 | Declined by the executive (her own choice) | 1 |
 | Completed only after a human correction | 1 |
 | Partly completed | 0 |
-| Left for a human to do | 6 |
+| Left for a human to do | 7 |
 | Incorrect (something wrong took effect) | 0 |
 | Messages needing nothing, correctly left alone | 1 of 1 |
-| **Handled with approvals only** | **8 of 15 (53%)** |
+| **Handled with approvals only** | **7 of 15 (47%)** |
 
 ## Every message, and the evidence
 
@@ -42,26 +42,24 @@
 | Mon 12:00 | Jonas Weber | quick question | nothing OR hand to the executive (Nothing can be read from an empty message.) | **Nothing needed, nothing done** | no run |  |
 | Mon 12:30 | Omar Haddad | Regional cost review and one approval | task about fuel surcharge/surcharge/cost review, due 2026-11-20 | **Done correctly** | run 104 COMPLETED | task created: action 114 (executed, Desk-verified) |
 | Mon 13:00 | Mei Tanaka | Wednesday | hand to the executive (The sender is on no meeting: there is nothing to cancel.) | **Correctly handed to the executive** | run 119 NEEDS_CLARIFICATION |  |
-| Mon 13:05 | Mei Tanaka | Re: Wednesday | book Wed 18 Nov 14:00 with mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Done correctly** | run 134 COMPLETED | calendar event created: action 151 (executed, Desk-verified); confirmation reply: action 156 (executed, Desk-verified) |
-| Mon 14:00 | Greta Lindqvist | This morning | book nothing; offer free times to greta.lindqvist@nordlicht-retail.example (no_time_given) OR hand to the executive (The time is already past: nothing may be booked.) | **Wrong proposal stopped by the executive**<br>the executive rejected a wrong proposal: it offers a meeting starting 2026-11-16T14:00:43+01:00, which is the moment the reply is written or earlier | run 161 CANCELLED |  |
-| Mon 14:30 | Nora Aziz | Weekend working session | propose create_calendar_event; the executive declines; write nothing | **Declined by the executive** | run 179 CANCELLED |  |
-| Mon 15:00 | Jonas Weber | Pricing with Mei | book Thu 19 Nov 16:00 with jonas.weber@meridianfreight.example, mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Done after a human correction**<br>the executive had to correct the proposal before approving it | run 199 COMPLETED | calendar event created: action 216 (executed, Desk-verified); confirmation reply: action 222 (executed, Desk-verified) |
+| Mon 13:05 | Mei Tanaka | Re: Wednesday | book Wed 18 Nov 14:00 with mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Not done; handed over safely**<br>the meeting was not done; the Desk handed it over (conflicting_instructions) | run 134 ESCALATED |  |
+| Mon 14:00 | Greta Lindqvist | This morning | book nothing; offer free times to greta.lindqvist@nordlicht-retail.example (no_time_given) OR hand to the executive (The time is already past: nothing may be booked.) | **Wrong proposal stopped by the executive**<br>the executive rejected a wrong proposal: it offers a meeting starting 2026-11-16T14:00:43+01:00, which is the moment the reply is written or earlier | run 146 CANCELLED |  |
+| Mon 14:30 | Nora Aziz | Weekend working session | propose create_calendar_event; the executive declines; write nothing | **Declined by the executive** | run 164 CANCELLED |  |
+| Mon 15:00 | Jonas Weber | Pricing with Mei | book Thu 19 Nov 16:00 with jonas.weber@meridianfreight.example, mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Done after a human correction**<br>the executive had to correct the proposal before approving it | run 184 COMPLETED | calendar event created: action 201 (executed, Desk-verified); confirmation reply: action 207 (executed, Desk-verified) |
 
 ## Human decisions
 
-9 decisions: 5 approvals, 1 rejections and 0 edits by the executive's own choice, 1 corrections and 2 rescues of a wrong proposal, 0 proposals completed by hand, 0 retries after a provider failure. 6 requests were left for a human to do.
+7 decisions: 3 approvals, 1 rejections and 0 edits by the executive's own choice, 1 corrections and 2 rescues of a wrong proposal, 0 proposals completed by hand, 0 retries after a provider failure. 7 requests were left for a human to do.
 
 | Step | Action | Decision | Category | Result | Why |
 | --- | --- | --- | --- | --- | --- |
 | surprise-04 | send_email (clarify) #62 | approve | approval | executed | it offers only times that are really free |
 | surprise-05 | send_email (clarify) #83 | reject | corrective_rejection **(counts against autonomy)** | cancelled | it offers a meeting starting 2026-11-16T09:30:24+01:00, which is the moment the reply is written or earlier |
 | surprise-11 | create_task (record_task) #114 | approve | approval | executed | the task and its deadline are right |
-| surprise-13 | create_calendar_event (book) #151 | approve | approval | executed | the meeting, the time, the people and the calendar are right |
-| surprise-13 | send_email (confirm) #156 | approve | approval | executed | it confirms the calendar change that was just made |
-| surprise-14 | send_email (clarify) #176 | reject | corrective_rejection **(counts against autonomy)** | cancelled | it offers a meeting starting 2026-11-16T14:00:43+01:00, which is the moment the reply is written or earlier |
-| surprise-15 | create_calendar_event (book) #196 | reject | preference_rejection | cancelled | The executive does not take meetings at the weekend. |
-| surprise-16 | create_calendar_event (book) #216 | approve with {"attendees": ["jonas.weber@meridianfreight.example", "mei.tanaka@brightwavefoods.example"], "desk_confirmed_recipients": ["mei.tanaka@brightwavefoods.example"]} | corrective_edit **(counts against autonomy)** | executed | mei.tanaka@brightwavefoods.example should be invited too |
-| surprise-16 | send_email (confirm) #222 | approve | approval | executed | it confirms the calendar change that was just made |
+| surprise-14 | send_email (clarify) #161 | reject | corrective_rejection **(counts against autonomy)** | cancelled | it offers a meeting starting 2026-11-16T14:00:43+01:00, which is the moment the reply is written or earlier |
+| surprise-15 | create_calendar_event (book) #181 | reject | preference_rejection | cancelled | The executive does not take meetings at the weekend. |
+| surprise-16 | create_calendar_event (book) #201 | approve with {"attendees": ["jonas.weber@meridianfreight.example", "mei.tanaka@brightwavefoods.example"], "desk_confirmed_recipients": ["mei.tanaka@brightwavefoods.example"]} | corrective_edit **(counts against autonomy)** | executed | mei.tanaka@brightwavefoods.example should be invited too |
+| surprise-16 | send_email (confirm) #207 | approve | approval | executed | it confirms the calendar change that was just made |
 
 ## Checks
 
@@ -71,7 +69,7 @@
 | surprise-17 | briefing_meetings_today_match_calendar | pass | briefing says 3, the calendars hold 3 |
 | surprise-17 | briefing_open_tasks_match_task_list | pass | briefing says 4, the task list holds 4 |
 | surprise-17 | briefing_built_on_complete_inbox | pass | inbox_complete=True, unavailable=[] |
-| surprise-17 | briefing_reports_handled_work | **FAIL** | 4 runs executed something today; the briefing has no section for work that was done |
+| surprise-17 | briefing_reports_handled_work | **FAIL** | 3 runs executed something today; the briefing has no section for work that was done |
 | surprise-17 | briefing_reports_awaited_replies | **FAIL** | 3 replies are awaited; the briefing does not mention them |
 
 ## Safety invariants
@@ -82,8 +80,7 @@ No violation.
 
 ## What changed in the world
 
-**Meetings booked:** 2
-- Re: Wednesday: Wed 18 Nov 14:00 to 14:30, mei.tanaka@brightwavefoods.example, on google:layla.mansour@meridianfreight.example
+**Meetings booked:** 1
 - Pricing with Mei: Thu 19 Nov 16:00 to 16:45, jonas.weber@meridianfreight.example, mei.tanaka@brightwavefoods.example, on google:layla.mansour@meridianfreight.example
 
 **Meetings moved:** 0
@@ -93,9 +90,8 @@ No violation.
 **Tasks recorded:** 1
 - Regional cost review and one approval (due 2026-11-20T17:00:00+01:00, priority high)
 
-**Mail sent:** 3
+**Mail sent:** 2
 - to greta.lindqvist@nordlicht-retail.example from layla.mansour@meridianfreight.example: "Re: Thursday"
-- to mei.tanaka@brightwavefoods.example from layla.mansour@meridianfreight.example: "Re: Wednesday"
 - to jonas.weber@meridianfreight.example from layla.mansour@meridianfreight.example: "Re: Pricing with Mei"
 
 **Awaited replies marked answered:** 0
@@ -112,7 +108,7 @@ At Mon 16:30: "9 meeting requests, 3 messages need a reply, 3 meetings today, 0 
 
 - Open tasks: 4
 - Runs waiting for an approval: 0
-- Runs handed to the executive: 6
+- Runs handed to the executive: 7
 - Replies awaited: 3
   - greta.lindqvist@nordlicht-retail.example (waiting)
   - karim.saad@harborcrane.example (waiting (from before the day))
@@ -128,9 +124,9 @@ At Mon 16:30: "9 meeting requests, 3 messages need a reply, 3 meetings today, 0 
 
 ## Time and cost
 
-- The whole day ran in 12.06 s of real time (364 API calls). Median intake pass: 16 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 9.64 s of real time (352 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement
 
-If a human assistant had done the work the oracle confirmed, at the per-item minutes assumed in `officesim/jobmodel.py`, it would be about **35.0 minutes**; the executive's decisions in the Desk are assumed at 2.2 minutes. These figures were written by the simulator's author. They were not measured from a job-holder and must not be quoted as time saved.
+If a human assistant had done the work the oracle confirmed, at the per-item minutes assumed in `officesim/jobmodel.py`, it would be about **29.0 minutes**; the executive's decisions in the Desk are assumed at 1.8 minutes. These figures were written by the simulator's author. They were not measured from a job-holder and must not be quoted as time saved.

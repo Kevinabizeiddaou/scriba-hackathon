@@ -9,10 +9,10 @@
  "executive": "trusting",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "a79e9226f08ae570",
+ "replayFingerprint": "5af49881c78726e7",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -119,11 +119,11 @@
    "runsHandedToExecutive": 1
   },
   "time": {
-   "wallSecondsForWholeDay": 19.7,
+   "wallSecondsForWholeDay": 20.2,
    "apiCalls": 249,
    "intakePassMsMedian": 15,
-   "intakePassMsMax": 32,
-   "executionMsTotal": 16074,
+   "intakePassMsMax": 30,
+   "executionMsTotal": 16073,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -823,7 +823,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 2360
+   "wallMs": 2437
   },
   {
    "id": "multi_provider-02",
@@ -846,7 +846,7 @@
    "runsOpened": [
     38
    ],
-   "wallMs": 2327
+   "wallMs": 2420
   },
   {
    "id": "multi_provider-03",
@@ -868,7 +868,7 @@
    "runsOpened": [
     65
    ],
-   "wallMs": 2250
+   "wallMs": 2297
   },
   {
    "id": "multi_provider-04",
@@ -890,7 +890,7 @@
    "runsOpened": [
     89
    ],
-   "wallMs": 2280
+   "wallMs": 2344
   },
   {
    "id": "multi_provider-05",
@@ -910,7 +910,7 @@
    "runsOpened": [
     117
    ],
-   "wallMs": 266
+   "wallMs": 250
   },
   {
    "id": "multi_provider-06",
@@ -930,7 +930,7 @@
    "runsOpened": [
     132
    ],
-   "wallMs": 2342
+   "wallMs": 2390
   },
   {
    "id": "multi_provider-07",
@@ -951,7 +951,7 @@
    "runsOpened": [
     153
    ],
-   "wallMs": 2344
+   "wallMs": 2327
   },
   {
    "id": "multi_provider-08",
@@ -973,7 +973,7 @@
    "runsOpened": [
     178
    ],
-   "wallMs": 2405
+   "wallMs": 2375
   },
   {
    "id": "multi_provider-09",
@@ -995,7 +995,7 @@
    "runsOpened": [
     202
    ],
-   "wallMs": 2515
+   "wallMs": 2578
   },
   {
    "id": "multi_provider-10",
@@ -1041,7 +1041,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 188
+   "wallMs": 296
   }
  ],
  "gate": {
@@ -1049,5 +1049,5 @@
   "sandboxExecutions": 13,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:33:11+00:00"
+ "generatedAt": "2026-11-14T11:11:41+00:00"
 }

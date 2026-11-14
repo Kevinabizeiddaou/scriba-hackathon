@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `trusting` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `c205e99d05127b8e`
+- Replay fingerprint: `3dd0be3e226e8d9e`
 
 ## Result
 
@@ -39,7 +39,7 @@
 | Mon 11:00 | Daniel Okafor | Pricing annex | book Thu 19 Nov 11:00 with daniel.okafor@atlaspharma.example on google:meridianfreight.example, confirm | **Done correctly** | run 155 COMPLETED | calendar event created: action 172 (executed, Desk-verified); confirmation reply: action 177 (executed, Desk-verified) |
 | Mon 12:00 | Ingrid Solberg | Site visit debrief | book Fri 20 Nov 14:00 with ingrid.solberg@bluewatershipping.example on google:meridianfreight.example, confirm | **Done correctly** | run 191 COMPLETED | calendar event created: action 208 (executed, Desk-verified); confirmation reply: action 213 (executed, Desk-verified) |
 | Mon 13:00 | Mei Tanaka | Cold-chain lanes: intro call | book Wed 18 Nov 14:00 with mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Done correctly** | run 218 COMPLETED | calendar event created: action 235 (executed, Desk-verified); confirmation reply: action 240 (executed, Desk-verified) |
-| Mon 13:10 | Mei Tanaka | Cold-chain lanes: intro call | hand to the executive (This meeting is already booked: no second event, no second reply.) | **Correctly handed to the executive** | run 245 ESCALATED |  |
+| Mon 13:10 | Mei Tanaka | Cold-chain lanes: intro call | hand to the executive (This meeting is already booked: no second event, no second reply.) | **Correctly handed to the executive** | run 245 COMPLETED |  |
 | Mon 14:30 | Hannah Schmidt | Budget committee prep | book Wed 18 Nov 12:00 with hannah.schmidt@portalliance.example on outlook:portalliance.example, confirm | **Done correctly** | run 262 COMPLETED | calendar event created: action 279 (executed, Desk-verified); confirmation reply: action 286 (executed, Desk-verified) |
 
 ## Human decisions
@@ -137,7 +137,7 @@ At Mon 16:30: "10 meeting requests, 0 messages need a reply, 3 meetings today, 0
 
 - Open tasks: 4
 - Runs waiting for an approval: 0
-- Runs handed to the executive: 2
+- Runs handed to the executive: 1
 - Replies awaited: 2
   - karim.saad@harborcrane.example (waiting (from before the day))
   - rafael.costa@lumenaudit.example (waiting (from before the day))
@@ -152,7 +152,7 @@ At Mon 16:30: "10 meeting requests, 0 messages need a reply, 3 meetings today, 0
 
 ## Time and cost
 
-- The whole day ran in 26.44 s of real time (436 API calls). Median intake pass: 16 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 26.88 s of real time (436 API calls). Median intake pass: 15 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement

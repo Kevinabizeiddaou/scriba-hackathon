@@ -4,10 +4,10 @@
 
 - Office: Layla Mansour, Chief Executive Officer, Meridian Freight Partners
 - Simulated week of 2026-11-16 (Europe/Paris); seed 7; office fingerprint `890a911e74c74890`
-- Desk engine: overlay 0.3.0, backend revision `0282558`, execution mode `sandbox`, external writes disabled
+- Desk engine: overlay 0.3.1, backend revision `f06a258`, execution mode `sandbox`, external writes disabled
 - Understanding: rules only (no model was called)
 - Simulated executive: `trusting` (see `officesim/executive.py` for what each decision category means)
-- Replay fingerprint: `104d5981b08938b6`
+- Replay fingerprint: `0554133f316d3b40`
 
 ## Result
 
@@ -16,15 +16,15 @@
 | | Count |
 | --- | --- |
 | Actionable requests the Desk opened a run for | 8 of 8 |
-| Completed correctly (verified in the world) | 5 |
+| Completed correctly (verified in the world) | 6 |
 | Correctly handed to the executive | 1 |
 | Declined by the executive (her own choice) | 1 |
 | Completed only after a human correction | 0 |
 | Partly completed | 0 |
 | Left for a human to do | 0 |
-| Incorrect (something wrong took effect) | 1 |
+| Incorrect (something wrong took effect) | 0 |
 | Messages needing nothing, correctly left alone | 0 of 0 |
-| **Handled with approvals only** | **7 of 8 (88%)** |
+| **Handled with approvals only** | **8 of 8 (100%)** |
 
 ## Every message, and the evidence
 
@@ -33,7 +33,7 @@
 | Mon 08:30 | Yusuf Demir | Introduction: Turkey to France road lane | propose create_calendar_event; the executive declines; write nothing | **Declined by the executive** | run 11 CANCELLED |  |
 | Mon 09:00 | Omar Haddad | FY27 capex plan | task about capex, due 2026-11-18 | **Done correctly** | run 31 COMPLETED | task created: action 41 (executed, Desk-verified) |
 | Mon 09:30 | Greta Lindqvist | Peak-season forecast | book Wed 18 Nov 11:00 with greta.lindqvist@nordlicht-retail.example on google:meridianfreight.example, confirm | **Done correctly** | run 47 COMPLETED | calendar event created: action 64 (executed, Desk-verified); confirmation reply: action 69 (executed, Desk-verified) |
-| Mon 10:00 | Mei Tanaka | Cold-chain lanes: intro call | book Wed 18 Nov 14:30 with mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **INCORRECT**<br>the event is on the calendar as approved, but the Desk reports it as NOT verified (start_differs); the meeting is booked; the confirmation that was sent states a different time from the one booked | run 74 ESCALATED | calendar event created: action 91 (executed, not Desk-verified); confirmation reply: action 97 (executed, Desk-verified) |
+| Mon 10:00 | Mei Tanaka | Cold-chain lanes: intro call | book Wed 18 Nov 14:30 with mei.tanaka@brightwavefoods.example on google:meridianfreight.example, confirm | **Done correctly** | run 74 COMPLETED | calendar event created: action 91 (executed, Desk-verified); confirmation reply: action 97 (executed, Desk-verified) |
 | Mon 10:30 | Jonas Weber | Pipeline catch-up | book nothing; offer free times to jonas.weber@meridianfreight.example (no_time_given) | **Done correctly** | run 102 COMPLETED | reply offering times: action 117 (executed, Desk-verified) |
 | Mon 10:45 | Jonas Weber | Re: Pipeline catch-up | book Mon 16 Nov 12:00 with jonas.weber@meridianfreight.example on google:meridianfreight.example, confirm | **Done correctly** | run 123 COMPLETED | calendar event created: action 140 (executed, Desk-verified); confirmation reply: action 146 (executed, Desk-verified) |
 | Mon 13:00 | Tomas Vega | Friday's renewal call | cancel evt-insurance-renewal, confirm | **Done correctly** | run 159 COMPLETED | calendar event cancelled: action 174 (executed, Desk-verified); confirmation reply: action 179 (executed, Desk-verified) |
@@ -110,7 +110,7 @@ At Mon 16:30: "6 meeting requests, 1 message needs a reply, 4 meetings today, 0 
 
 - Open tasks: 4
 - Runs waiting for an approval: 0
-- Runs handed to the executive: 2
+- Runs handed to the executive: 1
 - Replies awaited: 2
   - karim.saad@harborcrane.example (waiting (from before the day))
   - rafael.costa@lumenaudit.example (waiting (from before the day))
@@ -120,14 +120,14 @@ At Mon 16:30: "6 meeting requests, 1 message needs a reply, 4 meetings today, 0 
 - Actions failed at the end of the day: 0
 - Provider failures injected and hit: 0
 - Outcomes unknown at the end: 0
-- Executed but not verified by the Desk: 1
+- Executed but not verified by the Desk: 0
 - Backend errors seen by the simulator: 0
 
 ## Time and cost
 
-- The whole day ran in 13.16 s of real time (236 API calls). Median intake pass: 14 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
+- The whole day ran in 13.75 s of real time (236 API calls). Median intake pass: 14 ms. Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment.
 - Model: No model call was recorded: the Desk ran on its rules. Estimated cost: not measurable (no model call).
 
 ## Assumption, not a measurement
 
-If a human assistant had done the work the oracle confirmed, at the per-item minutes assumed in `officesim/jobmodel.py`, it would be about **30.0 minutes**; the executive's decisions in the Desk are assumed at 2.8 minutes. These figures were written by the simulator's author. They were not measured from a job-holder and must not be quoted as time saved.
+If a human assistant had done the work the oracle confirmed, at the per-item minutes assumed in `officesim/jobmodel.py`, it would be about **36.0 minutes**; the executive's decisions in the Desk are assumed at 2.8 minutes. These figures were written by the simulator's author. They were not measured from a job-holder and must not be quoted as time saved.

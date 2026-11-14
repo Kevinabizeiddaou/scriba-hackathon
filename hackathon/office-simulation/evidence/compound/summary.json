@@ -9,10 +9,10 @@
  "executive": "attentive",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "fa283cbe9180e5f8",
+ "replayFingerprint": "53b9770f686bf275",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -112,11 +112,11 @@
    "runsHandedToExecutive": 0
   },
   "time": {
-   "wallSecondsForWholeDay": 6.3,
+   "wallSecondsForWholeDay": 7.0,
    "apiCalls": 165,
-   "intakePassMsMedian": 15,
-   "intakePassMsMax": 46,
-   "executionMsTotal": 4016,
+   "intakePassMsMedian": 30,
+   "intakePassMsMax": 31,
+   "executionMsTotal": 4000,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -372,7 +372,7 @@
    ],
    "unverifiedActions": [],
    "runIds": [
-    96
+    98
    ],
    "stages": [
     "CANCELLED"
@@ -429,8 +429,8 @@
    "evidence": [
     {
      "what": "calendar event cancelled",
-     "runId": 114,
-     "toolCallId": 129,
+     "runId": 118,
+     "toolCallId": 133,
      "tool": "cancel_calendar_event",
      "status": "executed",
      "verifiedByDesk": true,
@@ -442,8 +442,8 @@
     },
     {
      "what": "confirmation reply",
-     "runId": 114,
-     "toolCallId": 134,
+     "runId": 118,
+     "toolCallId": 138,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -466,7 +466,7 @@
    ],
    "unverifiedActions": [],
    "runIds": [
-    114
+    118
    ],
    "stages": [
     "COMPLETED"
@@ -544,11 +544,11 @@
    "errorCode": null
   },
   {
-   "toolCallId": 93,
+   "toolCallId": 95,
    "runId": 78,
    "requestId": "compound-greta-next-steps",
    "tool": "send_email",
-   "purpose": "clarify",
+   "purpose": "offer_times",
    "mode": "attentive",
    "decision": "reject",
    "category": "corrective_rejection",
@@ -561,11 +561,11 @@
    "errorCode": null
   },
   {
-   "toolCallId": 111,
-   "runId": 96,
+   "toolCallId": 115,
+   "runId": 98,
    "requestId": "compound-omar-prep",
    "tool": "send_email",
-   "purpose": "clarify",
+   "purpose": "offer_times",
    "mode": "attentive",
    "decision": "reject",
    "category": "corrective_rejection",
@@ -578,8 +578,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 129,
-   "runId": 114,
+   "toolCallId": 133,
+   "runId": 118,
    "requestId": "compound-tomas-rebook",
    "tool": "cancel_calendar_event",
    "purpose": "cancel",
@@ -595,8 +595,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 134,
-   "runId": 114,
+   "toolCallId": 138,
+   "runId": 118,
    "requestId": "compound-tomas-rebook",
    "tool": "send_email",
    "purpose": "confirm",
@@ -685,7 +685,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 125
+   "wallMs": 202
   },
   {
    "id": "compound-02",
@@ -712,7 +712,7 @@
    "runsOpened": [
     30
    ],
-   "wallMs": 2328
+   "wallMs": 2375
   },
   {
    "id": "compound-03",
@@ -745,7 +745,7 @@
    "runsOpened": [
     57
    ],
-   "wallMs": 250
+   "wallMs": 437
   },
   {
    "id": "compound-04",
@@ -767,7 +767,7 @@
    "runsOpened": [
     78
    ],
-   "wallMs": 140
+   "wallMs": 327
   },
   {
    "id": "compound-05",
@@ -787,9 +787,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    96
+    98
    ],
-   "wallMs": 172
+   "wallMs": 344
   },
   {
    "id": "compound-06",
@@ -808,9 +808,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    114
+    118
    ],
-   "wallMs": 2358
+   "wallMs": 2422
   },
   {
    "id": "compound-07",
@@ -856,7 +856,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 141
+   "wallMs": 250
   }
  ],
  "gate": {
@@ -864,5 +864,5 @@
   "sandboxExecutions": 4,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:37:41+00:00"
+ "generatedAt": "2026-11-14T11:09:33+00:00"
 }

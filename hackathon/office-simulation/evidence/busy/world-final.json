@@ -302,6 +302,20 @@
    "sent_at": "2026-11-13T09:05:00+00:00"
   },
   {
+   "id": "sent-office-meridian-1",
+   "provider": "gmail",
+   "provider_account_id": "layla.mansour@meridianfreight.example",
+   "to": [
+    "daniel.okafor@atlaspharma.example"
+   ],
+   "subject": "Re: Tomorrow's negotiation",
+   "text": "Thank you for your message. I have moved \"Atlas Pharma contract negotiation\" to Tuesday 17 November, 15:00 to 16:00 (Europe/Paris). You should receive a calendar update separately.",
+   "thread_id": "thread-daniel-move",
+   "mode": "reply",
+   "in_reply_to": "busy-daniel-move",
+   "sent_at": "2026-11-16T07:30:24+00:00"
+  },
+  {
    "id": "sent-office-meridian-2",
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
@@ -309,7 +323,7 @@
     "yusuf.demir@anatoliacargo.example"
    ],
    "subject": "Re: Introduction: Turkey to France road lane",
-   "text": "Thank you for your message. I have scheduled \"Introduction: Turkey to France road lane\" for Tuesday 17 November, 15:00 to 15:45 (Europe/Paris). You should receive a calendar invitation separately.",
+   "text": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
    "thread_id": "thread-yusuf-intro",
    "mode": "reply",
    "in_reply_to": "busy-yusuf-intro",
@@ -320,31 +334,17 @@
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
    "to": [
-    "greta.lindqvist@nordlicht-retail.example"
-   ],
-   "subject": "Re: Follow-up after the review",
-   "text": "Thank you for your message. I have scheduled \"Follow-up after the review\" for Monday 16 November, 12:00 to 12:30 (Europe/Paris). You should receive a calendar invitation separately.",
-   "thread_id": "thread-greta-after-review",
-   "mode": "reply",
-   "in_reply_to": "busy-greta-after-review",
-   "sent_at": "2026-11-16T08:10:37+00:00"
-  },
-  {
-   "id": "sent-office-meridian-6",
-   "provider": "gmail",
-   "provider_account_id": "layla.mansour@meridianfreight.example",
-   "to": [
     "jonas.weber@meridianfreight.example"
    ],
    "subject": "Re: Brightwave pricing",
-   "text": "Thank you for your message. Unfortunately that time is not available.\n\nThe following times are free (Europe/Paris):\n- Monday 16 November, 09:30 to 10:00\n- Monday 16 November, 10:00 to 10:30\n- Monday 16 November, 10:30 to 11:00\n\nPlease let me know which suits you, or suggest another.",
+   "text": "Thank you for your message. I have scheduled \"Brightwave pricing\" for Monday 16 November, 12:15 to 12:45 (Europe/Paris). You should receive a calendar invitation separately.",
    "thread_id": "thread-jonas-overlap",
    "mode": "reply",
    "in_reply_to": "busy-jonas-overlap",
    "sent_at": "2026-11-16T08:20:21+00:00"
   },
   {
-   "id": "sent-office-meridian-8",
+   "id": "sent-office-meridian-7",
    "provider": "outlook",
    "provider_account_id": null,
    "to": [
@@ -358,7 +358,7 @@
    "sent_at": "2026-11-16T09:00:41+00:00"
   },
   {
-   "id": "sent-office-meridian-10",
+   "id": "sent-office-meridian-9",
    "provider": "gmail",
    "provider_account_id": "layla.mansour@meridianfreight.example",
    "to": [
@@ -414,18 +414,18 @@
    "id": "evt-office-meridian-4",
    "provider": "google",
    "account": "layla.mansour@meridianfreight.example",
-   "title": "Follow-up after the review",
-   "start": "2026-11-16T12:00:00+01:00",
-   "end": "2026-11-16T12:30:00+01:00",
+   "title": "Brightwave pricing",
+   "start": "2026-11-16T12:15:00+01:00",
+   "end": "2026-11-16T12:45:00+01:00",
    "attendees": [
-    "greta.lindqvist@nordlicht-retail.example"
+    "jonas.weber@meridianfreight.example"
    ],
    "organizer": "layla.mansour@meridianfreight.example",
    "location": null,
-   "description": "Requested by Greta Lindqvist <greta.lindqvist@nordlicht-retail.example> by email.",
+   "description": "Requested by Jonas Weber <jonas.weber@meridianfreight.example> by email.",
    "status": "confirmed",
    "show_as": "busy",
-   "updated_at": "2026-11-16T09:10:37+01:00"
+   "updated_at": "2026-11-16T09:20:21+01:00"
   },
   {
    "id": "evt-priya-1on1",
@@ -445,24 +445,6 @@
    "updated_at": "2026-11-16T11:15:12+01:00"
   },
   {
-   "id": "evt-atlas-negotiation",
-   "provider": "google",
-   "account": "layla.mansour@meridianfreight.example",
-   "title": "Atlas Pharma contract negotiation",
-   "start": "2026-11-17T10:00:00+01:00",
-   "end": "2026-11-17T11:00:00+01:00",
-   "attendees": [
-    "daniel.okafor@atlaspharma.example",
-    "elena.petrova@meridianfreight.example"
-   ],
-   "organizer": "layla.mansour@meridianfreight.example",
-   "location": null,
-   "description": "",
-   "status": "confirmed",
-   "show_as": "busy",
-   "updated_at": "2026-11-16T08:00:00+01:00"
-  },
-  {
    "id": "evt-budget-fy27",
    "provider": "google",
    "account": "layla.mansour@meridianfreight.example",
@@ -480,21 +462,22 @@
    "updated_at": "2026-11-16T08:00:00+01:00"
   },
   {
-   "id": "evt-office-meridian-1",
+   "id": "evt-atlas-negotiation",
    "provider": "google",
    "account": "layla.mansour@meridianfreight.example",
-   "title": "Introduction: Turkey to France road lane",
+   "title": "Atlas Pharma contract negotiation",
    "start": "2026-11-17T15:00:00+01:00",
-   "end": "2026-11-17T15:45:00+01:00",
+   "end": "2026-11-17T16:00:00+01:00",
    "attendees": [
-    "yusuf.demir@anatoliacargo.example"
+    "daniel.okafor@atlaspharma.example",
+    "elena.petrova@meridianfreight.example"
    ],
    "organizer": "layla.mansour@meridianfreight.example",
    "location": null,
-   "description": "Requested by Yusuf Demir <yusuf.demir@anatoliacargo.example> by email.",
+   "description": "",
    "status": "confirmed",
    "show_as": "busy",
-   "updated_at": "2026-11-16T08:32:37+01:00"
+   "updated_at": "2026-11-16T08:30:24+01:00"
   },
   {
    "id": "evt-pa-board",
@@ -548,7 +531,7 @@
    "updated_at": "2026-11-16T08:00:00+01:00"
   },
   {
-   "id": "evt-office-meridian-7",
+   "id": "evt-office-meridian-6",
    "provider": "outlook",
    "account": "layla.mansour@portalliance.example",
    "title": "Pre-read session",
@@ -663,7 +646,7 @@
    "created_at": "2026-11-16T08:45:41+01:00"
   },
   {
-   "id": "task-office-meridian-9",
+   "id": "task-office-meridian-8",
    "title": "Customs audit notice: response due tomorrow",
    "description": "From Elena Petrova <elena.petrova@meridianfreight.example>, received 2026-11-16T09:30:05+00:00 (gmail). Layla, we received a customs audit notice this morning. I need your approval of the response letter by 12:00 tomorrow, otherwise we risk a penalty.",
    "due_at": "2026-11-17T12:00:00+01:00",
@@ -713,15 +696,24 @@
  "operations": [
   {
    "seq": 1,
-   "at": "2026-11-16T07:32:37+00:00",
-   "op": "calendar.create_event",
+   "at": "2026-11-16T07:30:24+00:00",
+   "op": "calendar.update_event",
    "status": "executed",
-   "object_id": "evt-office-meridian-1",
+   "object_id": "evt-atlas-negotiation",
    "error": null,
    "simulated": true
   },
   {
    "seq": 2,
+   "at": "2026-11-16T07:30:24+00:00",
+   "op": "email.send",
+   "status": "executed",
+   "object_id": "sent-office-meridian-1",
+   "error": null,
+   "simulated": true
+  },
+  {
+   "seq": 3,
    "at": "2026-11-16T07:32:37+00:00",
    "op": "email.send",
    "status": "executed",
@@ -730,7 +722,7 @@
    "simulated": true
   },
   {
-   "seq": 3,
+   "seq": 4,
    "at": "2026-11-16T07:45:41+00:00",
    "op": "task.create",
    "status": "executed",
@@ -739,20 +731,11 @@
    "simulated": true
   },
   {
-   "seq": 4,
-   "at": "2026-11-16T08:10:37+00:00",
+   "seq": 5,
+   "at": "2026-11-16T08:20:21+00:00",
    "op": "calendar.create_event",
    "status": "executed",
    "object_id": "evt-office-meridian-4",
-   "error": null,
-   "simulated": true
-  },
-  {
-   "seq": 5,
-   "at": "2026-11-16T08:10:37+00:00",
-   "op": "email.send",
-   "status": "executed",
-   "object_id": "sent-office-meridian-5",
    "error": null,
    "simulated": true
   },
@@ -761,7 +744,7 @@
    "at": "2026-11-16T08:20:21+00:00",
    "op": "email.send",
    "status": "executed",
-   "object_id": "sent-office-meridian-6",
+   "object_id": "sent-office-meridian-5",
    "error": null,
    "simulated": true
   },
@@ -770,7 +753,7 @@
    "at": "2026-11-16T09:00:41+00:00",
    "op": "calendar.create_event",
    "status": "executed",
-   "object_id": "evt-office-meridian-7",
+   "object_id": "evt-office-meridian-6",
    "error": null,
    "simulated": true
   },
@@ -779,7 +762,7 @@
    "at": "2026-11-16T09:00:41+00:00",
    "op": "email.send",
    "status": "executed",
-   "object_id": "sent-office-meridian-8",
+   "object_id": "sent-office-meridian-7",
    "error": null,
    "simulated": true
   },
@@ -788,7 +771,7 @@
    "at": "2026-11-16T09:30:05+00:00",
    "op": "task.create",
    "status": "executed",
-   "object_id": "task-office-meridian-9",
+   "object_id": "task-office-meridian-8",
    "error": null,
    "simulated": true
   },
@@ -806,7 +789,7 @@
    "at": "2026-11-16T10:15:12+00:00",
    "op": "email.send",
    "status": "executed",
-   "object_id": "sent-office-meridian-10",
+   "object_id": "sent-office-meridian-9",
    "error": null,
    "simulated": true
   }

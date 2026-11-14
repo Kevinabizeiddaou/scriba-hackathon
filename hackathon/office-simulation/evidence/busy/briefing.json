@@ -97,7 +97,7 @@
     },
     {
      "event_id": null,
-     "title": "Follow-up after the review",
+     "title": "Brightwave pricing",
      "start_time": null,
      "end_time": null,
      "provider": "google",
@@ -134,7 +134,7 @@
      "effective_priority": null
     },
     {
-     "id": "task-office-meridian-9",
+     "id": "task-office-meridian-8",
      "title": "Customs audit notice: response due tomorrow",
      "due_at": "2026-11-17T12:00:00+01:00",
      "effective_priority": null

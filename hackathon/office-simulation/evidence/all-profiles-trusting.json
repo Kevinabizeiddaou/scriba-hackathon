@@ -9,20 +9,20 @@
   "actionable": 77,
   "actionableDetectedByDesk": 73,
   "completedCorrectly": 42,
-  "correctlyHandedToExecutive": 8,
+  "correctlyHandedToExecutive": 9,
   "declinedByExecutive": 3,
   "completedAfterHumanCorrection": 1,
   "partlyCompleted": 1,
-  "leftForHuman": 7,
-  "incorrect": 15,
-  "handledWithApprovalsOnly": 53,
-  "autonomyRate": 0.688,
+  "leftForHuman": 8,
+  "incorrect": 13,
+  "handledWithApprovalsOnly": 54,
+  "autonomyRate": 0.701,
   "calendarChangesVerified": 28,
   "emailRepliesVerified": 37,
   "tasksAndRemindersVerified": 7,
   "followUpsSatisfied": 8,
   "duplicatesPrevented": 4,
-  "mandatoryApprovals": 89,
+  "mandatoryApprovals": 85,
   "preferenceRejections": 3,
   "preferenceEdits": 2,
   "manualCorrections": 0,
@@ -32,15 +32,15 @@
   "invariantViolations": 0,
   "checksPassed": 44,
   "checksFailed": 17,
-  "executedButNotVerifiedByDesk": 1,
+  "executedButNotVerifiedByDesk": 0,
   "backendErrors": 0
  },
  "perProfile": {
   "normal": {
-   "replayFingerprint": "b059f11e9207b155",
+   "replayFingerprint": "226f2a18c5038249",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -155,11 +155,11 @@
      "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 18.02,
+     "wallSecondsForWholeDay": 18.47,
      "apiCalls": 294,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 32,
-     "executionMsTotal": 14030,
+     "intakePassMsMax": 47,
+     "executionMsTotal": 14029,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -177,17 +177,17 @@
    }
   },
   "busy": {
-   "replayFingerprint": "c764d2f38ee5ec6f",
+   "replayFingerprint": "2e3501a66f861ef0",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
     "chatScope": "enforced",
     "claims": "memory"
    },
-   "headline": "B. Busy executive: 11 messages, 11 actionable; 7 done correctly, 0 correctly handed over, 0 declined, 0 corrected, 0 partial, 0 left for a human, 4 incorrect. Approvals-only: 7/11. Decisions: 16. Checks: 4 pass, 1 fail. Invariant violations: 0.",
+   "headline": "B. Busy executive: 11 messages, 11 actionable; 7 done correctly, 1 correctly handed over, 0 declined, 0 corrected, 0 partial, 0 left for a human, 3 incorrect. Approvals-only: 8/11. Decisions: 14. Checks: 4 pass, 1 fail. Invariant violations: 0.",
    "metrics": {
     "requests": {
      "received": 11,
@@ -200,18 +200,18 @@
     "outcomes": {
      "byVerdict": {
       "correct": 7,
-      "incorrect": 4
+      "correct_escalation": 1,
+      "incorrect": 3
      },
      "completedCorrectly": 7,
-     "correctlyHandedToExecutive": 0,
+     "correctlyHandedToExecutive": 1,
      "declinedByExecutive": 0,
      "completedAfterHumanCorrection": 0,
      "partlyCompleted": 0,
      "leftForHuman": 0,
-     "incorrect": 4,
+     "incorrect": 3,
      "incorrectRequests": [
-      "busy-daniel-move",
-      "busy-priya-cancel-again",
+      "busy-greta-after-review",
       "busy-ingrid-move",
       "busy-mei-today"
      ]
@@ -222,7 +222,8 @@
      "tasksAndReminders": 2,
      "byKind": {
       "calendar event cancelled": 1,
-      "calendar event created": 2,
+      "calendar event created": 1,
+      "calendar event moved": 1,
       "confirmation reply": 3,
       "reply offering times": 2,
       "task created": 2
@@ -242,11 +243,11 @@
      "checksPassed": 4
     },
     "human": {
-     "decisions": 16,
+     "decisions": 14,
      "byCategory": {
-      "unreviewed_approval": 16
+      "unreviewed_approval": 14
      },
-     "mandatoryApprovals": 16,
+     "mandatoryApprovals": 14,
      "preferenceRejections": 0,
      "preferenceEdits": 0,
      "manualCorrections": 0,
@@ -258,8 +259,8 @@
     },
     "autonomy": {
      "actionableRequests": 11,
-     "handledWithApprovalsOnly": 7,
-     "rate": 0.636,
+     "handledWithApprovalsOnly": 8,
+     "rate": 0.727,
      "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
     },
     "outstanding": {
@@ -297,14 +298,14 @@
      ],
      "openTasks": 5,
      "runsAwaitingApproval": 0,
-     "runsHandedToExecutive": 0
+     "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 22.33,
-     "apiCalls": 312,
+     "wallSecondsForWholeDay": 20.69,
+     "apiCalls": 300,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 32,
-     "executionMsTotal": 18044,
+     "intakePassMsMax": 46,
+     "executionMsTotal": 16115,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -315,17 +316,17 @@
     },
     "humanTimeEstimate": {
      "IS_AN_ASSUMPTION": true,
-     "assistantMinutesForThisWork": 40.0,
-     "executiveMinutesDecidingInDesk": 4.0,
+     "assistantMinutesForThisWork": 39.0,
+     "executiveMinutesDecidingInDesk": 3.5,
      "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
     }
    }
   },
   "multi_provider": {
-   "replayFingerprint": "a79e9226f08ae570",
+   "replayFingerprint": "5af49881c78726e7",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -433,11 +434,11 @@
      "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 19.7,
+     "wallSecondsForWholeDay": 20.2,
      "apiCalls": 249,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 32,
-     "executionMsTotal": 16074,
+     "intakePassMsMax": 30,
+     "executionMsTotal": 16073,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -455,10 +456,10 @@
    }
   },
   "unreliable": {
-   "replayFingerprint": "c205e99d05127b8e",
+   "replayFingerprint": "3dd0be3e226e8d9e",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -565,14 +566,14 @@
      ],
      "openTasks": 4,
      "runsAwaitingApproval": 0,
-     "runsHandedToExecutive": 2
+     "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 26.44,
+     "wallSecondsForWholeDay": 26.88,
      "apiCalls": 436,
-     "intakePassMsMedian": 16,
-     "intakePassMsMax": 61,
-     "executionMsTotal": 16031,
+     "intakePassMsMedian": 15,
+     "intakePassMsMax": 141,
+     "executionMsTotal": 16044,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -590,17 +591,17 @@
    }
   },
   "human_in_loop": {
-   "replayFingerprint": "104d5981b08938b6",
+   "replayFingerprint": "0554133f316d3b40",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
     "chatScope": "enforced",
     "claims": "memory"
    },
-   "headline": "E. Human in the loop: 8 messages, 8 actionable; 5 done correctly, 1 correctly handed over, 1 declined, 0 corrected, 0 partial, 0 left for a human, 1 incorrect. Approvals-only: 7/8. Decisions: 11. Checks: 4 pass, 2 fail. Invariant violations: 0.",
+   "headline": "E. Human in the loop: 8 messages, 8 actionable; 6 done correctly, 1 correctly handed over, 1 declined, 0 corrected, 0 partial, 0 left for a human, 0 incorrect. Approvals-only: 8/8. Decisions: 11. Checks: 4 pass, 2 fail. Invariant violations: 0.",
    "metrics": {
     "requests": {
      "received": 8,
@@ -612,30 +613,27 @@
     },
     "outcomes": {
      "byVerdict": {
-      "correct": 5,
+      "correct": 6,
       "correct_escalation": 1,
-      "declined": 1,
-      "incorrect": 1
+      "declined": 1
      },
-     "completedCorrectly": 5,
+     "completedCorrectly": 6,
      "correctlyHandedToExecutive": 1,
      "declinedByExecutive": 1,
      "completedAfterHumanCorrection": 0,
      "partlyCompleted": 0,
      "leftForHuman": 0,
-     "incorrect": 1,
-     "incorrectRequests": [
-      "human_in_loop-mei-intro"
-     ]
+     "incorrect": 0,
+     "incorrectRequests": []
     },
     "verifiedWork": {
-     "calendarChanges": 3,
-     "emailReplies": 4,
+     "calendarChanges": 4,
+     "emailReplies": 5,
      "tasksAndReminders": 1,
      "byKind": {
       "calendar event cancelled": 1,
-      "calendar event created": 2,
-      "confirmation reply": 3,
+      "calendar event created": 3,
+      "confirmation reply": 4,
       "reply offering times": 1,
       "task created": 1
      },
@@ -647,7 +645,7 @@
      "actionsFailedAtEndOfDay": 0,
      "providerFailuresInjectedAndHit": 0,
      "outcomesUnknownAtEndOfDay": 0,
-     "executedButNotVerifiedByDesk": 1,
+     "executedButNotVerifiedByDesk": 0,
      "invariantViolations": 0,
      "backendErrors": 0,
      "checksFailed": 2,
@@ -672,8 +670,8 @@
     },
     "autonomy": {
      "actionableRequests": 8,
-     "handledWithApprovalsOnly": 7,
-     "rate": 0.875,
+     "handledWithApprovalsOnly": 8,
+     "rate": 1.0,
      "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
     },
     "outstanding": {
@@ -691,14 +689,14 @@
      ],
      "openTasks": 4,
      "runsAwaitingApproval": 0,
-     "runsHandedToExecutive": 2
+     "runsHandedToExecutive": 1
     },
     "time": {
-     "wallSecondsForWholeDay": 13.16,
+     "wallSecondsForWholeDay": 13.75,
      "apiCalls": 236,
      "intakePassMsMedian": 14,
      "intakePassMsMax": 32,
-     "executionMsTotal": 10059,
+     "executionMsTotal": 10072,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -709,17 +707,17 @@
     },
     "humanTimeEstimate": {
      "IS_AN_ASSUMPTION": true,
-     "assistantMinutesForThisWork": 30.0,
+     "assistantMinutesForThisWork": 36.0,
      "executiveMinutesDecidingInDesk": 2.8,
      "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
     }
    }
   },
   "compound": {
-   "replayFingerprint": "4dde71ca60cce3f8",
+   "replayFingerprint": "4ba98bf22dd3ed30",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -834,10 +832,10 @@
      "runsHandedToExecutive": 0
     },
     "time": {
-     "wallSecondsForWholeDay": 12.41,
+     "wallSecondsForWholeDay": 12.25,
      "apiCalls": 165,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 30,
+     "intakePassMsMax": 32,
      "executionMsTotal": 10030,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
@@ -856,10 +854,10 @@
    }
   },
   "follow_up": {
-   "replayFingerprint": "0162cd0a01b6e020",
+   "replayFingerprint": "53905dd5195e47ca",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
@@ -969,11 +967,11 @@
      "runsHandedToExecutive": 0
     },
     "time": {
-     "wallSecondsForWholeDay": 17.06,
+     "wallSecondsForWholeDay": 17.09,
      "apiCalls": 211,
-     "intakePassMsMedian": 15,
+     "intakePassMsMedian": 14,
      "intakePassMsMax": 32,
-     "executionMsTotal": 14077,
+     "executionMsTotal": 14030,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -991,17 +989,17 @@
    }
   },
   "surprise": {
-   "replayFingerprint": "ceece960df77c7e8",
+   "replayFingerprint": "dad28f9bb5e2b4b9",
    "engine": {
-    "overlay": "0.3.0",
-    "deskBackend": "0282558",
+    "overlay": "0.3.1",
+    "deskBackend": "f06a258",
     "executionMode": "sandbox",
     "externalWritesEnabled": false,
     "modelConfigured": false,
     "chatScope": "enforced",
     "claims": "memory"
    },
-   "headline": "H. Surprise day: 16 messages, 15 actionable; 3 done correctly, 4 correctly handed over, 1 declined, 0 corrected, 0 partial, 4 left for a human, 3 incorrect. Approvals-only: 8/15. Decisions: 9. Checks: 4 pass, 2 fail. Invariant violations: 0.",
+   "headline": "H. Surprise day: 16 messages, 15 actionable; 2 done correctly, 4 correctly handed over, 1 declined, 0 corrected, 0 partial, 5 left for a human, 3 incorrect. Approvals-only: 7/15. Decisions: 7. Checks: 4 pass, 2 fail. Invariant violations: 0.",
    "metrics": {
     "requests": {
      "received": 16,
@@ -1013,20 +1011,20 @@
     },
     "outcomes": {
      "byVerdict": {
-      "correct": 3,
+      "correct": 2,
       "correct_escalation": 4,
       "correct_none": 1,
       "declined": 1,
       "incorrect": 3,
       "missed": 2,
-      "safe_escalation": 2
+      "safe_escalation": 3
      },
-     "completedCorrectly": 3,
+     "completedCorrectly": 2,
      "correctlyHandedToExecutive": 4,
      "declinedByExecutive": 1,
      "completedAfterHumanCorrection": 0,
      "partlyCompleted": 0,
-     "leftForHuman": 4,
+     "leftForHuman": 5,
      "incorrect": 3,
      "incorrectRequests": [
       "surprise-mei-ist",
@@ -1035,12 +1033,10 @@
      ]
     },
     "verifiedWork": {
-     "calendarChanges": 1,
-     "emailReplies": 2,
+     "calendarChanges": 0,
+     "emailReplies": 1,
      "tasksAndReminders": 1,
      "byKind": {
-      "calendar event created": 1,
-      "confirmation reply": 1,
       "reply offering times": 1,
       "task created": 1
      },
@@ -1059,30 +1055,31 @@
      "checksPassed": 4
     },
     "human": {
-     "decisions": 9,
+     "decisions": 7,
      "byCategory": {
       "preference_rejection": 1,
-      "unreviewed_approval": 8
+      "unreviewed_approval": 6
      },
-     "mandatoryApprovals": 8,
+     "mandatoryApprovals": 6,
      "preferenceRejections": 1,
      "preferenceEdits": 0,
      "manualCorrections": 0,
      "manualRescues": 0,
      "missingInformationSupplied": 0,
      "recoveryRetries": 0,
-     "fullTakeovers": 4,
+     "fullTakeovers": 5,
      "takeoverRequests": [
       "surprise-daniel-arvo",
       "surprise-karim-french",
       "surprise-legal-notice",
-      "surprise-tomas-orphan"
+      "surprise-tomas-orphan",
+      "surprise-mei-correction"
      ]
     },
     "autonomy": {
      "actionableRequests": 15,
-     "handledWithApprovalsOnly": 8,
-     "rate": 0.533,
+     "handledWithApprovalsOnly": 7,
+     "rate": 0.467,
      "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
     },
     "outstanding": {
@@ -1115,14 +1112,14 @@
      ],
      "openTasks": 4,
      "runsAwaitingApproval": 0,
-     "runsHandedToExecutive": 6
+     "runsHandedToExecutive": 7
     },
     "time": {
-     "wallSecondsForWholeDay": 14.77,
-     "apiCalls": 364,
+     "wallSecondsForWholeDay": 12.62,
+     "apiCalls": 352,
      "intakePassMsMedian": 15,
-     "intakePassMsMax": 30,
-     "executionMsTotal": 10000,
+     "intakePassMsMax": 32,
+     "executionMsTotal": 8046,
      "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
     },
     "model": {
@@ -1133,8 +1130,8 @@
     },
     "humanTimeEstimate": {
      "IS_AN_ASSUMPTION": true,
-     "assistantMinutesForThisWork": 29.0,
-     "executiveMinutesDecidingInDesk": 2.2,
+     "assistantMinutesForThisWork": 23.0,
+     "executiveMinutesDecidingInDesk": 1.8,
      "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
     }
    }

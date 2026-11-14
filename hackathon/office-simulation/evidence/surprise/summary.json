@@ -9,10 +9,10 @@
  "executive": "attentive",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "2838b6af22bbebec",
+ "replayFingerprint": "ee7290c19cdcaef6",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -30,31 +30,31 @@
   },
   "outcomes": {
    "byVerdict": {
-    "correct": 3,
+    "correct": 2,
     "correct_escalation": 4,
     "correct_none": 1,
     "corrected": 1,
     "declined": 1,
     "missed": 2,
     "rescued": 2,
-    "safe_escalation": 2
+    "safe_escalation": 3
    },
-   "completedCorrectly": 3,
+   "completedCorrectly": 2,
    "correctlyHandedToExecutive": 4,
    "declinedByExecutive": 1,
    "completedAfterHumanCorrection": 1,
    "partlyCompleted": 0,
-   "leftForHuman": 6,
+   "leftForHuman": 7,
    "incorrect": 0,
    "incorrectRequests": []
   },
   "verifiedWork": {
-   "calendarChanges": 2,
-   "emailReplies": 3,
+   "calendarChanges": 1,
+   "emailReplies": 2,
    "tasksAndReminders": 1,
    "byKind": {
-    "calendar event created": 2,
-    "confirmation reply": 2,
+    "calendar event created": 1,
+    "confirmation reply": 1,
     "reply offering times": 1,
     "task created": 1
    },
@@ -73,34 +73,35 @@
    "checksPassed": 4
   },
   "human": {
-   "decisions": 9,
+   "decisions": 7,
    "byCategory": {
-    "approval": 5,
+    "approval": 3,
     "corrective_edit": 1,
     "corrective_rejection": 2,
     "preference_rejection": 1
    },
-   "mandatoryApprovals": 5,
+   "mandatoryApprovals": 3,
    "preferenceRejections": 1,
    "preferenceEdits": 0,
    "manualCorrections": 1,
    "manualRescues": 2,
    "missingInformationSupplied": 0,
    "recoveryRetries": 0,
-   "fullTakeovers": 6,
+   "fullTakeovers": 7,
    "takeoverRequests": [
     "surprise-daniel-arvo",
     "surprise-mei-ist",
     "surprise-karim-french",
     "surprise-legal-notice",
     "surprise-tomas-orphan",
+    "surprise-mei-correction",
     "surprise-greta-past"
    ]
   },
   "autonomy": {
    "actionableRequests": 15,
-   "handledWithApprovalsOnly": 8,
-   "rate": 0.533,
+   "handledWithApprovalsOnly": 7,
+   "rate": 0.467,
    "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
   },
   "outstanding": {
@@ -123,14 +124,14 @@
    ],
    "openTasks": 4,
    "runsAwaitingApproval": 0,
-   "runsHandedToExecutive": 6
+   "runsHandedToExecutive": 7
   },
   "time": {
-   "wallSecondsForWholeDay": 12.06,
-   "apiCalls": 364,
-   "intakePassMsMedian": 16,
-   "intakePassMsMax": 78,
-   "executionMsTotal": 6030,
+   "wallSecondsForWholeDay": 9.64,
+   "apiCalls": 352,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 47,
+   "executionMsTotal": 4030,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -141,8 +142,8 @@
   },
   "humanTimeEstimate": {
    "IS_AN_ASSUMPTION": true,
-   "assistantMinutesForThisWork": 35.0,
-   "executiveMinutesDecidingInDesk": 2.2,
+   "assistantMinutesForThisWork": 29.0,
+   "executiveMinutesDecidingInDesk": 1.8,
    "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
   }
  },
@@ -523,43 +524,18 @@
     "confirm": true,
     "withinWorkingHours": true
    },
-   "verdict": "correct",
-   "notes": [],
-   "evidence": [
-    {
-     "what": "calendar event created",
-     "runId": 134,
-     "toolCallId": 151,
-     "tool": "create_calendar_event",
-     "status": "executed",
-     "verifiedByDesk": true,
-     "verificationMethod": "sandbox_readback",
-     "attempts": 1,
-     "approvedBy": [
-      "alice@example.com"
-     ]
-    },
-    {
-     "what": "confirmation reply",
-     "runId": 134,
-     "toolCallId": 156,
-     "tool": "send_email",
-     "status": "executed",
-     "verifiedByDesk": true,
-     "verificationMethod": "sandbox_readback",
-     "attempts": 1,
-     "approvedBy": [
-      "alice@example.com"
-     ]
-    }
+   "verdict": "safe_escalation",
+   "notes": [
+    "the meeting was not done; the Desk handed it over (conflicting_instructions)"
    ],
+   "evidence": [],
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
     134
    ],
    "stages": [
-    "COMPLETED"
+    "ESCALATED"
    ]
   },
   "surprise-greta-past": {
@@ -588,7 +564,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    161
+    146
    ],
    "stages": [
     "CANCELLED"
@@ -607,7 +583,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    179
+    164
    ],
    "stages": [
     "CANCELLED"
@@ -638,8 +614,8 @@
    "evidence": [
     {
      "what": "calendar event created",
-     "runId": 199,
-     "toolCallId": 216,
+     "runId": 184,
+     "toolCallId": 201,
      "tool": "create_calendar_event",
      "status": "executed",
      "verifiedByDesk": true,
@@ -651,8 +627,8 @@
     },
     {
      "what": "confirmation reply",
-     "runId": 199,
-     "toolCallId": 222,
+     "runId": 184,
+     "toolCallId": 207,
      "tool": "send_email",
      "status": "executed",
      "verifiedByDesk": true,
@@ -666,7 +642,7 @@
    "parts": [],
    "unverifiedActions": [],
    "runIds": [
-    199
+    184
    ],
    "stages": [
     "COMPLETED"
@@ -727,42 +703,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 151,
-   "runId": 134,
-   "requestId": "surprise-mei-correction",
-   "tool": "create_calendar_event",
-   "purpose": "book",
-   "mode": "attentive",
-   "decision": "approve",
-   "category": "approval",
-   "why": "the meeting, the time, the people and the calendar are right",
-   "countsAgainstAutonomy": false,
-   "stepId": "surprise-13",
-   "at": "2026-11-16T13:05:09+01:00",
-   "result": "executed",
-   "error": null,
-   "errorCode": null
-  },
-  {
-   "toolCallId": 156,
-   "runId": 134,
-   "requestId": "surprise-mei-correction",
-   "tool": "send_email",
-   "purpose": "confirm",
-   "mode": "attentive",
-   "decision": "approve",
-   "category": "approval",
-   "why": "it confirms the calendar change that was just made",
-   "countsAgainstAutonomy": false,
-   "stepId": "surprise-13",
-   "at": "2026-11-16T13:05:09+01:00",
-   "result": "executed",
-   "error": null,
-   "errorCode": null
-  },
-  {
-   "toolCallId": 176,
-   "runId": 161,
+   "toolCallId": 161,
+   "runId": 146,
    "requestId": "surprise-greta-past",
    "tool": "send_email",
    "purpose": "clarify",
@@ -778,8 +720,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 196,
-   "runId": 179,
+   "toolCallId": 181,
+   "runId": 164,
    "requestId": "surprise-nora-saturday",
    "tool": "create_calendar_event",
    "purpose": "book",
@@ -795,8 +737,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 216,
-   "runId": 199,
+   "toolCallId": 201,
+   "runId": 184,
    "requestId": "surprise-jonas-three",
    "tool": "create_calendar_event",
    "purpose": "book",
@@ -821,8 +763,8 @@
    "errorCode": null
   },
   {
-   "toolCallId": 222,
-   "runId": 199,
+   "toolCallId": 207,
+   "runId": 184,
    "requestId": "surprise-jonas-three",
    "tool": "send_email",
    "purpose": "confirm",
@@ -867,7 +809,7 @@
    "stepId": "surprise-17",
    "check": "briefing_reports_handled_work",
    "passed": false,
-   "detail": "4 runs executed something today; the briefing has no section for work that was done"
+   "detail": "3 runs executed something today; the briefing has no section for work that was done"
   },
   {
    "stepId": "surprise-17",
@@ -917,7 +859,7 @@
    "runsOpened": [
     20
    ],
-   "wallMs": 108
+   "wallMs": 125
   },
   {
    "id": "surprise-03",
@@ -936,7 +878,7 @@
    "runsOpened": [
     35
    ],
-   "wallMs": 172
+   "wallMs": 125
   },
   {
    "id": "surprise-04",
@@ -956,7 +898,7 @@
    "runsOpened": [
     47
    ],
-   "wallMs": 2250
+   "wallMs": 2264
   },
   {
    "id": "surprise-05",
@@ -976,7 +918,7 @@
    "runsOpened": [
     68
    ],
-   "wallMs": 250
+   "wallMs": 281
   },
   {
    "id": "surprise-06",
@@ -996,7 +938,7 @@
    "runsOpened": [
     86
    ],
-   "wallMs": 233
+   "wallMs": 250
   },
   {
    "id": "surprise-07",
@@ -1014,7 +956,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 157
+   "wallMs": 203
   },
   {
    "id": "surprise-08",
@@ -1031,7 +973,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 155
+   "wallMs": 202
   },
   {
    "id": "surprise-09",
@@ -1052,7 +994,7 @@
    "runsOpened": [
     95
    ],
-   "wallMs": 186
+   "wallMs": 109
   },
   {
    "id": "surprise-10",
@@ -1069,7 +1011,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 125
+   "wallMs": 219
   },
   {
    "id": "surprise-11",
@@ -1089,7 +1031,7 @@
    "runsOpened": [
     104
    ],
-   "wallMs": 328
+   "wallMs": 390
   },
   {
    "id": "surprise-12",
@@ -1109,7 +1051,7 @@
    "runsOpened": [
     119
    ],
-   "wallMs": 203
+   "wallMs": 359
   },
   {
    "id": "surprise-13",
@@ -1126,11 +1068,11 @@
    ],
    "notes": [],
    "checks": [],
-   "opened": 0,
+   "opened": 1,
    "runsOpened": [
     134
    ],
-   "wallMs": 2578
+   "wallMs": 405
   },
   {
    "id": "surprise-14",
@@ -1148,9 +1090,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    161
+    146
    ],
-   "wallMs": 483
+   "wallMs": 438
   },
   {
    "id": "surprise-15",
@@ -1175,9 +1117,9 @@
    ],
    "opened": 0,
    "runsOpened": [
-    179
+    164
    ],
-   "wallMs": 719
+   "wallMs": 514
   },
   {
    "id": "surprise-16",
@@ -1196,9 +1138,9 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [
-    199
+    184
    ],
-   "wallMs": 3078
+   "wallMs": 2750
   },
   {
    "id": "surprise-17",
@@ -1233,7 +1175,7 @@
      "stepId": "surprise-17",
      "check": "briefing_reports_handled_work",
      "passed": false,
-     "detail": "4 runs executed something today; the briefing has no section for work that was done"
+     "detail": "3 runs executed something today; the briefing has no section for work that was done"
     },
     {
      "stepId": "surprise-17",
@@ -1244,13 +1186,13 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 358
+   "wallMs": 390
   }
  ],
  "gate": {
   "held": 0,
-  "sandboxExecutions": 6,
+  "sandboxExecutions": 4,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:38:33+00:00"
+ "generatedAt": "2026-11-14T11:10:15+00:00"
 }

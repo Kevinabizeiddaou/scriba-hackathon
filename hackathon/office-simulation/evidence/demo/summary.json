@@ -9,10 +9,10 @@
  "executive": "attentive",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "bbe9e922fb71b42a",
+ "replayFingerprint": "3732999aac460e3f",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -116,11 +116,11 @@
    "runsHandedToExecutive": 1
   },
   "time": {
-   "wallSecondsForWholeDay": 15.19,
+   "wallSecondsForWholeDay": 14.75,
    "apiCalls": 294,
    "intakePassMsMedian": 15,
    "intakePassMsMax": 32,
-   "executionMsTotal": 10076,
+   "executionMsTotal": 10029,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -916,7 +916,7 @@
     11,
     30
    ],
-   "wallMs": 2561
+   "wallMs": 2453
   },
   {
    "id": "normal-02",
@@ -940,7 +940,7 @@
    "runsOpened": [
     53
    ],
-   "wallMs": 2359
+   "wallMs": 2265
   },
   {
    "id": "normal-03",
@@ -961,7 +961,7 @@
    "runsOpened": [
     77
    ],
-   "wallMs": 234
+   "wallMs": 203
   },
   {
    "id": "normal-04",
@@ -984,7 +984,7 @@
    "runsOpened": [
     86
    ],
-   "wallMs": 2405
+   "wallMs": 2452
   },
   {
    "id": "normal-05",
@@ -1007,7 +1007,7 @@
    "runsOpened": [
     114
    ],
-   "wallMs": 2421
+   "wallMs": 2485
   },
   {
    "id": "normal-06",
@@ -1027,7 +1027,7 @@
    "checks": [],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 235
+   "wallMs": 139
   },
   {
    "id": "normal-07",
@@ -1049,7 +1049,7 @@
    "runsOpened": [
     142
    ],
-   "wallMs": 405
+   "wallMs": 360
   },
   {
    "id": "normal-08",
@@ -1072,7 +1072,7 @@
    "runsOpened": [
     157
    ],
-   "wallMs": 2546
+   "wallMs": 2530
   },
   {
    "id": "normal-09",
@@ -1092,7 +1092,7 @@
    "runsOpened": [
     182
    ],
-   "wallMs": 405
+   "wallMs": 484
   },
   {
    "id": "normal-10",
@@ -1115,7 +1115,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 297
+   "wallMs": 219
   },
   {
    "id": "normal-11",
@@ -1138,7 +1138,7 @@
    "runsOpened": [
     200
    ],
-   "wallMs": 390
+   "wallMs": 405
   },
   {
    "id": "normal-12",
@@ -1184,7 +1184,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 342
+   "wallMs": 250
   }
  ],
  "gate": {
@@ -1192,5 +1192,5 @@
   "sandboxExecutions": 11,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:41:46+00:00"
+ "generatedAt": "2026-11-14T11:20:22+00:00"
 }

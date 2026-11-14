@@ -9,10 +9,10 @@
  "executive": "trusting",
  "day": "2026-11-16",
  "officeFingerprint": "890a911e74c74890",
- "replayFingerprint": "104d5981b08938b6",
+ "replayFingerprint": "0554133f316d3b40",
  "engine": {
-  "overlay": "0.3.0",
-  "deskBackend": "0282558",
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
   "executionMode": "sandbox",
   "externalWritesEnabled": false,
   "modelConfigured": false,
@@ -30,30 +30,27 @@
   },
   "outcomes": {
    "byVerdict": {
-    "correct": 5,
+    "correct": 6,
     "correct_escalation": 1,
-    "declined": 1,
-    "incorrect": 1
+    "declined": 1
    },
-   "completedCorrectly": 5,
+   "completedCorrectly": 6,
    "correctlyHandedToExecutive": 1,
    "declinedByExecutive": 1,
    "completedAfterHumanCorrection": 0,
    "partlyCompleted": 0,
    "leftForHuman": 0,
-   "incorrect": 1,
-   "incorrectRequests": [
-    "human_in_loop-mei-intro"
-   ]
+   "incorrect": 0,
+   "incorrectRequests": []
   },
   "verifiedWork": {
-   "calendarChanges": 3,
-   "emailReplies": 4,
+   "calendarChanges": 4,
+   "emailReplies": 5,
    "tasksAndReminders": 1,
    "byKind": {
     "calendar event cancelled": 1,
-    "calendar event created": 2,
-    "confirmation reply": 3,
+    "calendar event created": 3,
+    "confirmation reply": 4,
     "reply offering times": 1,
     "task created": 1
    },
@@ -65,7 +62,7 @@
    "actionsFailedAtEndOfDay": 0,
    "providerFailuresInjectedAndHit": 0,
    "outcomesUnknownAtEndOfDay": 0,
-   "executedButNotVerifiedByDesk": 1,
+   "executedButNotVerifiedByDesk": 0,
    "invariantViolations": 0,
    "backendErrors": 0,
    "checksFailed": 2,
@@ -90,8 +87,8 @@
   },
   "autonomy": {
    "actionableRequests": 8,
-   "handledWithApprovalsOnly": 7,
-   "rate": 0.875,
+   "handledWithApprovalsOnly": 8,
+   "rate": 1.0,
    "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
   },
   "outstanding": {
@@ -109,14 +106,14 @@
    ],
    "openTasks": 4,
    "runsAwaitingApproval": 0,
-   "runsHandedToExecutive": 2
+   "runsHandedToExecutive": 1
   },
   "time": {
-   "wallSecondsForWholeDay": 13.16,
+   "wallSecondsForWholeDay": 13.75,
    "apiCalls": 236,
    "intakePassMsMedian": 14,
    "intakePassMsMax": 32,
-   "executionMsTotal": 10059,
+   "executionMsTotal": 10072,
    "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
   },
   "model": {
@@ -127,7 +124,7 @@
   },
   "humanTimeEstimate": {
    "IS_AN_ASSUMPTION": true,
-   "assistantMinutesForThisWork": 30.0,
+   "assistantMinutesForThisWork": 36.0,
    "executiveMinutesDecidingInDesk": 2.8,
    "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
   }
@@ -264,12 +261,8 @@
     "confirm": true,
     "withinWorkingHours": true
    },
-   "verdict": "incorrect",
-   "notes": [
-    "the event is on the calendar as approved, but the Desk reports it as NOT verified (start_differs)",
-    "the meeting is booked",
-    "the confirmation that was sent states a different time from the one booked"
-   ],
+   "verdict": "correct",
+   "notes": [],
    "evidence": [
     {
      "what": "calendar event created",
@@ -277,7 +270,7 @@
      "toolCallId": 91,
      "tool": "create_calendar_event",
      "status": "executed",
-     "verifiedByDesk": false,
+     "verifiedByDesk": true,
      "verificationMethod": "sandbox_readback",
      "attempts": 1,
      "approvedBy": [
@@ -299,14 +292,12 @@
     }
    ],
    "parts": [],
-   "unverifiedActions": [
-    91
-   ],
+   "unverifiedActions": [],
    "runIds": [
     74
    ],
    "stages": [
-    "ESCALATED"
+    "COMPLETED"
    ]
   },
   "human_in_loop-jonas-catchup": {
@@ -724,7 +715,7 @@
    "runsOpened": [
     11
    ],
-   "wallMs": 155
+   "wallMs": 280
   },
   {
    "id": "human_in_loop-02",
@@ -744,7 +735,7 @@
    "runsOpened": [
     31
    ],
-   "wallMs": 219
+   "wallMs": 264
   },
   {
    "id": "human_in_loop-03",
@@ -764,7 +755,7 @@
    "runsOpened": [
     47
    ],
-   "wallMs": 2344
+   "wallMs": 2313
   },
   {
    "id": "human_in_loop-04",
@@ -784,7 +775,7 @@
    "runsOpened": [
     74
    ],
-   "wallMs": 2217
+   "wallMs": 2453
   },
   {
    "id": "human_in_loop-05",
@@ -805,7 +796,7 @@
    "runsOpened": [
     102
    ],
-   "wallMs": 2235
+   "wallMs": 2312
   },
   {
    "id": "human_in_loop-06",
@@ -827,7 +818,7 @@
    "runsOpened": [
     123
    ],
-   "wallMs": 2342
+   "wallMs": 2468
   },
   {
    "id": "human_in_loop-07",
@@ -849,7 +840,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 296
+   "wallMs": 281
   },
   {
    "id": "human_in_loop-08",
@@ -869,7 +860,7 @@
    "runsOpened": [
     159
    ],
-   "wallMs": 2422
+   "wallMs": 2359
   },
   {
    "id": "human_in_loop-09",
@@ -935,7 +926,7 @@
    ],
    "opened": 0,
    "runsOpened": [],
-   "wallMs": 250
+   "wallMs": 219
   }
  ],
  "gate": {
@@ -943,5 +934,5 @@
   "sandboxExecutions": 10,
   "isolationViolations": 0
  },
- "generatedAt": "2026-11-14T07:34:05+00:00"
+ "generatedAt": "2026-11-14T11:12:38+00:00"
 }

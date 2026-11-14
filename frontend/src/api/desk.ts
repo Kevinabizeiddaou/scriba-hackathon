@@ -666,7 +666,7 @@ export type DeskEvidenceKind =
  * apart so that code keeps compiling; `timeline[].kind` can be any `DeskAnyEvidenceKind`.
  * `task`: a change to one of the person's existing tasks (`DeskTaskUpdate`).
  */
-export type DeskRevisedEvidenceKind = 'task'
+export type DeskRevisedEvidenceKind = 'task' | 'file'
 
 export type DeskAnyEvidenceKind = DeskEvidenceKind | DeskRevisedEvidenceKind
 
@@ -776,9 +776,11 @@ export interface DeskFile {
   filename: string
   mimeType: string
   sizeBytes: number
-  /** The action that made it, and its step in the plan. */
-  toolCallId: number
+  /** The action that made it, and its step in the plan. Null for the result of a workbook change (`changeId`). */
+  toolCallId: number | null
   stepId: string | null
+  /** Set when this file is the changed copy a `DeskFileChange` produced. */
+  changeId?: string
   state: DeskActionLifecycle
   /** True only after the file was reopened and showed the title and headings that were approved. */
   verified: boolean
@@ -786,6 +788,65 @@ export interface DeskFile {
   simulated: boolean
   /** Owner only. Always served as a download (`Content-Disposition: attachment`), never rendered. */
   download: { method: 'GET'; path: string }
+}
+
+/** One change to a workbook. A value is data: text that starts like a formula is refused. */
+export type DeskWorkbookOperation =
+  | { op: 'update_cell'; sheet: string; cell: string; value: string | number | boolean | null }
+  /** Adds one row by column header. A totals row stays last and its range grows. */
+  | { op: 'append_row'; sheet: string; values: Record<string, string | number | boolean | null> }
+  /** Updates the row whose `key` column equals `values[key]`, or adds it. */
+  | { op: 'upsert_row'; sheet: string; key: string; values: Record<string, string | number | boolean | null> }
+
+/** What Scriba's Excel skill reported for one operation. */
+export interface DeskWorkbookStep {
+  index: number
+  op: DeskWorkbookOperation['op']
+  sheet: string
+  status: string
+  /** The skill read the written cells back and every sheet and formula was still there. */
+  verified: boolean
+  cell: string | null
+  row: number | null
+  matched: boolean | null
+  oldValue: unknown
+  oldValues: Record<string, unknown> | null
+  formulasKept: number | null
+  cellsChecked: number | null
+  error: string | null
+  stage: string | null
+}
+
+/**
+ * A change to a workbook of a run (overlay 0.5.1). `suggested`: nothing was changed; the person
+ * applies or dismisses it. `applied`: Scriba's Excel skills ran on a COPY, the result was reopened
+ * and compared with the original, and it is kept as a NEW file (`resultFileId`). The original is
+ * never changed. `failed`: nothing was kept. `unverified`: the store did not confirm.
+ */
+export interface DeskFileChange {
+  id: string
+  state: 'suggested' | 'applied' | 'unverified' | 'failed' | 'dismissed'
+  sourceFileId: string
+  filename: string
+  operations: DeskWorkbookOperation[]
+  resultFileId: string | null
+  resultFilename: string | null
+  verified: boolean
+  verification:
+    | { ok: boolean; reason: string | null; method?: 'workbook_reopened'; verified?: boolean; sheets?: number; rowsAdded?: number; formulas?: number; sheet?: string }
+    | null
+  steps: DeskWorkbookStep[]
+  /** For `failed`: the 1-based operation that did not take effect. Later ones never ran. */
+  failedAt: number | null
+  error: string | null
+  message: string | null
+  /** For `dismissed`: what the change was when the person set it aside. Not a success. */
+  dismissedFrom: 'suggested' | 'failed' | 'unverified' | null
+  by: string | null
+  updatedAt: string
+  simulated: boolean
+  /** Present while `suggested`. POST it to apply. */
+  apply: { method: 'POST'; path: string } | null
 }
 
 // ── the desktop bridge (overlay 0.5; BACKEND_CONTRACT section 14) ──────────
@@ -997,7 +1058,7 @@ export interface DeskRun {
    * 'advance': call advanceDeskRun. 'draft_reply': post draftRequest to Scriba.
    * 'complete_task' (0.3.1): a `taskUpdates` entry is `suggested`; call applyDeskTaskUpdate or dismissDeskTaskUpdate.
    */
-  next: Array<'advance' | 'draft_reply' | 'complete_task'>
+  next: Array<'advance' | 'draft_reply' | 'complete_task' | 'apply_file_change'>
 
   // ── overlay 0.3 and later. Absent on an older backend. ──────────────────
   lifecycle?: DeskLifecycle
@@ -1026,6 +1087,8 @@ export interface DeskRun {
    * contains 'resolve_unresolved': POST /desk/runs/{runId}/unresolved/resolve when the person takes them over.
    */
   unresolved?: Array<{ id: string; text: string; why: string; resolved: boolean }>
+  /** Changes to a workbook of this run, each in its latest state (0.5.1). */
+  fileChanges?: DeskFileChange[]
   updatedAt?: string
   /** Number of actions by Scriba status. */
   actionCounts?: Record<string, number>
@@ -1140,6 +1203,17 @@ export const fetchDeskRuns = (limit?: number) =>
 export const fetchDeskRun = (runId: number) => getJson<DeskRun>(`/desk/runs/${runId}`)
 
 export const advanceDeskRun = (runId: number) => postJson<DeskRun>(`/desk/runs/${runId}/advance`)
+
+/** Suggest a change to a workbook that came with this run's message, or that the run made. Changes nothing. */
+export const suggestDeskFileChange = (runId: number, body: { fileId: string; operations: DeskWorkbookOperation[] }) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/file-changes`, body)
+
+/** Apply it: a changed COPY is made, verified and kept as a new file. Safe to repeat. */
+export const applyDeskFileChange = (runId: number, changeId: string) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/file-changes/${encodeURIComponent(changeId)}/apply`)
+
+export const dismissDeskFileChange = (runId: number, changeId: string) =>
+  postJson<DeskRun>(`/desk/runs/${runId}/file-changes/${encodeURIComponent(changeId)}/dismiss`)
 
 /** The path of a file of the caller's own records. Fetch it with credentials; it is always a download. */
 export const deskFilePath = (fileId: string) => `/desk/files/${encodeURIComponent(fileId)}`

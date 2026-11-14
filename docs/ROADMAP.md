@@ -98,7 +98,7 @@ Next, in order: run the two labs against this branch; decide whether mail the
 rules cannot place is escalated instead of filed; run the 38 scenarios with a
 real model; sandbox control routes for a driven demo.
 
-## Files and the desktop bridge (14 November 2026, overlay 0.5)
+## Files, workbook changes and the desktop bridge (14 November 2026, overlay 0.5.1)
 
 On branch `agent1/automation-integration`, not merged. Sandbox only. Detail:
 [handoff/AUTOMATION_INTEGRATION.md](handoff/AUTOMATION_INTEGRATION.md) and
@@ -109,7 +109,8 @@ On branch `agent1/automation-integration`, not merged. Sandbox only. Detail:
 | A message with a file: read, review document, verification, reply for approval | Works in the sandbox, with Scriba's own readers, table query and document generator |
 | Generated Word document or workbook inside a run | Scriba's `create_document` and `create_spreadsheet`; verified by reopening the file |
 | Paired computers and recorded tasks | Adapter over Scriba's own functions, tested against their shapes; a fake device in the sandbox. No real device has run anything |
-| Editing an existing workbook, meeting briefs, a desktop task as a plan step, attachments of a real mailbox | Not built. Presentations cannot be generated: Scriba has no generator |
+| Changing an existing workbook (0.5.1) | Scriba's own Excel skills on a copy: suggested, applied by the person, verified by reopening, kept as a new file; the original is never changed. The operations come from the caller: the Desk does not work out what to change |
+| Meeting briefs, a desktop task as a plan step, attachments of a real mailbox | Not built. Presentations cannot be generated: Scriba has no generator |
 
 ## Missing capabilities
 

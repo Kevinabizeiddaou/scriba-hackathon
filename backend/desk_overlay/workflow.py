@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
-from . import files, lifecycle, planning, plans, reading, requests, understanding
+from . import files, lifecycle, planning, plans, reading, requests, understanding, workbooks
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
@@ -65,6 +65,14 @@ _NEWS = re.compile(
     r"just (?:an update|a heads[- ]up|to let you know|keeping you (?:posted|in the loop)|so you know)|"
     r"for the record|keeping you (?:posted|in the loop)|thank you|thanks(?: again)?|"
     r"received,? (?:with )?thanks|noted|sounds good|see you (?:then|there|on))\b", re.I)
+
+
+class InvalidRequest(ValueError):
+    """The request is not well formed. Nothing was done."""
+
+
+class Conflict(RuntimeError):
+    """The request cannot be carried out as things stand. Nothing was done."""
 
 
 class IntakeBusy(RuntimeError):
@@ -834,6 +842,110 @@ class DeskWorkflow:
             if open_ones:
                 self._record(user, run, "human", {"action": "resolve_unresolved", "by": user.email,
                                                   "ids": [entry["id"] for entry in open_ones]})
+        return self.view(ctx, user, run_id)
+
+    # ── changing a workbook: always a copy, always asked for ────────────────
+    def _run_file(self, user: Any, run: Dict[str, Any], file_id: str) -> Dict[str, Any]:
+        """A file that belongs to THIS run: one that came with its message, or
+        one the run generated. Anything else is not found."""
+        events = self.gateway.run_events(user, run)
+        own = {str((e.get("data") or {}).get("attachmentId")) for e in events
+               if e.get("kind") == "read" and (e.get("data") or {}).get("tool") == "file.read_attachment"}
+        own |= {str(((c.get("output") or {}).get("document") or {}).get("id")) for c in self.gateway.run_cards(user, run)}
+        own |= {str(change.get("resultFileId")) for change in lifecycle.file_changes(events)}
+        lookup = getattr(self.gateway, "stored_file", None)
+        found = lookup(user, str(file_id)) if callable(lookup) and str(file_id) in own else None
+        if not found:
+            raise NotFound("That file is not part of this run.")
+        return found
+
+    def suggest_file_change(self, ctx: Any, user: Any, run_id: int, file_id: str, operations: Any) -> Dict[str, Any]:
+        """Record a change to a workbook of this run as a suggestion. Nothing
+        is changed: the person applies it or dismisses it."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            source = self._run_file(user, run, file_id)
+            clean, problems = workbooks.validate(operations)
+            if problems:
+                raise InvalidRequest(" ".join(problems))
+            info = files.inspect(source["filename"], source["content"])
+            if not info["ok"] or info["kind"] != "xlsx":
+                raise InvalidRequest("Only an .xlsx workbook can be changed.")
+            known = lifecycle.file_changes(self.gateway.run_events(user, run))
+            bound = workbooks.binding(source["sha256"], clean)
+            if any(c.get("binding") == bound and c.get("state") in ("suggested", "applied") for c in known):
+                return self.view(ctx, user, run_id)          # the same change, asked again: nothing new
+            self._record(user, run, "file", {
+                "changeId": f"fc-{run['id']}-{len(known) + 1}", "op": "change_workbook", "state": "suggested",
+                "sourceFileId": str(source["id"]), "filename": source["filename"], "sourceSha256": source["sha256"],
+                "operations": clean, "binding": bound, "by": user.email})
+        return self.view(ctx, user, run_id)
+
+    def apply_file_change(self, ctx: Any, user: Any, run_id: int, change_id: str,
+                          *, dismiss: bool = False) -> Dict[str, Any]:
+        """The person applies (or dismisses) a suggested change. Applying runs
+        Scriba's Excel skills on a copy and keeps the result as a NEW file."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            known = {c["changeId"]: c for c in lifecycle.file_changes(self.gateway.run_events(user, run))}
+            change = known.get(str(change_id))
+            if change is None:
+                raise NotFound("This run suggests no such change.")
+            if change.get("state") == ("dismissed" if dismiss else "applied"):
+                return self.view(ctx, user, run_id)          # repeating it changes nothing
+            base = {"changeId": change["changeId"], "op": "change_workbook", "filename": change.get("filename")}
+            if dismiss and change.get("state") in ("suggested", "failed", "unverified"):
+                # Setting aside a change that failed or could not be verified is the person's
+                # acknowledgement, not a success: what it was stays on the record.
+                self._record(user, run, "file", {**base, "state": "dismissed", "dismissedFrom": change.get("state"),
+                                                 "by": user.email})
+                return self.view(ctx, user, run_id)
+            if change.get("state") != "suggested":
+                raise Conflict(f"This change is {change.get('state')}; it cannot be "
+                               f"{'dismissed' if dismiss else 'applied'}."
+                               + ("" if dismiss else " Suggest it again."))
+            source = self._run_file(user, run, str(change.get("sourceFileId")))
+            # Bound to the file and the operations that were shown.
+            if workbooks.binding(source["sha256"], change.get("operations") or []) != change.get("binding"):
+                self._record(user, run, "file", {**base, "state": "failed", "error": "change_no_longer_matches",
+                                                 "by": user.email})
+                return self.view(ctx, user, run_id)
+            done = workbooks.apply(source["filename"], source["content"], change["operations"])
+            if not done["ok"]:
+                self._record(user, run, "file", {**base, "state": "failed", "error": done.get("code"),
+                                                 "message": done.get("message"), "failedAt": done.get("failedAt"),
+                                                 "steps": done.get("steps"), "by": user.email})
+                return self.view(ctx, user, run_id)
+            check = workbooks.verify(source["filename"], source["content"], done["content"], change["operations"],
+                                     done["steps"])
+            if not check["ok"]:
+                # The skills said yes and the reopened result disagrees: it is not kept.
+                self._record(user, run, "file", {**base, "state": "failed", "error": "result_not_verified",
+                                                 "verification": check, "steps": done["steps"], "by": user.email})
+                return self.view(ctx, user, run_id)
+            keep = getattr(self.gateway, "keep_file", None)
+            try:
+                stored = keep(user, filename=workbooks.result_name(source["filename"]), content=done["content"],
+                              mime_type=workbooks.XLSX_MIME, extension=".xlsx") if callable(keep) else None
+            except Exception as exc:
+                uncertain = bool(getattr(exc, "uncertain", False))
+                self._record(user, run, "file", {**base, "state": "unverified" if uncertain else "failed",
+                                                 "error": "file_store_did_not_confirm" if uncertain else "file_store_failed",
+                                                 "steps": done["steps"], "by": user.email})
+                return self.view(ctx, user, run_id)
+            if not stored:
+                self._record(user, run, "file", {**base, "state": "failed", "error": "no_file_store",
+                                                 "message": "This backend keeps no files for the Desk.", "by": user.email})
+                return self.view(ctx, user, run_id)
+            # Read the kept file back: it must be the bytes that were verified.
+            kept = self.gateway.stored_file(user, str(stored["id"]))
+            same = bool(kept) and kept["sha256"] == done["sha256"]
+            self._record(user, run, "file", {
+                **base, "state": "applied" if same else "unverified", "resultFileId": str(stored["id"]),
+                "resultFilename": stored.get("filename"), "resultSha256": done["sha256"],
+                "sizeBytes": stored.get("size_bytes"), "steps": done["steps"],
+                "verification": {**check, "method": "workbook_reopened", "verified": same},
+                "error": None if same else "kept_file_differs", "by": user.email})
         return self.view(ctx, user, run_id)
 
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
@@ -1759,6 +1871,9 @@ class DeskWorkflow:
         unresolved = lifecycle.unresolved_of(meta, events)
         if any(not entry["resolved"] for entry in unresolved):
             next_steps.append("resolve_unresolved")   # POST /desk/runs/{id}/unresolved/resolve
+        file_changes = lifecycle.file_changes(events)
+        if any(change.get("state") == "suggested" for change in file_changes):
+            next_steps.append("apply_file_change")    # POST /desk/runs/{id}/file-changes/{changeId}/apply
         counts: Dict[str, int] = {}
         for status in statuses:
             counts[status] = counts.get(status, 0) + 1
@@ -1785,6 +1900,7 @@ class DeskWorkflow:
             "followUps": follow,
             "taskUpdates": task_updates,
             "unresolved": unresolved,
+            "fileChanges": [_file_change_view(change, bool(meta.get("sandbox")), run["id"]) for change in file_changes],
         }
         if detail:
             view["plan"] = {**plan, "steps": steps} if plan is not None else None
@@ -1792,7 +1908,13 @@ class DeskWorkflow:
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
             view["attachments"] = _attachment_views(events)
-            view["files"] = _file_views(actions)
+            view["files"] = _file_views(actions) + [
+                {"id": c["resultFileId"], "filename": c.get("resultFilename"), "mimeType": workbooks.XLSX_MIME,
+                 "sizeBytes": c.get("sizeBytes"), "toolCallId": None, "stepId": None, "changeId": c["changeId"],
+                 "state": "VERIFIED" if c.get("state") == "applied" else "EXECUTED_UNVERIFIED",
+                 "verified": c.get("state") == "applied", "simulated": bool(meta.get("sandbox")),
+                 "download": {"method": "GET", "path": f"/desk/files/{c['resultFileId']}"}}
+                for c in file_changes if c.get("resultFileId")]
             if meta.get("kind") == "command":
                 view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
                 view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))
@@ -1957,6 +2079,26 @@ def _summary(meta: Dict[str, Any], proposals: List[Dict[str, Any]]) -> str:
     elif not proposals:
         parts.append("No action is proposed.")
     return " ".join(part for part in parts if part)
+
+
+def _file_change_view(change: Mapping[str, Any], simulated: bool, run_id: Any) -> Dict[str, Any]:
+    """A change to a workbook as the person sees it: what will be (or was)
+    changed, on which file, and what shows that it worked."""
+    state = str(change.get("state"))
+    return {
+        "id": change.get("changeId"), "state": state, "sourceFileId": change.get("sourceFileId"),
+        "filename": change.get("filename"), "operations": change.get("operations") or [],
+        "resultFileId": change.get("resultFileId"), "resultFilename": change.get("resultFilename"),
+        # True only when the changed copy was reopened, compared with the original and read back from the store.
+        "verified": state == "applied", "verification": change.get("verification"),
+        "steps": change.get("steps") or [], "failedAt": change.get("failedAt"),
+        "error": change.get("error") if state in ("failed", "unverified") else None,
+        "message": change.get("message") if state == "failed" else None,
+        "dismissedFrom": change.get("dismissedFrom") if state == "dismissed" else None,
+        "by": change.get("by"), "updatedAt": change.get("updatedAt"), "simulated": simulated,
+        "apply": {"method": "POST", "path": f"/desk/runs/{run_id}/file-changes/{change.get('changeId')}/apply"}
+        if state == "suggested" else None,
+    }
 
 
 def _attachment_views(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

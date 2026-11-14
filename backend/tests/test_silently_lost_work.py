@@ -223,3 +223,74 @@ def test_what_counts_as_putting_an_answer_off():
     assert not requests.is_holding_reply("Please find the signed copy attached.")
     assert not requests.is_holding_reply("Yes, Thursday at 10 works.")
     assert not requests.is_holding_reply("I will send the rest later, but the main schedule is attached.")
+
+
+# ── what a request is not ───────────────────────────────────────────────────
+
+FOOTER = ("Could we meet Tuesday at 10:00 for 30 minutes?\n\nKind regards,\nImogen Tavares\nPortside Agency\n"
+          "Please consider the environment before printing this email. If you are not the intended recipient "
+          "please notify the sender and delete it.")
+
+
+def test_a_footer_or_a_disclaimer_is_never_a_request(desk):
+    desk.gateway.model_available = False
+    desk.world().deliver(message_id="f1", from_addr=SOFIA, subject="Berth plan", thread_id="T-f1", body=FOOTER)
+    run = desk.intake("f1").json()
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"] and run["unresolved"] == []
+    assert requests.units("x", FOOTER) == [{"text": "Could we meet Tuesday at 10:00 for 30 minutes?",
+                                            "kind": "scheduling", "intent": "new"}]
+
+
+def test_a_request_that_names_an_address_is_handed_over_never_recorded_or_obeyed(desk):
+    desk.gateway.model_available = False
+    desk.world().deliver(
+        message_id="a1", from_addr=SOFIA, subject="Berth plan", thread_id="T-a1",
+        body="Could we meet Tuesday at 10:00 for 30 minutes? Please also loop in harbour@thirdparty.example.")
+    run = desk.intake("a1").json()
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"]
+    assert run["actions"][0]["input"]["attendees"] == ["sofia@client.example"]
+    assert [u["why"] for u in run["unresolved"]] == ["names_an_address"]
+    assert "thirdparty" not in str(run["actions"])
+
+
+def test_an_ask_that_is_not_clearly_separate_work_is_shown_not_turned_into_a_task(desk):
+    desk.gateway.model_available = False
+    desk.world().deliver(message_id="s1", from_addr=SOFIA, subject="Berth plan", thread_id="T-s1",
+                         body="Could we meet Tuesday at 10:00 for 30 minutes? Please bring the tide tables.")
+    run = desk.intake("s1").json()
+    assert [a["tool_name"] for a in run["actions"]] == ["create_calendar_event"]
+    assert [u["why"] for u in run["unresolved"]] == ["needs_your_decision"]
+
+
+def test_two_deadlines_in_one_sentence_are_two_tasks(desk):
+    run = deliver(desk, "I need two things from you: review the dredging quote by Wednesday, "
+                        "and countersign the pilotage agreement by Friday.", subject="Two things")
+    tasks = sorted((a["input"]["title"], a["input"].get("due_at", "")[:10]) for a in run["actions"]
+                   if a["tool_name"] == "create_task")
+    assert tasks == [("Countersign the pilotage agreement by Friday", "2026-11-20"),
+                     ("Review the dredging quote by Wednesday", "2026-11-18")]
+
+
+def test_cancel_this_one_and_could_we_meet_then_is_not_done_when_only_the_first_is(desk):
+    desk.gateway.model_available = False
+    desk.world().add_event(provider="google", event_id="evt-tow", title="Towage review",
+                           start="2026-11-17T09:00:00+00:00", end="2026-11-17T10:00:00+00:00",
+                           attendees=["sofia@client.example"])
+    desk.world().deliver(
+        message_id="x1", from_addr=SOFIA, subject="Towage review", thread_id="T-x1",
+        body="I cannot make the towage review tomorrow, please cancel it. Could we meet on Thursday at 14:00 instead?")
+    run = desk.intake("x1").json()
+    assert [u["why"] for u in run["unresolved"]] == ["second_scheduling_request"]
+    for action in run["actions"]:
+        if action["status"] == "awaiting_approval":
+            desk.gateway.settle(action["toolCallId"], "executed")
+    done = desk.post(f"/runs/{run['runId']}/advance").json()
+    assert done["lifecycle"]["stage"] != "COMPLETED"
+
+
+def test_a_question_that_begins_remind_me_is_not_a_reminder_to_set(desk):
+    from desk_overlay import reading
+
+    assert not reading.reminder_request("Remind me, which quay did we settle on for the Altair?")
+    assert reading.reminder_request("Remind me on Wednesday at 09:00 to ring the chairman.")
+    assert reading.reminder_request("Please remind yourself to bring the survey.")

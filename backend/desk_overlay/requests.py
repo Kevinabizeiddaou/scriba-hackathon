@@ -74,16 +74,45 @@ _DELIVERS = re.compile(
     r"|\b(?:see|is|are) below\b|\bthe answer is\b", re.I)
 
 
+# Text that every message from an organisation carries and nobody wrote for
+# this reader.
+_BOILERPLATE = re.compile(
+    r"intended recipient|confidential|privileged|consider the environment|before printing|unsubscribe|disclaimer"
+    r"|this (?:e-?mail|message|communication) (?:and any|is intended|may contain|was sent|has been)"
+    r"|sent from my|virus(?:es)?\b|registered (?:office|in england)|company (?:number|no\.)", re.I)
+_ADDRESS = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|https?://\S+|\bwww\.\S+", re.I)
+_DEADLINE_MARK = re.compile(r"\b(?:by|before|until|no later than|due)\b", re.I)
+_ADDITIVE = re.compile(r"^\W*(?:(?:and\s+)?(?:also|additionally|separately|in addition|one more thing|finally|lastly|"
+                       r"meanwhile|on another note|by the way)\b|(?:please|could you|can you|would you)\s+also\b)", re.I)
+_CLAUSE = re.compile(r",\s*(?:and|then|also)\s+|;\s*(?:and\s+)?|\s+and\s+(?:also\s+)?(?=[a-z]+\s+(?:the|my|our|your|a|an|this|that)\b)",
+                     re.I)
+
+
 def sentences(text: Any) -> List[str]:
-    """The message's own sentences: no greeting, no sign-off, nothing quoted."""
+    """The message's own sentences: no greeting, nothing quoted, and nothing
+    after the sign-off (a name, a job title, a legal footer)."""
     kept: List[str] = []
     for line in str(text or "").splitlines():
-        if _QUOTED.match(line):
+        if _QUOTED.match(line) or line.strip() in ("--", "-- ", "___", "---"):
             break
-        if not line.strip() or _GREETING.match(line) or _SIGN_OFF.match(line):
+        if _SIGN_OFF.match(line):
+            break                           # what follows the sign-off is not the message
+        if not line.strip() or _GREETING.match(line):
             continue
         kept.extend(part.strip() for part in _SENTENCE.split(line) if part.strip())
-    return [s for s in kept if len(re.findall(r"[A-Za-z]{2,}", s)) >= 2]
+    return [s for s in kept if len(re.findall(r"[A-Za-z]{2,}", s)) >= 2 and not _BOILERPLATE.search(s)]
+
+
+def _clauses(sentence: str) -> List[str]:
+    """"approve the plan by Wednesday, and sign the mandate by Friday" is two
+    requests. Split only when every part carries its own deadline."""
+    body = sentence
+    if ":" in sentence and _DEADLINE_MARK.search(sentence.split(":", 1)[1]):
+        body = sentence.split(":", 1)[1]
+    parts = [part.strip(" .") for part in _CLAUSE.split(body) if part and part.strip(" .")]
+    if len(parts) >= 2 and all(_DEADLINE_MARK.search(part) for part in parts):
+        return parts
+    return [sentence]
 
 
 def is_ask(sentence: str) -> bool:
@@ -101,12 +130,20 @@ def units(subject: Any, text: Any) -> List[Dict[str, Any]]:
         if not scheduling and not is_ask(sentence):
             continue
         if scheduling:
-            kind = "scheduling"
-        elif _ASKS_ONLY_FOR_AN_ANSWER.match(sentence) or not _ASK.search(sentence):
-            kind = "answer"                 # a plain question, or "let me know"
-        else:
-            kind = "action"
-        found.append({"text": sentence, "kind": kind})
+            found.append({"text": sentence, "kind": "scheduling", "intent": scheduling})
+            continue
+        if _ASKS_ONLY_FOR_AN_ANSWER.match(sentence) or not _ASK.search(sentence):
+            found.append({"text": sentence, "kind": "answer"})     # a plain question, or "let me know"
+            continue
+        for clause in _clauses(sentence):
+            found.append({
+                "text": clause, "kind": "action",
+                # Clearly a separate piece of work: introduced as one more
+                # thing, or carrying its own deadline.
+                "separate": bool(_ADDITIVE.search(clause) or _DEADLINE_MARK.search(clause)),
+                # It names an address or a link. Whoever that is, the Desk does
+                # not act on it by itself.
+                "names_address": bool(_ADDRESS.search(clause))})
     return found
 
 

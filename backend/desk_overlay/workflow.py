@@ -366,7 +366,18 @@ class DeskWorkflow:
             else:
                 self._plan_task(ctx, user, item, plan)
         elif triage["category"] == "meeting_request":
-            asked = [u for u in requests.units(item.get("subject"), text) if u["kind"] == "action"]
+            read = requests.units(item.get("subject"), text)
+            asked = [u for u in read if u["kind"] == "action"]
+            wishes = [u for u in read if u["kind"] == "scheduling"]
+            if len({u.get("intent") for u in wishes}) > 1:
+                # Two different things about the calendar in one message (cancel
+                # this one, and could we meet then): the Desk acts on one. The
+                # other is not forgotten.
+                first = (triage.get("meeting_intent") or "new")
+                for unit in wishes:
+                    if unit.get("intent") != first:
+                        plan.setdefault("unresolved", []).append({
+                            "text": unit["text"][:300], "why": "second_scheduling_request"})
             if asked:
                 # The meeting's time is read from the sentences about the
                 # meeting. Another request's date is not the meeting's.
@@ -426,6 +437,16 @@ class DeskWorkflow:
         is identified and cannot be recorded is listed as unresolved: the run
         is then not complete until the person has seen it."""
         held_before = plan["held"]
+        clear = [u for u in asked if u.get("separate") and not u.get("names_address")]
+        for unit in asked:
+            if unit not in clear:
+                # Asked for, and not clearly a piece of work the Desk can
+                # record by itself (or it names an address): the person sees
+                # it before the run can count as done.
+                plan.setdefault("unresolved", []).append({
+                    "text": unit["text"][:300],
+                    "why": "names_an_address" if unit.get("names_address") else "needs_your_decision"})
+        asked = clear
         for unit in asked[:MAX_REQUESTED_TASKS]:
             title = requests.title_of(unit["text"])
             if any(_same_title(p.get("tool_input", {}).get("title"), title) for p in plan["proposals"]

@@ -38,6 +38,7 @@ EXPECTED = {
     "nudge": "The awaited person has one reminder in the original thread.",
     "reply": "The sender has the reply the executive approved.",
     "record_task": "The task or reminder exists in the executive's own records.",
+    "notify": "The meeting's attendees have a note stating the change.",
 }
 ESCALATION = [
     "A calendar cannot be read: availability is unknown and nothing is booked.",
@@ -55,8 +56,15 @@ def build(*, meta: Mapping[str, Any], understanding: Mapping[str, Any], plan: Ma
                            proposal.get("depends_on") or [], deferred=False))
     # What may only follow a calendar change: telling the sender.
     for step in list(steps):
-        if step["purpose"] in ("book", "reschedule", "cancel"):
+        if plan.get("confirm_sender", True) and step["purpose"] in ("book", "reschedule", "cancel"):
             steps.append(_step(f"s{len(steps) + 1}", "send_email", "confirm", [step["id"]], deferred=True))
+    # Steps the planner itself deferred: each names the proposal it follows
+    # and carries what will be proposed once that one took effect.
+    for later in plan.get("deferred") or []:
+        step = _step(f"s{len(steps) + 1}", later["tool"], later.get("purpose"),
+                     [f"s{int(later['depends_on_index']) + 1}"], deferred=True)
+        step["pending"] = later.get("pending")
+        steps.append(step)
     return {
         "version": 1,
         "message": {key: meta.get(key) for key in ("provider", "provider_account_id", "email_id", "thread_id")},

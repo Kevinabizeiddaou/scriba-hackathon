@@ -102,7 +102,7 @@ _WEEKDAY_WITH_DATE = re.compile(
 _RETRACT = re.compile(
     r"\bon second thou?ghts?\b|\bscratch that\b|\bnever ?mind\b|\bdisregard\b|\bas you were\b|"
     r"\bignore (?:that|this|the above|my (?:last|previous|earlier))\b|"
-    r"\bactually,? (?:let'?s )?(?:keep|leave|don'?t|do not|no)\b|\b(?:let'?s )?keep it (?:as (?:it )?is|as planned|where it is|in)\b|"
+    r"\bactually,? (?:let'?s )?(?:keep|leave|don'?t|do not)\b|\b(?:let'?s )?keep it (?:as (?:it )?is|as planned|where it is|in)\b|"
     r"\b(?:please )?(?:don'?t|do not) (?:cancel|move|reschedule|book|change) (?:it|that|this|anything)\b|"
     r"\bchanged my mind\b|\bforget (?:that|it|what i said)\b", re.I)
 # The message speaks of a meeting that already exists, or of moving one.

@@ -488,6 +488,10 @@ export interface DeskAction {
   retry?: DeskActionRetry | null
   /** The fields the person changed in the approve request. `input` stays as proposed. */
   edited?: string[]
+  /** On a reminder (`purpose: "nudge"`): the follow-up it chases (0.4). */
+  followUpId?: string | null
+  /** The existing event a calendar change is about, as it was when proposed (0.4). */
+  target?: { id: string; title: string; start: string; end: string; provider: 'google' | 'outlook' } | null
   /** The action as it ran, or will run: `input` with the person's edit applied. */
   effectiveInput?: Record<string, unknown>
   /** The provider did not confirm: it may or may not have happened. Check before retrying. */
@@ -528,6 +532,13 @@ export type DeskHeldReasonRevised =
   | 'details_missing'
   /** The message contradicts itself or takes an instruction back (0.3.1). Nothing is picked. */
   | 'conflicting_instructions'
+  /** Mail from a person that the Desk cannot place (0.4): handed over, never filed as done. */
+  | 'needs_review'
+  /** A reply is needed and only the person can write it (0.4). */
+  | 'reply_needs_author'
+  /** The same request was already taken in (0.4). `held.target: {runId, messageId, stage}` names the earlier run. */
+  | 'already_in_progress'
+  | 'already_handled'
 
 /** Every reason a run can be held for, on the first draft of overlay 0.3. */
 export type DeskHeldReason = DeskHeldReasonV2 | DeskHeldReasonV3
@@ -662,6 +673,17 @@ export interface DeskFollowUp {
   toolCallId?: number
   /** True for an awaited reply Scriba tracked before the Desk (not opened by a Desk run). */
   external?: boolean
+  // ── overlay 0.4 ("Follow-ups as records") ───────────────────────────────
+  kind?: 'reply' | string
+  /** `desk`: opened by a Desk run. `external`: tracked by Scriba before the Desk. */
+  source?: 'desk' | 'external'
+  waitingOnName?: string | null
+  /** Reminders already sent for it, counted from executed cards. */
+  nudges?: number
+  /** A reminder for it waits for approval. */
+  nudgePending?: boolean
+  lastNudgeAt?: string | null
+  reason?: string | null
 }
 
 /**
@@ -812,6 +834,8 @@ export interface DeskRun {
   plan?: DeskPlan | null
   /** Changes this run suggests to existing tasks, each in its latest state (0.3.1). */
   taskUpdates?: DeskTaskUpdate[]
+  /** `command` (0.4): the run was started from a chat instruction; `email.email_id`, `thread_id` and `from_addr` are then null. */
+  kind?: 'email' | 'command'
   updatedAt?: string
   /** Number of actions by Scriba status. */
   actionCounts?: Record<string, number>

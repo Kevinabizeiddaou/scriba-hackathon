@@ -109,3 +109,58 @@ Until those are decided, the Desk runs on `http://localhost:5173`.
 Issues found in Scriba's backend while preparing this project are tracked
 privately in Scriba's own repository and will be fixed there. They are not
 described in this public repository.
+
+
+## The secretary engine (overlay 0.4)
+
+How the pieces fit, by module (`backend/desk_overlay/`). Arrows are calls.
+
+```
+ mail arrives            the executive types           a card is approved
+      |                          |                             |
+ worker / POST /intake     POST /desk/commands        Scriba's approve route
+      |                          |                             |
+      v                          v                             v
+ workflow.intake           commands.Commands            execution.ExecutionGate
+      |   triage, thread         |  operations                 | binding, readiness,
+      |   understanding          |  (rules, or a model         | sandbox routing,
+      |   (rules or a model      |   whose operations          | verification by read-back
+      |    that must quote)      |   must quote)               |
+      v                          v                             v
+            planning by checked code                     on_settled -> workflow.advance
+   availability on every calendar, the ORIGINAL event,     deferred steps whose
+   recipients from the From header or from records,        prerequisite took effect
+   deadlines from the request's own sentence               are proposed; blocked
+      |                                                    ones are recorded once
+      v
+   plans.build  ->  the typed plan, stored as evidence on the run
+      |
+      v
+   gateway.propose_action  ->  Scriba's own card path and validation,
+                               then the Desk's safeguards (section 7)
+```
+
+| Module | Responsibility | Trust boundary it holds |
+| --- | --- | --- |
+| `workflow.py` | Intake, planning of mail, advance, follow-ups, the run view | A message is data. Its sender is the only attendee or recipient the Desk adds |
+| `commands.py` | Instructions typed by the executive: operations, their planning, the reply in words | Recipients come from calendar and follow-up records only |
+| `understanding.py` | One model call that reads intents, validated | An intent with no quote from the message is dropped; a time needs an offset |
+| `agent.py` | The bounded model step: read tools, three proposal types | It cannot choose a recipient, change a calendar or approve |
+| `memory.py` | A snapshot read from records on demand; the repeated-request check | Unknown is never reported as empty; scoped to user and world |
+| `plans.py`, `lifecycle.py` | The typed plan and step states; evidence and the stage derived from it | A dependent step is never proposed before its prerequisite took effect |
+| `execution.py` | The gate on Scriba's approve, retry and cancel | External writes are off by construction; an approval is bound to what was proposed |
+| `sandbox.py` | Isolated provider worlds; tripwires on real clients | A sandbox run cannot reach a real provider |
+| `safeguards.py`, `chat_scope.py` | Recipient provenance, reply target, structural checks on every card | A card with an unverified recipient is held |
+
+**Memory is not a store.** Every reader (the `GET /desk/memory` route, the
+repeated-request check, the model step's `records`) gets a fresh read of
+Scriba's calendar mirror, Scriba's tasks and the evidence events on the
+Desk's runs. The Desk keeps no second copy that could drift, and a model's
+recollection is never a source.
+
+**Persistence.** A run is a Scriba chat conversation; its evidence is
+append-only system messages on it; its actions are Scriba chat tool-call
+cards; claims go to Scriba's receipt ledger. Follow-ups, task updates, plans
+and decisions are all derived from that evidence, so they survive a restart
+wherever Scriba's own storage does. In the dev backend that storage is in
+memory.

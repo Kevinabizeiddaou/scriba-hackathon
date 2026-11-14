@@ -65,3 +65,23 @@ of the status report.
 No live mailbox or calendar, no Postgres database. A real model was run in
 the sandbox only, once per case. No external
 write is possible from this branch. ScribaAssist/Scriba was not changed.
+
+
+## Added after `8cff1f4`: overlay 0.4
+
+- **Instructions in chat** (`POST /desk/commands`): a reminder, moving or
+  cancelling a meeting and telling its attendees, chasing overdue replies.
+  Dependent steps wait for the step they depend on; recipients come only from
+  calendar and follow-up records.
+- **Finishing an existing task** when a message reports it done; **repeated
+  requests** recognised and not acted on twice; **several requests** in one
+  message, each with its own deadline.
+- **Memory read from records** (`GET /desk/memory`); **follow-ups as
+  records** with one reminder at most and escalation after it.
+- **Mail the Desk cannot place is handed over**, not filed as done.
+- Measured with a real model in the sandbox, one run per case: Agent 2's
+  visible suite 18 of 20 and hold-out 18 of 20 (11 and 10 before), my 42
+  scenarios 38 fully correct, no unsafe run. Backend tests: 739 passed.
+- Contract section 12; `docs/handoff/EVAL_COMPARISON_0_4.md`;
+  `docs/handoff/AGENT2_INTEGRATION_0_4.md`. Two behaviours changed for a
+  client: repeats are `COMPLETED`, and unplaced mail is `ESCALATED`.

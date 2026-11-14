@@ -122,7 +122,7 @@ the secretary workflow on them yet.
 ## 4. Desk overlay endpoints (Tested on the seeded backend)
 
 These exist only when the backend runs with the Desk overlay
-([backend/README.md](../backend/README.md)), version 0.4.0 (what 0.4 added: section 12). All need a
+([backend/README.md](../backend/README.md)), version 0.5.0 (what 0.4 added: section 12; 0.5: section 13). All need a
 session, and all sit behind Scriba's own session and cross-site guards. The
 ones in this section are read-only. Types and client functions:
 `frontend/src/api/desk.ts`; fields added in 0.3 are optional there, so a
@@ -1032,26 +1032,129 @@ instead of 500.
   store, so it knows nothing Scriba does not hold.
 - French and Arabic mail is still not read by the rules.
 
-## 13. Overlay 0.5 and 0.5.1: files, workbook changes and the desktop bridge (Tested in a sandbox; no real mailbox or device)
+
+## 13. Overlay 0.5: the integrated engine, and work that is not silently lost
+
+0.5 is the merge of overlay 0.3.1 (`agent1/engine-reconciliation`: the action
+as approved, an explicit action lifecycle, reader guards, the right meeting
+or none) and overlay 0.4 (`agent1/autonomous-engine`: section 12), on `main`
+with the frontend of pull request 7. Sections 6 to 12 all hold. What follows
+is new in 0.5.
+
+### Policy
+
+1. **"No work" is a finding, not a default.** A message from a person is
+   filed (`COMPLETED`, `no_action_needed`) only when it says nothing is asked
+   ("FYI", "no need to reply"), or is a bare acknowledgement, or reports
+   something the Desk acted on. A sign-off "Thanks" is not that. A message
+   that says something is still outstanding is not that. A message in a
+   language the rules cannot read is not that. Mail is filed as automated
+   only when Scriba's classifier has a sign for it; a subject that merely
+   resembles a newsletter's (`weak_automated_subject` alone) is not one.
+   Everything else is `held.reason: "needs_review"`, `stage: "ESCALATED"`.
+2. **A compound request is not complete while a part of it is open.**
+   `DeskRun.unresolved[]` lists what was identified and not acted on:
+   `{id, text, why, resolved}`. While one is unresolved the run is
+   `ESCALATED` with `lifecycle.reason: "unresolved_requests"`, never
+   `COMPLETED`, and `next` contains `resolve_unresolved`.
+3. **A holding reply does not satisfy a wait.** A reply that says the answer
+   is not there yet, or promises it and gives no answer, leaves the follow-up
+   `waiting` (`reason: "holding_reply"`, `lastHoldingReplyId`,
+   `lastHoldingReplyAt`). It can still become overdue. A reply that answers
+   (a yes, a time, "that works") or hands the thing over satisfies it, even
+   when it also mentions the future.
+
+### New route
+
+| Method and path | Purpose | Type |
+| --- | --- | --- |
+| `POST /desk/runs/{runId}/unresolved/resolve` | The person takes over the requests the Desk could not act on. Records a `human` event; the run can then complete. Safe to repeat | `DeskRun` |
+
+### `unresolved[].why`
+
+| Value | Meaning |
+| --- | --- |
+| `needs_your_decision` | A sentence asks the executive for something beside the main request, and it is not clearly a separate piece of work to record ("please bring the tide tables") |
+| `names_an_address` | The sentence names an address or a link. The Desk neither records nor acts on it by itself |
+| `second_scheduling_request` | The message asks two different things of the calendar (cancel this, and could we meet then); the Desk acted on one |
+| `details_missing` | A reminder was read with no time |
+| `reply_needs_author` | Something else was recorded, and a reply the message also needs was not drafted |
+| `possibly_same_as_open_task` | The request looks like an open task (`taskId`) with another date |
+| `not_recorded` | More separate requests than the Desk records from one message (three) |
+
+### Several requests, on the rules' path
+
+A message is read sentence by sentence (`backend/desk_overlay/requests.py`).
+Nothing after the sign-off, no legal footer and no quoted text is read. A
+sentence that asks the executive to do something (an imperative with
+"please", "could you", "I need you to", "your sign-off is needed by") is a
+request. Two deadlines in one sentence are two requests.
+
+| The sentence | Becomes |
+| --- | --- |
+| is about the calendar (asks to meet, move, cancel or book; or asks about a day and a time) | part of the meeting request. Never a task |
+| only asks to be answered ("let me know", a plain question) | nothing of its own |
+| asks for work, is introduced as one more thing or carries its own deadline, and names no address | a `create_task` card with a title from the sentence and a deadline from the sentence |
+| asks for work otherwise | an `unresolved` entry |
+
+The meeting's time is read from the sentences about the meeting: another
+request's date no longer makes the meeting's time ambiguous. In a message
+the rules class as work, two or more such sentences are two or more tasks.
+
+### Tasks that already exist
+
+A new task is compared with the open ones by content, not only by title: an
+open task most of whose title is in the request, with no other task close.
+Same work and the same date (or none stated): `held.reason: "task_exists"`
+with `held.target: {taskId, title}`. Same work with another date:
+`unresolved` (`possibly_same_as_open_task`), no second task.
+
+### Instructions taken back
+
+"Cancel it. On second thought, keep it." is `conflicting_instructions`
+before any reader is asked: no model is called and no task is made from
+either half.
+
+### From the reconciliation (0.3.1), for reference
+
+`action.lifecycle` (twelve named states), `action.final`, `action.retry`
+(`{mode, attempts, sameEffect}`), `action.edited`, `action.effectiveInput`
+(the action as approved: what is verified and what the sender is told),
+`plan.steps[].state: "blocked"` after a dependency that failed verification,
+`held.reason: "conflicting_instructions"`, the unknown-outcome rule on a
+held card, `taskUpdates[].state: "unverified"` with `stage: "VERIFYING"`.
+They are specified in section 6 ("The lifecycle of an action") and section 8.
+
+### Limits of 0.5
+
+- What a sentence asks is read from its form. A request worded as a plain
+  statement ("the auditors are waiting for your letter") is not recognised
+  as work by the rules; such a message is handed over (`needs_review`), not
+  recorded as a task. With model understanding on, the model's intents are
+  planned as in section 6.
+- French, Arabic and other non-English mail is handed over, not read.
+- A holding reply is recognised by its wording. It is not asked of a model.
+- The rules still read one meeting request per message.
+## 14. Overlay 0.5 and 0.5.1: files, workbook changes and the desktop bridge (Tested in a sandbox; no real mailbox or device)
 
 Typed in `frontend/src/api/desk.ts` (`DeskAttachment`, `DeskFile`,
 `DeskDesktopStatus`, `DeskDesktopJob`, ...). Nothing here generates or parses a
 file with Desk code: the readers, the table query, the content scan and the
 generators are Scriba's (see `docs/handoff/SCRIBA_REUSE_MATRIX.md`).
 
-### 13.1 What is real and what is not
+### 14.1 What is real and what is not
 
 | | State |
 | --- | --- |
 | Attachments of mail in a **sandbox world** | Read, analysed, reviewed. Tested |
 | Attachments of a **real mailbox** | **Not read.** `health.files.attachments` is `false`; a run has `attachments: []`; nothing is claimed |
 | Generated Word document, generated workbook | Scriba's own `create_document` / `create_spreadsheet`. In a sandbox the file is kept in the world |
-| Changing an existing workbook (0.5.1) | Scriba's own `xlsx.*` skills on a copy; the result is a new file. Tested in a sandbox. See 13.5 |
+| Changing an existing workbook (0.5.1) | Scriba's own `xlsx.*` skills on a copy; the result is a new file. Tested in a sandbox. See 14.5 |
 | Generated presentation, PDF, CSV | **Not available**: Scriba has no generator for them |
 | A **real paired computer** | Adapter written and tested against Scriba's function shapes. **No device executed anything**: on this backend Scriba reports the subsystem off, and its tables need Postgres |
 | The fake device in a sandbox world | Everything it returns has `simulated: true` |
 
-### 13.2 A message that brings a file
+### 14.2 A message that brings a file
 
 Every attachment is read when the run is opened (at most 10 per message, 25 MB
 each). Each read is a `read` event with `tool: "file.read_attachment"` and
@@ -1091,7 +1194,7 @@ review blocks the reply (`blocked`, section 6).
 person's own records): they need an approval, except in a world or on a Desk
 set to keep own records without asking. They never send, upload or share.
 
-### 13.3 A generated file
+### 14.3 A generated file
 
 `DeskRun.files[]`, one per generated file:
 
@@ -1120,7 +1223,7 @@ attachment or a generated file). Always `Content-Disposition: attachment`,
 `404` for another person's file, an unknown id, and on a backend that keeps no
 files for the Desk. **Render it never; offer it as a download.**
 
-### 13.4 The desktop bridge
+### 14.4 The desktop bridge
 
 Scriba's existing agent, reached through Scriba's own job queue. The Desk adds
 no agent. A job is created only by the signed-in person, explicitly.
@@ -1173,7 +1276,7 @@ recorded task. Running it again is a new job that the person asks for.
 `{attachments, generate, read, simulated}`. `health.capabilities` gains
 `files` and `desktop_bridge`.
 
-### 13.5 Changing a workbook (overlay 0.5.1)
+### 14.5 Changing a workbook (overlay 0.5.1)
 
 A change to an `.xlsx` workbook that belongs to a run: one that came with its
 message, one the run generated, or the result of an earlier change. Typed as
@@ -1282,23 +1385,23 @@ number can come back as text); on a backend with no sandbox world there is no
 file of a run to change, so nothing can be suggested there; the changed copy
 is not attached to a reply.
 
-### 13.6 Limits of 0.5
+### 14.6 Limits of 0.5
 
 - A desktop job is not yet a step of a Desk run's plan: it is started and
   followed through the routes above.
-- A change to a workbook is never proposed by the Desk itself: the caller sends the operations (13.5).
+- A change to a workbook is never proposed by the Desk itself: the caller sends the operations (14.5).
 - A review is an extract by rule. No model summarises a file.
 - The reply after a review is a fixed text. The person edits or rejects it.
 - Attachments are not sent with a reply.
 
-## 14. Overlay 0.6: the browser as a tool of a run (Tested in a sandbox, on a real headless browser and a synthetic site)
+## 15. Overlay 0.6: the browser as a tool of a run (Tested in a sandbox, on a real headless browser and a synthetic site)
 
 Typed in `frontend/src/api/desk.ts` (`DeskBrowserErrand`, `DeskBrowserStep`,
 `DeskBrowserDownload`, `DeskBrowserStatus`, `DeskBrowserState`). What is
 Scriba's and what the Desk adds: `docs/handoff/BROWSER_AGENT.md`. Measurements:
 `docs/handoff/BROWSER_BENCHMARK.md`.
 
-### 14.1 What is real and what is not
+### 15.1 What is real and what is not
 
 | | State |
 | --- | --- |
@@ -1308,7 +1411,7 @@ Scriba's and what the Desk adds: `docs/handoff/BROWSER_AGENT.md`. Measurements:
 | A real site, a real sign-in | **Not available.** The Desk holds no passwords and types none. Scriba's extension in the person's own Chrome is not connected to the Desk |
 | Model calls | None. Every decision of an errand is a rule (`modelCalls: 0`) |
 
-### 14.2 `GET /desk/browser`
+### 15.2 `GET /desk/browser`
 
 Never fails for "not available": read `available`.
 
@@ -1323,7 +1426,7 @@ Never fails for "not available": read `available`.
 `no_authorised_sites`. `health.browser` carries `available`, `reason` and
 `simulated`. Capability name: `browser`.
 
-### 14.3 A website errand in a run
+### 15.3 A website errand in a run
 
 A message that asks for a report to be fetched from a website the person has
 authorised, by name, opens a run like any other. The run then carries, in one
@@ -1332,7 +1435,7 @@ record:
 | Part | Gate | Where it shows |
 | --- | --- | --- |
 | Fetching: open, follow links, read, download | **None: it only reads.** Runs when the run is opened | `run.browser`; timeline items of kind `browser`; the file in `run.files[]` with `source: "browser"` |
-| The workbook change, when the message brings a workbook and asks for it to be updated | The person applies it (13.5) | `run.fileChanges[]`, `next` contains `apply_file_change` |
+| The workbook change, when the message brings a workbook and asks for it to be updated | The person applies it (14.5) | `run.fileChanges[]`, `next` contains `apply_file_change` |
 | The email | Scriba's own `send_email` card, approved by the person. Proposed only after the workbook change is applied (or straight after the fetch when no workbook is involved). An address that only the message named is held as `unverified_recipient` until the person confirms it | `run.actions[]`, `purpose: "send_report"` |
 
 A site named in a message that is not one of the person's authorised sites is
@@ -1394,7 +1497,7 @@ Step `error` codes: `target_not_found`, `ambiguous_target`, `target_disabled`,
 `download_tried_again:<why>`, `kept_locator_no_longer_fits`,
 `answer_missing_or_unexpected_read_back_instead`.
 
-Lifecycle of a run with an errand, beside the reasons of 13.5:
+Lifecycle of a run with an errand, beside the reasons of 14.5:
 
 | `lifecycle.reason` | `stage` |
 | --- | --- |
@@ -1404,7 +1507,7 @@ Lifecycle of a run with an errand, beside the reasons of 13.5:
 | `browser_outcome_unknown` | `VERIFYING` |
 | `workbook_not_mapped` (the report was fetched; its columns are not the workbook's, so nothing was suggested) | `ESCALATED` |
 
-### 14.4 What the browser will and will not do
+### 15.4 What the browser will and will not do
 
 - **Only the site's exact origin.** Every request of the page (documents,
   scripts, images, redirects) passes one gate; anything for another origin is
@@ -1432,7 +1535,7 @@ Lifecycle of a run with an errand, beside the reasons of 13.5:
   written to a run's record or a log. Cookies live in the browser's memory
   and end with it.
 
-### 14.5 Limits of 0.6
+### 15.5 Limits of 0.6
 
 - Sites exist only in sandbox worlds. There is no route to authorise a real
   site, and no real site has been browsed.

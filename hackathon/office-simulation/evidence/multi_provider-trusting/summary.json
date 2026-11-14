@@ -1,0 +1,1053 @@
+{
+ "simulated": true,
+ "profile": {
+  "id": "multi_provider",
+  "name": "C. Multi-provider day",
+  "description": "Gmail and Outlook mail, two Google calendars and an Outlook calendar; the right account must be chosen for every event and every reply."
+ },
+ "seed": 7,
+ "executive": "trusting",
+ "day": "2026-11-16",
+ "officeFingerprint": "890a911e74c74890",
+ "replayFingerprint": "5af49881c78726e7",
+ "engine": {
+  "overlay": "0.3.1",
+  "deskBackend": "f06a258",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "modelConfigured": false,
+  "chatScope": "enforced",
+  "claims": "memory"
+ },
+ "metrics": {
+  "requests": {
+   "received": 9,
+   "notSent": 0,
+   "actionable": 9,
+   "needingNothing": 0,
+   "actionableDetectedByDesk": 9,
+   "needingNothingLeftAlone": 0
+  },
+  "outcomes": {
+   "byVerdict": {
+    "correct": 7,
+    "correct_escalation": 1,
+    "incorrect": 1
+   },
+   "completedCorrectly": 7,
+   "correctlyHandedToExecutive": 1,
+   "declinedByExecutive": 0,
+   "completedAfterHumanCorrection": 0,
+   "partlyCompleted": 0,
+   "leftForHuman": 0,
+   "incorrect": 1,
+   "incorrectRequests": [
+    "multi_provider-nora-deck"
+   ]
+  },
+  "verifiedWork": {
+   "calendarChanges": 5,
+   "emailReplies": 7,
+   "tasksAndReminders": 0,
+   "byKind": {
+    "calendar event cancelled": 1,
+    "calendar event created": 3,
+    "calendar event moved": 1,
+    "confirmation reply": 5,
+    "reply offering times": 2
+   },
+   "followUpsSatisfied": 1,
+   "duplicatesPrevented": 0,
+   "duplicatesPreventedDetail": []
+  },
+  "failures": {
+   "actionsFailedAtEndOfDay": 0,
+   "providerFailuresInjectedAndHit": 0,
+   "outcomesUnknownAtEndOfDay": 0,
+   "executedButNotVerifiedByDesk": 0,
+   "invariantViolations": 0,
+   "backendErrors": 0,
+   "checksFailed": 2,
+   "checksPassed": 3
+  },
+  "human": {
+   "decisions": 13,
+   "byCategory": {
+    "unreviewed_approval": 13
+   },
+   "mandatoryApprovals": 13,
+   "preferenceRejections": 0,
+   "preferenceEdits": 0,
+   "manualCorrections": 0,
+   "manualRescues": 0,
+   "missingInformationSupplied": 0,
+   "recoveryRetries": 0,
+   "fullTakeovers": 0,
+   "takeoverRequests": []
+  },
+  "autonomy": {
+   "actionableRequests": 9,
+   "handledWithApprovalsOnly": 8,
+   "rate": 0.889,
+   "definition": "Actionable requests that ended in the right outcome with no human action other than approving (or declining) what the Desk proposed."
+  },
+  "outstanding": {
+   "repliesAwaited": [
+    {
+     "waitingOn": "nora.aziz@verdemobility.example",
+     "state": "waiting",
+     "thread": "thread-nora-deck"
+    },
+    {
+     "waitingOn": "daniel.okafor@atlaspharma.example",
+     "state": "waiting",
+     "thread": "thread-daniel-annex"
+    },
+    {
+     "waitingOn": "karim.saad@harborcrane.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-crane-quote"
+    },
+    {
+     "waitingOn": "rafael.costa@lumenaudit.example",
+     "state": "waiting (from before the day)",
+     "thread": "thread-audit-documents"
+    }
+   ],
+   "openTasks": 3,
+   "runsAwaitingApproval": 0,
+   "runsHandedToExecutive": 1
+  },
+  "time": {
+   "wallSecondsForWholeDay": 20.2,
+   "apiCalls": 249,
+   "intakePassMsMedian": 15,
+   "intakePassMsMax": 30,
+   "executionMsTotal": 16073,
+   "note": "Real time on this machine against the sandbox, with no model call and no provider network. It is not a latency figure for a live deployment."
+  },
+  "model": {
+   "configured": false,
+   "runsWithUsage": 0,
+   "estimatedCostUsd": null,
+   "note": "No model call was recorded: the Desk ran on its rules."
+  },
+  "humanTimeEstimate": {
+   "IS_AN_ASSUMPTION": true,
+   "assistantMinutesForThisWork": 45.0,
+   "executiveMinutesDecidingInDesk": 3.2,
+   "basis": "Per-item minutes in officesim/jobmodel.py, written by the simulator's author. Not measured from a job-holder. Only work the oracle confirmed is counted."
+  }
+ },
+ "verdicts": {
+  "multi_provider-hannah-budget": {
+   "subject": "Budget committee prep",
+   "sender": "hannah.schmidt@portalliance.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "hannah",
+    "email": "hannah.schmidt@portalliance.example",
+    "attendees": [
+     "hannah.schmidt@portalliance.example"
+    ],
+    "start": "2026-11-18T11:00:00+01:00",
+    "end": "2026-11-18T11:45:00+01:00",
+    "provider": "outlook",
+    "account": "layla.mansour@portalliance.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 11,
+     "toolCallId": 28,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 11,
+     "toolCallId": 33,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    11
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "multi_provider-nora-termsheet": {
+   "subject": "Term sheet walkthrough",
+   "sender": "nora.aziz@verdemobility.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "nora",
+    "email": "nora.aziz@verdemobility.example",
+    "attendees": [
+     "nora.aziz@verdemobility.example"
+    ],
+    "start": "2026-11-19T15:00:00+01:00",
+    "end": "2026-11-19T16:00:00+01:00",
+    "provider": "google",
+    "account": "layla@mansour-advisory.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 38,
+     "toolCallId": 55,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 38,
+     "toolCallId": 60,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    38
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "multi_provider-greta-holiday": {
+   "subject": "Holiday shipping plan",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-17T16:30:00+01:00",
+     "end": "2026-11-17T17:00:00+01:00"
+    },
+    "conflicts": [
+     "evt-pa-board"
+    ]
+   },
+   "verdict": "correct",
+   "notes": [
+    "quality: none of the offered times is on the day that was asked for (2026-11-17)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 65,
+     "toolCallId": 83,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    65
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "multi_provider-greta-picks": {
+   "subject": "Re: Holiday shipping plan",
+   "sender": "greta.lindqvist@nordlicht-retail.example",
+   "expected": {
+    "outcome": "schedule",
+    "with": "greta",
+    "email": "greta.lindqvist@nordlicht-retail.example",
+    "attendees": [
+     "greta.lindqvist@nordlicht-retail.example"
+    ],
+    "start": "2026-11-16T10:00:00+01:00",
+    "end": "2026-11-16T10:30:00+01:00",
+    "provider": "google",
+    "account": "layla.mansour@meridianfreight.example",
+    "confirm": true,
+    "withinWorkingHours": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event created",
+     "runId": 89,
+     "toolCallId": 106,
+     "tool": "create_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 89,
+     "toolCallId": 112,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    89
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "multi_provider-hannah-board-move": {
+   "subject": "Board meeting moved",
+   "sender": "hannah.schmidt@portalliance.example",
+   "expected": {
+    "outcome": "escalate",
+    "why": "The executive does not organize this meeting; her calendar copy must not be moved by the Desk."
+   },
+   "verdict": "correct_escalation",
+   "notes": [],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    117
+   ],
+   "stages": [
+    "ESCALATED"
+   ]
+  },
+  "multi_provider-nora-deck": {
+   "subject": "Pitch deck comments",
+   "sender": "nora.aziz@verdemobility.example",
+   "expected": {
+    "outcome": "task",
+    "title_has": [
+     "pitch deck",
+     "deck"
+    ],
+    "dueDate": "2026-11-18",
+    "urgent": false
+   },
+   "verdict": "incorrect",
+   "notes": [
+    "the task was needed and the Desk decided nothing was",
+    "unexpected action took effect: send_email (clarify)"
+   ],
+   "evidence": [],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    132
+   ],
+   "stages": [
+    "WAITING_FOR_RESPONSE"
+   ]
+  },
+  "multi_provider-hannah-cancel-safety": {
+   "subject": "Safety committee on Thursday",
+   "sender": "hannah.schmidt@portalliance.example",
+   "expected": {
+    "outcome": "cancel",
+    "event": "evt-pa-safety",
+    "with": "hannah",
+    "email": "hannah.schmidt@portalliance.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event cancelled",
+     "runId": 153,
+     "toolCallId": 168,
+     "tool": "cancel_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 153,
+     "toolCallId": 173,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    153
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  },
+  "multi_provider-daniel-annex": {
+   "subject": "Pricing annex",
+   "sender": "daniel.okafor@atlaspharma.example",
+   "expected": {
+    "outcome": "offer_times",
+    "with": "daniel",
+    "email": "daniel.okafor@atlaspharma.example",
+    "because": "requested_time_busy",
+    "requested": {
+     "start": "2026-11-18T16:30:00+01:00",
+     "end": "2026-11-18T17:00:00+01:00"
+    },
+    "conflicts": [
+     "evt-verde-advisory"
+    ]
+   },
+   "verdict": "correct",
+   "notes": [
+    "quality: none of the offered times is on the day that was asked for (2026-11-18)"
+   ],
+   "evidence": [
+    {
+     "what": "reply offering times",
+     "runId": 178,
+     "toolCallId": 196,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    178
+   ],
+   "stages": [
+    "WAITING_FOR_RESPONSE"
+   ]
+  },
+  "multi_provider-nora-move": {
+   "subject": "Advisory session",
+   "sender": "nora.aziz@verdemobility.example",
+   "expected": {
+    "outcome": "reschedule",
+    "event": "evt-verde-advisory",
+    "start": "2026-11-18T17:00:00+01:00",
+    "end": "2026-11-18T18:00:00+01:00",
+    "with": "nora",
+    "email": "nora.aziz@verdemobility.example",
+    "confirm": true
+   },
+   "verdict": "correct",
+   "notes": [],
+   "evidence": [
+    {
+     "what": "calendar event moved",
+     "runId": 202,
+     "toolCallId": 220,
+     "tool": "update_calendar_event",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    },
+    {
+     "what": "confirmation reply",
+     "runId": 202,
+     "toolCallId": 225,
+     "tool": "send_email",
+     "status": "executed",
+     "verifiedByDesk": true,
+     "verificationMethod": "sandbox_readback",
+     "attempts": 1,
+     "approvedBy": [
+      "alice@example.com"
+     ]
+    }
+   ],
+   "parts": [],
+   "unverifiedActions": [],
+   "runIds": [
+    202
+   ],
+   "stages": [
+    "COMPLETED"
+   ]
+  }
+ },
+ "notSent": [],
+ "decisions": [
+  {
+   "toolCallId": 28,
+   "runId": 11,
+   "requestId": "multi_provider-hannah-budget",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-01",
+   "at": "2026-11-16T08:30:17+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 33,
+   "runId": 11,
+   "requestId": "multi_provider-hannah-budget",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-01",
+   "at": "2026-11-16T08:30:17+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 55,
+   "runId": 38,
+   "requestId": "multi_provider-nora-termsheet",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-02",
+   "at": "2026-11-16T08:45:28+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 60,
+   "runId": 38,
+   "requestId": "multi_provider-nora-termsheet",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-02",
+   "at": "2026-11-16T08:45:28+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 83,
+   "runId": 65,
+   "requestId": "multi_provider-greta-holiday",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-03",
+   "at": "2026-11-16T09:00:54+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 106,
+   "runId": 89,
+   "requestId": "multi_provider-greta-picks",
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-04",
+   "at": "2026-11-16T09:15:51+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 112,
+   "runId": 89,
+   "requestId": "multi_provider-greta-picks",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-04",
+   "at": "2026-11-16T09:15:51+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 147,
+   "runId": 132,
+   "requestId": "multi_provider-nora-deck",
+   "tool": "send_email",
+   "purpose": "clarify",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-06",
+   "at": "2026-11-16T10:00:53+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 168,
+   "runId": 153,
+   "requestId": "multi_provider-hannah-cancel-safety",
+   "tool": "cancel_calendar_event",
+   "purpose": "cancel",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-07",
+   "at": "2026-11-16T10:30:27+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 173,
+   "runId": 153,
+   "requestId": "multi_provider-hannah-cancel-safety",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-07",
+   "at": "2026-11-16T10:30:27+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 196,
+   "runId": 178,
+   "requestId": "multi_provider-daniel-annex",
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-08",
+   "at": "2026-11-16T11:00:53+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 220,
+   "runId": 202,
+   "requestId": "multi_provider-nora-move",
+   "tool": "update_calendar_event",
+   "purpose": "reschedule",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-09",
+   "at": "2026-11-16T14:00:26+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  },
+  {
+   "toolCallId": 225,
+   "runId": 202,
+   "requestId": "multi_provider-nora-move",
+   "tool": "send_email",
+   "purpose": "confirm",
+   "mode": "trusting",
+   "decision": "approve",
+   "category": "unreviewed_approval",
+   "why": "approved without review",
+   "countsAgainstAutonomy": false,
+   "stepId": "multi_provider-09",
+   "at": "2026-11-16T14:00:26+01:00",
+   "result": "executed",
+   "error": null,
+   "errorCode": null
+  }
+ ],
+ "checks": [
+  {
+   "stepId": "multi_provider-10",
+   "check": "briefing_meetings_today_match_calendar",
+   "passed": true,
+   "detail": "briefing says 4, the calendars hold 4"
+  },
+  {
+   "stepId": "multi_provider-10",
+   "check": "briefing_open_tasks_match_task_list",
+   "passed": true,
+   "detail": "briefing says 3, the task list holds 3"
+  },
+  {
+   "stepId": "multi_provider-10",
+   "check": "briefing_built_on_complete_inbox",
+   "passed": true,
+   "detail": "inbox_complete=True, unavailable=[]"
+  },
+  {
+   "stepId": "multi_provider-10",
+   "check": "briefing_reports_handled_work",
+   "passed": false,
+   "detail": "8 runs executed something today; the briefing has no section for work that was done"
+  },
+  {
+   "stepId": "multi_provider-10",
+   "check": "briefing_reports_awaited_replies",
+   "passed": false,
+   "detail": "4 replies are awaited; the briefing does not mention them"
+  }
+ ],
+ "violations": [],
+ "errors": [],
+ "steps": [
+  {
+   "id": "multi_provider-01",
+   "at": "D+0 08:30",
+   "title": "A request reaches the Outlook mailbox",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "multi_provider-hannah-budget"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    11
+   ],
+   "wallMs": 2437
+  },
+  {
+   "id": "multi_provider-02",
+   "at": "D+0 08:45",
+   "title": "A request reaches the second Google account",
+   "kind": "email",
+   "job": [
+    "detect",
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "multi_provider-nora-termsheet"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    38
+   ],
+   "wallMs": 2420
+  },
+  {
+   "id": "multi_provider-03",
+   "at": "D+0 09:00",
+   "title": "A Gmail request for a time that is busy only on the Outlook calendar",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "multi_provider-greta-holiday"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    65
+   ],
+   "wallMs": 2297
+  },
+  {
+   "id": "multi_provider-04",
+   "at": "D+0 09:15",
+   "title": "The client picks one of the offered times",
+   "kind": "counterpart_reply",
+   "job": [
+    "detect",
+    "coordinate",
+    "execute",
+    "chase"
+   ],
+   "requests": [
+    "multi_provider-greta-picks"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    89
+   ],
+   "wallMs": 2344
+  },
+  {
+   "id": "multi_provider-05",
+   "at": "D+0 09:30",
+   "title": "The organizer announces that a meeting the executive does not own is moving",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather"
+   ],
+   "requests": [
+    "multi_provider-hannah-board-move"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 1,
+   "runsOpened": [
+    117
+   ],
+   "wallMs": 250
+  },
+  {
+   "id": "multi_provider-06",
+   "at": "D+0 10:00",
+   "title": "A deadline arrives in the advisory mailbox",
+   "kind": "email",
+   "job": [
+    "understand",
+    "record"
+   ],
+   "requests": [
+    "multi_provider-nora-deck"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    132
+   ],
+   "wallMs": 2390
+  },
+  {
+   "id": "multi_provider-07",
+   "at": "D+0 10:30",
+   "title": "A cancellation for a meeting on the Outlook calendar",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "execute"
+   ],
+   "requests": [
+    "multi_provider-hannah-cancel-safety"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    153
+   ],
+   "wallMs": 2327
+  },
+  {
+   "id": "multi_provider-08",
+   "at": "D+0 11:00",
+   "title": "A Gmail request for a time that is busy only on the second Google account",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "chase"
+   ],
+   "requests": [
+    "multi_provider-daniel-annex"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    178
+   ],
+   "wallMs": 2375
+  },
+  {
+   "id": "multi_provider-09",
+   "at": "D+0 14:00",
+   "title": "A request to move a meeting on the advisory calendar",
+   "kind": "email",
+   "job": [
+    "understand",
+    "gather",
+    "coordinate",
+    "execute"
+   ],
+   "requests": [
+    "multi_provider-nora-move"
+   ],
+   "notes": [],
+   "checks": [],
+   "opened": 0,
+   "runsOpened": [
+    202
+   ],
+   "wallMs": 2578
+  },
+  {
+   "id": "multi_provider-10",
+   "at": "D+0 16:30",
+   "title": "The executive receives the end-of-day briefing",
+   "kind": "briefing",
+   "job": [
+    "report"
+   ],
+   "requests": [],
+   "notes": [],
+   "checks": [
+    {
+     "stepId": "multi_provider-10",
+     "check": "briefing_meetings_today_match_calendar",
+     "passed": true,
+     "detail": "briefing says 4, the calendars hold 4"
+    },
+    {
+     "stepId": "multi_provider-10",
+     "check": "briefing_open_tasks_match_task_list",
+     "passed": true,
+     "detail": "briefing says 3, the task list holds 3"
+    },
+    {
+     "stepId": "multi_provider-10",
+     "check": "briefing_built_on_complete_inbox",
+     "passed": true,
+     "detail": "inbox_complete=True, unavailable=[]"
+    },
+    {
+     "stepId": "multi_provider-10",
+     "check": "briefing_reports_handled_work",
+     "passed": false,
+     "detail": "8 runs executed something today; the briefing has no section for work that was done"
+    },
+    {
+     "stepId": "multi_provider-10",
+     "check": "briefing_reports_awaited_replies",
+     "passed": false,
+     "detail": "4 replies are awaited; the briefing does not mention them"
+    }
+   ],
+   "opened": 0,
+   "runsOpened": [],
+   "wallMs": 296
+  }
+ ],
+ "gate": {
+  "held": 0,
+  "sandboxExecutions": 13,
+  "isolationViolations": 0
+ },
+ "generatedAt": "2026-11-14T11:11:41+00:00"
+}

@@ -144,6 +144,17 @@ def task_updates(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     return list(latest.values())
 
 
+def unresolved_of(meta: Mapping[str, Any], events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Requests that were identified and not acted on, each marked resolved
+    once the person has taken them over."""
+    taken = set()
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "human" and data.get("action") == "resolve_unresolved":
+            taken.update(str(entry) for entry in data.get("ids") or [])
+    return [{**entry, "resolved": str(entry.get("id")) in taken} for entry in meta.get("unresolved") or []]
+
+
 def follow_ups(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     """Each follow-up of the run in its latest state."""
     latest: Dict[str, Dict[str, Any]] = {}
@@ -265,6 +276,18 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
         else:
             stage = "COMPLETED"
 
+    if stage == "COMPLETED" and actions and held and str(held.get("reason")) not in ALREADY_DONE_REASONS \
+            and all(a.get("purpose") == "record_task" for a in actions if a.get("status") in EXECUTED):
+        # Something else in the message was recorded, and what the hold is
+        # about was never dealt with (no reply, no question, no change). A
+        # recorded task does not answer a meeting request.
+        reason = str(held.get("reason") or "")
+        stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
+    if stage == "COMPLETED" and (held is None or str(held.get("reason")) not in ALREADY_DONE_REASONS) \
+            and any(not entry["resolved"] for entry in unresolved_of(meta, events)):
+        # Everything the Desk proposed is done, and the message asked for
+        # something more that it could not act on. That is not complete.
+        stage, reason = "ESCALATED", "unresolved_requests"
     # A change to a workbook that is suggested, failed or unverified is work
     # that is not finished, whatever else the run did.
     changes = {str(change.get("state")) for change in file_changes(events)}

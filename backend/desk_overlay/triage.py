@@ -31,6 +31,10 @@ _DEADLINE_RE = re.compile(
 )
 
 
+# The one reason Scriba's classifier gives that is a resemblance, not a sign.
+WEAK_AUTOMATED = frozenset({"weak_automated_subject"})
+
+
 def meeting_intent(subject: str, text: str) -> str:
     """new, reschedule or cancel. Only meaningful for a meeting request."""
     combined = f"{subject}\n{text}"
@@ -52,6 +56,8 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
     text = str(item.get("body") or item.get("snippet") or item.get("text") or "")
     reasons: List[str] = [str(reason) for reason in (verdict.get("reasons") or [])]
     classification = str(verdict.get("classification") or "")
+    # Only the classifier's own reasons count here, before the Desk adds its own.
+    weak_only = bool(reasons) and set(reasons) <= WEAK_AUTOMATED
     has_deadline = bool(_DEADLINE_RE.search(f"{subject}\n{text}"))
 
     # The Desk's own reading of the text. Scriba's classifier asks whether a
@@ -71,7 +77,14 @@ def triage(item: Mapping[str, Any], verdict: Mapping[str, Any]) -> Dict[str, Any
     if asks_action:
         reasons.append("desk_action_requested")
 
-    if classification == "automated/promotional":
+    # Mail is filed as automated on a sign (the sender, the content, bulk
+    # headers, an unmistakable subject, a blocked sender). When the ONLY
+    # reason is that the subject line resembles a newsletter's, that is not
+    # established: a person's "Investor update" must not disappear.
+    automated = classification == "automated/promotional" and not weak_only
+    if classification == "automated/promotional" and not automated:
+        reasons.append("desk_automated_not_established")
+    if automated:
         category = "automated"
     elif "meeting_request" in reasons or signal:
         category = "meeting_request"

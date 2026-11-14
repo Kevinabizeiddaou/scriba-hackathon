@@ -10,7 +10,7 @@ site it has opened is a synthetic supplier portal on this machine. No model
 is called anywhere in this work. ScribaAssist/Scriba was read from a clone
 and not changed; none of its source is in this repository.
 
-Contract: [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md) section 14.
+Contract: [../BACKEND_CONTRACT.md](../BACKEND_CONTRACT.md) section 15.
 Measurements: [BROWSER_BENCHMARK.md](BROWSER_BENCHMARK.md).
 
 ## 1. What Scriba has (audit of `3ae3a2a`, read-only)
@@ -78,7 +78,7 @@ https://scriba-hackaton.vercel.app/ ; it does not show any of this yet.
 | Data | Required behaviour |
 | --- | --- |
 | `run.browser` present | A "Website" block on the run page. Show `site` and `origin` (the website being accessed), `goal`, and `stepsDone` of `stepsTotal` |
-| `run.browser.state` | Eleven states (contract 14.3). **Only `VERIFIED` is green.** `COMPLETED` is "read, nothing to verify". `PLANNED` and `RUNNING` are in progress: poll the run while it is one of them. Every other state is not success and needs its own wording; show `message` |
+| `run.browser.state` | Eleven states (contract 15.3). **Only `VERIFIED` is green.** `COMPLETED` is "read, nothing to verify". `PLANNED` and `RUNNING` are in progress: poll the run while it is one of them. Every other state is not success and needs its own wording; show `message` |
 | `run.browser.steps[]` | The current activity and what was done, in order: `op` and `name` ("follow: Reports"), `state`, `ms`. Show `recovered[]` in plain words ("closed a dialog", "tried a slow page again", "signed in"). For a stopped step show its `message`. A step with `state: "submitting"` means a submission went out and its answer is not on record yet |
 | `steps[].verification` | The evidence line. `file_opened` with `checksum: "matches_the_page"`: "the file was opened and has the checksum the page states". `read_back`: "the site was read again and shows the change". `pressedAgain` is always false; say "submitted once" where `answered` is false |
 | `run.browser.downloads[]` and `run.files[]` with `source: "browser"` | The retrieved file with its download (`download.path`, with credentials), size and where it came from (`from`) |
@@ -146,12 +146,12 @@ headless shell build 1234. Sandbox only. No model configured.
 
 | What | Result |
 | --- | --- |
-| Backend unit tests | 548 passed |
-| Backend integration tests, on Scriba's real application | 359 passed, 56 skipped (real-model parameters) |
-| Of which new: browser (28), typed client (1) | All pass. Skipped on a machine with no Chromium |
+| Backend unit tests | 654 passed (on the merge with `main` at `3d8b4ab`) |
+| Backend integration tests, on Scriba's real application | 366 passed, 56 skipped (real-model parameters) |
+| Of which new: browser (35), typed client (1) | All pass. Skipped on a machine with no Chromium |
 | Frontend against the new typed client | Type check clean, 452 of 452 tests |
 | Benchmark | 225 of 225 runs correct, 0 unsafe actions, 0 false successes (BROWSER_BENCHMARK.md) |
-| Mutation check on the browser code | See the pull request |
+| Mutation check on the browser code | 35 planted defects, 31 caught (24 at first; seven tests added, and one real weakness fixed: a session that ended just before the download was not recovered). Not caught: two backup checks that another check already covers (a metadata address is also refused as not global; a failed fetch has no file to act on), and two guards with no test yet: a field that does not keep the value typed into it, and a kept locator that now points at a control with another name |
 
 Not run: the quality lab and the office simulation against this branch; any
 real site; any real model; the hosted deployment (not tried; with no authorised

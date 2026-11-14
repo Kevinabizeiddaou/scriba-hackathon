@@ -91,33 +91,49 @@ each marked with its source: the API client, API base-URL resolution, the
 provider-status hook, the design tokens and component styles, and the
 Tailwind and TypeScript configuration.
 
+## Where it stands (14 November 2026, overlay 0.5.1, integrated)
+
+One application: the frontend in `frontend/`, the Desk overlay in `backend/`
+mounted on Scriba's own API, one typed client (`frontend/src/api/desk.ts`) and
+one contract (`docs/BACKEND_CONTRACT.md`). What is in it, how it was merged
+and every number measured on the combined tree:
+[docs/handoff/FINAL_INTEGRATION.md](docs/handoff/FINAL_INTEGRATION.md).
+
+What works, in the sandbox: incoming mail is taken in by a background worker,
+read, planned as dependent steps, proposed as Scriba approval cards, executed
+after approval, verified by reading the result back, and tracked until an
+awaited reply arrives. A file that comes with a message is read with Scriba's
+readers, reviewed into a Word document that is reopened before it counts as
+done, and answered with an approved reply. Chat instructions open runs the
+same way.
+
 ## Present limitations
 
-- The Desk is a read-only shell: sign-in, four connection cards, a mail list
-  per provider, a calendar list, API health.
-- No end-to-end agent run has happened, and none of the 20 evaluation cases
-  has been executed.
-- Live Google and Microsoft data have not been tested from the Desk; tests
-  ran against Scriba's seeded test backend.
-- Some target capabilities do not exist in Scriba yet: availability across
-  both calendars, tracking of awaited replies, a meeting-booking automation,
-  cost per run. See the roadmap.
-- Triage state lives in Scriba; the Desk will not archive, label or move
-  mail in Gmail or Outlook.
-- The Desk runs locally in Docker on `http://localhost:5173`. Hosting it needs
-  configuration decisions listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Nothing has run against a real mailbox, calendar or computer.** External
+  mail and calendar writes are disabled in code outside the sandbox
+  (`GET /desk/health` reports `externalWrites.enabled: false` and why).
+- **No real-model result exists for the integrated tree.** Every number
+  measured on it is rules-only or a scripted stand-in, and is labelled so.
+  Earlier real-model measurements (`docs/handoff/EVAL_CONFIGURED_MODEL.md`,
+  `EVAL_COMPARISON_0_4.md`) are of earlier commits.
+- **The desktop bridge has not run on a paired device.** It is Scriba's own
+  agent queue behind an explicit confirmation; on the seeded backend Scriba
+  reports the subsystem off, and the sandbox device is a fake whose results
+  are marked `simulated`.
+- Attachments of a real mailbox are not read; presentations, PDFs and CSV
+  files are not generated; French and Arabic mail is handed to the person.
+- With the rules alone, unfamiliar wording is often handed over rather than
+  acted on (see the hold-out numbers in the integration document).
+- Triage state lives in Scriba; the Desk does not archive, label or move mail.
 
 ## Phases
-
-Work proceeds one submission checkpoint at a time; a phase starts only when
-authorized.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Index card and foundation | Done |
-| 2 | Unified inbox, chatbot, calendar reads and triage (read-only) | Not started |
-| 3 | Scheduling, tasks, reminders, automations and approvals | Not started |
-| Final | Reliable integrated product, 20 real cases, metrics and demo | Not started |
+| 2 | Unified inbox, chat, calendar reads and triage | Done, on seeded and sandbox data |
+| 3 | Scheduling, tasks, reminders, follow-ups, files, approvals | Done in the sandbox; live writes disabled |
+| Final | Integrated product, evaluation, office simulation, reliability lab, demo | Integrated and measured rules-only; real-model and live-provider runs outstanding |
 
 ## Run it
 
@@ -132,6 +148,12 @@ next to this repository (or set `SCRIBA_PATH` to an existing checkout's
 git clone https://github.com/ScribaAssist/Scriba ../scriba
 ```
 
+The repository is tested against the Scriba revision in
+[`backend/SCRIBA_REVISION`](backend/SCRIBA_REVISION). The `api` container
+checks the checkout when it starts (`docker compose logs api`): it refuses to
+start if Scriba's `requirements.txt` changed since the image was built (run
+`docker compose build api`), and warns if the checkout is on another revision.
+
 Then, from the repository root:
 
 ```bash
@@ -142,7 +164,8 @@ docker compose build
 docker compose up -d
 ```
 
-Open http://localhost:5173. Stop it with `docker compose down`.
+Open http://localhost:5173. Stop it with `docker compose down`. Both ports are
+published on `127.0.0.1` only, so the app is not reachable from other machines.
 
 `up -d` starts two containers:
 
@@ -153,6 +176,18 @@ Open http://localhost:5173. Stop it with `docker compose down`.
 
 Seeded sign-in users are listed at the top of Scriba's
 `e2e/seeded_server.py`. All data resets when `api` restarts.
+
+Settings are optional and go in a `.env` file next to `docker-compose.yml`;
+[`.env.example`](.env.example) lists them all. Put them in `.env` rather than
+in front of one command: every `docker compose` command must see the same
+values, or compose recreates `api` with the other ones.
+
+**The demo:** with `DESK_DEMO=on` in `.env` and `docker compose up -d`, the
+seeded users Alice and Bob get synthetic Gmail and Outlook mail and calendars.
+The intake worker turns that mail into runs within a minute, and approving an
+action executes it against the synthetic world (`GET /desk/sandbox` lists what
+was done). Without it, `api` serves Scriba's own seeded inbox, where nothing
+needs work.
 
 - Edits under `frontend/` reload in the browser. The overlay (`backend/`) and
   the Scriba checkout are mounted read-only: run `docker compose restart api`
@@ -165,7 +200,12 @@ Seeded sign-in users are listed at the top of Scriba's
 - After a dependency change in `frontend/package.json`, run
   `docker compose build` and then `docker compose up -d -V` to refresh the
   container's `node_modules`.
-- Logs: `docker compose logs -f api` or `docker compose logs -f desk`.
+- Logs: `docker compose logs -f api` or `docker compose logs -f desk`
+  (rotated at 10 MB, three files kept).
+- Containers do not restart on their own: after a reboot or a Docker Desktop
+  restart, run `docker compose up -d` again.
+- `failed to get build context scriba` from `docker compose build` means the
+  Scriba checkout is missing: clone it as above or set `SCRIBA_PATH`.
 
 Other profiles:
 
@@ -173,7 +213,8 @@ Other profiles:
 docker compose --profile demo up -d desk-demo     # mock data, no backend:     http://localhost:5174
 docker compose --profile prod up -d desk-prod     # production build on nginx: http://localhost:5173 (instead of desk)
 docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
-docker compose --profile test run --rm backend-tests    # overlay unit and route tests
+docker compose --profile test run --rm backend-tests    # whole backend suite, incl. overlay on the real Scriba app
+docker compose --profile test run --rm smoke            # API smoke test against the running api
 ```
 
 For `desk-prod`, `VITE_API_BASE_URL` is baked in at build time, so rebuild
@@ -183,15 +224,52 @@ after changing it.
 
 ```bash
 docker compose --profile test run --rm frontend-tests   # typecheck + unit tests
-docker compose --profile test run --rm backend-tests    # overlay unit and route tests
+docker compose --profile test run --rm backend-tests    # whole backend suite, incl. overlay on the real Scriba app
+docker compose --profile test run --rm smoke            # read-only API smoke against the api service
+docker compose --profile test run --rm smoke --desk-demo   # the same plus one demo run (DESK_DEMO=on)
 cd frontend && npm run eval                  # evaluation harness self-test (no backend, no agent)
-node scripts/smoke.mjs --base <scriba api>   # read-only API smoke
-node scripts/check-no-secrets.mjs            # run before every commit
+node scripts/e2e-sandbox.mjs --base http://localhost:8000   # DESK_DEMO=on: mail -> worker -> plan -> approvals -> verified,
+                                                            # a file workflow, follow-up tracking, the desktop gate (sandbox only)
 ```
 
-Signed-in smoke checks run when `SMOKE_EMAIL` and `SMOKE_PASSWORD` are set in
-the environment. The smoke test only reads; the one thing it changes is its
-own session.
+`backend-tests` runs in the `api` image (same Python, Scriba's pinned
+packages), including the integration tests that mount the overlay on the real
+Scriba app. Signed-in smoke checks run when `SMOKE_EMAIL` and `SMOKE_PASSWORD`
+(a seeded user) are set in `.env` or the environment. The smoke test only
+reads; the one thing it changes is its own session.
+
+Every commit runs the secret scan (`scripts/check-no-secrets.mjs`) through a
+Git hook. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main` and every pull request:
+
+| Job | What it checks |
+| --- | --- |
+| `secret-scan` | No secret, token store or dump in the tracked files |
+| `frontend` | Typecheck, unit tests, production build |
+| `images` | The compose file is valid; the frontend dev and production images build |
+| `backend` | The whole backend suite in the `api` image, then the smoke test against the running seeded `api`, in normal and demo mode |
+| `hosted-image` | `backend/Dockerfile.railway` builds, starts against a throwaway Postgres and passes the anonymous smoke checks; its Scriba pin matches `backend/SCRIBA_REVISION` |
+
+`backend` and `hosted-image` need Scriba, a private repository. They read it
+with the repository secret `SCRIBA_GITHUB_TOKEN`: a fine-grained GitHub token
+with **Contents: read-only** on `ScribaAssist/Scriba` and nothing else. To set
+it (the command asks for the token):
+
+```bash
+gh secret set SCRIBA_GITHUB_TOKEN --repo nabiljaber/scriba-hackathon
+```
+
+Pull requests from forks get no secrets, so those two jobs are skipped there.
+This repository's Actions logs are public: the jobs print no Scriba code
+(pytest runs with `--tb=line`; run the suite locally for full tracebacks).
 
 ## Repository rules
 

@@ -1,8 +1,11 @@
 /**
- * Transferred unchanged from Scriba: Gmail/frontend/src/lib/apiBase.ts @ 3ae3a2aa.
+ * Transferred from Scriba: Gmail/frontend/src/lib/apiBase.ts @ 3ae3a2aa, with one
+ * change: backendUrl keeps a path in the base (see there).
  * For the Desk this means: on http://localhost:5173 the API is a local Scriba
  * backend at http://localhost:8000 unless VITE_API_BASE_URL names another
- * host (for example the existing Scriba API host).
+ * host (for example the existing Scriba API host), or a path on the Desk's own
+ * origin: the Vercel build sets VITE_API_BASE_URL=/api and proxies /api/* to the
+ * API, so the session cookie is first-party in every browser.
  *
  * Backend base-URL discovery — the single source of truth.
  *
@@ -81,13 +84,18 @@ export function getRawApiBaseUrl(): string {
   return normalizedApiBaseUrl
 }
 
-/** Absolute URL for a backend path, honouring the discovery order above. */
+/**
+ * URL for a backend path, honouring the discovery order above. The path is appended to the base,
+ * so a base with a path keeps it: base '/api' gives '/api/auth/login' (relative, same origin) and
+ * 'https://host/api' gives 'https://host/api/auth/login'. Resolving with `new URL(path, base)`, as
+ * Scriba does, would drop '/api' because the path starts with '/', and throws on a relative base.
+ */
 export function backendUrl(path = '/'): string {
   if (!path) return normalizedApiBaseUrl || '/'
   if (isAbsoluteUrl(path)) return path
   if (!normalizedApiBaseUrl) return path
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return new URL(normalizedPath, `${normalizedApiBaseUrl}/`).toString()
+  return `${normalizedApiBaseUrl}${normalizedPath}`
 }
 
 /** Same as backendUrl, minus the scheme — for user-facing link text. */

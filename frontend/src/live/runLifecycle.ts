@@ -37,16 +37,40 @@ export interface StageInfo {
   blurb: string
 }
 
-export const LIFECYCLE: Record<DeskLifecycleStage, StageInfo> = {
+/**
+ * The stages the backend sends (BACKEND_CONTRACT section 6, `DeskRunStage` in the reconciled
+ * client). These are the canonical names: the screens work in them and show them. The typed
+ * client on `main` still declares three names from a first draft that were never sent; they are
+ * accepted as aliases (STAGE_ALIASES) and never shown.
+ */
+export type RunStage =
+  | 'RECEIVED'
+  | 'UNDERSTANDING'
+  | 'INVESTIGATING'
+  | 'PLANNING'
+  | 'AWAITING_APPROVAL'
+  | 'HELD'
+  | 'EXECUTING'
+  | 'VERIFYING'
+  | 'COMPLETED'
+  | 'WAITING_FOR_RESPONSE'
+  | 'NEEDS_CLARIFICATION'
+  | 'ESCALATED'
+  | 'PARTIALLY_COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+
+export const LIFECYCLE: Record<RunStage, StageInfo> = {
   RECEIVED: { label: 'Incoming', tone: 'neutral', holder: 'secretary', blurb: 'The message has been picked up.' },
-  CLASSIFIED: { label: 'Understanding', tone: 'accent', holder: 'secretary', blurb: 'The secretary has worked out what kind of request this is.' },
-  CONTEXT_GATHERING: { label: 'Investigating', tone: 'info', holder: 'secretary', blurb: 'The thread, calendars and tasks that bear on it are being read.' },
+  UNDERSTANDING: { label: 'Understanding', tone: 'accent', holder: 'secretary', blurb: 'The secretary has worked out what kind of request this is.' },
+  INVESTIGATING: { label: 'Investigating', tone: 'info', holder: 'secretary', blurb: 'The thread, calendars and tasks that bear on it are being read.' },
   PLANNING: { label: 'Planning', tone: 'info', holder: 'secretary', blurb: 'The secretary is deciding what to propose.' },
   AWAITING_APPROVAL: { label: 'Awaiting approval', tone: 'warn', holder: 'you', blurb: 'An action is proposed and waits for your decision. It does not run unless you approve it.' },
+  HELD: { label: 'Held', tone: 'warn', holder: 'you', blurb: 'Every proposed action is held by a safety check, so nothing can be approved as it stands. The action card says why.' },
   EXECUTING: { label: 'Executing', tone: 'info', holder: 'secretary', blurb: 'An approved action is running, or the next step is about to be proposed.' },
   VERIFYING: { label: 'Verifying', tone: 'info', holder: 'secretary', blurb: 'An action ran and its result is not confirmed yet.' },
-  COMPLETED: { label: 'Completed', tone: 'ok', holder: 'nobody', blurb: 'Everything proposed took effect and was verified, or nothing was needed.' },
-  AWAITING_REPLY: { label: 'Awaiting reply', tone: 'info', holder: 'other_party', blurb: 'A reply went out and the other person has not answered yet.' },
+  COMPLETED: { label: 'Completed', tone: 'ok', holder: 'nobody', blurb: 'The server reports that everything proposed took effect and was verified, or that nothing was needed.' },
+  WAITING_FOR_RESPONSE: { label: 'Waiting for a response', tone: 'info', holder: 'other_party', blurb: 'A reply went out and the other person has not answered yet.' },
   NEEDS_CLARIFICATION: { label: 'Needs clarification', tone: 'warn', holder: 'you', blurb: 'The request cannot be acted on as written, and nothing could be proposed.' },
   ESCALATED: { label: 'Escalated to you', tone: 'warn', holder: 'you', blurb: 'The secretary handed this to you and proposes nothing itself.' },
   PARTIALLY_COMPLETED: { label: 'Partially completed', tone: 'danger', holder: 'you', blurb: 'Some actions took effect and some did not. What ran is not undone.' },
@@ -55,26 +79,18 @@ export const LIFECYCLE: Record<DeskLifecycleStage, StageInfo> = {
 }
 
 /**
- * The contract on agent1/autonomous-engine was revised after the typed client was written
- * (0282558): three stages were renamed and `HELD` was added, while `src/api/desk.ts` still
- * declares the first names. Both spellings are accepted here so a run from either backend is
- * understood. This is recorded as a discrepancy in docs/AGENT2_FRONTEND_HANDOFF.md.
+ * First-draft names that the typed client on `main` still declares. No backend sends them; they
+ * are mapped to the canonical names so that code and fixtures written against them keep working.
  */
-export const STAGE_ALIASES: Record<string, DeskLifecycleStage> = {
-  UNDERSTANDING: 'CLASSIFIED',
-  INVESTIGATING: 'CONTEXT_GATHERING',
-  WAITING_FOR_RESPONSE: 'AWAITING_REPLY',
+export const STAGE_ALIASES: Record<string, RunStage> = {
+  CLASSIFIED: 'UNDERSTANDING',
+  CONTEXT_GATHERING: 'INVESTIGATING',
+  AWAITING_REPLY: 'WAITING_FOR_RESPONSE',
 }
 
-/** A stage the revised contract adds and the typed client does not declare yet. */
-export const HELD_STAGE: StageInfo = {
-  label: 'Held',
-  tone: 'warn',
-  holder: 'you',
-  blurb: 'Every proposed action is held by a safety check, so nothing can be approved as it stands. The action card says why.',
-}
+export const HELD_STAGE: StageInfo = LIFECYCLE.HELD
 
-/** The spelling this file works in, whichever one the backend sent. */
+/** The backend's own name for a stage, whichever spelling arrived. */
 export const canonicalStage = (stage: string): string => STAGE_ALIASES[stage] ?? stage
 
 export const UNKNOWN_STAGE: StageInfo = {
@@ -84,14 +100,14 @@ export const UNKNOWN_STAGE: StageInfo = {
   blurb: 'The backend reported a stage this version of the Desk does not know. It is not treated as finished.',
 }
 
-export const isKnownStage = (stage: unknown): stage is DeskLifecycleStage => typeof stage === 'string' && (stage in LIFECYCLE || stage === 'HELD')
+export const isKnownStage = (stage: unknown): stage is RunStage => typeof stage === 'string' && Object.prototype.hasOwnProperty.call(LIFECYCLE, stage)
 
 /**
  * The stage the server reports for a run or a list row. Null when the backend reports none
  * (an overlay before 0.3). A string that is not a known stage is returned as it is, so the caller
  * can show it as unrecognised.
  */
-export function stageOfRun(run: { lifecycle?: DeskRun['lifecycle'] | DeskLifecycleStage | string | null }): DeskLifecycleStage | string | null {
+export function stageOfRun(run: { lifecycle?: DeskRun['lifecycle'] | DeskLifecycleStage | string | null }): RunStage | string | null {
   const lifecycle = run.lifecycle
   if (!lifecycle) return null
   const stage = typeof lifecycle === 'string' ? lifecycle : lifecycle.stage
@@ -100,22 +116,22 @@ export function stageOfRun(run: { lifecycle?: DeskRun['lifecycle'] | DeskLifecyc
 
 export function stageInfo(stage: string | null): StageInfo | null {
   if (stage === null) return null
-  if (stage === 'HELD') return HELD_STAGE
-  return isKnownStage(stage) ? LIFECYCLE[stage] : UNKNOWN_STAGE
+  const canonical = canonicalStage(stage)
+  return isKnownStage(canonical) ? LIFECYCLE[canonical] : UNKNOWN_STAGE
 }
 
 // ── the progress rail ───────────────────────────────────────────────────────
 
 /** The path a run follows when nothing stops it. */
-export const PROGRESS_PATH: DeskLifecycleStage[] = ['RECEIVED', 'CLASSIFIED', 'CONTEXT_GATHERING', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING', 'COMPLETED']
+export const PROGRESS_PATH: RunStage[] = ['RECEIVED', 'UNDERSTANDING', 'INVESTIGATING', 'PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING', 'COMPLETED']
 
 /** Stages a run can rest in that are not on that path. */
-const OFF_PATH: DeskLifecycleStage[] = ['AWAITING_REPLY', 'NEEDS_CLARIFICATION', 'ESCALATED', 'PARTIALLY_COMPLETED', 'FAILED', 'CANCELLED']
+const OFF_PATH: RunStage[] = ['HELD', 'WAITING_FOR_RESPONSE', 'NEEDS_CLARIFICATION', 'ESCALATED', 'PARTIALLY_COMPLETED', 'FAILED', 'CANCELLED']
 
 export type ProgressState = 'reached' | 'current' | 'skipped' | 'upcoming'
 
 export interface ProgressStep {
-  stage: DeskLifecycleStage | string
+  stage: RunStage | string
   label: string
   state: ProgressState
   /** When the server recorded it. Null when no event was recorded for this stage. */
@@ -147,8 +163,8 @@ export function progressOf(run: Pick<DeskRun, 'lifecycle' | 'timeline' | 'update
   const stage = stageOfRun(run)
   if (stage === null) return null
   const times = stageTimes(run.timeline)
-  const onPath = PROGRESS_PATH.indexOf(stage as DeskLifecycleStage)
-  const step = (s: DeskLifecycleStage, state: ProgressState): ProgressStep => ({ stage: s, label: LIFECYCLE[s].label, state, at: times.get(s) ?? null, tone: LIFECYCLE[s].tone })
+  const onPath = PROGRESS_PATH.indexOf(stage as RunStage)
+  const step = (s: RunStage, state: ProgressState): ProgressStep => ({ stage: s, label: LIFECYCLE[s].label, state, at: times.get(s) ?? null, tone: LIFECYCLE[s].tone })
 
   if (onPath >= 0) {
     return PROGRESS_PATH.map((s, index) => {
@@ -162,7 +178,7 @@ export function progressOf(run: Pick<DeskRun, 'lifecycle' | 'timeline' | 'update
   // Resting off the path (or in a stage this version does not know): show what was recorded, then where it stopped.
   const behind = PROGRESS_PATH.filter(s => times.has(s)).map(s => step(s, 'reached'))
   const info = stageInfo(stage)!
-  const known = (OFF_PATH as string[]).includes(stage) || stage === 'HELD'
+  const known = (OFF_PATH as string[]).includes(stage)
   return [...behind, { stage, label: known ? info.label : `${info.label}: ${stage}`, state: 'current', at: run.updatedAt ?? null, tone: info.tone }]
 }
 
@@ -178,6 +194,7 @@ export const LIFECYCLE_REASON: Record<string, string> = {
   external_writes_disabled: 'Sending mail and changing calendars are switched off on this backend, so the proposed action cannot run.',
   reply_needs_author: 'The message needs a reply that only you can write. The secretary proposes none by itself.',
   untrusted_instructions: 'The message contains text addressed to an assistant, so nothing was proposed from it.',
+  unresolved_requests: 'The message asked for more than one thing and not every request could be acted on. What is left is listed below; the run is not complete until you take it over.',
 }
 
 // ── held reasons added by overlay 0.3 ───────────────────────────────────────
@@ -204,6 +221,8 @@ export const HELD_REASON_REVISED: Record<string, { title: string; next: string }
   reply_needs_author: { title: 'This needs a reply in your own words', next: 'Write the reply, or ask for a draft to review. Nothing is sent by itself.' },
   already_in_progress: { title: 'This repeats a request that is already being handled', next: 'Nothing: open the earlier run to see where it stands. No second action was proposed.' },
   already_handled: { title: 'This repeats a request that was already handled', next: 'Nothing. No second action was proposed.' },
+  // Overlay 0.5. Wording is the backend owner's first draft.
+  unresolved_requests: { title: 'The message asked for something more that was not acted on', next: 'Read what is listed as unresolved and take it from there. The rest of the run is done.' },
 }
 
 // ── evidence ────────────────────────────────────────────────────────────────
@@ -225,13 +244,13 @@ export const EVIDENCE_KIND: Record<DeskTimelineItem['kind'] | 'plan', { label: s
 }
 
 export interface VerificationView {
-  state: 'verified' | 'pending' | 'unknown_outcome' | 'not_applicable'
+  state: 'verified' | 'pending' | 'failed' | 'unknown_outcome' | 'not_applicable'
   label: string
   detail: string
 }
 
 const METHOD: Record<string, string> = {
-  sandbox_readback: 'the sandbox world was read back and the effect is there',
+  sandbox_readback: 'the sandbox world was read back and the effect is there (simulated: no real mailbox or calendar was involved)',
   scriba_action_record: "Scriba's own record of the executed action",
   user_confirmed: 'you confirmed it',
 }
@@ -240,6 +259,10 @@ const METHOD: Record<string, string> = {
 export function verificationOf(action: DeskAction): VerificationView {
   if (action.outcomeUnknown) {
     return { state: 'unknown_outcome', label: 'Outcome unknown', detail: 'The provider did not confirm. This may or may not have happened. Check the mailbox or calendar before retrying.' }
+  }
+  // The state was read back and does not show the effect: said in its own words, never "pending".
+  if ((action as unknown as { lifecycle?: unknown }).lifecycle === 'VERIFICATION_FAILED') {
+    return { state: 'failed', label: 'Verification failed', detail: action.verification?.reason ?? 'The call returned, but the mailbox or calendar read back does not show its effect. It is not counted as done. Check it yourself; the steps that depend on it are blocked.' }
   }
   if (action.verified) {
     const method = action.verification?.method ? METHOD[action.verification.method] ?? action.verification.method : action.assistantActionId ? `Scriba action record #${action.assistantActionId}` : 'the server reports it verified'
@@ -278,8 +301,13 @@ export const FOLLOW_UP_STATE: Record<DeskFollowUp['state'], { label: string; ton
 
 export const FOLLOW_UP_ORDER: DeskFollowUp['state'][] = ['overdue', 'waiting', 'satisfied', 'closed']
 
+/** States the backend sends since overlay 0.4 that the typed `state` does not list (so the table above stays exhaustive). */
+export const FOLLOW_UP_STATE_REVISED: Record<string, { label: string; tone: Tone; blurb: string }> = {
+  escalated: { label: 'Reminded once, still no answer', tone: 'danger', blurb: 'One reminder went out and two more days passed. The secretary will not write again: this one is yours.' },
+}
+
 export function followUpInfo(state: string): { label: string; tone: Tone; blurb: string } {
-  return FOLLOW_UP_STATE[state as DeskFollowUp['state']] ?? { label: `State not recognised: ${state}`, tone: 'danger', blurb: 'This version of the Desk does not know this follow-up state. It is not treated as answered.' }
+  return FOLLOW_UP_STATE[state as DeskFollowUp['state']] ?? FOLLOW_UP_STATE_REVISED[state] ?? { label: `State not recognised: ${state}`, tone: 'danger', blurb: 'This version of the Desk does not know this follow-up state. It is not treated as answered.' }
 }
 
 // ── the worker ──────────────────────────────────────────────────────────────

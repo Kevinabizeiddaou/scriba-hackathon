@@ -1,0 +1,176 @@
+[
+ {
+  "stepId": "surprise-17",
+  "at": "2026-11-16T16:30:50+01:00",
+  "briefing": {
+   "account": "alice@example.com",
+   "generated_at": "2026-11-16T16:30:50+01:00",
+   "headline": "9 meeting requests, 3 messages need a reply, 3 meetings today, 0 tasks due today.",
+   "counts": {
+    "meeting_requests": 9,
+    "needs_reply": 3,
+    "action_items": 1,
+    "meetings_today": 3,
+    "open_tasks": 4,
+    "tasks_due_today": 0,
+    "reminders": 1
+   },
+   "needs_attention": [
+    {
+     "id": "surprise-jonas-three",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Jonas Weber <jonas.weber@meridianfreight.example>",
+     "subject": "Pricing with Mei",
+     "timestamp": "2026-11-16T14:00:19+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "surprise-nora-saturday",
+     "provider": "gmail",
+     "provider_account_id": "layla@mansour-advisory.example",
+     "from_addr": "Nora Aziz <nora.aziz@verdemobility.example>",
+     "subject": "Weekend working session",
+     "timestamp": "2026-11-16T13:30:27+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "surprise-greta-past",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+     "subject": "This morning",
+     "timestamp": "2026-11-16T13:00:43+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "surprise-mei-correction",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+     "subject": "Re: Wednesday",
+     "timestamp": "2026-11-16T12:05:09+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "surprise-omar-long",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Omar Haddad <omar.haddad@meridianfreight.example>",
+     "subject": "Regional cost review and one approval",
+     "timestamp": "2026-11-16T11:30:37+00:00",
+     "category": "action_item",
+     "outcome": "task",
+     "priority": "high"
+    }
+   ],
+   "meetings_today": [
+    {
+     "event_id": null,
+     "title": "Leadership stand-up",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "Nordlicht quarterly review",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "1:1 Priya Nair",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    }
+   ],
+   "tasks_due_today": [],
+   "open_tasks": [
+    {
+     "id": "task-atlas-contract",
+     "title": "Review Atlas Pharma draft contract",
+     "due_at": "2026-11-17T09:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-crane-renewal",
+     "title": "Sign Harbor Crane maintenance renewal",
+     "due_at": "2026-11-20T17:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-q4-marketing",
+     "title": "Approve Q4 marketing budget",
+     "due_at": "2026-11-18T17:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-office-meridian-2",
+     "title": "Regional cost review and one approval",
+     "due_at": "2026-11-20T17:00:00+01:00",
+     "effective_priority": null
+    }
+   ],
+   "reminders": [
+    {
+     "created_at": "2026-11-16T08:00:00+01:00",
+     "id": "rem-call-omar",
+     "title": "Call Omar before the budget review",
+     "remind_at": "2026-11-17T13:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "status": "scheduled"
+    }
+   ],
+   "timezone": "Europe/Paris",
+   "inbox_complete": true,
+   "sources": [
+    {
+     "provider": "gmail",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 16,
+     "hasMore": false
+    },
+    {
+     "provider": "outlook",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 0,
+     "hasMore": false
+    }
+   ],
+   "unavailable": []
+  },
+  "followUps": {
+   "waiting": 1,
+   "overdue": 0,
+   "satisfied": 0,
+   "closed": 0
+  }
+ }
+]

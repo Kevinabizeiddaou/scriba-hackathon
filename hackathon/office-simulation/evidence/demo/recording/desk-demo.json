@@ -1,0 +1,427 @@
+{
+ "simulated": true,
+ "name": "desk-demo",
+ "recordedAt": "2026-11-14T11:09:33.421Z",
+ "video": "desk-demo.webm",
+ "viewport": {
+  "width": 1280,
+  "height": 800
+ },
+ "videoSize": {
+  "width": 1152,
+  "height": 720
+ },
+ "browserTimeZone": {
+  "set": "Europe/Paris",
+  "why": "the Desk shows times in the zone of the browser until a response names another; the browser is put in the zone of the sandbox world so that 14:00 in the message reads 14:00 on screen"
+ },
+ "frontend": {
+  "url": "http://localhost:5183",
+  "revision": "298b7d6"
+ },
+ "backend": {
+  "url": "http://localhost:8924",
+  "overlay": "0.3.1",
+  "revision": "f06a258",
+  "sim": {
+   "worldId": "office-meridian",
+   "day": "2026-11-16",
+   "timezone": "Europe/Paris",
+   "workerMode": "thread",
+   "model": "off"
+  },
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "workerAtStart": {
+   "enabled": true,
+   "running": true,
+   "intervalSeconds": 15
+  }
+ },
+ "browser": "chrome 157.0.8103.52",
+ "browserClock": {
+  "fixedTo": "2026-11-16T08:30:20+01:00",
+  "why": "the Desk computes \"today\" from the browser clock; the sandbox world is on its own date. Times stamped by the backend with the real clock (the worker's last pass) are real."
+ },
+ "steps": [
+  {
+   "at": 0.7,
+   "id": "sign-in",
+   "caption": "Signing in to the Desk as the sandbox backend's seeded test user"
+  },
+  {
+   "at": 10.4,
+   "id": "overview-before",
+   "caption": "Overview before any mail arrives. The Desk's background intake is running on its own 15-second timer"
+  },
+  {
+   "at": 14,
+   "id": "mei-arrives",
+   "caption": "A message arrives in the sandbox mailbox (delivered by the simulator, playing the outside world)"
+  },
+  {
+   "at": 18.8,
+   "id": "waiting-for-worker",
+   "caption": "Nobody asks the Desk to look. Waiting for its own background worker (15-second timer)…"
+  },
+  {
+   "at": 27.8,
+   "id": "work-queue",
+   "caption": "The Desk's background worker picked it up: nobody asked. Run 11 is in the work queue"
+  },
+  {
+   "at": 32.2,
+   "id": "run-detail",
+   "caption": "The run: what the Desk understood, and what it proposes. Nothing has happened yet"
+  },
+  {
+   "at": 35.3,
+   "id": "run-plan",
+   "caption": "Scrolling the run: the proposed action, the plan (two steps, each needs an approval), every read the Desk made"
+  },
+  {
+   "at": 48.4,
+   "id": "approve-booking",
+   "caption": "The executive approves the calendar invitation (the real button; it runs in the sandbox)"
+  },
+  {
+   "at": 51.6,
+   "id": "booking-executed",
+   "caption": "Executed in the sandbox calendar, and verified: the Desk read the sandbox calendar back and the event is there"
+  },
+  {
+   "at": 57,
+   "id": "confirmation-proposed",
+   "caption": "Second step of the plan: now that the event exists, the Desk proposes the confirmation email to Mei Tanaka"
+  },
+  {
+   "at": 62.6,
+   "id": "approve-confirmation",
+   "caption": "The executive approves the confirmation email (the real button; \"sent\" means sent inside the sandbox)"
+  },
+  {
+   "at": 69.2,
+   "id": "run-completed",
+   "caption": "The server reports run 11 as COMPLETED: both steps ran in the sandbox. No real mailbox or calendar was reached"
+  },
+  {
+   "at": 77.3,
+   "id": "overview-after",
+   "caption": "Overview again: the request is under \"Handled by the secretary\" (other entries there are the test backend's own seed data)"
+  },
+  {
+   "at": 81.4,
+   "id": "greta-arrives",
+   "caption": "A second message arrives (delivered by the simulator): Greta Lindqvist asks to meet tomorrow at 14:30, a time that is busy"
+  },
+  {
+   "at": 85.6,
+   "id": "waiting-for-worker-2",
+   "caption": "Again nobody asks. Waiting for the Desk's background worker…"
+  },
+  {
+   "at": 88.4,
+   "id": "offer-times",
+   "caption": "Approval center: the time is busy, so the Desk books nothing. It proposes a reply offering times it verified free"
+  },
+  {
+   "at": 95,
+   "id": "approve-offer",
+   "caption": "The executive approves the reply (the real button; it is sent inside the sandbox only)"
+  },
+  {
+   "at": 103.2,
+   "id": "waiting-for-response",
+   "caption": "The reply went out inside the sandbox. The run now waits for Greta's answer (server stage WAITING_FOR_RESPONSE); the Desk tracks it"
+  },
+  {
+   "at": 114.4,
+   "id": "end",
+   "caption": "End of the recording. Everything shown ran against the sandbox world; its operation log is in the report file"
+  }
+ ],
+ "runs": {
+  "mei": {
+   "runId": 11,
+   "trigger": "worker",
+   "openedAfterDeliverySeconds": 12.4,
+   "plan": {
+    "planner": "rules",
+    "approvals": 2,
+    "steps": [
+     {
+      "id": "s1",
+      "tool": "create_calendar_event",
+      "purpose": "book",
+      "dependsOn": []
+     },
+     {
+      "id": "s2",
+      "tool": "send_email",
+      "purpose": "confirm",
+      "dependsOn": [
+       "s1"
+      ]
+     }
+    ]
+   },
+   "stageAtEnd": "COMPLETED",
+   "stateAtEnd": "completed"
+  },
+  "greta": {
+   "runId": 38,
+   "trigger": "worker",
+   "held": {
+    "reason": "calendar_conflict"
+   },
+   "proposedSlots": [
+    {
+     "start": "2026-11-16T09:30:00+01:00",
+     "end": "2026-11-16T10:00:00+01:00"
+    },
+    {
+     "start": "2026-11-16T10:00:00+01:00",
+     "end": "2026-11-16T10:30:00+01:00"
+    },
+    {
+     "start": "2026-11-16T10:30:00+01:00",
+     "end": "2026-11-16T11:00:00+01:00"
+    }
+   ],
+   "stageAtEnd": "WAITING_FOR_RESPONSE",
+   "followUps": [
+    {
+     "id": "fu-38-56",
+     "state": "waiting"
+    }
+   ]
+  }
+ },
+ "approvals": [
+  {
+   "step": "approve-booking",
+   "runId": 11,
+   "toolCallId": 28,
+   "tool": "create_calendar_event",
+   "purpose": "book",
+   "control": "Approve in sandbox",
+   "clickedAt": 51.4,
+   "httpStatus": 200,
+   "statusAfter": "executed",
+   "verified": true,
+   "verification": {
+    "toolCallId": 28,
+    "tool": "create_calendar_event",
+    "verified": true,
+    "method": "sandbox_readback",
+    "reason": null,
+    "simulated": true,
+    "at": "2026-11-16T08:30:20+01:00"
+   },
+   "simulated": true,
+   "runStageAfter": "AWAITING_APPROVAL"
+  },
+  {
+   "step": "approve-confirmation",
+   "runId": 11,
+   "toolCallId": 33,
+   "tool": "send_email",
+   "purpose": "confirm",
+   "control": "Approve in sandbox",
+   "clickedAt": 65.6,
+   "httpStatus": 200,
+   "statusAfter": "executed",
+   "verified": true,
+   "verification": {
+    "toolCallId": 33,
+    "tool": "send_email",
+    "verified": true,
+    "method": "sandbox_readback",
+    "reason": null,
+    "simulated": true,
+    "at": "2026-11-16T08:30:20+01:00"
+   },
+   "simulated": true,
+   "runStageAfter": "COMPLETED"
+  },
+  {
+   "step": "approve-offer",
+   "runId": 38,
+   "toolCallId": 56,
+   "tool": "send_email",
+   "purpose": "offer_times",
+   "control": "Approve in sandbox",
+   "clickedAt": 98,
+   "httpStatus": 200,
+   "statusAfter": "executed",
+   "verified": true,
+   "verification": {
+    "toolCallId": 56,
+    "tool": "send_email",
+    "verified": true,
+    "method": "sandbox_readback",
+    "reason": null,
+    "simulated": true,
+    "at": "2026-11-16T08:30:20+01:00"
+   },
+   "simulated": true,
+   "runStageAfter": "WAITING_FOR_RESPONSE"
+  }
+ ],
+ "stills": [
+  {
+   "at": 14,
+   "file": "desk-demo-still-01-overview-before.png"
+  },
+  {
+   "at": 18.8,
+   "file": "desk-demo-still-02-inbox-mei.png"
+  },
+  {
+   "at": 31.3,
+   "file": "desk-demo-still-03-work-queue.png"
+  },
+  {
+   "at": 35.3,
+   "file": "desk-demo-still-04-run-proposed.png"
+  },
+  {
+   "at": 48.4,
+   "file": "desk-demo-still-05-run-record.png"
+  },
+  {
+   "at": 57,
+   "file": "desk-demo-still-06-booking-verified.png"
+  },
+  {
+   "at": 62.6,
+   "file": "desk-demo-still-07-confirmation-proposed.png"
+  },
+  {
+   "at": 75.8,
+   "file": "desk-demo-still-08-run-completed.png"
+  },
+  {
+   "at": 81.4,
+   "file": "desk-demo-still-09-overview-after.png"
+  },
+  {
+   "at": 95,
+   "file": "desk-demo-still-10-offer-times.png"
+  },
+  {
+   "at": 106.8,
+   "file": "desk-demo-still-11-greta-run.png"
+  }
+ ],
+ "scriptRequests": [
+  {
+   "at": 8.7,
+   "method": "POST",
+   "path": "/sim/clock",
+   "status": 200,
+   "by": "the script, outside the page (the simulator playing the outside world)",
+   "body": {
+    "now": "2026-11-16T08:30:20+01:00"
+   }
+  },
+  {
+   "at": 14,
+   "method": "POST",
+   "path": "/sim/deliver",
+   "status": 200,
+   "by": "the script, outside the page (the simulator playing the outside world)",
+   "body": {
+    "message_id": "demo-mei-intro",
+    "thread_id": "thread-demo-mei-intro",
+    "from_addr": "Mei Tanaka <mei.tanaka@brightwavefoods.example>",
+    "subject": "Cold-chain lanes: intro call",
+    "body": "Hi Layla, would you be free on Wednesday at 14:00 for a 30 minute call to walk through the new cold-chain lanes?"
+   }
+  },
+  {
+   "at": 81.4,
+   "method": "POST",
+   "path": "/sim/deliver",
+   "status": 200,
+   "by": "the script, outside the page (the simulator playing the outside world)",
+   "body": {
+    "message_id": "demo-greta-forecast",
+    "thread_id": "thread-demo-greta-forecast",
+    "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+    "subject": "Peak-season forecast",
+    "body": "Hi Layla, could we meet tomorrow at 14:30 for an hour to go over the peak-season forecast?"
+   }
+  }
+ ],
+ "pageWrites": [
+  {
+   "at": 1.5,
+   "method": "POST",
+   "path": "/auth/signin",
+   "by": "the page (a click in the Desk)"
+  },
+  {
+   "at": 51.4,
+   "method": "POST",
+   "path": "/chat/tool-calls/28/approve",
+   "by": "the page (a click in the Desk)"
+  },
+  {
+   "at": 65.6,
+   "method": "POST",
+   "path": "/chat/tool-calls/33/approve",
+   "by": "the page (a click in the Desk)"
+  },
+  {
+   "at": 98,
+   "method": "POST",
+   "path": "/chat/tool-calls/56/approve",
+   "by": "the page (a click in the Desk)"
+  }
+ ],
+ "blockedWrites": [],
+ "problems": [],
+ "console": [],
+ "world": {
+  "id": "office-meridian",
+  "now": "2026-11-16T08:30:20+01:00",
+  "operations": [
+   {
+    "seq": 1,
+    "at": "2026-11-16T07:30:20+00:00",
+    "op": "calendar.create_event",
+    "status": "executed",
+    "object_id": "evt-office-meridian-1",
+    "error": null,
+    "simulated": true
+   },
+   {
+    "seq": 2,
+    "at": "2026-11-16T07:30:20+00:00",
+    "op": "email.send",
+    "status": "executed",
+    "object_id": "sent-office-meridian-2",
+    "error": null,
+    "simulated": true
+   },
+   {
+    "seq": 3,
+    "at": "2026-11-16T07:30:20+00:00",
+    "op": "email.send",
+    "status": "executed",
+    "object_id": "sent-office-meridian-3",
+    "error": null,
+    "simulated": true
+   }
+  ],
+  "isolationViolations": [],
+  "gate": {
+   "held": 0,
+   "sandboxExecutions": 3,
+   "isolationViolations": 0
+  }
+ },
+ "durationSeconds": 116.9,
+ "videoBytes": 20404757
+}

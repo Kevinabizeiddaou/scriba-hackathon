@@ -1,0 +1,100 @@
+{
+ "simulated": true,
+ "label": "05-meeting-moved",
+ "capturedAt": "2026-11-14T07:14:45.263Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T09:00:36+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 13,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite",
+    "Q3 board pack"
+   ],
+   "operations": 8,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T09:00:36+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 09:00 Europe/Paris  ·  capture 05-meeting-moved",
+ "screens": [
+  {
+   "screen": "run",
+   "route": "#/work/114",
+   "what": "Run detail: plan, proposed actions, evidence, timeline (needs --run)",
+   "file": "05-meeting-moved-run-114.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6100,
+   "actionCards": 2,
+   "run": {
+    "runId": 114,
+    "subject": null,
+    "state": "completed",
+    "stage": "COMPLETED",
+    "simulated": true,
+    "actions": [
+     {
+      "toolCallId": 132,
+      "tool": "update_calendar_event",
+      "status": "executed",
+      "simulated": true
+     },
+     {
+      "toolCallId": 137,
+      "tool": "send_email",
+      "status": "executed",
+      "simulated": true
+     }
+    ]
+   },
+   "viewport": {
+    "width": 1440,
+    "height": 3220
+   },
+   "heading": "Our 1:1 today",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "executed",
+     "label": "Change a calendar event"
+    },
+    {
+     "status": "executed",
+     "label": "Send an email: Re: Our 1:1 today"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

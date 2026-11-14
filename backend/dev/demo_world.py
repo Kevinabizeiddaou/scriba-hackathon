@@ -115,6 +115,34 @@ def build_demo_world(owner_email: str, *, name: str = "", now: Any = None) -> Sa
     except Exception:       # no Scriba here: the demo simply has no file message
         pass
 
+    # A synthetic supplier portal on this machine, authorised for this person, and a message that
+    # asks for its latest report to be brought into a workbook and sent on. The portal is started
+    # only when the demo asks for it (DESK_DEMO_PORTAL=1): it opens a local port.
+    import os
+
+    if os.environ.get("DESK_DEMO_PORTAL") == "1":
+        try:
+            from app import chat_file_tools
+
+            import supplier_portal
+
+            portal, _stop = supplier_portal.start()
+            world.add_site(name="Northwind supplier portal", origin=portal.origin, aliases=["supplier portal"],
+                           start="/home", reports={"entry": "quarterly report"},
+                           sign_in={"path": "/login", "submit": "Sign in",
+                                    "fields": {"Email": supplier_portal.ACCOUNT,
+                                               "Password": supplier_portal.ACCOUNT_PASSWORD}})
+            actuals = chat_file_tools.build_xlsx([{
+                "name": "Actuals", "columns": ["Department", "Planned", "Actual"],
+                "rows": [["Sales", 1000, 1040], ["Ops", 500, 505]]}])
+            mail(20, message_id=f"{handle}-portal", from_addr="Omar Rahal <omar.rahal@northwind.example>",
+                 subject="Q3 supplier report", thread_id=f"thread-{handle}-portal",
+                 body="Please download the latest quarterly report from the Northwind supplier portal, update the "
+                      "attached workbook with the new figures, and send the completed report to me.",
+                 attachments=[{"filename": "supplier-actuals.xlsx", "content": actuals}])
+        except Exception:   # no Scriba, or no free port: the demo simply has no website errand
+            pass
+
     # A FAKE paired computer with two recorded tasks, so the desktop screens
     # have something to show. Everything about it is reported as simulated.
     world.add_desktop(recordings=[

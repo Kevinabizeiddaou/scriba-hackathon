@@ -293,6 +293,12 @@ def build_router(gateway: Any, *, now: Any = None, extra_health: Any = None,
         user = gateway.current_user(request)
         return guarded(lambda: workflow.apply_task_update(request, user, run_id, task_id, dismiss=True))
 
+    @router.post("/runs/{run_id}/unresolved/resolve")
+    def desk_unresolved_resolve(request: Request, run_id: int) -> Dict[str, Any]:
+        """The person takes over the requests the Desk identified and could not act on."""
+        user = gateway.current_user(request)
+        return guarded(lambda: workflow.resolve_unresolved(request, user, run_id))
+
     @router.post("/runs/{run_id}/file-changes")
     def desk_file_change_suggest(request: Request, run_id: int, body: FileChangeBody) -> Dict[str, Any]:
         """Suggest a change to a workbook that came with this run's message

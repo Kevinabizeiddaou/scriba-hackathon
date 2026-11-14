@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+reports/_scratch/
+reports/*/traces/
+reports/*/*.server.log

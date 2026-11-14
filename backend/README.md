@@ -41,6 +41,7 @@ in force, and is otherwise held (`external_writes_disabled`). See
 | `desk_overlay/eval_api.py` | `/desk/eval/v1`: the evaluation harness's five calls, on one sandbox world per case |
 | `desk_overlay/agent.py` | A bounded model step: read tools from a fixed list, and a reply, task or reminder as proposals. Off by default |
 | `desk_overlay/safeguards.py` | The Desk's own checks on a proposed action: completeness, recipient provenance, reply target (pure) |
+| `desk_overlay/jira/` | Jira, off unless `DESK_JIRA` is set: `/desk/jira/*`, reads through Scriba's connection, every write a proposal that is approved and read back. See [../docs/jira/README.md](../docs/jira/README.md) |
 | `desk_overlay/scriba_transferred/` | Scriba's slot search and time rules, transferred unchanged |
 | `dev/seeded_desk_server.py` | Scriba's seeded test backend with the overlay mounted. `--demo` adds sandbox worlds and the worker |
 | `dev/demo_world.py` | The synthetic mail and calendars of the demo |
@@ -129,7 +130,16 @@ signed-in Scriba user. No new OAuth client, redirect URI or cloud setup.
 Running the overlay on a hosted Scriba API is a deployment change and needs
 explicit authorization. It is not done from this repository.
 
+The Desk's own hosted API is a separate deployment: `Dockerfile.railway` builds
+Scriba at a pinned commit with the overlay mounted, for Railway. See
+[../docs/DEPLOY.md](../docs/DEPLOY.md).
+
 ## Test it
+
+**Use Docker:** `docker compose --profile test run --rm backend-tests` from the
+repository root runs the whole suite below, integration tests included, in the
+`api` image (Python 3.12 with Scriba's pinned packages). The commands below are
+the same thing by hand.
 
 Use Scriba's Python environment (it has FastAPI, pytest and httpx).
 

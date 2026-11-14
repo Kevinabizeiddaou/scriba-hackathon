@@ -1,0 +1,327 @@
+[
+ {
+  "stepId": "follow_up-06",
+  "at": "2026-11-16T16:30:50+01:00",
+  "briefing": {
+   "account": "alice@example.com",
+   "generated_at": "2026-11-16T16:30:50+01:00",
+   "headline": "4 meeting requests, 0 messages need a reply, 4 meetings today, 0 tasks due today.",
+   "counts": {
+    "meeting_requests": 4,
+    "needs_reply": 0,
+    "action_items": 0,
+    "meetings_today": 4,
+    "open_tasks": 3,
+    "tasks_due_today": 0,
+    "reminders": 1
+   },
+   "needs_attention": [
+    {
+     "id": "follow_up-greta-picks",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+     "subject": "Re: Peak-season forecast",
+     "timestamp": "2026-11-16T08:10:17+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-yusuf-call",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Yusuf Demir <yusuf.demir@anatoliacargo.example>",
+     "subject": "Partnership call",
+     "timestamp": "2026-11-16T08:00:20+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-greta-forecast",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+     "subject": "Peak-season forecast",
+     "timestamp": "2026-11-16T07:45:48+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-rafael-documents",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Rafael Costa <rafael.costa@lumenaudit.example>",
+     "subject": "Re: Outstanding audit documents",
+     "timestamp": "2026-11-16T13:00:46+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "medium"
+    }
+   ],
+   "meetings_today": [
+    {
+     "event_id": null,
+     "title": "Leadership stand-up",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "Re: Peak-season forecast",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "Nordlicht quarterly review",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "1:1 Priya Nair",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    }
+   ],
+   "tasks_due_today": [],
+   "open_tasks": [
+    {
+     "id": "task-atlas-contract",
+     "title": "Review Atlas Pharma draft contract",
+     "due_at": "2026-11-17T09:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-crane-renewal",
+     "title": "Sign Harbor Crane maintenance renewal",
+     "due_at": "2026-11-20T17:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-q4-marketing",
+     "title": "Approve Q4 marketing budget",
+     "due_at": "2026-11-18T17:00:00+01:00",
+     "effective_priority": null
+    }
+   ],
+   "reminders": [
+    {
+     "created_at": "2026-11-16T08:00:00+01:00",
+     "id": "rem-call-omar",
+     "title": "Call Omar before the budget review",
+     "remind_at": "2026-11-17T13:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "status": "scheduled"
+    }
+   ],
+   "timezone": "Europe/Paris",
+   "inbox_complete": true,
+   "sources": [
+    {
+     "provider": "gmail",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 5,
+     "hasMore": false
+    },
+    {
+     "provider": "outlook",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 0,
+     "hasMore": false
+    }
+   ],
+   "unavailable": []
+  },
+  "followUps": {
+   "waiting": 2,
+   "overdue": 0,
+   "satisfied": 2,
+   "closed": 0
+  }
+ },
+ {
+  "stepId": "follow_up-11",
+  "at": "2026-11-18T16:30:37+01:00",
+  "briefing": {
+   "account": "alice@example.com",
+   "generated_at": "2026-11-18T16:30:37+01:00",
+   "headline": "5 meeting requests, 0 messages need a reply, 2 meetings today, 0 tasks due today.",
+   "counts": {
+    "meeting_requests": 5,
+    "needs_reply": 0,
+    "action_items": 0,
+    "meetings_today": 2,
+    "open_tasks": 3,
+    "tasks_due_today": 0,
+    "reminders": 1
+   },
+   "needs_attention": [
+    {
+     "id": "follow_up-yusuf-answers",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Yusuf Demir <yusuf.demir@anatoliacargo.example>",
+     "subject": "Re: Partnership call",
+     "timestamp": "2026-11-18T14:00:33+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-greta-picks",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+     "subject": "Re: Peak-season forecast",
+     "timestamp": "2026-11-16T08:10:17+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-yusuf-call",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Yusuf Demir <yusuf.demir@anatoliacargo.example>",
+     "subject": "Partnership call",
+     "timestamp": "2026-11-16T08:00:20+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-greta-forecast",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Greta Lindqvist <greta.lindqvist@nordlicht-retail.example>",
+     "subject": "Peak-season forecast",
+     "timestamp": "2026-11-16T07:45:48+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "high"
+    },
+    {
+     "id": "follow_up-rafael-documents",
+     "provider": "gmail",
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "from_addr": "Rafael Costa <rafael.costa@lumenaudit.example>",
+     "subject": "Re: Outstanding audit documents",
+     "timestamp": "2026-11-16T13:00:46+00:00",
+     "category": "meeting_request",
+     "outcome": "schedule",
+     "priority": "medium"
+    }
+   ],
+   "meetings_today": [
+    {
+     "event_id": null,
+     "title": "Sales pipeline review",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla.mansour@meridianfreight.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    },
+    {
+     "event_id": null,
+     "title": "Advisory session: Verde Mobility",
+     "start_time": null,
+     "end_time": null,
+     "provider": "google",
+     "calendar_provider": null,
+     "provider_account_id": "layla@mansour-advisory.example",
+     "attendee_emails": null,
+     "meeting_link": null
+    }
+   ],
+   "tasks_due_today": [],
+   "open_tasks": [
+    {
+     "id": "task-atlas-contract",
+     "title": "Review Atlas Pharma draft contract",
+     "due_at": "2026-11-17T09:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-crane-renewal",
+     "title": "Sign Harbor Crane maintenance renewal",
+     "due_at": "2026-11-20T17:00:00+01:00",
+     "effective_priority": null
+    },
+    {
+     "id": "task-q4-marketing",
+     "title": "Approve Q4 marketing budget",
+     "due_at": "2026-11-18T17:00:00+01:00",
+     "effective_priority": null
+    }
+   ],
+   "reminders": [
+    {
+     "created_at": "2026-11-16T08:00:00+01:00",
+     "id": "rem-call-omar",
+     "title": "Call Omar before the budget review",
+     "remind_at": "2026-11-17T13:30:00+01:00",
+     "timezone": "Europe/Paris",
+     "status": "scheduled"
+    }
+   ],
+   "timezone": "Europe/Paris",
+   "inbox_complete": true,
+   "sources": [
+    {
+     "provider": "gmail",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 6,
+     "hasMore": false
+    },
+    {
+     "provider": "outlook",
+     "state": "connected",
+     "ok": true,
+     "error": null,
+     "count": 0,
+     "hasMore": false
+    }
+   ],
+   "unavailable": []
+  },
+  "followUps": {
+   "waiting": 1,
+   "overdue": 1,
+   "satisfied": 4,
+   "closed": 0
+  }
+ }
+]

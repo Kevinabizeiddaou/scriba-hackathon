@@ -19,7 +19,7 @@ const SOURCE: Record<MailProvider | CalendarProvider, { label: string; dot: stri
 export function SourceBadge({ source, className }: { source: MailProvider | CalendarProvider; className?: string }) {
   const s = SOURCE[source];
   return (
-    <span className={clsx('inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-semibold', s.text, className)}>
+    <span className={clsx('inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold', s.text, className)}>
       <span aria-hidden className={clsx('h-1.5 w-1.5 rounded-full', s.dot)} />
       {s.label}
     </span>

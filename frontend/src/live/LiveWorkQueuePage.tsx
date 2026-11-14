@@ -142,7 +142,7 @@ function SweepReport({ record, onAgain, busy }: { record: SweepRecord; onAgain: 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {sweepLines(sweep).map(line => (
           <div key={line.id} className={clsx('rounded-xl px-3 py-2', line.id === 'failed' && line.count > 0 ? 'bg-danger/[0.09]' : line.id === 'opened' && line.count > 0 ? 'bg-ok/[0.08]' : 'bg-white/[0.04]')} title={line.note}>
-            <dt className="text-[11.5px] text-mute">{line.label}</dt>
+            <dt className="text-xs text-mute">{line.label}</dt>
             <dd className="text-[18px] font-bold tabular-nums text-ink">{line.count}</dd>
           </div>
         ))}
@@ -339,7 +339,7 @@ function WorkQueue() {
 
         {queue.data && (
           <>
-            <div role="group" aria-label="Filter runs" className="flex gap-1.5 overflow-x-auto">
+            <div role="group" aria-label="Filter runs" className="flex gap-1.5 overflow-x-auto scroll-fade">
               {(['all', ...QUEUE_ORDER] as const).map(group => {
                 const count = group === 'all' ? entries.length : grouped(group).length
                 if (group !== 'all' && count === 0) return null

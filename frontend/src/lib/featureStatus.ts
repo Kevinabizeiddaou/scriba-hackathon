@@ -39,6 +39,7 @@ export const STATUS_LABEL: Record<FeatureStatus, string> = {
 export const FEATURES: Feature[] = [
   { area: 'Workspace', name: 'Sign-in and session', status: 'connected', backend: 'Scriba session cookie; GET /providers/status; POST /auth/signin; POST /auth/logout', needs: 'Google and Microsoft sign-in are navigations to Scriba and were not exercised here' },
   { area: 'Workspace', name: 'Executive overview and work queue', status: 'connected', backend: 'GET /desk/briefing, GET /desk/inbox, GET /desk/connections, chat action records', needs: 'A backend work-queue listing, so the queue is not limited to recent conversations' },
+  { area: 'Workspace', name: 'Overview: waiting on you, with the secretary, and finished work', status: 'connected', backend: 'Chat action records and GET /desk/runs: counts and the finished list come from server statuses only', needs: 'A run for an actionable message on the seeded backend: in a browser only completed chat actions and a no-action run were seen' },
   { area: 'Workspace', name: 'Connected accounts (Gmail, Outlook Mail, Google Calendar, Outlook Calendar)', status: 'connected', backend: 'GET /desk/connections', needs: 'Nothing for the Desk; reconnecting happens in Scriba' },
   { area: 'Workspace', name: 'Activity and execution history', status: 'connected', backend: 'GET /chat/conversations and their messages: every action card with its server status', needs: 'The same work-queue listing; automation runs are not included yet' },
 

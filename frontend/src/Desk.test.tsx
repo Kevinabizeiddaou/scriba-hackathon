@@ -146,6 +146,32 @@ describe('unified inbox', () => {
     expect(within(list).getAllByRole('listitem')).toHaveLength(12);
   });
 
+  it('marks urgent and high-priority mail, and tells a meeting request from an action and from mail that asks for nothing', async () => {
+    await open('#/inbox');
+    const list = await screen.findByRole('region', { name: 'Messages' });
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(20));
+    const row = (text: RegExp) => within(list).getByText(text).closest('li')!;
+
+    // Urgent: a rail down the side and the word, so colour is not the only signal.
+    const urgent = row(/Driver shortage at the Tripoli depot/);
+    expect(within(urgent).getByTestId('priority-rail')).toBeInTheDocument();
+    expect(within(urgent).getByText('Urgent')).toBeInTheDocument();
+    expect(within(urgent).getByText('Action required').closest('.pill')!.querySelector('svg')).not.toBeNull();
+
+    // A normal-priority meeting request: no rail, and a chip that carries the meeting icon.
+    const meeting = row(/In Beirut today/);
+    expect(within(meeting).queryByTestId('priority-rail')).toBeNull();
+    expect(within(meeting).getByText('Meeting').closest('.pill')!.querySelector('svg')).not.toBeNull();
+
+    // Mail that asks for nothing is labelled, but not with a chip that competes with the ones above.
+    const quiet = within(list).getAllByText(/^(For information|Low priority)$/);
+    expect(quiet.length).toBeGreaterThan(0);
+    for (const label of quiet) expect(label.closest('.pill')).toBeNull();
+    // Only rows that are urgent or high carry a rail.
+    const rails = within(list).getAllByTestId('priority-rail');
+    for (const rail of rails) expect(rail.closest('li')!.textContent).toMatch(/Urgent|High/);
+  });
+
   it('shows the summary, action items, thread and a thread-aware reply draft for an email', async () => {
     await open('#/inbox/mail-ratecard');
     const detail = await screen.findByRole('article', { name: 'Email: Re: Rate card for 2027' });
@@ -238,6 +264,12 @@ describe('calendar', () => {
     // An approved booking is on the calendar; a pending one is only proposed.
     expect(names).toContain('Pilot results: Hudson Analytics, Wed 18 Nov, 17:00 to 17:30, Cedar & Vale');
     expect(names).toContain('Intro call: Lumen Events, Tue 17 Nov, 11:00 to 11:30, proposed');
+    // One line marks the current time, on today's column only.
+    expect(within(week).getAllByTestId('now-line')).toHaveLength(1);
+    // Each event in conflict carries a warning mark beside its title, not only a border colour.
+    const clash = within(week).getByRole('button', { name: /^1:1 with Omar/ });
+    expect(clash.querySelector('svg')).not.toBeNull();
+    expect(within(week).getByRole('button', { name: /^Weekly leadership sync/ }).querySelector('svg')).toBeNull();
   });
 
   it('opens meeting preparation for an event and explains a cross-calendar conflict', async () => {
@@ -333,9 +365,21 @@ describe('activity', () => {
 
     await user.click(within(filters).getByRole('button', { name: /^Calendar/ }));
     const entries = screen.getAllByRole('listitem');
-    expect(entries.length).toBeGreaterThanOrEqual(5);
-    expect(entries.some((li) => li.textContent!.includes('Failed'))).toBe(true); // the three failed calendar writes
+    expect(entries.length).toBeGreaterThanOrEqual(4);
+    // The three failed calendar writes are one row that says so, not three identical rows.
+    const failed = entries.filter((li) => li.textContent!.includes('Failed'));
+    expect(failed).toHaveLength(2);
+    expect(failed[0]).toHaveTextContent(/Altamira Freight.*Tried 3 times/);
+    expect(failed[1]).not.toHaveTextContent(/Tried/);
     expect(entries.every((li) => /Created|Moved|Cancelled|Create/.test(li.textContent!))).toBe(true);
+
+    // Outcome filter: only what failed, and the count on the button is the number of records.
+    const outcomes = screen.getByRole('group', { name: 'Filter by outcome' });
+    expect(within(outcomes).getByRole('button', { name: /^Failed/ })).toHaveTextContent('Failed4');
+    await user.click(within(outcomes).getByRole('button', { name: /^Failed/ }));
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    await user.click(within(outcomes).getByRole('button', { name: /^Rejected/ }));
+    expect(screen.queryAllByRole('listitem').every((li) => li.textContent!.includes('Rejected'))).toBe(true);
   });
 });
 

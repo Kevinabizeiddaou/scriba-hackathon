@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, Inbox, ListTodo, PlugZap, RefreshCw, ShieldCheck, type LucideIcon } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { backendUrl, getErrorMessage } from '../api/client'
 import { fetchDeskBriefing, type DeskInbox, type MailSource, type TriageCategory } from '../api/desk'
@@ -44,16 +44,27 @@ export function sourceProblems(sources: MailSource[]): string[] {
 function Stage({ icon: Icon, label, value, detail, href, tone = 'neutral', unknown = false }: { icon: LucideIcon; label: string; value: number | null; detail: string; href: string; tone?: 'neutral' | 'warn' | 'danger' | 'ok'; unknown?: boolean }) {
   const colour = tone === 'warn' ? 'text-warn' : tone === 'danger' ? 'text-danger' : tone === 'ok' ? 'text-ok' : 'text-ink'
   return (
-    <a href={href} className="card group flex min-w-0 flex-col gap-1 p-4 transition-colors duration-150 hover:border-line-strong">
-      <span className="flex items-center gap-2 text-[12px] font-semibold text-soft">
-        <Icon aria-hidden className="h-4 w-4 text-mute" />
+    <a href={href} className="group flex min-w-0 flex-col gap-0.5 rounded-xl px-2.5 py-2 transition-colors duration-150 hover:bg-white/[0.04]">
+      <span className="flex items-center gap-1.5 text-[12px] font-semibold text-soft">
+        <Icon aria-hidden className="hidden h-3.5 w-3.5 shrink-0 text-mute sm:block" />
         {label}
       </span>
-      <span className={clsx('text-[26px] font-bold leading-8 tabular-nums', value && value > 0 ? colour : 'text-ink')}>
+      <span className={clsx('text-[24px] font-bold leading-8 tabular-nums', value && value > 0 ? colour : 'text-ink')}>
         {unknown || value === null ? '–' : value}
       </span>
-      <span className="text-[12px] leading-[17px] text-mute">{detail}</span>
+      {/* On a phone the explanation is dropped to keep the strip short, except when it reports a failed read. */}
+      <span className={clsx('text-[12px] leading-[17px] text-mute', !unknown && 'hidden lg:block')}>{detail}</span>
     </a>
+  )
+}
+
+/** One half of the status strip: either what is waiting on the user, or what the secretary has in hand. */
+function StageGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={title} className="min-w-0 p-3 sm:p-4">
+      <p className="eyebrow mb-1 px-2.5">{title}</p>
+      <div className="grid grid-cols-3 gap-1">{children}</div>
+    </div>
   )
 }
 
@@ -113,11 +124,22 @@ export function LiveOverviewPage() {
     void runs.refetch()
   }
 
+  const link = (page: Page, param?: string) => hrefFor(page, param)
   const work = (queue.data?.cards ?? []).filter(isWorkItem)
   const waiting = work.filter(needsUser)
   const problems = work.filter(needsIntervention)
   const executing = work.filter(card => stageOf(card.toolCall.status) === 'executing')
   const completed = work.filter(card => stageOf(card.toolCall.status) === 'completed')
+  // Finished work, only as the server reports it: actions that ran, and picked-up requests the run closed.
+  const handled: { key: string; kind: 'completed' | 'closed'; title: string; detail: string; href: string }[] = [
+    ...completed.map(card => {
+      const description = describeAction(card.toolCall)
+      return { key: `action-${card.toolCall.id}`, kind: 'completed' as const, title: description.headline || description.title, detail: `${description.title}: completed`, href: link('activity') }
+    }),
+    ...(runs.data?.entries ?? [])
+      .filter(entry => entry.run && ['done', 'no_action'].includes(groupOf(entry.run)))
+      .map(({ row, run }) => ({ key: `run-${row.runId}`, kind: groupOf(run!) === 'done' ? ('completed' as const) : ('closed' as const), title: run!.email.subject || 'No subject', detail: QUEUE_GROUPS[groupOf(run!)].label, href: link('work', String(row.runId)) })),
+  ]
   const arrived = inbox.data?.items.length ?? null
   const classified = inbox.data?.counts
   const needsAttention = briefing.data?.needs_attention ?? []
@@ -125,8 +147,6 @@ export function LiveOverviewPage() {
   const hour = Number(fmtTime(new Date().toISOString(), tz).slice(0, 2))
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const firstName = principal.name.includes('@') ? '' : principal.name.split(' ')[0]
-
-  const link = (page: Page, param?: string) => hrefFor(page, param)
 
   return (
     <div>
@@ -151,14 +171,18 @@ export function LiveOverviewPage() {
           </p>
         )}
 
-        {/* The work pipeline, left to right: what came in, what was made of it, what is waiting, what happened. */}
-        <section aria-label="Work queue" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <Stage icon={Inbox} label="Arrived" value={arrived} unknown={inbox.isError} href={link('inbox')} detail={inbox.isError ? 'Could not be read' : 'Recent messages across Gmail and Outlook'} />
-          <Stage icon={ListTodo} label="Need action" value={classified ? classified.meeting_request + classified.needs_reply + classified.action_item : null} unknown={inbox.isError} href={link('inbox')} detail="Classified as a meeting request, a reply or an action" />
-          <Stage icon={ShieldCheck} label="Awaiting approval" value={queue.data ? waiting.length : null} unknown={queue.isError} tone="warn" href={link('approvals')} detail="Proposed by the secretary; nothing has happened yet" />
-          <Stage icon={RefreshCw} label="Executing" value={queue.data ? executing.length : null} unknown={queue.isError} href={link('activity')} detail="Approved and running on Scriba now" />
-          <Stage icon={CheckCircle2} label="Completed" value={queue.data ? completed.length : null} unknown={queue.isError} tone="ok" href={link('activity')} detail="Ran, with the provider result on record" />
-          <Stage icon={AlertTriangle} label="Failed or partial" value={queue.data ? problems.length : null} unknown={queue.isError} tone="danger" href={link('activity')} detail="Did not finish cleanly; needs a person" />
+        {/* Two halves: what cannot move without the user, and what the secretary has in hand or has finished. */}
+        <section aria-label="Where the work stands" className="card grid divide-y divide-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+          <StageGroup title="Waiting on you">
+            <Stage icon={ShieldCheck} label="Awaiting approval" value={queue.data ? waiting.length : null} unknown={queue.isError} tone="warn" href={link('approvals')} detail={queue.isError ? 'Could not be read' : 'Proposed by the secretary; nothing has happened yet'} />
+            <Stage icon={AlertTriangle} label="Failed or partial" value={queue.data ? problems.length : null} unknown={queue.isError} tone="danger" href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Did not finish cleanly; needs a person'} />
+            <Stage icon={ListTodo} label="Need action" value={classified ? classified.meeting_request + classified.needs_reply + classified.action_item : null} unknown={inbox.isError} href={link('inbox')} detail={inbox.isError ? 'Could not be read' : 'Mail classified as a meeting request, a reply or an action'} />
+          </StageGroup>
+          <StageGroup title="With the secretary">
+            <Stage icon={Inbox} label="Arrived" value={arrived} unknown={inbox.isError} href={link('inbox')} detail={inbox.isError ? 'Could not be read' : 'Recent messages across Gmail and Outlook'} />
+            <Stage icon={RefreshCw} label="Executing" value={queue.data ? executing.length : null} unknown={queue.isError} href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Approved and running on Scriba now'} />
+            <Stage icon={CheckCircle2} label="Completed" value={queue.data ? completed.length : null} unknown={queue.isError} tone="ok" href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Ran, with the provider result on record'} />
+          </StageGroup>
         </section>
         {queue.data && <QueueCoverage queue={queue.data} />}
 
@@ -291,6 +315,27 @@ export function LiveOverviewPage() {
                   </p>
                 </div>
               )}
+            </Section>
+
+            <Section title="Handled by the secretary" action={<a href={link('activity')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Activity <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
+              {(queue.isPending || (session.overlay === 'ok' && runs.isPending)) && <SkeletonRows rows={2} />}
+              {!queue.isPending && !(session.overlay === 'ok' && runs.isPending) && handled.length === 0 && (
+                <p className="text-[13px] text-soft">{queue.isError ? 'The record of finished work could not be read.' : 'Nothing has been finished yet. Completed actions and requests closed without action are listed here once the server reports them.'}</p>
+              )}
+              <ul className="divide-y divide-line">
+                {handled.slice(0, 5).map(item => (
+                  <li key={item.key}>
+                    <a href={item.href} className="flex items-center gap-3 py-2 hover:bg-white/[0.02]">
+                      <CheckCircle2 aria-hidden className={clsx('h-4 w-4 shrink-0', item.kind === 'completed' ? 'text-ok' : 'text-mute')} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-medium text-ink">{item.title}</span>
+                        <span className="block truncate text-[12px] text-soft">{item.detail}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              {handled.length > 5 && <p className="mt-2 text-[12px] text-mute">And {handled.length - 5} more in the activity record.</p>}
             </Section>
 
             <Section title="Follow-ups">

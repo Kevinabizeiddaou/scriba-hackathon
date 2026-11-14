@@ -1,6 +1,6 @@
 # Screenshots
 
-Taken from the app running on the in-memory mock (`npm run dev`), on 13 November 2026. Every person, company, email and calendar entry shown is fictional, and every address uses the reserved `.example` domain. Nothing shown was sent, and no real mailbox or calendar was involved.
+Taken from the app running on the in-memory mock (`npm run dev:demo`), by a scripted Chrome session. All but `approval-failed.png` were retaken on 14 November 2026 after the polish pass on `agent2/frontend-excellence`; `approval-failed.png` is from 13 November. Every person, company, email and calendar entry shown is fictional, and every address uses the reserved `.example` domain. Nothing shown was sent, and no real mailbox or calendar was involved.
 
 Desktop shots are 1440 by 900. Phone shots are 390 by 844.
 
@@ -16,7 +16,7 @@ Desktop shots are 1440 by 900. Phone shots are 390 by 844.
 | `chat.png` | Secretary chat with the agent's steps and an approval card inline |
 | `approvals.png`, `approvals-phone.png` | Approval center: proposals waiting for a decision |
 | `approval-failed.png` | An approved proposal whose execution failed: step results and the recovery block |
-| `activity.png` | Activity history |
-| `evaluation.png` | Evaluation dashboard before any real run: the desk suite by area, and empty headline numbers |
+| `activity.png`, `activity-phone.png` | Activity history: the outcome filter, and a step that failed several times in a row shown as one row with its count |
+| `evaluation.png` | Evaluation before any real run: the desk suite by area, and empty headline numbers |
 
-The evaluation dashboard shows no pass rate, cost or latency because no run against a real agent exists.
+The evaluation screen shows no pass rate, cost or latency because no run against a real agent exists.

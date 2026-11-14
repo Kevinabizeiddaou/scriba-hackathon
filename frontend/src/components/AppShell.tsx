@@ -47,7 +47,7 @@ function Mark() {
 function Badge({ count, label }: { count: number; label: string }) {
   if (count === 0) return null;
   return (
-    <span aria-label={`${count} ${label}`} className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent/20 px-1.5 text-[11px] font-bold tabular-nums text-accent">
+    <span aria-label={`${count} ${label}`} className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent/20 px-1.5 text-xs font-bold tabular-nums text-accent">
       {count}
     </span>
   );
@@ -179,7 +179,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
           <Mark />
           <span className="leading-tight">
             <span className="block text-[15px] font-bold tracking-[-0.01em] text-ink">Scriba</span>
-            <span className="block text-[11.5px] font-medium text-accent">Executive Desk</span>
+            <span className="block text-xs font-medium text-accent">Executive Desk</span>
           </span>
         </a>
         <nav aria-label="Main" className="min-h-0 flex-1 space-y-4 overflow-y-auto">
@@ -217,7 +217,7 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             </span>
             <span className="min-w-0 leading-tight">
               <span className="block truncate text-[13px] font-semibold text-ink">{info.principal.name}</span>
-              <span className="block truncate text-[11.5px] text-mute">{info.principal.timezone}</span>
+              <span className="block truncate text-xs text-mute">{info.principal.timezone}</span>
             </span>
             {session && (
               <button type="button" onClick={() => void session.signOut()} aria-label="Sign out" title="Sign out" className="tap ml-auto inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-mute hover:bg-white/[0.08] hover:text-ink">
@@ -281,11 +281,11 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             const active = target === page && !moreOpen;
             const count = badge(target);
             return (
-              <a key={target} href={hrefFor(target)} aria-current={active ? 'page' : undefined} className={clsx('relative flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold', active ? 'text-accent' : 'text-mute')}>
+              <a key={target} href={hrefFor(target)} aria-current={active ? 'page' : undefined} className={clsx('relative flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-xs font-semibold', active ? 'text-accent' : 'text-mute')}>
                 <span className="relative">
                   <Icon aria-hidden className="h-5 w-5" />
                   {count > 0 && (
-                    <span aria-label={`${count} ${badgeLabel(target)}`} className="absolute -right-2.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
+                    <span aria-label={`${count} ${badgeLabel(target)}`} className="absolute -right-2.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-bold text-white">
                       {count}
                     </span>
                   )}
@@ -299,12 +299,12 @@ export function AppShell({ page, children }: { page: Page; children: ReactNode }
             onClick={() => setMoreOpen((open) => !open)}
             aria-expanded={moreOpen}
             aria-controls="more-menu"
-            className={clsx('relative flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-0.5 text-[11px] font-semibold', moreActive || moreOpen ? 'text-accent' : 'text-mute')}
+            className={clsx('relative flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-0.5 text-xs font-semibold', moreActive || moreOpen ? 'text-accent' : 'text-mute')}
           >
             <span className="relative">
               <Menu aria-hidden className="h-5 w-5" />
               {moreCount > 0 && (
-                <span aria-label={`${moreCount} items in More`} className="absolute -right-2.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
+                <span aria-label={`${moreCount} items in More`} className="absolute -right-2.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-bold text-white">
                   {moreCount}
                 </span>
               )}

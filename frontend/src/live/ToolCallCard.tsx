@@ -287,8 +287,9 @@ export function ToolCallCard({ toolCall, reason, conversation, run, compact = fa
         </p>
       )}
 
-      <footer className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-white/[0.02] px-4 py-3">
-        <p className="min-w-0 flex-1 text-[12px] text-mute">
+      <footer className="mt-4 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-line bg-white/[0.02] px-4 py-3">
+        {/* On a phone the source and time take their own line, so they never squeeze into a column beside the buttons. */}
+        <p className="min-w-0 basis-full text-[12px] text-mute sm:flex-1 sm:basis-0">
           {run && (
             <a href={hrefFor('work', String(run.runId))} className="tap mr-3 inline-flex items-center gap-1 font-medium text-accent hover:underline">
               <MailOpen aria-hidden className="h-3.5 w-3.5" />

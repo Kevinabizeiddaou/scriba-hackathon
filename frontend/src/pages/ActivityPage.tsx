@@ -29,12 +29,42 @@ const OUTCOME: Record<ActivityEntry['outcome'], { label: string; tone: Tone }> =
 
 const ACTOR = { agent: 'Secretary', human: 'You', system: 'System' } as const;
 
+export interface ActivityRow {
+  entry: ActivityEntry;
+  /** How many consecutive records this row stands for: 3 when the same step failed three times in a row. */
+  attempts: number;
+  /** The time of the earliest of them, when there is more than one. */
+  firstAt: string | null;
+}
+
+/**
+ * Folds a run of identical consecutive records into one row. A step that was tried three times
+ * and failed three times is one fact with a count, not three facts. Records are newest first, so
+ * the row keeps the newest record and the time of the oldest.
+ */
+export function collapseRepeats(entries: ActivityEntry[]): ActivityRow[] {
+  const rows: ActivityRow[] = [];
+  for (const entry of entries) {
+    const last = rows.at(-1);
+    if (last && last.entry.title === entry.title && last.entry.kind === entry.kind && last.entry.outcome === entry.outcome && last.entry.actor === entry.actor) {
+      last.attempts += 1;
+      last.firstAt = entry.at;
+    } else rows.push({ entry, attempts: 1, firstAt: null });
+  }
+  return rows;
+}
+
+type OutcomeFilter = ActivityEntry['outcome'] | 'all';
+const OUTCOME_FILTERS: OutcomeFilter[] = ['all', 'pending', 'failed', 'done', 'rejected'];
+
 export function ActivityPage() {
   const tz = getApi().info.principal.timezone;
   const [kind, setKind] = useState<ActivityEntry['kind'] | 'all'>('all');
   const activity = useWorkspace((w) => w.listActivity(), []);
   const all = activity.data ?? [];
-  const shown = kind === 'all' ? all : all.filter((entry) => entry.kind === kind);
+  const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
+  const ofKind = kind === 'all' ? all : all.filter((entry) => entry.kind === kind);
+  const shown = outcomeFilter === 'all' ? ofKind : ofKind.filter((entry) => entry.outcome === outcomeFilter);
 
   const days: { date: string; label: string; entries: ActivityEntry[] }[] = [];
   for (const entry of shown) {
@@ -43,12 +73,13 @@ export function ActivityPage() {
     if (last?.date === date) last.entries.push(entry);
     else days.push({ date, label: fmtDay(entry.at, tz), entries: [entry] });
   }
+  const count = (outcome: ActivityEntry['outcome']) => ofKind.filter((entry) => entry.outcome === outcome).length;
 
   return (
     <div>
       <PageHeader title="Activity" subtitle="Everything the secretary read, proposed, sent or changed, and every decision you made, newest first." />
       <div className="px-4 pb-12 sm:px-6 lg:px-8">
-        <div role="group" aria-label="Filter activity" className="mb-4 flex gap-1.5 overflow-x-auto">
+        <div role="group" aria-label="Filter activity" className="mb-2 flex gap-1.5 overflow-x-auto scroll-fade">
           {(['all', ...Object.keys(KIND)] as (ActivityEntry['kind'] | 'all')[]).map((k) => (
             <button
               key={k}
@@ -63,12 +94,27 @@ export function ActivityPage() {
           ))}
         </div>
 
+        <div role="group" aria-label="Filter by outcome" className="mb-4 flex flex-wrap gap-1.5">
+          {OUTCOME_FILTERS.map((o) => (
+            <button
+              key={o}
+              type="button"
+              aria-pressed={outcomeFilter === o}
+              onClick={() => setOutcomeFilter(o)}
+              className={clsx('tap inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-semibold transition-colors duration-150', outcomeFilter === o ? 'border-accent/50 text-ink' : 'border-line text-mute hover:text-ink')}
+            >
+              {o === 'all' ? 'Any outcome' : OUTCOME[o].label}
+              {o !== 'all' && <span className="tabular-nums">{count(o)}</span>}
+            </button>
+          ))}
+        </div>
+
         <WorkspaceState error={activity.error} onRetry={activity.reload}>
           {activity.loading ? (
             <SkeletonRows rows={6} />
           ) : shown.length === 0 ? (
             <EmptyState icon={History} title="Nothing recorded">
-              No activity of this kind yet.
+              Nothing matches these filters.
             </EmptyState>
           ) : (
             <div className="max-w-3xl space-y-6">
@@ -76,12 +122,12 @@ export function ActivityPage() {
                 <section key={day.date} aria-label={day.label}>
                   <h2 className="eyebrow mb-2.5">{day.label}</h2>
                   <ol className="relative space-y-0">
-                    {day.entries.map((entry, index) => {
+                    {collapseRepeats(day.entries).map(({ entry, attempts, firstAt }, index, rows) => {
                       const Icon = KIND[entry.kind].icon;
                       const outcome = OUTCOME[entry.outcome];
                       return (
                         <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">
-                          {index < day.entries.length - 1 && <span aria-hidden className="absolute left-[15px] top-8 h-[calc(100%-32px)] w-px bg-line-strong" />}
+                          {index < rows.length - 1 && <span aria-hidden className="absolute left-[15px] top-8 h-[calc(100%-32px)] w-px bg-line-strong" />}
                           <span className={clsx('relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border bg-surface', entry.outcome === 'failed' ? 'border-danger/50 text-danger' : entry.outcome === 'pending' ? 'border-warn/50 text-warn' : 'border-line-strong text-soft')}>
                             <Icon aria-hidden className="h-4 w-4" />
                           </span>
@@ -89,14 +135,15 @@ export function ActivityPage() {
                             <p className="text-[13.5px] text-ink">{entry.title}</p>
                             {entry.detail && <p className="mt-0.5 text-[12.5px] text-soft">{entry.detail}</p>}
                             <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-mute">
-                              <span className="tabular-nums">{fmtTime(entry.at, tz)}</span>
+                              <span className="tabular-nums">{firstAt && fmtTime(firstAt, tz) !== fmtTime(entry.at, tz) ? `${fmtTime(firstAt, tz)} to ${fmtTime(entry.at, tz)}` : fmtTime(entry.at, tz)}</span>
                               <span>{ACTOR[entry.actor]}</span>
                               <Pill tone={outcome.tone} icon={null}>
                                 {outcome.label}
                               </Pill>
+                              {attempts > 1 && <span className="font-semibold text-soft">{entry.outcome === 'failed' ? `Tried ${attempts} times` : `${attempts} times`}</span>}
                               {entry.simulated && (entry.kind === 'email' || entry.kind === 'calendar') && entry.outcome === 'done' && <SimulatedTag />}
                               {entry.link && (
-                                <a href={hrefFor(entry.link.page, entry.link.param)} className="tap inline-flex items-center font-medium text-accent hover:underline">
+                                <a href={hrefFor(entry.link.page, entry.link.param)} aria-label={`View: ${entry.title}`} className="hit inline-flex items-center font-medium text-accent hover:underline">
                                   View
                                 </a>
                               )}

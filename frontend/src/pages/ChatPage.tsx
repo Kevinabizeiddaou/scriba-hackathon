@@ -12,7 +12,7 @@ import { useResource } from '../lib/useResource';
 
 function AssistantAvatar() {
   return (
-    <span aria-hidden className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-[11px] font-bold text-white">
+    <span aria-hidden className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-xs font-bold text-white">
       S
     </span>
   );
@@ -33,7 +33,7 @@ function Message({ message, run, approvals, timeZone, onRetry }: MessageProps) {
       <li className="rise-in flex justify-end">
         <div className="max-w-[min(560px,85%)]">
           <p className="whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 px-4 py-2.5 text-[14px] leading-[22px] text-white">{message.text}</p>
-          <p className="mt-1 text-right text-[11px] tabular-nums text-mute">{fmtTime(message.createdAt, timeZone)}</p>
+          <p className="mt-1 text-right text-xs tabular-nums text-mute">{fmtTime(message.createdAt, timeZone)}</p>
         </div>
       </li>
     );
@@ -177,7 +177,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
               >
                 <span className="block truncate text-[13.5px] font-semibold text-ink">{c.title}</span>
                 <span className="mt-0.5 block truncate text-[12px] text-mute">{c.lastMessagePreview ?? 'No messages yet'}</span>
-                <span className="mt-0.5 block text-[11px] tabular-nums text-mute">{fmtDayTime(c.updatedAt, principal.timezone)}</span>
+                <span className="mt-0.5 block text-xs tabular-nums text-mute">{fmtDayTime(c.updatedAt, principal.timezone)}</span>
               </a>
             );
           })}
@@ -188,7 +188,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
       <section aria-label="Conversation" className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-[16px] font-bold text-ink">{conversations.data?.find((c) => c.id === activeId)?.title ?? 'Secretary Chat'}</h1>
+            <h1 className="truncate text-[16px] font-bold text-ink">{conversations.data?.find((c) => c.id === activeId)?.title ?? 'Secretary chat'}</h1>
             <p className="hidden text-[12px] text-mute sm:block">Ask Scriba to handle mail, meetings, tasks and reminders. Anything that sends or changes something waits for your approval.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 md:hidden">
@@ -233,7 +233,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
               </div>
             )}
             {suggestedPrompts.length > 0 && (
-              <div className="mb-2.5 flex gap-2 overflow-x-auto pb-1" aria-label="Suggested prompts">
+              <div className="mb-2.5 flex gap-2 overflow-x-auto scroll-fade pb-1" aria-label="Suggested prompts">
                 {suggestedPrompts.map((prompt) => (
                   <button
                     key={prompt}
@@ -266,7 +266,7 @@ export function ChatPage({ conversationId }: { conversationId: string | null }) 
                 Send
               </Button>
             </form>
-            <p className="mt-1.5 text-[11.5px] text-mute">
+            <p className="mt-1.5 text-xs text-mute">
               Enter to send, Shift+Enter for a new line.
               {dataSource === 'simulated' && ' Mock mode answers the suggested prompts only.'}
             </p>

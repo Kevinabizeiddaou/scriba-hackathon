@@ -221,7 +221,7 @@ describe('live overview', () => {
     setBackend([CALLS.email, CALLS.task, CALLS.failed])
     renderApp()
 
-    const queue = await screen.findByRole('region', { name: 'Work queue' })
+    const queue = await screen.findByRole('region', { name: 'Where the work stands' })
     await waitFor(() => expect(within(queue).getByText('Awaiting approval').closest('a')).toHaveTextContent('2'))
     expect(within(queue).getByText('Arrived').closest('a')).toHaveTextContent('1')
     expect(within(queue).getByText('Need action').closest('a')).toHaveTextContent('1')
@@ -229,6 +229,48 @@ describe('live overview', () => {
     expect(within(queue).getByText('Completed').closest('a')).toHaveTextContent('0')
     expect(screen.getByTestId('classified')).toHaveTextContent('1 need a reply')
     expect(screen.getByRole('region', { name: 'Mail that needs you' })).toHaveTextContent('Dana Haddad')
+  })
+
+  it('separates what is waiting on the user from what the secretary has in hand, and lists finished work only when the server says it ran', async () => {
+    setBackend([CALLS.email, { ...CALLS.task, status: 'executed' }, { ...CALLS.task, id: 25, status: 'executed', input: { title: 'Book the room' } }, CALLS.failed])
+    renderApp()
+
+    const strip = await screen.findByRole('region', { name: 'Where the work stands' })
+    const yours = within(strip).getByRole('group', { name: 'Waiting on you' })
+    const theirs = within(strip).getByRole('group', { name: 'With the secretary' })
+    await waitFor(() => expect(within(yours).getByText('Awaiting approval').closest('a')).toHaveTextContent('1'))
+    expect(within(yours).getByText('Failed or partial').closest('a')).toHaveTextContent('1')
+    expect(within(yours).getByText('Need action')).toBeInTheDocument()
+    expect(within(theirs).getByText('Completed').closest('a')).toHaveTextContent('2')
+    expect(within(theirs).getByText('Arrived')).toBeInTheDocument()
+    expect(within(theirs).queryByText('Awaiting approval')).toBeNull()
+
+    const handled = screen.getByRole('region', { name: 'Handled by the secretary' })
+    await waitFor(() => expect(within(handled).getByText('Send the board pack')).toBeInTheDocument())
+    expect(within(handled).getByText('Book the room')).toBeInTheDocument()
+    expect(within(handled).getAllByRole('listitem')).toHaveLength(2)
+    // A proposal that is still waiting and an action that failed are not finished work.
+    expect(handled).not.toHaveTextContent('Re: Board pack')
+    expect(handled).not.toHaveTextContent('File expenses')
+  })
+
+  it('says nothing has been finished when the server reports no completed action', async () => {
+    setBackend([CALLS.email, CALLS.failed])
+    renderApp()
+    const handled = await screen.findByRole('region', { name: 'Handled by the secretary' })
+    await waitFor(() => expect(handled).toHaveTextContent('Nothing has been finished yet'))
+    expect(within(handled).queryAllByRole('listitem')).toHaveLength(0)
+  })
+
+  it('labels who is speaking in chat and sums up a reply that carries several actions', async () => {
+    setBackend([CALLS.email, { ...CALLS.task, status: 'executed' }, CALLS.failed])
+    renderApp('#/chat/2')
+    const summary = await screen.findByTestId('steps-summary')
+    expect(summary).toHaveTextContent('3 actions in this reply: 1 awaiting approval, 1 failed, 1 completed.')
+    expect(screen.getByText('Action 1 of 3')).toBeInTheDocument()
+    expect(screen.getByText('Action 3 of 3')).toBeInTheDocument()
+    expect(screen.getByText('Secretary')).toBeInTheDocument()
+    expect(screen.getByText('You said:')).toBeInTheDocument()
   })
 
   it('says which mailbox is missing when one could not be read, instead of presenting a partial count as the total', async () => {
@@ -244,7 +286,7 @@ describe('live overview', () => {
     renderApp()
 
     expect(await screen.findByText(/The briefing could not be loaded: Gmail did not answer/)).toBeInTheDocument()
-    const queue = screen.getByRole('region', { name: 'Work queue' })
+    const queue = screen.getByRole('region', { name: 'Where the work stands' })
     await waitFor(() => expect(within(queue).getByText('Arrived').closest('a')).toHaveTextContent('Could not be read'))
     // An unknown count is a dash, never a zero.
     expect(within(queue).getByText('Arrived').closest('a')).toHaveTextContent('–')

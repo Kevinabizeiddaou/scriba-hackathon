@@ -136,7 +136,7 @@ export function LiveActivityPage() {
         actions={<Button icon={RefreshCw} onClick={() => void queue.refetch()} busy={queue.isFetching}>Refresh</Button>}
       />
       <div className="max-w-3xl space-y-4 px-4 pb-12 sm:px-6 lg:px-8">
-        <div role="group" aria-label="Filter by stage" className="flex gap-1.5 overflow-x-auto">
+        <div role="group" aria-label="Filter by stage" className="flex gap-1.5 overflow-x-auto scroll-fade">
           {FILTERS.map(f => (
             <button key={f.id} type="button" aria-pressed={f.id === filter} onClick={() => setFilter(f.id)} className={clsx('tap inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-colors duration-150', f.id === filter ? 'bg-brand-500/40 text-ink' : 'text-soft hover:bg-white/[0.06] hover:text-ink')}>
               {f.label}

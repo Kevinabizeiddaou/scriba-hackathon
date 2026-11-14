@@ -21,6 +21,8 @@ const STEP_ICON: Record<StepStanding, LucideIcon> = {
   running: Clock,
   verified: Check,
   ran_unverified: Clock,
+  verification_failed: ShieldAlert,
+  interrupted: X,
   outcome_unknown: HelpCircle,
   partly: X,
   failed: X,
@@ -137,7 +139,7 @@ export function RunPlan({ plan, actions, simulated = false }: { plan: RunPlanDat
                     </p>
                     <p className="mt-1 text-[12.5px] leading-[19px] text-soft">{step.blurb}</p>
                     {step.expected && <p className="mt-0.5 text-[12.5px] leading-[19px] text-soft"><span className="text-mute">Done when: </span>{step.expected}</p>}
-                    {(step.standing === 'failed' || step.standing === 'partly') && step.onFailure && <p className="mt-0.5 text-[12.5px] leading-[19px] text-danger">{step.onFailure}</p>}
+                    {(step.standing === 'failed' || step.standing === 'partly' || step.standing === 'verification_failed' || step.standing === 'interrupted') && step.onFailure && <p className="mt-0.5 text-[12.5px] leading-[19px] text-danger">{step.onFailure}</p>}
                   </div>
                 </li>
               )

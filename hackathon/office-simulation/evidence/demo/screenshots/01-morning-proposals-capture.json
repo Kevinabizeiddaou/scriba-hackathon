@@ -1,0 +1,172 @@
+{
+ "simulated": true,
+ "label": "01-morning-proposals",
+ "capturedAt": "2026-11-14T07:13:30.000Z",
+ "frontend": "http://localhost:5183",
+ "api": "http://localhost:8914",
+ "user": "alice@example.com",
+ "browser": "chrome 157.0.8103.52",
+ "signIn": "sign-in form",
+ "sandbox": {
+  "now": "2026-11-16T08:30:31+01:00",
+  "timezone": "Europe/Paris",
+  "worldId": "office-meridian",
+  "executionMode": "sandbox",
+  "externalWritesEnabled": false,
+  "overlay": "0.3.0",
+  "simulated": true,
+  "world": {
+   "events": 11,
+   "tasks": [
+    "Review Atlas Pharma draft contract",
+    "Sign Harbor Crane maintenance renewal",
+    "Approve Q4 marketing budget",
+    "Choose venue for leadership offsite"
+   ],
+   "operations": 0,
+   "isolationViolations": 0
+  }
+ },
+ "browserClock": {
+  "fixedTo": "2026-11-16T08:30:31+01:00",
+  "why": "the Desk computes \"today\" and \"this week\" from the browser clock; the sandbox world is on its own date"
+ },
+ "banner": "SIMULATED: sandbox data, fictional office, nothing real was sent or changed  ·  sandbox clock Mon, 16 Nov 2026, 08:30 Europe/Paris  ·  capture 01-morning-proposals",
+ "screens": [
+  {
+   "screen": "overview",
+   "route": "#/overview",
+   "what": "Overview: what needs the executive, the day, connections",
+   "file": "01-morning-proposals-overview.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 6231,
+   "viewport": {
+    "width": 1440,
+    "height": 1389
+   },
+   "heading": "Good morning, Alice",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": false
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "inbox",
+   "route": "#/inbox",
+   "what": "Inbox: the sandbox mailboxes as the Desk reads them",
+   "file": "01-morning-proposals-inbox.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 1,
+   "viewport": {
+    "width": 1440,
+    "height": 952
+   },
+   "heading": "Inbox",
+   "alerts": [],
+   "toolCalls": [],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": false
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "run",
+   "route": "#/work/11",
+   "what": "Run detail: plan, proposed actions, evidence, timeline (needs --run)",
+   "file": "01-morning-proposals-run-11.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 783,
+   "actionCards": 1,
+   "run": {
+    "runId": 11,
+    "subject": null,
+    "state": "awaiting_approval",
+    "stage": "AWAITING_APPROVAL",
+    "simulated": true,
+    "actions": [
+     {
+      "toolCallId": 28,
+      "tool": "create_calendar_event",
+      "status": "awaiting_approval",
+      "simulated": true
+     }
+    ]
+   },
+   "viewport": {
+    "width": 1440,
+    "height": 2217
+   },
+   "heading": "Cold-chain lanes: intro call",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "awaiting_approval",
+     "label": "Send a calendar invitation: Cold-chain lanes: intro call"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  },
+  {
+   "screen": "approvals",
+   "route": "#/approvals",
+   "what": "Approval center: every action waiting for a decision",
+   "file": "01-morning-proposals-approvals.png",
+   "ok": true,
+   "problems": [],
+   "warnings": [],
+   "settleMs": 789,
+   "viewport": {
+    "width": 1440,
+    "height": 1670
+   },
+   "heading": "Approval center",
+   "alerts": [],
+   "toolCalls": [
+    {
+     "status": "awaiting_approval",
+     "label": "Create a task: Q3 board pack"
+    },
+    {
+     "status": "awaiting_approval",
+     "label": "Send a calendar invitation: Cold-chain lanes: intro call"
+    },
+    {
+     "status": "awaiting_approval",
+     "label": "Create a task: Archive old reports"
+    },
+    {
+     "status": "awaiting_approval",
+     "label": "Create a task: Prepare the quarterly deck"
+    }
+   ],
+   "uiSandboxMarker": {
+    "shell": true,
+    "screen": true
+   },
+   "shellUser": "Alice Journey"
+  }
+ ],
+ "approve": null,
+ "log": {
+  "screen": "end",
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "httpErrors": [],
+  "blockedWrites": []
+ }
+}

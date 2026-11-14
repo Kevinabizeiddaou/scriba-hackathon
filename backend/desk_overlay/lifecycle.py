@@ -31,7 +31,7 @@ FINAL_STAGES = ("COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED")
 
 # Kinds of evidence. One event is exactly one of these.
 KINDS = ("stage", "plan", "decision", "read", "proposal", "approval", "execution", "verification",
-         "human", "followup", "usage", "error", "task")
+         "human", "followup", "usage", "error", "task", "file")
 
 EXECUTED = ("executed",)
 PARTIAL = ("partially_executed",)
@@ -88,6 +88,11 @@ def summary_of(item: Mapping[str, Any]) -> str:
                 "dismissed": "The suggestion to mark a task done was dismissed",
                 "failed": "The task could not be marked done"}.get(str(data.get("state")), "Task update") \
             + f": {data.get('title') or data.get('taskId')}."
+    if kind == "file":
+        return {"suggested": "A change to a workbook is suggested", "applied": "A changed copy of the workbook was made",
+                "unverified": "A changed copy was made and could not be verified",
+                "failed": "The workbook could not be changed", "dismissed": "The suggested change was dismissed",
+                }.get(str(data.get("state")), "Workbook change") + f": {data.get('filename') or data.get('changeId')}."
     if kind == "usage":
         return f"Model call: {data.get('model')}."
     return str(data.get("message") or "An error was recorded.")
@@ -101,6 +106,19 @@ def record(gateway: Any, user: Any, run: Mapping[str, Any], kind: str, data: Map
     return item
 
 
+def file_changes(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Each change this run suggested to a workbook, in its latest state."""
+    latest: Dict[str, Dict[str, Any]] = {}
+    for item in events:
+        if item.get("kind") != "file":
+            continue
+        data = dict(item.get("data") or {})
+        key = str(data.get("changeId") or "")
+        latest[key] = {**latest.get(key, {}), **{k: v for k, v in data.items() if v is not None},
+                       "updatedAt": item.get("at")}
+    return list(latest.values())
+
+
 def task_updates(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     """Each existing task this run touched, in its latest state."""
     latest: Dict[str, Dict[str, Any]] = {}
@@ -112,6 +130,17 @@ def task_updates(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
         latest[key] = {**latest.get(key, {}), **{k: v for k, v in data.items() if v is not None},
                        "updatedAt": item.get("at")}
     return list(latest.values())
+
+
+def unresolved_of(meta: Mapping[str, Any], events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """Requests that were identified and not acted on, each marked resolved
+    once the person has taken them over."""
+    taken = set()
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "human" and data.get("action") == "resolve_unresolved":
+            taken.update(str(entry) for entry in data.get("ids") or [])
+    return [{**entry, "resolved": str(entry.get("id")) in taken} for entry in meta.get("unresolved") or []]
 
 
 def follow_ups(events: List[Mapping[str, Any]]) -> List[Dict[str, Any]]:
@@ -234,6 +263,29 @@ def derive(meta: Mapping[str, Any], actions: List[Mapping[str, Any]],
             stage = "WAITING_FOR_RESPONSE"
         else:
             stage = "COMPLETED"
+
+    if stage == "COMPLETED" and actions and held and str(held.get("reason")) not in ALREADY_DONE_REASONS \
+            and all(a.get("purpose") == "record_task" for a in actions if a.get("status") in EXECUTED):
+        # Something else in the message was recorded, and what the hold is
+        # about was never dealt with (no reply, no question, no change). A
+        # recorded task does not answer a meeting request.
+        reason = str(held.get("reason") or "")
+        stage = "NEEDS_CLARIFICATION" if reason in CLARIFY_REASONS else "ESCALATED"
+    if stage == "COMPLETED" and (held is None or str(held.get("reason")) not in ALREADY_DONE_REASONS) \
+            and any(not entry["resolved"] for entry in unresolved_of(meta, events)):
+        # Everything the Desk proposed is done, and the message asked for
+        # something more that it could not act on. That is not complete.
+        stage, reason = "ESCALATED", "unresolved_requests"
+    # A change to a workbook that is suggested, failed or unverified is work
+    # that is not finished, whatever else the run did.
+    changes = {str(change.get("state")) for change in file_changes(events)}
+    if stage == "COMPLETED" and changes & {"suggested", "failed", "unverified"}:
+        if "failed" in changes:
+            stage, reason = "ESCALATED", "file_change_failed"
+        elif "unverified" in changes:
+            stage, reason = "VERIFYING", "file_change_not_verified"
+        else:
+            stage, reason = "ESCALATED", "file_change_suggested"
 
     compensation = None
     if stage == "PARTIALLY_COMPLETED":

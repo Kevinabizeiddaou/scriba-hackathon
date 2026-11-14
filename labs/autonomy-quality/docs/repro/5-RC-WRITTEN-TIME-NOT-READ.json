@@ -1,0 +1,267 @@
+{
+ "caseId": "SEM-direct_meeting-04",
+ "input": {
+  "kind": "email",
+  "email": {
+   "id": "m-sem-direct_meeting-04",
+   "threadId": "thr-m-sem-direct_meeting-04",
+   "from": {
+    "name": "Kenji Watanabe",
+    "email": "kenji.watanabe@pacific-reefer.example"
+   },
+   "to": [
+    {
+     "name": "Nadim Haddad",
+     "email": "nadim.haddad@levantine-logistics.example"
+    }
+   ],
+   "cc": [],
+   "sentAt": "2027-03-08T08:09:00+02:00",
+   "subject": "Call Tuesday 9 March 11:00?",
+   "bodyText": "See subject. 30 minutes is enough.\n\nKenji"
+  },
+  "thread": []
+ },
+ "context": {
+  "now": "2027-03-08T08:30:00+02:00",
+  "principal": {
+   "name": "Nadim Haddad",
+   "email": "nadim.haddad@levantine-logistics.example",
+   "timezone": "Asia/Beirut",
+   "workingHours": {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "start": "09:00",
+    "end": "18:00"
+   }
+  },
+  "calendar": [
+   {
+    "id": "ev-exco",
+    "title": "Executive committee",
+    "start": "2027-03-08T10:00:00+02:00",
+    "end": "2027-03-08T11:30:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Rima Sfeir",
+      "email": "rima.sfeir@levantine-logistics.example"
+     },
+     {
+      "name": "Fadi Chidiac",
+      "email": "fadi.chidiac@levantine-logistics.example"
+     },
+     {
+      "name": "Joelle Abi Nader",
+      "email": "joelle.abinader@levantine-logistics.example"
+     }
+    ],
+    "location": "Boardroom",
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-bank",
+    "title": "Banque du Levant: credit line renewal",
+    "start": "2027-03-08T14:00:00+02:00",
+    "end": "2027-03-08T15:00:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Sophie Laurent",
+      "email": "sophie.laurent@banque-du-levant.example"
+     },
+     {
+      "name": "Fadi Chidiac",
+      "email": "fadi.chidiac@levantine-logistics.example"
+     }
+    ],
+    "location": null,
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-port",
+    "title": "Port authority concession review",
+    "start": "2027-03-09T09:00:00+02:00",
+    "end": "2027-03-09T10:30:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Tarek Younes",
+      "email": "tarek.younes@beirut-port-authority.example"
+     },
+     {
+      "name": "Lara Khalil",
+      "email": "lara.khalil@cedar-legal.example"
+     }
+    ],
+    "location": null,
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-gulf",
+    "title": "Gulf Crane maintenance contract",
+    "start": "2027-03-09T15:00:00+02:00",
+    "end": "2027-03-09T16:00:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Hassan Al Mansoori",
+      "email": "hassan.almansoori@gulfcrane.example"
+     }
+    ],
+    "location": "Video call",
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-ops",
+    "title": "Operations review",
+    "start": "2027-03-10T10:00:00+02:00",
+    "end": "2027-03-10T11:00:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Walid Tabet",
+      "email": "walid.tabet@levantine-logistics.example"
+     },
+     {
+      "name": "Joelle Abi Nader",
+      "email": "joelle.abinader@levantine-logistics.example"
+     }
+    ],
+    "location": null,
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-investor",
+    "title": "Northbridge Capital: investor update",
+    "start": "2027-03-10T16:00:00+02:00",
+    "end": "2027-03-10T17:00:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Emily Carter",
+      "email": "emily.carter@northbridge-capital.example"
+     }
+    ],
+    "location": "Video call",
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-legal",
+    "title": "Cedar Legal: arbitration prep",
+    "start": "2027-03-11T11:00:00+02:00",
+    "end": "2027-03-11T12:00:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Lara Khalil",
+      "email": "lara.khalil@cedar-legal.example"
+     }
+    ],
+    "location": null,
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-marseille",
+    "title": "Port of Marseille partnership call",
+    "start": "2027-03-11T15:00:00+02:00",
+    "end": "2027-03-11T15:45:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Claire Dubois",
+      "email": "claire.dubois@port-marseille.example"
+     }
+    ],
+    "location": "Video call",
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-finance",
+    "title": "Monthly finance close",
+    "start": "2027-03-12T09:30:00+02:00",
+    "end": "2027-03-12T10:30:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     },
+     {
+      "name": "Fadi Chidiac",
+      "email": "fadi.chidiac@levantine-logistics.example"
+     }
+    ],
+    "location": null,
+    "description": null,
+    "status": "confirmed"
+   },
+   {
+    "id": "ev-lunch",
+    "title": "Lunch with the board chair",
+    "start": "2027-03-12T13:00:00+02:00",
+    "end": "2027-03-12T14:30:00+02:00",
+    "timezone": "Asia/Beirut",
+    "attendees": [
+     {
+      "name": "Nadim Haddad",
+      "email": "nadim.haddad@levantine-logistics.example"
+     }
+    ],
+    "location": "Em Sherif",
+    "description": null,
+    "status": "confirmed"
+   }
+  ],
+  "tasks": [],
+  "followUps": [],
+  "faults": []
+ },
+ "mode": "sandbox",
+ "_note": "Exact body the lab sent for SEM-direct_meeting-04 (seed 20270308), without this key."
+}

@@ -91,33 +91,49 @@ each marked with its source: the API client, API base-URL resolution, the
 provider-status hook, the design tokens and component styles, and the
 Tailwind and TypeScript configuration.
 
+## Where it stands (14 November 2026, overlay 0.5.1, integrated)
+
+One application: the frontend in `frontend/`, the Desk overlay in `backend/`
+mounted on Scriba's own API, one typed client (`frontend/src/api/desk.ts`) and
+one contract (`docs/BACKEND_CONTRACT.md`). What is in it, how it was merged
+and every number measured on the combined tree:
+[docs/handoff/FINAL_INTEGRATION.md](docs/handoff/FINAL_INTEGRATION.md).
+
+What works, in the sandbox: incoming mail is taken in by a background worker,
+read, planned as dependent steps, proposed as Scriba approval cards, executed
+after approval, verified by reading the result back, and tracked until an
+awaited reply arrives. A file that comes with a message is read with Scriba's
+readers, reviewed into a Word document that is reopened before it counts as
+done, and answered with an approved reply. Chat instructions open runs the
+same way.
+
 ## Present limitations
 
-- The Desk is a read-only shell: sign-in, four connection cards, a mail list
-  per provider, a calendar list, API health.
-- No end-to-end agent run has happened, and none of the 20 evaluation cases
-  has been executed.
-- Live Google and Microsoft data have not been tested from the Desk; tests
-  ran against Scriba's seeded test backend.
-- Some target capabilities do not exist in Scriba yet: availability across
-  both calendars, tracking of awaited replies, a meeting-booking automation,
-  cost per run. See the roadmap.
-- Triage state lives in Scriba; the Desk will not archive, label or move
-  mail in Gmail or Outlook.
-- The Desk runs locally in Docker on `http://localhost:5173`. Hosting it needs
-  configuration decisions listed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Nothing has run against a real mailbox, calendar or computer.** External
+  mail and calendar writes are disabled in code outside the sandbox
+  (`GET /desk/health` reports `externalWrites.enabled: false` and why).
+- **No real-model result exists for the integrated tree.** Every number
+  measured on it is rules-only or a scripted stand-in, and is labelled so.
+  Earlier real-model measurements (`docs/handoff/EVAL_CONFIGURED_MODEL.md`,
+  `EVAL_COMPARISON_0_4.md`) are of earlier commits.
+- **The desktop bridge has not run on a paired device.** It is Scriba's own
+  agent queue behind an explicit confirmation; on the seeded backend Scriba
+  reports the subsystem off, and the sandbox device is a fake whose results
+  are marked `simulated`.
+- Attachments of a real mailbox are not read; presentations, PDFs and CSV
+  files are not generated; French and Arabic mail is handed to the person.
+- With the rules alone, unfamiliar wording is often handed over rather than
+  acted on (see the hold-out numbers in the integration document).
+- Triage state lives in Scriba; the Desk does not archive, label or move mail.
 
 ## Phases
-
-Work proceeds one submission checkpoint at a time; a phase starts only when
-authorized.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Index card and foundation | Done |
-| 2 | Unified inbox, chatbot, calendar reads and triage (read-only) | Not started |
-| 3 | Scheduling, tasks, reminders, automations and approvals | Not started |
-| Final | Reliable integrated product, 20 real cases, metrics and demo | Not started |
+| 2 | Unified inbox, chat, calendar reads and triage | Done, on seeded and sandbox data |
+| 3 | Scheduling, tasks, reminders, follow-ups, files, approvals | Done in the sandbox; live writes disabled |
+| Final | Integrated product, evaluation, office simulation, reliability lab, demo | Integrated and measured rules-only; real-model and live-provider runs outstanding |
 
 ## Run it
 
@@ -212,6 +228,8 @@ docker compose --profile test run --rm backend-tests    # whole backend suite, i
 docker compose --profile test run --rm smoke            # read-only API smoke against the api service
 docker compose --profile test run --rm smoke --desk-demo   # the same plus one demo run (DESK_DEMO=on)
 cd frontend && npm run eval                  # evaluation harness self-test (no backend, no agent)
+node scripts/e2e-sandbox.mjs --base http://localhost:8000   # DESK_DEMO=on: mail -> worker -> plan -> approvals -> verified,
+                                                            # a file workflow, follow-up tracking, the desktop gate (sandbox only)
 ```
 
 `backend-tests` runs in the `api` image (same Python, Scriba's pinned

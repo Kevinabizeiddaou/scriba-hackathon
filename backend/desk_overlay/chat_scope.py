@@ -45,6 +45,9 @@ DESK_READ_TOOLS = frozenset({
 DESK_APPROVAL_TOOLS = frozenset({
     "draft_email_reply", "send_email", "create_task", "create_reminder",
     "create_calendar_event", "update_calendar_event", "cancel_calendar_event",
+    # Scriba's own file tools: a Word document or a workbook, generated into
+    # the person's own records after approval. Nothing is sent or shared.
+    "create_document", "create_spreadsheet",
 })
 DESK_TOOL_DESCRIPTIONS: Dict[str, str] = {
     "check_availability": (

@@ -10,7 +10,7 @@
  */
 import clsx from 'clsx'
 import { ArrowLeft, Ban, CalendarClock, Check, CircleDashed, CircleDot, FilePen, MailOpen, Minus, RefreshCw, Send, ShieldAlert, ShieldCheck, X, type LucideIcon } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiClientError, getErrorMessage } from '../api/client'
 import { advanceDeskRun, closeDeskFollowUp, fetchDeskRun, type CalendarRead, type DeskAction, type DeskRun } from '../api/desk'
@@ -37,10 +37,11 @@ import {
   type StepState,
 } from './deskRuns'
 import { emailKey, parseSender } from './mappers'
-import { ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, SandboxTag } from './RunParts'
+import { ExecutionStep, FollowUpItem, RunProgress, RunStatus, RunTimeline, SandboxTag, StepTally } from './RunParts'
+import { applyTaskUpdate, commandTextOf, dismissTaskUpdate, resolveUnresolved, runKindOf, taskUpdatesOf, unresolvedOf } from './deskContract'
 import { FOLLOW_UP_ORDER, LIFECYCLE_REASON, effectsOf, progressOf, stageInfo, stageOfRun } from './runLifecycle'
 import { RunPlan } from './PlanView'
-import { planOf } from './runPlan'
+import { planOf, tallyOf } from './runPlan'
 import { createDraftFromRequest, fetchChatToolCall } from './scribaApi'
 import { useRequiredLiveSession } from './session'
 import { ToolCallCard } from './ToolCallCard'
@@ -158,9 +159,16 @@ function Held({ run }: { run: DeskRun }) {
 /** Held reasons that are about finding a time, where "no verified free time" is worth saying. */
 const MEETING_TIME_REASONS: string[] = ['calendar_conflict', 'availability_unknown', 'time_not_understood', 'change_request', 'invalid_preferences']
 
-function ActionSlot({ action, index, total, repeats }: { action: DeskAction; index: number; total: number; repeats: number }) {
+function ActionSlot({ action, index, total, repeats, onBehind }: { action: DeskAction; index: number; total: number; repeats: number; onBehind: () => void }) {
   const tz = getApi().info.principal.timezone
   const card = useQuery({ queryKey: runToolCallKey(action.toolCallId), queryFn: () => fetchChatToolCall(action.toolCallId) })
+  // Scriba's record of the card and the run's view of it are two reads. When the card has moved
+  // on and the run has not, the run is read again, so the page never rests on an older state
+  // (an action shown as executed while its verification is still missing from the page).
+  const cardStatus = card.data?.status
+  useEffect(() => {
+    if (cardStatus && cardStatus !== action.status) onBehind()
+  }, [cardStatus, action.status, onBehind])
   const stage = WORK_STAGES[stageOf(action.status)]
   const label = ACTION_LABEL[action.tool_name] ?? action.tool_name.replace(/_/g, ' ')
   const executed = stageOf(action.status) === 'completed' || stageOf(action.status) === 'partially_completed'
@@ -183,7 +191,7 @@ function ActionSlot({ action, index, total, repeats }: { action: DeskAction; ind
           ))}
       </p>
       {card.data ? (
-        <ToolCallCard toolCall={card.data} reason={PROPOSAL_REASON[action.tool_name]} />
+        <ToolCallCard toolCall={card.data} reason={action.reason ? undefined : PROPOSAL_REASON[action.tool_name]} action={action} />
       ) : (
         <div className="card space-y-2 px-4 py-3.5" data-testid="action-fallback">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -215,8 +223,35 @@ export function LiveRunDetail({ runId }: { runId: number }) {
     queryKey: runKey(runId),
     queryFn: () => fetchDeskRun(runId),
     // Read again while an approved action is running; otherwise the page changes only when the user acts.
-    refetchInterval: query => (query.state.data?.state === 'executing' || ['EXECUTING', 'VERIFYING'].includes(String(query.state.data ? stageOfRun(query.state.data) : '')) ? 3_000 : false),
+    refetchInterval: query => {
+      const data = query.state.data
+      if (!data) return false
+      if (data.state === 'executing' || ['EXECUTING', 'VERIFYING'].includes(String(stageOfRun(data)))) return 3_000
+      // An action that is approved, running, or ran without its verification on record yet: the next read settles it.
+      const moving = data.actions.some(action => ['approved', 'executing'].includes(action.status) || ['APPROVED', 'EXECUTING', 'EXECUTED_UNVERIFIED'].includes(String((action as unknown as { lifecycle?: unknown }).lifecycle)))
+      return moving ? 3_000 : false
+    },
   })
+  // Bounded: a run that stays behind its cards is re-read a few times, then left for Refresh.
+  const behind = useRef({ count: 0, timer: null as ReturnType<typeof setTimeout> | null })
+  const refetchRun = run.refetch
+  const onBehind = useRef(() => {
+    const state = behind.current
+    if (state.timer || state.count >= 8) return
+    state.count += 1
+    state.timer = setTimeout(() => {
+      state.timer = null
+      void refetchRun()
+    }, 1_200)
+  }).current
+  useEffect(() => {
+    const state = behind.current
+    state.count = 0
+    return () => {
+      if (state.timer) clearTimeout(state.timer)
+      state.timer = null
+    }
+  }, [runId])
   const connections = useQuery({ queryKey: ['desk', 'connections'], queryFn: () => session.workspace.connections() })
 
   const afterStep = (next: DeskRun) => {
@@ -226,6 +261,8 @@ export function LiveRunDetail({ runId }: { runId: number }) {
   }
   const advance = useMutation({ mutationFn: () => advanceDeskRun(runId), onSuccess: afterStep })
   const closeFollowUp = useMutation({ mutationFn: (followUpId: string) => closeDeskFollowUp(runId, followUpId), onSuccess: afterStep })
+  const takeOver = useMutation({ mutationFn: () => resolveUnresolved(runId), onSuccess: afterStep })
+  const taskUpdate = useMutation({ mutationFn: ({ taskId, dismiss }: { taskId: string; dismiss: boolean }) => (dismiss ? dismissTaskUpdate(runId, taskId) : applyTaskUpdate(runId, taskId)), onSuccess: afterStep })
   const draft = useMutation({ mutationFn: () => createDraftFromRequest(run.data!.draftRequest!) })
 
   // A different run is a different page: drop the result of a step taken on the previous one.
@@ -275,15 +312,20 @@ export function LiveRunDetail({ runId }: { runId: number }) {
   const progress = progressOf(data)
   const effects = effectsOf(data.actions)
   const plan = planOf(data)
+  const tally = tallyOf(data)
+  const taskUpdates = taskUpdatesOf(data)
+  const unresolved = unresolvedOf(data)
+  const openUnresolved = unresolved.filter(request => !request.resolved)
+  const command = runKindOf(data) === 'command' ? commandTextOf(data) : null
   const followUps = [...(data.followUps ?? [])].sort((a, b) => FOLLOW_UP_ORDER.indexOf(a.state) - FOLLOW_UP_ORDER.indexOf(b.state))
-  const TRIGGER: Record<string, string> = { manual: 'You, from the inbox', sweep: 'You, with "Check for new work"', worker: 'The background intake worker', evaluation: 'An evaluation run' }
+  const TRIGGER: Record<string, string> = { manual: 'You, from the inbox', sweep: 'You, with "Check for new work"', worker: 'The background intake worker', evaluation: 'An evaluation run', chat: 'You, with an instruction to the secretary' }
 
   return (
     <div>
       <div className="px-4 pt-5 sm:px-6 lg:px-8">{back}</div>
       <PageHeader
         title={data.email.subject || 'No subject'}
-        subtitle={`Run ${data.runId}. ${categoryLabel(data.category)} from ${sender.name || sender.email || 'an unknown sender'}.`}
+        subtitle={command ? `Run ${data.runId}. An instruction you gave the secretary.` : `Run ${data.runId}. ${categoryLabel(data.category)} from ${sender.name || sender.email || 'an unknown sender'}.`}
         actions={<Button icon={RefreshCw} onClick={() => void run.refetch()} busy={run.isFetching}>Refresh</Button>}
       />
 
@@ -294,10 +336,16 @@ export function LiveRunDetail({ runId }: { runId: number }) {
               <p className="eyebrow">What this needs from you</p>
               <Pill tone={QUEUE_GROUPS[group].tone} spin={group === 'in_progress'}>{QUEUE_GROUPS[group].label}</Pill>
               {data.simulated && <SandboxTag />}
-              <span className="text-[12px] text-mute">Server state: {isKnownState(data.state) ? RUN_STATE_LABEL[data.state] : data.state}{stage ? `, stage ${stage}` : ''}</span>
+              <span className="text-[12px] text-mute" data-testid="server-state">Server state: {isKnownState(data.state) ? RUN_STATE_LABEL[data.state] : data.state}{stage ? `, stage ${stage}` : ''}</span>
             </div>
             <h2 className="mt-2 text-[17px] font-semibold leading-6 text-ink">{next.label}</h2>
             <p className="mt-1 text-[13px] leading-[20px] text-soft">{next.detail}</p>
+            {tally.total > 0 && (
+              <div className="mt-3">
+                <StepTally tally={tally} />
+              </div>
+            )}
+            {data.simulated && <p className="mt-2 text-[12px] text-warn" data-testid="run-sandbox-note">Sandbox run: the message, the calendars and every result on this page are simulated. Nobody real was contacted.</p>}
 
             {next.kind === 'advance' && (
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -358,7 +406,7 @@ export function LiveRunDetail({ runId }: { runId: number }) {
               <h2 className="text-[14.5px] font-semibold text-danger">This run did not finish cleanly</h2>
               <ul className="space-y-1 text-[13px] text-soft">
                 {breakdown.ran.map(action => (
-                  <li key={action.toolCallId}><span className="font-semibold text-ok">Ran: </span>{name(action)}{action.verified ? ` (recorded as action #${action.assistantActionId})` : ' (no record in Scriba)'}</li>
+                  <li key={action.toolCallId}><span className={action.verified ? 'font-semibold text-ok' : 'font-semibold text-warn'}>{action.simulated ? 'Executed in sandbox: ' : 'Executed: '}</span>{name(action)}{action.verified ? ' (verified)' : ' (not verified)'}</li>
                 ))}
                 {breakdown.failed.map(action => (
                   <li key={action.toolCallId}><span className="font-semibold text-danger">{stageOf(action.status) === 'partially_completed' ? 'Partly ran: ' : 'Failed: '}</span>{name(action)}{action.error ? ` (${action.error})` : ''}</li>
@@ -371,13 +419,70 @@ export function LiveRunDetail({ runId }: { runId: number }) {
             </section>
           )}
 
+          {unresolved.length > 0 && (
+            <section aria-label="Requests not acted on" role={openUnresolved.length > 0 ? 'alert' : undefined} className={clsx('card space-y-3 p-4 sm:p-5', openUnresolved.length > 0 && 'border-warn/40')} data-testid="unresolved-requests">
+              <h2 className="text-[14.5px] font-semibold text-ink">{openUnresolved.length > 0 ? `${openUnresolved.length} request${openUnresolved.length === 1 ? '' : 's'} in this message ${openUnresolved.length === 1 ? 'was' : 'were'} not acted on` : 'Requests you took over'}</h2>
+              <p className="text-[12.5px] leading-[19px] text-soft">{openUnresolved.length > 0 ? 'The secretary read these and could not act on them. Nothing was proposed for them and nothing was dropped: the run is not complete while one is open.' : 'You took these over. The secretary did nothing for them.'}</p>
+              <ul className="space-y-2">
+                {unresolved.map(request => (
+                  <li key={request.id} className="rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5">
+                    <p className="break-words text-[13px] leading-[20px] text-ink">{request.text}</p>
+                    {request.why && <p className="mt-0.5 text-xs text-mute">Why not: {request.why.replace(/_/g, ' ')}</p>}
+                    <p className={clsx('mt-0.5 text-xs font-semibold', request.resolved ? 'text-soft' : 'text-warn')}>{request.resolved ? 'Taken over by you' : 'Open'}</p>
+                  </li>
+                ))}
+              </ul>
+              {openUnresolved.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="primary" icon={Check} onClick={() => takeOver.mutate()} busy={takeOver.isPending}>I will handle {openUnresolved.length === 1 ? 'this' : 'these'} myself</Button>
+                  <span className="text-[12px] text-mute">Records that you took {openUnresolved.length === 1 ? 'it' : 'them'} over. It sends nothing.</span>
+                </div>
+              )}
+              {takeOver.isError && <p role="alert" className="text-[12.5px] text-danger">That could not be recorded: {getErrorMessage(takeOver.error)}. The requests are still open.</p>}
+            </section>
+          )}
+
+          {taskUpdates.length > 0 && (
+            <section aria-label="Changes to your tasks" className="card space-y-3 p-4 sm:p-5" data-testid="task-updates">
+              <h2 className="text-[14.5px] font-semibold text-ink">A task this message reports as finished</h2>
+              <ul className="space-y-2.5">
+                {taskUpdates.map(update => (
+                  <li key={update.taskId} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-white/[0.02] px-3.5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-[13.5px] font-semibold text-ink">{update.title ?? `Task ${update.taskId}`}</p>
+                      {update.matched.length > 0 && <p className="text-xs text-mute">Matched on: {update.matched.join(', ')}</p>}
+                      <p className="mt-0.5 text-[12.5px] leading-[19px] text-soft">
+                        {update.state === 'suggested' && 'Suggested: mark it done. Only your own records change, and only if you confirm.'}
+                        {update.state === 'completed' && `Marked done${update.verified === true ? ' and read back as no longer open' : ''}${data.simulated ? ', in the sandbox' : ''}.`}
+                        {update.state === 'unverified' && 'The change was sent, but the tasks could not be read back. It is not known to be done.'}
+                        {update.state === 'failed' && `It could not be marked done${update.error ? ` (${update.error})` : ''}. It is still open.`}
+                        {update.state === 'dismissed' && 'You dismissed this suggestion. The task is unchanged.'}
+                        {!['suggested', 'completed', 'unverified', 'failed', 'dismissed'].includes(update.state) && `State reported: ${update.state}. This version of the Desk does not know it; it is not treated as done.`}
+                      </p>
+                    </div>
+                    <Pill tone={update.state === 'completed' && update.verified === true ? 'ok' : update.state === 'failed' ? 'danger' : update.state === 'dismissed' ? 'neutral' : 'warn'}>
+                      {update.state === 'completed' ? (update.verified === true ? 'Done, verified' : 'Done, not verified') : update.state === 'suggested' ? 'Awaiting your confirmation' : update.state === 'unverified' ? 'Not verified' : update.state === 'failed' ? 'Failed' : update.state === 'dismissed' ? 'Dismissed' : 'Not recognised'}
+                    </Pill>
+                    {update.state === 'suggested' && (
+                      <div className="flex basis-full flex-wrap justify-end gap-2">
+                        <Button variant="ghost" onClick={() => taskUpdate.mutate({ taskId: update.taskId, dismiss: true })} disabled={taskUpdate.isPending}>Dismiss</Button>
+                        <Button variant="primary" icon={Check} onClick={() => taskUpdate.mutate({ taskId: update.taskId, dismiss: false })} busy={taskUpdate.isPending && taskUpdate.variables?.taskId === update.taskId && !taskUpdate.variables.dismiss}>{data.simulated ? 'Mark done in sandbox' : 'Mark done'}</Button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {taskUpdate.isError && <p role="alert" className="text-[12.5px] text-danger">The task could not be changed: {getErrorMessage(taskUpdate.error)}. It is as it was.</p>}
+            </section>
+          )}
+
           {data.held && <Held run={data} />}
 
           {data.actions.length > 0 && (
             <section aria-label="Proposed actions" className="space-y-3">
               <h2 className="eyebrow">Proposed actions ({effects.length})</h2>
               <ol className="space-y-4">
-                {effects.map((effect, index) => <ActionSlot key={effect.key} action={effect.primary} index={index} total={effects.length} repeats={effect.duplicates.length} />)}
+                {effects.map((effect, index) => <ActionSlot key={effect.key} action={effect.primary} index={index} total={effects.length} repeats={effect.duplicates.length} onBehind={onBehind} />)}
               </ol>
             </section>
           )}
@@ -431,13 +536,14 @@ export function LiveRunDetail({ runId }: { runId: number }) {
 
         <aside aria-label="Source message" className="space-y-4">
           <section className="card space-y-2.5 p-4">
-            <h2 className="eyebrow">Source message</h2>
+            <h2 className="eyebrow">{command ? 'Your instruction' : 'Source message'}</h2>
+            {command && <p className="whitespace-pre-wrap break-words text-[13px] leading-[20px] text-ink">{command}</p>}
             <dl className="space-y-2 text-[12.5px]">
-              <div>
+              <div className={clsx(command && 'hidden')}>
                 <dt className="text-mute">From</dt>
                 <dd className="break-words text-ink">{sender.name || sender.email || 'Unknown sender'}{sender.name && sender.email ? <span className="block break-all text-soft">{sender.email}</span> : null}</dd>
               </div>
-              <div>
+              <div className={clsx(command && 'hidden')}>
                 <dt className="text-mute">Arrived in</dt>
                 <dd className="flex flex-wrap items-center gap-x-2 text-ink">
                   <SourceBadge source={data.email.provider} />{' '}
@@ -452,7 +558,13 @@ export function LiveRunDetail({ runId }: { runId: number }) {
                 <dt className="text-mute">Picked up</dt>
                 <dd className="tabular-nums text-ink">{isInstant(data.createdAt) ? `${fmtDayTime(data.createdAt, tz)} (${tz})` : data.createdAt}</dd>
               </div>
-              <div>
+              {data.simulated !== undefined && (
+                <div>
+                  <dt className="text-mute">Execution</dt>
+                  <dd className="text-ink" data-testid="run-execution">{data.simulated ? 'Sandbox: simulated, nothing real is sent or changed' : session.mode.externalWrites ? 'Real providers: approvals are carried out for real' : 'Real providers: external writes are disabled'}</dd>
+                </div>
+              )}
+              <div className={clsx(command && 'hidden')}>
                 <dt className="text-mute">Classified as</dt>
                 <dd className="text-ink">{categoryLabel(data.category)}</dd>
               </div>
@@ -473,15 +585,17 @@ export function LiveRunDetail({ runId }: { runId: number }) {
                 </div>
               )}
             </dl>
-            <a href={hrefFor('inbox', emailKey(data.email.provider, data.email.email_id))} className="btn btn-secondary w-full">
-              <MailOpen aria-hidden className="h-4 w-4" />
-              Open the message
-            </a>
+            {!command && data.email.email_id && (
+              <a href={hrefFor('inbox', emailKey(data.email.provider, data.email.email_id))} className="btn btn-secondary w-full">
+                <MailOpen aria-hidden className="h-4 w-4" />
+                Open the message
+              </a>
+            )}
           </section>
           <section className="card space-y-1.5 p-4 text-[12.5px] text-soft">
             <h2 className="eyebrow">Safety</h2>
             <p className="flex gap-2"><Ban aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />The message is untrusted input. Only its sender, taken from the From header, can become a recipient or attendee.</p>
-            <p className="flex gap-2"><ShieldCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />Nothing runs without your approval, and {session.policy.externalWritesEnabled ? 'each approval is carried out for real.' : session.policy.executionMode === 'sandbox' ? 'on this backend an approved mail or calendar action runs against an isolated stand-in: nothing real is sent or changed.' : 'sending mail and changing calendars are switched off on this backend.'}</p>
+            <p className="flex gap-2"><ShieldCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />Nothing runs without your approval, and {session.mode.kind === 'sandbox' || data.simulated ? 'here an approved action runs against an isolated stand-in: nothing real is sent or changed, and nobody real is contacted.' : session.mode.externalWrites ? 'each approval is carried out for real.' : 'sending mail and changing calendars are switched off on this backend.'}</p>
           </section>
         </aside>
       </div>

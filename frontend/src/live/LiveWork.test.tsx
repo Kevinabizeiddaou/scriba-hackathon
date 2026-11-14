@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiClientError } from '../api/client'
 import type { ProviderDescriptor, ProviderStatusPayload } from '../api/contract'
-import type { DeskBriefing, DeskConnections, DeskHealth, DeskInbox, DeskRun, DeskSweep, TriagedEmail } from '../api/desk'
+import type { DeskAction, DeskBriefing, DeskConnections, DeskHealth, DeskInbox, DeskRun, DeskSandbox, DeskSweep, TriagedEmail } from '../api/desk'
 import type { ChatToolCall } from './scribaApi'
 
 vi.mock('../api/scriba', async original => ({
@@ -29,9 +29,17 @@ vi.mock('../api/desk', async original => ({
   fetchDeskBriefing: vi.fn(),
   fetchDeskRuns: vi.fn(),
   fetchDeskRun: vi.fn(),
+  fetchDeskSandbox: vi.fn(),
   sweepDeskInbox: vi.fn(),
   startDeskIntake: vi.fn(),
   advanceDeskRun: vi.fn(),
+}))
+// The newer routes the screens read as untyped data. In a sandbox the workspace asks /desk/memory.
+vi.mock('./deskContract', async original => ({
+  ...(await original<typeof import('./deskContract')>()),
+  fetchDeskMemory: vi.fn(),
+  applyTaskUpdate: vi.fn(),
+  dismissTaskUpdate: vi.fn(),
 }))
 vi.mock('./scribaApi', async original => ({
   ...(await original<typeof import('./scribaApi')>()),
@@ -48,9 +56,10 @@ vi.mock('./scribaApi', async original => ({
 }))
 
 import App from '../App'
-import { advanceDeskRun, fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns, startDeskIntake, sweepDeskInbox } from '../api/desk'
+import { advanceDeskRun, fetchDeskBriefing, fetchDeskConnections, fetchDeskHealth, fetchDeskInbox, fetchDeskRun, fetchDeskRuns, fetchDeskSandbox, startDeskIntake, sweepDeskInbox } from '../api/desk'
 import { fetchCalendarEvents, fetchProviderStatus } from '../api/scriba'
 import { deskAction, deskRun, executedAction } from '../test/deskFixtures'
+import { applyTaskUpdate, dismissTaskUpdate, fetchDeskMemory } from './deskContract'
 import { HOLD_CODES, explainHold, unverifiedRecipients } from './deskHolds'
 import { AUTO_CHECK_MS } from './LiveWorkQueuePage'
 import { approveChatToolCall, createDraftFromRequest, fetchChatConversations, fetchChatMessages, fetchChatToolCall, fetchDrafts, fetchReminders, fetchTasks } from './scribaApi'
@@ -118,6 +127,9 @@ function setBackend() {
   vi.mocked(fetchDeskConnections).mockResolvedValue(connections())
   vi.mocked(fetchDeskInbox).mockResolvedValue(inbox())
   vi.mocked(fetchDeskBriefing).mockResolvedValue(briefing())
+  // Outside a sandbox neither of these is asked for; a test that enters one says what they answer.
+  vi.mocked(fetchDeskSandbox).mockRejectedValue(new ApiClientError('Not Found', { status: 404 }))
+  vi.mocked(fetchDeskMemory).mockResolvedValue(null)
   vi.mocked(fetchChatConversations).mockResolvedValue([])
   vi.mocked(fetchChatMessages).mockResolvedValue({ conversation: { id: 7, title: 'Desk', status: 'active' }, messages: [] })
   vi.mocked(fetchChatToolCall).mockImplementation(async id => card({ id }))
@@ -159,6 +171,8 @@ const HELD_RUN = deskRun({
   },
 })
 const DONE_RUN = deskRun({ runId: 9, state: 'completed', email: { ...TASK_RUN.email, email_id: 'm-9', subject: 'Expense report due' }, actions: [executedAction({ toolCallId: 41, assistantActionId: 412 })] })
+/** The server calls it completed, but the action that ran carries no verification evidence. */
+const UNVERIFIED_RUN = deskRun({ runId: 11, state: 'completed', email: { ...TASK_RUN.email, email_id: 'm-11', subject: 'Renew the domain' }, actions: [executedAction({ toolCallId: 43, assistantActionId: null, verified: false })] })
 const INFO_RUN = deskRun({ runId: 10, state: 'no_action_proposed', category: 'informational', outcome: 'none', email: { ...TASK_RUN.email, email_id: 'm-10', subject: 'Weekly digest' }, actions: [] })
 
 beforeEach(() => {
@@ -179,7 +193,7 @@ describe('work queue', () => {
     renderApp('#/work')
     await screen.findByRole('heading', { level: 1, name: 'Work queue' })
     const sections = await waitFor(() => {
-      const found = ['Awaiting your approval', 'Needs your input', 'Completed', 'No action needed'].map(name => screen.getByRole('region', { name }))
+      const found = ['Awaiting your approval', 'Needs your input', 'Completed and verified', 'No action needed'].map(name => screen.getByRole('region', { name }))
       return found
     })
     // Document order is the order of urgency.
@@ -206,10 +220,10 @@ describe('work queue', () => {
     serveRuns([DONE_RUN, TASK_RUN])
     renderApp('#/work')
     const filters = await screen.findByRole('group', { name: 'Filter runs' })
-    expect(within(filters).getAllByRole('button').map(button => button.textContent)).toEqual(['All runs2', 'Awaiting your approval1', 'Completed1'])
-    await user.click(within(filters).getByRole('button', { name: /Completed/ }))
+    expect(within(filters).getAllByRole('button').map(button => button.textContent)).toEqual(['All runs2', 'Awaiting your approval1', 'Completed and verified1'])
+    await user.click(within(filters).getByRole('button', { name: /Completed and verified/ }))
     expect(screen.queryByRole('region', { name: 'Awaiting your approval' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Completed' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Completed and verified' })).toBeInTheDocument()
 
     const intake = screen.getByRole('region', { name: 'Intake' })
     expect(intake).toHaveTextContent('This backend has no background worker: nothing is picked up while the Desk is closed.')
@@ -231,7 +245,24 @@ describe('work queue', () => {
     expect(await screen.findByText(/1 run could not be read, so its state is unknown/)).toBeInTheDocument()
     const unread = screen.getByRole('region', { name: 'State not read' })
     expect(within(unread).getByRole('link', { name: /Run 9/ })).toHaveTextContent('Could not be read')
-    expect(screen.queryByRole('region', { name: 'Completed' })).not.toBeInTheDocument() // unknown is not shown as done
+    expect(screen.queryByRole('region', { name: /Completed/ })).not.toBeInTheDocument() // unknown is not shown as done
+    expect(screen.queryByRole('region', { name: 'Executed, not verified' })).not.toBeInTheDocument()
+  })
+
+  it('keeps a run that executed without verification out of the completed list, and counts it as needing the user', async () => {
+    serveRuns([DONE_RUN, UNVERIFIED_RUN])
+    renderApp('#/work')
+    const unverified = await screen.findByRole('region', { name: 'Executed, not verified' })
+    const row = within(unverified).getByRole('link', { name: /Run 11/ })
+    expect(row).toHaveTextContent('Check the result yourself')
+    expect(within(row).getByTestId('step-tally')).toHaveTextContent('0 of 1 step verified · 1 ran, not verified')
+    const done = screen.getByRole('region', { name: 'Completed and verified' })
+    expect(within(done).getByRole('link', { name: /Run 9/ })).toHaveTextContent('1 of 1 step verified')
+    expect(within(done).queryByRole('link', { name: /Run 11/ })).toBeNull()
+    // What needs the person comes before finished work.
+    expect(unverified.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const nav = screen.getAllByRole('navigation', { name: 'Main' })[0]
+    expect(within(within(nav).getByRole('link', { name: /Work queue/ })).getByLabelText(/^1 runs? that needs? you$/)).toHaveTextContent('1')
   })
 
   it('shows a failure to load as a failure, not as an empty queue', async () => {
@@ -619,7 +650,7 @@ describe('run detail', () => {
     renderApp('#/work/7')
     const breakdown = await screen.findByRole('alert', { name: 'What ran and what did not' })
     expect(within(breakdown).getAllByRole('listitem').map(li => li.textContent)).toEqual([
-      'Ran: Create a calendar event (recorded as action #700)',
+      'Executed: Create a calendar event (verified)',
       'Failed: Send an email (provider_error)',
       'Not run: Record a task (cancelled)',
     ])
@@ -685,5 +716,209 @@ describe('run detail', () => {
     expect(await screen.findByText('Run 999 does not exist for this account.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Try again|Retry/ })).not.toBeInTheDocument()
     expect(within(screen.getByRole('main')).getByRole('link', { name: 'Work queue' })).toHaveAttribute('href', '#/work')
+  })
+})
+
+describe('execution mode', () => {
+  const world = (over: Partial<DeskSandbox> = {}): { account: string; world: DeskSandbox } => ({
+    account: 'exec@desk.example',
+    world: { id: 'w-1', label: 'Demo office', now: '2026-11-16T09:00:00+02:00', fixedClock: true, accounts: { gmail: ['exec@gmail.example'], outlook: null }, counts: { inbox: 3, sent: 0, events: 0, tasks: 0, reminders: 0 }, operations: [], isolationViolations: [], ...over },
+  })
+  const banner = async (mode: string) => {
+    const strip = await screen.findByTestId('mode-banner')
+    await waitFor(() => expect(strip).toHaveAttribute('data-mode', mode))
+    return strip
+  }
+
+  it('labels every screen SANDBOX on a sandbox backend, even with the readiness switch on, and never calls it live', async () => {
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ version: '0.4.0', executionMode: 'sandbox', sandbox: { id: 'w-1', label: 'Demo office' }, externalWrites: { enabled: true, authorized: true } }))
+    vi.mocked(fetchDeskSandbox).mockResolvedValue(world())
+    renderApp('#/work')
+    const strip = await banner('sandbox')
+    expect(within(strip).getByTestId('mode-badge')).toHaveTextContent('SANDBOX')
+    expect(strip).toHaveTextContent('Simulated execution. Synthetic mail and calendars; no real email is sent and no real person is contacted.')
+    expect(strip).toHaveTextContent('World: Demo office')
+    await waitFor(() => expect(strip).toHaveTextContent(/sandbox clock Mon 16 Nov, 09:00 \(Asia\/Beirut\)/))
+    const note = screen.getAllByTestId('data-source')[0]
+    expect(note).toHaveAttribute('data-mode', 'sandbox')
+    expect(note).toHaveTextContent('SANDBOX')
+    expect(note).toHaveTextContent('Simulated execution')
+    expect(note).toHaveTextContent('Desk overlay 0.4.0 · 0 sandbox operations so far')
+    // Connected to a backend is one fact; carrying out real writes is another. A sandbox is not "live".
+    expect(note).toHaveTextContent('Connected to a Scriba backend')
+    expect(document.body.textContent).not.toMatch(/Live: Scriba|\bLIVE\b|External writes are authorized/)
+  })
+
+  it('says WRITES OFF when the server holds external writes, whatever the switch says, and LIVE only when they are enabled', async () => {
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ executionMode: 'held', externalWrites: { enabled: true, authorized: true } }))
+    renderApp('#/work')
+    let strip = await banner('disabled')
+    expect(within(strip).getByTestId('mode-badge')).toHaveTextContent('WRITES OFF')
+    expect(strip).toHaveTextContent('External writes are disabled. Mail and calendar actions can be reviewed and cancelled, not carried out.')
+    expect(screen.getAllByTestId('data-source')[0]).toHaveTextContent('External writes disabled')
+    expect(document.body.textContent).not.toMatch(/SANDBOX|\bLIVE\b/)
+    expect(fetchDeskSandbox).not.toHaveBeenCalled() // the sandbox world is asked for only in a sandbox
+    cleanup()
+
+    // A backend that reports nothing about writes is treated as off.
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health())
+    renderApp('#/work')
+    expect(within(await banner('disabled')).getByTestId('mode-badge')).toHaveTextContent('WRITES OFF')
+    cleanup()
+
+    vi.mocked(fetchDeskHealth).mockResolvedValue(health({ executionMode: 'external', externalWrites: { enabled: true, authorized: true } }))
+    renderApp('#/work')
+    strip = await banner('external')
+    expect(within(strip).getByTestId('mode-badge')).toHaveTextContent('LIVE')
+    expect(strip).toHaveTextContent('External writes are authorized. An approval is carried out on the real mailbox or calendar.')
+    expect(screen.getAllByTestId('data-source')[0]).toHaveTextContent('External writes authorized')
+  })
+
+  it('says the overlay is missing as its own mode, with writes off', async () => {
+    vi.mocked(fetchDeskHealth).mockRejectedValue(new ApiClientError('Not Found', { status: 404 }))
+    renderApp('#/work')
+    const strip = await banner('no_overlay')
+    expect(within(strip).getByTestId('mode-badge')).toHaveTextContent('WRITES OFF')
+    expect(strip).toHaveTextContent('No Desk overlay on this backend. External writes stay switched off.')
+  })
+})
+
+describe('sandbox wording on a run', () => {
+  const stamp = (minute: number) => `2026-11-14T08:${String(minute).padStart(2, '0')}:00+00:00`
+  const sandboxHealth = () => health({ version: '0.4.0', executionMode: 'sandbox', sandbox: { id: 'w-1', label: 'Demo office' }, externalWrites: { enabled: false } })
+  const sentInSandbox = (over: Partial<DeskAction> = {}) =>
+    executedAction({ toolCallId: 31, tool_name: 'send_email', assistantActionId: null, simulated: true, proposedAt: stamp(1), execution: { status: 'executed', at: stamp(3), simulated: true }, verification: { verified: true, method: 'sandbox_readback', reason: null, at: stamp(4) }, ...over })
+  const sandboxRun = (action: DeskAction) => deskRun({ runId: 7, state: 'completed', simulated: true, lifecycle: { stage: 'COMPLETED', reason: null, final: true, outcomeUnknown: false, compensation: null }, actions: [action] })
+  const sentCard = () => card({ id: 31, tool_name: 'send_email', status: 'executed', input: { to: 'maya@lumen.example', subject: 'Re: Invoice', body: 'Paid on Monday.', provider: 'gmail', provider_account_id: 'acct-1' }, output: { outcome: { components: [{ kind: 'email', status: 'sent' }] } } })
+
+  beforeEach(() => {
+    vi.mocked(fetchDeskHealth).mockResolvedValue(sandboxHealth())
+    vi.mocked(fetchDeskSandbox).mockResolvedValue({ account: 'exec@desk.example', world: { id: 'w-1', label: 'Demo office', now: stamp(5), fixedClock: false, accounts: { gmail: [], outlook: null }, counts: { inbox: 1, sent: 1, events: 0, tasks: 0, reminders: 0 }, operations: [], isolationViolations: [] } })
+    vi.mocked(fetchChatToolCall).mockResolvedValue(sentCard())
+  })
+
+  it('shows an executed sandbox action as executed in the sandbox, never as a bare success', async () => {
+    serveRuns([sandboxRun(sentInSandbox())])
+    renderApp('#/work/7')
+    const slot = await screen.findByRole('listitem', { name: 'Action 1 of 1: Send an email' })
+    expect(await within(slot).findByTestId('card-status')).toHaveTextContent('Executed in sandbox, verified')
+    expect(within(slot).getAllByTestId('sandbox-tag').length).toBeGreaterThan(0)
+    // The provider's word ("sent") is never shown without saying where it happened.
+    expect(slot).toHaveTextContent('What happened in the sandbox (simulated)')
+    expect(slot).toHaveTextContent('Email: sent in the sandbox')
+    expect(slot.textContent).not.toMatch(/Email: sent(?! in the sandbox)/)
+    expect(within(slot).getByTestId('sandbox-outcome-note')).toHaveTextContent('no real email or invitation went out and nobody was contacted')
+    expect(within(slot).getByTestId('execution-31')).toHaveTextContent('Executed in sandbox: simulated, nothing real was sent or changed')
+    expect(within(slot).getByTestId('verification-31')).toHaveTextContent('simulated: no real mailbox or calendar was involved')
+    expect(slot).not.toHaveTextContent('Scriba recorded it as action')
+
+    const next = screen.getByRole('region', { name: 'Next step' })
+    expect(next).toHaveTextContent('Every action was executed in the sandbox and read back there. Nothing real was sent or changed.')
+    expect(within(next).getByTestId('server-state')).toHaveTextContent('Server state: Completed, stage COMPLETED')
+    expect(within(next).getByTestId('step-tally')).toHaveTextContent('1 of 1 step verified')
+    expect(within(next).getByTestId('run-sandbox-note')).toHaveTextContent('Nobody real was contacted.')
+    expect(screen.getByTestId('run-execution')).toHaveTextContent('Sandbox: simulated, nothing real is sent or changed')
+    expect(await screen.findByTestId('mode-banner')).toHaveAttribute('data-mode', 'sandbox')
+  })
+
+  it('does not call a sandbox action verified without the read-back, and keeps the run out of completed', async () => {
+    serveRuns([sandboxRun(sentInSandbox({ verified: false, verification: undefined }))])
+    renderApp('#/work/7')
+    const slot = await screen.findByRole('listitem', { name: 'Action 1 of 1: Send an email' })
+    expect(await within(slot).findByTestId('card-status')).toHaveTextContent('Executed in sandbox, not verified')
+    const next = screen.getByRole('region', { name: 'Next step' })
+    expect(next).toHaveTextContent('Executed, not verified')
+    expect(next).toHaveTextContent('Check the result yourself')
+    expect(next).not.toHaveTextContent('Completed and verified')
+    expect(within(next).getByTestId('step-tally')).toHaveTextContent('0 of 1 step verified · 1 ran, not verified')
+  })
+
+  it('offers a task approval as a sandbox approval too, and says what approving does', async () => {
+    serveRuns([deskRun({ runId: 7, simulated: true })])
+    vi.mocked(fetchChatToolCall).mockImplementation(async id => card({ id }))
+    renderApp('#/work/7')
+    const slot = await screen.findByRole('listitem', { name: 'Action 1 of 1: Record a task' })
+    expect(await within(slot).findByRole('button', { name: 'Approve in sandbox' })).toBeEnabled()
+    expect(within(slot).queryByRole('button', { name: 'Approve' })).toBeNull()
+    expect(within(slot).getByTestId('sandbox-note')).toHaveTextContent('Nothing real is sent or changed, nobody real is contacted')
+    expect(screen.getByRole('region', { name: 'Next step' })).toHaveTextContent('Nothing has been executed. Each action runs only if you approve it, and then only in the sandbox.')
+  })
+
+  it('names the server stage under the name the backend sends', async () => {
+    serveRuns([deskRun({ runId: 7, state: 'completed', simulated: true, lifecycle: { stage: 'WAITING_FOR_RESPONSE' as never, reason: null, final: false, outcomeUnknown: false, compensation: null }, actions: [sentInSandbox()] })])
+    renderApp('#/work/7')
+    const next = await screen.findByRole('region', { name: 'Next step' })
+    expect(within(next).getByTestId('server-state')).toHaveTextContent('stage WAITING_FOR_RESPONSE')
+    expect(next).toHaveTextContent('Waiting for a response')
+  })
+})
+
+describe('what the person changed at approval', () => {
+  const event = { title: 'Intro call', start: '2026-11-17T15:00:00+02:00', end: '2026-11-17T15:30:00+02:00', provider: 'google', provider_account_id: 'acct-1' }
+  const approved = { ...event, start: '2026-11-17T16:00:00+02:00', end: '2026-11-17T16:30:00+02:00' }
+  const edited = (extra: Record<string, unknown>) =>
+    ({ ...executedAction({ toolCallId: 51, tool_name: 'create_calendar_event', assistantActionId: 500, input: event, decisions: [{ decision: 'approve', by: 'exec@desk.example', at: '2026-11-14T08:05:00+00:00', edited: ['start', 'end'] }], execution: { status: 'executed', at: '2026-11-14T08:06:00+00:00' } }), ...extra }) as DeskAction
+
+  beforeEach(() => {
+    // Scriba's record of the card still holds the proposal as it was written.
+    vi.mocked(fetchChatToolCall).mockResolvedValue(card({ id: 51, tool_name: 'create_calendar_event', status: 'executed', assistant_action_id: 500, input: event }))
+  })
+
+  it('describes the action as it was approved, with the original proposal beside it', async () => {
+    serveRuns([deskRun({ runId: 7, state: 'completed', category: 'meeting_request', actions: [edited({ edited: ['start', 'end'], effectiveInput: approved })] })])
+    renderApp('#/work/7')
+    const slot = await screen.findByRole('listitem', { name: 'Action 1 of 1: Create a calendar event' })
+    const table = await within(slot).findByTestId('edited-51')
+    expect(table).toHaveTextContent('You changed this proposal when you approved it')
+    expect(within(table).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Field', 'Originally proposed', 'Approved and executed'])
+    await waitFor(() => expect(within(table).getByRole('row', { name: /^start/ })).toHaveTextContent(/15:00.*16:00/))
+    expect(within(table).getByRole('row', { name: /^end/ })).toHaveTextContent(/15:30.*16:30/)
+    // The card itself states the time that was approved and ran, not the one first proposed.
+    const when = within(slot).getByText('When').nextElementSibling!
+    expect(when).toHaveTextContent('16:00')
+    expect(when).not.toHaveTextContent('15:00')
+  })
+
+  it('says the approved values are not reported instead of guessing them', async () => {
+    serveRuns([deskRun({ runId: 7, state: 'completed', category: 'meeting_request', actions: [edited({ edited: ['start', 'end'] })] })])
+    renderApp('#/work/7')
+    const slot = await screen.findByRole('listitem', { name: 'Action 1 of 1: Create a calendar event' })
+    const note = await within(slot).findByTestId('edited-51')
+    expect(note).toHaveTextContent('Fields changed: start, end. This backend does not report the approved values, so the card above still shows the original proposal.')
+    expect(within(note).queryByRole('table')).toBeNull()
+    await waitFor(() => expect(within(slot).getByText('When').nextElementSibling).toHaveTextContent('15:00'))
+  })
+})
+
+describe('changes to an existing task', () => {
+  const withUpdates = (updates: unknown[]) => ({ ...deskRun({ runId: 7, state: 'no_action_proposed', actions: [] }), taskUpdates: updates }) as DeskRun
+
+  it('suggests marking a task done and changes it only when the person confirms', async () => {
+    const user = userEvent.setup()
+    serveRuns([withUpdates([{ taskId: 't-9', title: 'Send the board pack', state: 'suggested', matched: ['title', 'sender'] }])])
+    const after = withUpdates([{ taskId: 't-9', title: 'Send the board pack', state: 'completed', matched: ['title', 'sender'], verified: true }])
+    vi.mocked(applyTaskUpdate).mockImplementation(async () => {
+      serveRuns([after])
+      return after
+    })
+    renderApp('#/work/7')
+    const block = await screen.findByTestId('task-updates')
+    expect(block).toHaveTextContent('Send the board pack')
+    expect(block).toHaveTextContent('Matched on: title, sender')
+    expect(block).toHaveTextContent('Suggested: mark it done. Only your own records change, and only if you confirm.')
+    expect(applyTaskUpdate).not.toHaveBeenCalled()
+    await user.click(within(block).getByRole('button', { name: 'Mark done' }))
+    expect(applyTaskUpdate).toHaveBeenCalledWith(7, 't-9')
+    expect(dismissTaskUpdate).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByTestId('task-updates')).toHaveTextContent('Done, verified'))
+    expect(screen.getByTestId('task-updates')).toHaveTextContent('Marked done and read back as no longer open.')
+    expect(within(screen.getByTestId('task-updates')).queryByRole('button', { name: 'Mark done' })).toBeNull()
+  })
+
+  it('shows no task block on a run that reports none', async () => {
+    serveRuns([TASK_RUN])
+    renderApp('#/work/7')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Board pack by Thursday' })).toBeInTheDocument()
+    expect(screen.queryByTestId('task-updates')).toBeNull()
   })
 })

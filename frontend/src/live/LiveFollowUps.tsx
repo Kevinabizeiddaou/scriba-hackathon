@@ -15,7 +15,7 @@ import { Button, EmptyState, ErrorNote, SkeletonRows } from '../components/ui'
 import { getApi } from '../harness'
 import { RUNS_KEY } from './deskRuns'
 import { FollowUpItem } from './RunParts'
-import { FOLLOW_UP_ORDER, FOLLOW_UP_STATE, followUpInfo } from './runLifecycle'
+import { FOLLOW_UP_ORDER, FOLLOW_UP_STATE, FOLLOW_UP_STATE_REVISED, followUpInfo } from './runLifecycle'
 import type { LiveSession } from './session'
 
 export const FOLLOW_UPS_KEY = ['desk', 'follow-ups'] as const
@@ -56,8 +56,9 @@ export function LiveFollowUps({ onCount }: { onCount?: (open: number) => void })
   }
 
   // States this version knows, in the order a person works them; anything else is listed last, as unrecognised.
-  const known = FOLLOW_UP_ORDER as string[]
-  const groups = [...FOLLOW_UP_ORDER.map(state => ({ state: state as string, items: followUps.filter(followUp => followUp.state === state) })), { state: 'other', items: followUps.filter(followUp => !known.includes(followUp.state)) }].filter(group => group.items.length > 0)
+  const revised = Object.keys(FOLLOW_UP_STATE_REVISED)
+  const known = [...(FOLLOW_UP_ORDER as string[]), ...revised]
+  const groups = [...revised.map(state => ({ state, items: followUps.filter(followUp => (followUp.state as string) === state) })), ...FOLLOW_UP_ORDER.map(state => ({ state: state as string, items: followUps.filter(followUp => followUp.state === state) })), { state: 'other', items: followUps.filter(followUp => !known.includes(followUp.state)) }].filter(group => group.items.length > 0)
 
   return (
     <div className="space-y-5" aria-label="Follow-ups">
@@ -69,7 +70,7 @@ export function LiveFollowUps({ onCount }: { onCount?: (open: number) => void })
       </div>
       {close.isError && <p role="alert" className="text-[12.5px] text-danger">The follow-up could not be closed: {getErrorMessage(close.error)}. It is still open.</p>}
       {groups.map(group => (
-        <section key={group.state} aria-label={group.state === 'other' ? 'State not recognised' : FOLLOW_UP_STATE[group.state as DeskFollowUp['state']].label}>
+        <section key={group.state} aria-label={group.state === 'other' ? 'State not recognised' : followUpInfo(group.state).label}>
           <h2 className="eyebrow mb-2">{group.state === 'other' ? 'State not recognised' : followUpInfo(group.state).label} ({group.items.length})</h2>
           {group.state === 'overdue' && <p className="mb-2 text-[12.5px] text-soft">A reminder is proposed on each run for your approval. It is a suggestion: it has not been sent.</p>}
           <ul className="space-y-2">

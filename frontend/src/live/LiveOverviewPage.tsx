@@ -12,14 +12,16 @@ import { PRIORITY } from '../lib/labels'
 import { hrefFor, type Page } from '../lib/router'
 import { fmtDayTime, fmtTime, isInstant } from '../lib/time'
 import { describeAction } from './describeAction'
-import { useWorkQueue, QueueCoverage } from './LiveWorkPages'
+import { executedLabel } from './executionMode'
+import { useOwnedWork, QueueCoverage } from './LiveWorkPages'
+import { deskLinkOf } from './ownership'
 import { QUEUE_GROUPS, QUEUE_ORDER, groupOf, nextStepOf, type QueueGroup } from './deskRuns'
 import { FOLLOW_UPS_KEY, openFollowUps, tracksFollowUps } from './LiveFollowUps'
 import { useDeskWorker, useRunQueue } from './LiveWorkQueuePage'
 import { AgentActivity, FollowUpItem } from './RunParts'
 import { emailKey, parseSender, toAccounts, toMailProvider, toPriority } from './mappers'
 import { useRequiredLiveSession } from './session'
-import { WORK_STAGES, isWorkItem, needsIntervention, needsUser, stageOf } from './workQueue'
+import { WORK_STAGES, needsIntervention, needsUser, stageOf } from './workQueue'
 
 const CATEGORY_LABEL: Record<TriageCategory, string> = {
   meeting_request: 'Meeting requests',
@@ -106,18 +108,20 @@ export function LiveOverviewPage() {
   const { principal } = getApi().info
   const tz = principal.timezone
 
-  const briefing = useQuery({ queryKey: ['desk', 'briefing'], queryFn: fetchDeskBriefing })
+  const briefing = useQuery({ queryKey: ['desk', 'briefing'], queryFn: fetchDeskBriefing, staleTime: 30_000 })
   const inbox = useQuery<DeskInbox>({ queryKey: ['desk', 'inbox'], queryFn: () => session.workspace.inbox() })
   const connections = useQuery({ queryKey: ['desk', 'connections'], queryFn: () => session.workspace.connections() })
-  const queue = useWorkQueue()
+  // The secretary's numbers are the Desk's own action cards; Scriba chat cards are counted apart.
+  const { queue, index, owned, runsPending } = useOwnedWork()
   const runs = useRunQueue(session.overlay === 'ok')
+  const sandbox = session.mode.kind === 'sandbox'
   const worker = useDeskWorker()
   const followUpsTracked = tracksFollowUps(session)
   const followUps = useQuery({ queryKey: FOLLOW_UPS_KEY, queryFn: () => fetchDeskFollowUps({ refresh: true }), enabled: followUpsTracked })
   // How many picked-up requests sit in each list of the work queue. Only runs that were read count.
   const byGroup = new Map<QueueGroup, number>()
   for (const entry of runs.data?.entries ?? []) if (entry.run) byGroup.set(groupOf(entry.run), (byGroup.get(groupOf(entry.run)) ?? 0) + 1)
-  const runsForUser = (runs.data?.entries ?? []).filter(entry => entry.run && ['decision', 'input', 'problem', 'unknown'].includes(groupOf(entry.run)))
+  const runsForUser = (runs.data?.entries ?? []).filter(entry => entry.run && ['decision', 'input', 'problem', 'unverified', 'unknown'].includes(groupOf(entry.run)))
 
   useEffect(() => {
     session.desk.setTimeZone(briefing.data?.timezone)
@@ -133,24 +137,39 @@ export function LiveOverviewPage() {
   }
 
   const link = (page: Page, param?: string) => hrefFor(page, param)
-  const work = (queue.data?.cards ?? []).filter(isWorkItem)
+  // While the runs load it is not known whose a card is: nothing is counted as the secretary's yet.
+  const work = owned.known ? owned.desk : runsPending ? [] : owned.scriba
+  const counted = Boolean(queue.data) && !runsPending
   const waiting = work.filter(needsUser)
   const problems = work.filter(needsIntervention)
   const executing = work.filter(card => stageOf(card.toolCall.status) === 'executing')
   const completed = work.filter(card => stageOf(card.toolCall.status) === 'completed')
-  const finishedRuns = (runs.data?.entries ?? []).filter(entry => entry.run && ['done', 'no_action'].includes(groupOf(entry.run)))
+  // "Verified" is the Desk's evidence flag on the action, or, for a card the Desk does not own, Scriba's action record.
+  const isVerified = (card: (typeof work)[number]) => {
+    const action = deskLinkOf(card, index)?.action
+    return action ? action.verified === true : card.toolCall.assistant_action_id != null
+  }
+  const verifiedCount = completed.filter(isVerified).length
+  const unverifiedCount = completed.length - verifiedCount
+  const scribaWaiting = owned.known ? owned.scriba.filter(card => needsUser(card) || needsIntervention(card)).length : 0
+  const finishedRuns = (runs.data?.entries ?? []).filter(entry => entry.run && ['done', 'unverified', 'no_action'].includes(groupOf(entry.run)))
   const finishedRunActions = new Set(finishedRuns.flatMap(entry => entry.run!.actions.map(action => action.toolCallId)))
   // Finished work, only as the server reports it: actions that ran, and picked-up requests the run closed.
-  const handled: { key: string; kind: 'completed' | 'closed'; title: string; detail: string; href: string }[] = [
+  // Green is for work with verification evidence; "ran" alone is listed as not verified.
+  const handled: { key: string; kind: 'verified' | 'unverified' | 'closed'; title: string; detail: string; href: string }[] = [
     // A run's actions are chat tool calls (the ids match), so an action whose run is listed below is
     // not listed a second time on its own.
     ...completed.filter(card => !finishedRunActions.has(card.toolCall.id)).map(card => {
       const description = describeAction(card.toolCall)
-      return { key: `action-${card.toolCall.id}`, kind: 'completed' as const, title: description.headline || description.title, detail: `${description.title}: completed`, href: link('activity') }
+      const run = deskLinkOf(card, index)
+      const simulated = run?.action?.simulated === true
+      const verified = isVerified(card)
+      return { key: `action-${card.toolCall.id}`, kind: verified ? ('verified' as const) : ('unverified' as const), title: description.headline || description.title, detail: `${description.title}: ${verified ? executedLabel(simulated, true).toLowerCase() : `${executedLabel(simulated).toLowerCase()}, not verified`}`, href: run ? link('work', String(run.runId)) : link('activity') }
     }),
-    ...(runs.data?.entries ?? [])
-      .filter(entry => entry.run && ['done', 'no_action'].includes(groupOf(entry.run)))
-      .map(({ row, run }) => ({ key: `run-${row.runId}`, kind: groupOf(run!) === 'done' ? ('completed' as const) : ('closed' as const), title: run!.email.subject || 'No subject', detail: QUEUE_GROUPS[groupOf(run!)].label, href: link('work', String(row.runId)) })),
+    ...finishedRuns.map(({ row, run }) => {
+      const group = groupOf(run!)
+      return { key: `run-${row.runId}`, kind: group === 'done' ? ('verified' as const) : group === 'unverified' ? ('unverified' as const) : ('closed' as const), title: run!.email.subject || 'No subject', detail: group === 'done' && run!.simulated ? 'Completed in the sandbox, verified by read-back' : QUEUE_GROUPS[group].label, href: link('work', String(row.runId)) }
+    }),
   ]
   const arrived = inbox.data?.items.length ?? null
   const classified = inbox.data?.counts
@@ -186,14 +205,14 @@ export function LiveOverviewPage() {
         {/* Two halves: what cannot move without the user, and what the secretary has in hand or has finished. */}
         <section aria-label="Where the work stands" className="card grid divide-y divide-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
           <StageGroup title="Waiting on you">
-            <Stage icon={ShieldCheck} label="Awaiting approval" value={queue.data ? waiting.length : null} unknown={queue.isError} tone="warn" href={link('approvals')} detail={queue.isError ? 'Could not be read' : 'Proposed by the secretary; nothing has happened yet'} />
-            <Stage icon={AlertTriangle} label="Failed or partial" value={queue.data ? problems.length : null} unknown={queue.isError} tone="danger" href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Did not finish cleanly; needs a person'} />
+            <Stage icon={ShieldCheck} label="Awaiting approval" value={counted ? waiting.length : null} unknown={queue.isError} tone="warn" href={link('approvals')} detail={queue.isError ? 'Could not be read' : scribaWaiting > 0 ? `Proposed by the secretary; nothing has happened yet. ${scribaWaiting} more in Scriba chat, counted apart` : 'Proposed by the secretary; nothing has happened yet'} />
+            <Stage icon={AlertTriangle} label="Failed or partial" value={counted ? problems.length : null} unknown={queue.isError} tone="danger" href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Did not finish cleanly; needs a person'} />
             <Stage icon={ListTodo} label="Need action" value={classified ? classified.meeting_request + classified.needs_reply + classified.action_item : null} unknown={inbox.isError} href={link('inbox')} detail={inbox.isError ? 'Could not be read' : 'Mail classified as a meeting request, a reply or an action'} />
           </StageGroup>
           <StageGroup title="With the secretary">
             <Stage icon={Inbox} label="Arrived" value={arrived} unknown={inbox.isError} href={link('inbox')} detail={inbox.isError ? 'Could not be read' : 'Recent messages across Gmail and Outlook'} />
-            <Stage icon={RefreshCw} label="Executing" value={queue.data ? executing.length : null} unknown={queue.isError} href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Approved and running on Scriba now'} />
-            <Stage icon={CheckCircle2} label="Completed" value={queue.data ? completed.length : null} unknown={queue.isError} tone="ok" href={link('activity')} detail={queue.isError ? 'Could not be read' : 'Ran, with the provider result on record'} />
+            <Stage icon={RefreshCw} label="Executing" value={counted ? executing.length : null} unknown={queue.isError} href={link('activity')} detail={queue.isError ? 'Could not be read' : sandbox ? 'Approved and running in the sandbox now' : 'Approved and running now'} />
+            <Stage icon={CheckCircle2} label="Verified" value={counted ? verifiedCount : null} unknown={queue.isError} tone="ok" href={link('activity')} detail={queue.isError ? 'Could not be read' : `${sandbox ? 'Executed in the sandbox and read back there; nothing real was sent' : 'Executed, with verification evidence on record'}${unverifiedCount > 0 ? `. ${unverifiedCount} more ran without verification and ${unverifiedCount === 1 ? 'is' : 'are'} not counted` : ''}`} />
           </StageGroup>
         </section>
         {queue.data && <QueueCoverage queue={queue.data} />}
@@ -229,7 +248,7 @@ export function LiveOverviewPage() {
                   {runsForUser.slice(0, 5).map(({ row, run }) => (
                     <li key={row.runId}>
                       <a href={link('work', String(row.runId))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{run!.email.subject || 'No subject'}</span>
                           <span className="block truncate text-[12px] text-soft">{nextStepOf(run!).label}</span>
                         </span>
@@ -244,7 +263,8 @@ export function LiveOverviewPage() {
             <Section title="Waiting for you" action={<a href={link('approvals')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Approval center <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
               {queue.isPending && <SkeletonRows rows={2} />}
               {queue.isError && <ErrorNote error={new Error(`The secretary's actions could not be loaded: ${getErrorMessage(queue.error)}`)} onRetry={() => void queue.refetch()} />}
-              {queue.data && waiting.length === 0 && problems.length === 0 && <p className="text-[13px] text-soft">No proposal is waiting for a decision, and nothing has failed.</p>}
+              {counted && waiting.length === 0 && problems.length === 0 && <p className="text-[13px] text-soft">No proposal from the secretary is waiting for a decision, and nothing has failed.</p>}
+              {scribaWaiting > 0 && <p className="mb-2 text-[12px] text-mute" data-testid="scriba-waiting">{scribaWaiting} more action{scribaWaiting === 1 ? ' is' : 's are'} waiting in Scriba chat. {scribaWaiting === 1 ? 'It was' : 'They were'} not opened by the Desk and {scribaWaiting === 1 ? 'is' : 'are'} listed apart in the approval center.</p>}
               <ul className="space-y-2">
                 {[...waiting, ...problems].slice(0, 6).map(card => {
                   const description = describeAction(card.toolCall)
@@ -252,7 +272,7 @@ export function LiveOverviewPage() {
                   return (
                     <li key={card.toolCall.id}>
                       <a href={link('approvals')} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-white/[0.02] px-3.5 py-2.5 hover:border-line-strong">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block text-[12px] text-mute">{description.title}</span>
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{description.headline || 'No title on the card'}</span>
                           {description.recipients.length > 0 && <span className="block truncate text-[12px] text-soft">To {description.recipients.join(', ')}</span>}
@@ -275,7 +295,7 @@ export function LiveOverviewPage() {
                   return (
                     <li key={`${line.provider}:${line.id}`}>
                       <a href={link('inbox', emailKey(line.provider, line.id))} className="lift flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-transparent px-3 py-2 hover:border-line hover:bg-white/[0.04]">
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-[min(100%,170px)] flex-1">
                           <span className="block truncate text-[13.5px] font-semibold text-ink">{parseSender(line.from_addr).name}</span>
                           <span className="block truncate text-[12.5px] text-soft">{line.subject || '(no subject)'}</span>
                         </span>
@@ -348,14 +368,14 @@ export function LiveOverviewPage() {
             <Section title="Handled by the secretary" action={<a href={link('activity')} className="tap inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">Activity <ArrowRight aria-hidden className="h-3.5 w-3.5" /></a>}>
               {(queue.isPending || (session.overlay === 'ok' && runs.isPending)) && <SkeletonRows rows={2} />}
               {!queue.isPending && !(session.overlay === 'ok' && runs.isPending) && handled.length === 0 && (
-                <p className="text-[13px] text-soft">{queue.isError ? 'The record of finished work could not be read.' : 'Nothing has been finished yet. Completed actions and requests closed without action are listed here once the server reports them.'}</p>
+                <p className="text-[13px] text-soft">{queue.isError ? 'The record of finished work could not be read.' : sandbox ? 'Nothing has been executed in the sandbox yet. Actions the secretary executed and verified, and requests closed without action, are listed here.' : 'Nothing has been finished yet. Verified actions and requests closed without action are listed here once the server reports them.'}</p>
               )}
               <ul className="divide-y divide-line">
                 {handled.slice(0, 5).map(item => (
                   <li key={item.key}>
                     <a href={item.href} className="flex items-center gap-3 py-2 hover:bg-white/[0.02]">
-                      <CheckCircle2 aria-hidden className={clsx('h-4 w-4 shrink-0', item.kind === 'completed' ? 'text-ok' : 'text-mute')} />
-                      <span className="min-w-0 flex-1">
+                      {item.kind === 'unverified' ? <AlertTriangle aria-hidden className="h-4 w-4 shrink-0 text-warn" /> : <CheckCircle2 aria-hidden className={clsx('h-4 w-4 shrink-0', item.kind === 'verified' ? 'text-ok' : 'text-mute')} />}
+                      <span className="min-w-[min(100%,170px)] flex-1">
                         <span className="block truncate text-[13.5px] font-medium text-ink">{item.title}</span>
                         <span className="block truncate text-[12px] text-soft">{item.detail}</span>
                       </span>

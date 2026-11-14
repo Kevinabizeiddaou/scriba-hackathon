@@ -33,7 +33,7 @@ import re
 import threading
 from typing import Any, Dict, List, Mapping, Optional
 
-from . import lifecycle, planning, plans, reading, understanding
+from . import files, lifecycle, planning, plans, reading, requests, understanding, workbooks
 from .availability import InvalidAvailabilityRequest, parse_instant, resolve_zone
 from .claims import LEASE_SECONDS, MemoryClaims, claim_key
 from .commands import Commands, reply_text
@@ -52,6 +52,7 @@ SWEEP_MAX_NEW = 5
 TRIGGERS = ("manual", "sweep", "worker", "evaluation", "chat")
 # How long the Desk waits for an answer before it proposes a reminder.
 FOLLOW_UP_DAYS = 2
+MAX_REQUESTED_TASKS = 3
 EVENT_SEARCH_DAYS = 45
 # A reminder (nudge) is not a new wait: it belongs to the follow-up it chases.
 REPLY_PURPOSES_AWAITING = ("offer_times", "clarify")
@@ -64,6 +65,14 @@ _NEWS = re.compile(
     r"just (?:an update|a heads[- ]up|to let you know|keeping you (?:posted|in the loop)|so you know)|"
     r"for the record|keeping you (?:posted|in the loop)|thank you|thanks(?: again)?|"
     r"received,? (?:with )?thanks|noted|sounds good|see you (?:then|there|on))\b", re.I)
+
+
+class InvalidRequest(ValueError):
+    """The request is not well formed. Nothing was done."""
+
+
+class Conflict(RuntimeError):
+    """The request cannot be carried out as things stand. Nothing was done."""
 
 
 class IntakeBusy(RuntimeError):
@@ -219,6 +228,11 @@ class DeskWorkflow:
         found = plan.get("understanding") or understanding.from_rules(item)
         typed = plans.build(meta=meta, understanding=found, plan=plan)
         meta["held"] = plan["held"]
+        if plan.get("unresolved"):
+            # Requests that were identified and not acted on. While any is
+            # open the run is not complete, whatever else was done.
+            meta["unresolved"] = [{"id": f"u{index}", **entry}
+                                  for index, entry in enumerate(plan["unresolved"], start=1)]
         if plan.get("flags"):
             meta["flags"] = plan["flags"]
         if plan.get("requester_timezone"):
@@ -246,7 +260,7 @@ class DeskWorkflow:
                                          "count": (detail.get("thread") or {}).get("count")})
         for read in plan["reads"]:
             self._record(user, run, "read", read)
-        for closed in plan.get("closed_follow_ups") or []:
+        for closed in [*(plan.get("closed_follow_ups") or []), *(plan.get("kept_follow_ups") or [])]:
             self._record(user, run, "followup", closed)
         self._record(user, run, "stage", {"stage": "PLANNING", "planner": plan["planner"]})
         self._record(user, run, "plan", typed)
@@ -321,6 +335,16 @@ class DeskWorkflow:
             # and nothing is proposed on the strength of a message carrying it.
             return self._hand_over_untrusted(plan, source="rules")
 
+        attached = self._read_attachments(user, item, plan)
+        flagged = [f for f in attached if f.get("findings")]
+        if flagged:
+            # A file is data too. One that carries text written to an
+            # assistant is not read to a model, not summarised and not acted
+            # on: the message is handed over with the file named.
+            return self._hand_over_untrusted(
+                plan, source="attachment",
+                evidence=[f"{f['filename']}: {finding}" for f in flagged for finding in f["findings"]][:6])
+
         try:
             earlier = self.memory.earlier_same_request(ctx, user, item, self.thread_context(user, item, detail))
         except Exception:
@@ -340,6 +364,15 @@ class DeskWorkflow:
                                       "explanation": "The request repeats one already taken in."})
             return plan
 
+        if reading.retracted(text):
+            # "Cancel it. On second thought, keep it." Which half stands is the
+            # writer's to say. No reader, rule or model, gets to pick, and no
+            # task is made out of either half.
+            self._hold(plan, user, item, calendar, "conflicting_instructions",
+                       "The message gives an instruction and then takes it back, so nothing is "
+                       "proposed. Read it and decide.")
+            return plan
+
         self._close_awaited(user, item, plan)
         found = self._understand(user, item, detail, plan)
         plan["understanding"] = found
@@ -353,9 +386,33 @@ class DeskWorkflow:
         if found["source"] == "model" and triage["category"] != "automated":
             self._plan_from_intents(ctx, user, item, calendar, plan, found)
         elif triage["category"] == "action_item":
-            self._plan_task(ctx, user, item, plan)
+            asked = [u for u in requests.units(item.get("subject"), text) if u["kind"] == "action"]
+            if len(asked) >= 2:
+                # Two things to do are two tasks, each with its own date.
+                self._plan_requested_tasks(ctx, user, item, plan, asked)
+            else:
+                self._plan_task(ctx, user, item, plan)
         elif triage["category"] == "meeting_request":
+            read = requests.units(item.get("subject"), text)
+            asked = [u for u in read if u["kind"] == "action"]
+            wishes = [u for u in read if u["kind"] == "scheduling"]
+            if len({u.get("intent") for u in wishes}) > 1:
+                # Two different things about the calendar in one message (cancel
+                # this one, and could we meet then): the Desk acts on one. The
+                # other is not forgotten.
+                first = (triage.get("meeting_intent") or "new")
+                for unit in wishes:
+                    if unit.get("intent") != first:
+                        plan.setdefault("unresolved", []).append({
+                            "text": unit["text"][:300], "why": "second_scheduling_request"})
+            if asked:
+                # The meeting's time is read from the sentences about the
+                # meeting. Another request's date is not the meeting's.
+                plan["meeting_text"] = requests.without(text, [u["text"] for u in asked])
             self._plan_meeting(ctx, user, item, calendar, plan)
+            if asked and (plan.get("held") or {}).get("reason") not in ("untrusted_instructions",
+                                                                         "conflicting_instructions"):
+                self._plan_requested_tasks(ctx, user, item, plan, asked)
         elif triage["category"] == "needs_reply":
             plan["decisions"].append({"decision": "escalate", "reason": "reply_needs_author",
                                       "explanation": "This needs a reply in your words. A draft can "
@@ -374,6 +431,8 @@ class DeskWorkflow:
             plan["decisions"].append({"decision": "none", "reason": triage["category"],
                                       "explanation": "No action is needed for this message."})
 
+        self._plan_file_review(user, item, plan, attached)
+
         if self.agent is not None:
             try:
                 plan = self.agent.refine(ctx, user, item, detail, plan, workflow=self)
@@ -384,6 +443,14 @@ class DeskWorkflow:
         asked = {str(i.get("type")) for i in found.get("intents") or []
                  if (i.get("confidence") or 0) >= understanding.MIN_CONFIDENCE}
         if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
+                and plan["held"] is None and plan["proposals"] \
+                and not any(p.get("tool_name") == "send_email" for p in plan["proposals"]):
+            # Something else in the message was acted on, and the reply it
+            # also needs was not drafted. The run is not complete without it.
+            needing = next(i for i in found["intents"] if i.get("type") in ("reply_needed", "information_request"))
+            plan.setdefault("unresolved", []).append({
+                "text": str((needing.get("evidence") or ["a reply"])[0])[:300], "why": "reply_needs_author"})
+        if found.get("source") == "model" and asked & {"reply_needed", "information_request"} \
                 and plan["held"] is None and not plan["proposals"] and not plan.get("task_updates"):
             # A reply is needed and none was drafted. That is not "done":
             # the message is handed to the person, who writes it.
@@ -392,6 +459,105 @@ class DeskWorkflow:
                 "message": "This needs a reply in your words, and none could be drafted from what "
                            "the Desk can verify. It is yours to answer."}
         return plan
+
+    # ── files that arrive with a message ────────────────────────────────────
+    def _read_attachments(self, user: Any, item: Mapping[str, Any], plan: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Read every attachment of the message with Scriba's own readers and
+        record each read. Returns the analyses (kept for planning only: file
+        text is never written to the run's record)."""
+        listing = getattr(self.gateway, "attachments", None)
+        rows = listing(user, item) if callable(listing) else None
+        if not rows:
+            return []                       # none, or a mailbox whose attachments this backend cannot read
+        found: List[Dict[str, Any]] = []
+        for index, row in enumerate(rows):
+            base = {"tool": "file.read_attachment", "attachmentId": row.get("id"), "filename": row.get("filename"),
+                    "sizeBytes": row.get("sizeBytes")}
+            if index >= files.MAX_ATTACHMENTS:
+                plan["reads"].append({**base, "ok": False, "error": "too_many_attachments"})
+                continue
+            try:
+                content = self.gateway.attachment_content(user, str(row.get("id")))
+                analysis = files.analyse(str(row.get("filename") or "file"), content or b"")
+            except Exception as exc:        # one unreadable file does not stop the message
+                plan["reads"].append({**base, "ok": False, "error": type(exc).__name__})
+                continue
+            analysis["attachmentId"] = row.get("id")
+            plan["reads"].append({
+                **base, "ok": bool(analysis["read"]), "error": None if analysis["read"] else analysis.get("code"),
+                "kind": analysis.get("kind"), "sha256": analysis.get("sha256"), "unit": analysis.get("unit"),
+                "unitCount": analysis.get("unitCount"), "truncated": bool(analysis.get("truncated")),
+                "unread": len(analysis.get("unread") or []), "findings": len(analysis.get("findings") or []),
+                "unusual": len(analysis.get("unusual") or [])})
+            found.append(analysis)
+            if analysis["read"]:
+                plan.setdefault("facts", []).append(
+                    f"Read \"{analysis['filename']}\" ({analysis.get('label')}): "
+                    f"{analysis.get('unitCount')} {analysis.get('unit')}(s).")
+            else:
+                plan.setdefault("missing", []).append(f"the content of \"{analysis['filename']}\"")
+        return found
+
+    def _plan_file_review(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                          attached: List[Dict[str, Any]]) -> None:
+        """When a message asks for its file to be looked at: one review
+        document per readable file (Scriba's ``create_document``), and, after
+        the first one exists and was verified, a reply for approval."""
+        readable = [f for f in attached if f.get("read")]
+        if not readable or plan.get("held", None) and plan["held"].get("reason") not in ("needs_review",):
+            return
+        if not reading.file_request(str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")):
+            return
+        sender = str(item.get("from_addr") or "the sender")
+        first = len(plan["proposals"])
+        for analysis in readable[:3]:
+            plan["proposals"].append({
+                "tool_name": "create_document", "purpose": "review_file",
+                "reason": f"The message asks for \"{analysis['filename']}\" to be looked at. "
+                          "The review is built from the file itself, by fixed rules.",
+                "tool_input": files.summary_document(analysis, sender=sender, subject=str(item.get("subject") or ""))})
+        if plan.get("held") and plan["held"].get("reason") == "needs_review":
+            plan["held"] = None             # the Desk can place it after all: it asks for a file to be reviewed
+        plan["decisions"].append({
+            "decision": "propose", "reason": "file_review_requested",
+            "explanation": f"A review of {len(readable[:3])} attached file(s) is proposed. It writes only "
+                           "your own records."})
+        unusual = [f["finding"] for analysis in readable[:3] for f in analysis.get("unusual") or []]
+        if sender_address(sender) and item["triage"].get("category") != "automated":
+            plan.setdefault("deferred", []).append({
+                "tool": "send_email", "purpose": "reply", "depends_on_index": first,
+                "pending": {"tool_name": "send_email", "purpose": "reply",
+                            "reason": "The file was reviewed, so the sender can be answered. You approve or change "
+                                      "the wording.",
+                            "tool_input": self._reply_input(item, planning.file_review_reply(
+                                filenames=[a["filename"] for a in readable[:3]], findings=unusual))}})
+
+    def _plan_requested_tasks(self, ctx: Any, user: Any, item: Dict[str, Any], plan: Dict[str, Any],
+                              asked: List[Dict[str, Any]]) -> None:
+        """One task per sentence that asks the executive to do something. What
+        is identified and cannot be recorded is listed as unresolved: the run
+        is then not complete until the person has seen it."""
+        held_before = plan["held"]
+        clear = [u for u in asked if u.get("separate") and not u.get("names_address")]
+        for unit in asked:
+            if unit not in clear:
+                # Asked for, and not clearly a piece of work the Desk can
+                # record by itself (or it names an address): the person sees
+                # it before the run can count as done.
+                plan.setdefault("unresolved", []).append({
+                    "text": unit["text"][:300],
+                    "why": "names_an_address" if unit.get("names_address") else "needs_your_decision"})
+        asked = clear
+        for unit in asked[:MAX_REQUESTED_TASKS]:
+            title = requests.title_of(unit["text"])
+            if any(_same_title(p.get("tool_input", {}).get("title"), title) for p in plan["proposals"]
+                   if p.get("tool_name") == "create_task"):
+                continue
+            self._plan_task(ctx, user, item, plan, title=title, evidence=[unit["text"]], alone=False)
+            if (plan["held"] or {}).get("reason") == "task_exists":
+                plan["held"] = held_before       # that one is already recorded; the others still count
+        for unit in asked[MAX_REQUESTED_TASKS:]:
+            plan.setdefault("unresolved", []).append({"text": unit["text"][:300], "why": "not_recorded"})
 
     @staticmethod
     def _hand_over_untrusted(plan: Dict[str, Any], *, source: str,
@@ -432,10 +598,9 @@ class DeskWorkflow:
         """"No action" has to be earned: the message says it is for
         information, or the Desk already recorded what it reports (a task it
         finished, an awaited answer it brought)."""
-        if plan.get("task_updates") or plan.get("closed_follow_ups"):
+        if plan.get("task_updates") or plan.get("closed_follow_ups") or plan.get("kept_follow_ups"):
             return True
-        text = f"{item.get('subject') or ''}\n{item.get('body') or item.get('snippet') or ''}"
-        return bool(_NEWS.search(text))
+        return requests.no_work_established(item.get("subject"), item.get("body") or item.get("snippet"))
 
     def thread_context(self, user: Any, item: Mapping[str, Any],
                        detail: Mapping[str, Any]) -> List[Dict[str, Any]]:
@@ -516,6 +681,8 @@ class DeskWorkflow:
             kind, details = intent["type"], intent.get("details") or {}
             if kind in understanding.SCHEDULING:
                 if scheduled:
+                    plan.setdefault("unresolved", []).append({
+                        "text": str((intent.get("evidence") or [kind])[0])[:300], "why": "second_scheduling_request"})
                     plan["decisions"].append({"decision": "none", "reason": "second_scheduling_request",
                                               "explanation": "A second scheduling request in the same "
                                                              "message was left for you."})
@@ -548,6 +715,8 @@ class DeskWorkflow:
                         "reason": "The message asks to be reminded.",
                         "tool_input": {"title": str(details["title"])[:160], "remind_at": when.isoformat()}})
                 else:
+                    plan.setdefault("unresolved", []).append({
+                        "text": str((intent.get("evidence") or ["a reminder"])[0])[:300], "why": "details_missing"})
                     plan.setdefault("missing", []).append("reminder time")
                     plan["decisions"].append({"decision": "hold", "reason": "details_missing",
                                               "explanation": "A reminder was asked for with no time "
@@ -562,7 +731,9 @@ class DeskWorkflow:
                                           "explanation": "No action is needed for this part."})
         if triage.get("category") == "action_item" and not any(
                 p.get("tool_name") in ("create_task", "create_reminder") for p in plan["proposals"]) \
-                and (plan.get("held") or {}).get("reason") != "task_exists":
+                and (plan.get("held") or {}).get("reason") != "task_exists" \
+                and not any(d.get("reason") in ("task_exists", "possibly_same_as_open_task")
+                            for d in plan["decisions"]):
             # The rules' reading is the floor here too: a message they read as
             # something to do is recorded as a task even when the model saw
             # only a reply in it. A decision someone is waiting for is work.
@@ -661,6 +832,122 @@ class DeskWorkflow:
                 self._complete_task(ctx, user, run, str(task_id), by=user.email)
         return self.view(ctx, user, run_id)
 
+    def resolve_unresolved(self, ctx: Any, user: Any, run_id: int) -> Dict[str, Any]:
+        """The person has seen the requests the Desk could not act on and
+        takes them from here. Until then the run is not complete."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            open_ones = [entry for entry in lifecycle.unresolved_of(run["meta"], self.gateway.run_events(user, run))
+                         if not entry["resolved"]]
+            if open_ones:
+                self._record(user, run, "human", {"action": "resolve_unresolved", "by": user.email,
+                                                  "ids": [entry["id"] for entry in open_ones]})
+        return self.view(ctx, user, run_id)
+
+    # ── changing a workbook: always a copy, always asked for ────────────────
+    def _run_file(self, user: Any, run: Dict[str, Any], file_id: str) -> Dict[str, Any]:
+        """A file that belongs to THIS run: one that came with its message, or
+        one the run generated. Anything else is not found."""
+        events = self.gateway.run_events(user, run)
+        own = {str((e.get("data") or {}).get("attachmentId")) for e in events
+               if e.get("kind") == "read" and (e.get("data") or {}).get("tool") == "file.read_attachment"}
+        own |= {str(((c.get("output") or {}).get("document") or {}).get("id")) for c in self.gateway.run_cards(user, run)}
+        own |= {str(change.get("resultFileId")) for change in lifecycle.file_changes(events)}
+        lookup = getattr(self.gateway, "stored_file", None)
+        found = lookup(user, str(file_id)) if callable(lookup) and str(file_id) in own else None
+        if not found:
+            raise NotFound("That file is not part of this run.")
+        return found
+
+    def suggest_file_change(self, ctx: Any, user: Any, run_id: int, file_id: str, operations: Any) -> Dict[str, Any]:
+        """Record a change to a workbook of this run as a suggestion. Nothing
+        is changed: the person applies it or dismisses it."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            source = self._run_file(user, run, file_id)
+            clean, problems = workbooks.validate(operations)
+            if problems:
+                raise InvalidRequest(" ".join(problems))
+            info = files.inspect(source["filename"], source["content"])
+            if not info["ok"] or info["kind"] != "xlsx":
+                raise InvalidRequest("Only an .xlsx workbook can be changed.")
+            known = lifecycle.file_changes(self.gateway.run_events(user, run))
+            bound = workbooks.binding(source["sha256"], clean)
+            if any(c.get("binding") == bound and c.get("state") in ("suggested", "applied") for c in known):
+                return self.view(ctx, user, run_id)          # the same change, asked again: nothing new
+            self._record(user, run, "file", {
+                "changeId": f"fc-{run['id']}-{len(known) + 1}", "op": "change_workbook", "state": "suggested",
+                "sourceFileId": str(source["id"]), "filename": source["filename"], "sourceSha256": source["sha256"],
+                "operations": clean, "binding": bound, "by": user.email})
+        return self.view(ctx, user, run_id)
+
+    def apply_file_change(self, ctx: Any, user: Any, run_id: int, change_id: str,
+                          *, dismiss: bool = False) -> Dict[str, Any]:
+        """The person applies (or dismisses) a suggested change. Applying runs
+        Scriba's Excel skills on a copy and keeps the result as a NEW file."""
+        run = self._run(user, run_id)
+        with self._lock(run["meta"]["key"]):
+            known = {c["changeId"]: c for c in lifecycle.file_changes(self.gateway.run_events(user, run))}
+            change = known.get(str(change_id))
+            if change is None:
+                raise NotFound("This run suggests no such change.")
+            if change.get("state") == ("dismissed" if dismiss else "applied"):
+                return self.view(ctx, user, run_id)          # repeating it changes nothing
+            base = {"changeId": change["changeId"], "op": "change_workbook", "filename": change.get("filename")}
+            if dismiss and change.get("state") in ("suggested", "failed", "unverified"):
+                # Setting aside a change that failed or could not be verified is the person's
+                # acknowledgement, not a success: what it was stays on the record.
+                self._record(user, run, "file", {**base, "state": "dismissed", "dismissedFrom": change.get("state"),
+                                                 "by": user.email})
+                return self.view(ctx, user, run_id)
+            if change.get("state") != "suggested":
+                raise Conflict(f"This change is {change.get('state')}; it cannot be "
+                               f"{'dismissed' if dismiss else 'applied'}."
+                               + ("" if dismiss else " Suggest it again."))
+            source = self._run_file(user, run, str(change.get("sourceFileId")))
+            # Bound to the file and the operations that were shown.
+            if workbooks.binding(source["sha256"], change.get("operations") or []) != change.get("binding"):
+                self._record(user, run, "file", {**base, "state": "failed", "error": "change_no_longer_matches",
+                                                 "by": user.email})
+                return self.view(ctx, user, run_id)
+            done = workbooks.apply(source["filename"], source["content"], change["operations"])
+            if not done["ok"]:
+                self._record(user, run, "file", {**base, "state": "failed", "error": done.get("code"),
+                                                 "message": done.get("message"), "failedAt": done.get("failedAt"),
+                                                 "steps": done.get("steps"), "by": user.email})
+                return self.view(ctx, user, run_id)
+            check = workbooks.verify(source["filename"], source["content"], done["content"], change["operations"],
+                                     done["steps"])
+            if not check["ok"]:
+                # The skills said yes and the reopened result disagrees: it is not kept.
+                self._record(user, run, "file", {**base, "state": "failed", "error": "result_not_verified",
+                                                 "verification": check, "steps": done["steps"], "by": user.email})
+                return self.view(ctx, user, run_id)
+            keep = getattr(self.gateway, "keep_file", None)
+            try:
+                stored = keep(user, filename=workbooks.result_name(source["filename"]), content=done["content"],
+                              mime_type=workbooks.XLSX_MIME, extension=".xlsx") if callable(keep) else None
+            except Exception as exc:
+                uncertain = bool(getattr(exc, "uncertain", False))
+                self._record(user, run, "file", {**base, "state": "unverified" if uncertain else "failed",
+                                                 "error": "file_store_did_not_confirm" if uncertain else "file_store_failed",
+                                                 "steps": done["steps"], "by": user.email})
+                return self.view(ctx, user, run_id)
+            if not stored:
+                self._record(user, run, "file", {**base, "state": "failed", "error": "no_file_store",
+                                                 "message": "This backend keeps no files for the Desk.", "by": user.email})
+                return self.view(ctx, user, run_id)
+            # Read the kept file back: it must be the bytes that were verified.
+            kept = self.gateway.stored_file(user, str(stored["id"]))
+            same = bool(kept) and kept["sha256"] == done["sha256"]
+            self._record(user, run, "file", {
+                **base, "state": "applied" if same else "unverified", "resultFileId": str(stored["id"]),
+                "resultFilename": stored.get("filename"), "resultSha256": done["sha256"],
+                "sizeBytes": stored.get("size_bytes"), "steps": done["steps"],
+                "verification": {**check, "method": "workbook_reopened", "verified": same},
+                "error": None if same else "kept_file_differs", "by": user.email})
+        return self.view(ctx, user, run_id)
+
     def _close_awaited(self, user: Any, item: Dict[str, Any], plan: Dict[str, Any]) -> None:
         """This message may be the answer someone was being waited on for."""
         waiting = getattr(self.gateway, "waiting_follow_ups", None)
@@ -671,6 +958,17 @@ class DeskWorkflow:
             awaited = follow.get("waitingOn") or {}
             address = str(awaited.get("email") if isinstance(awaited, dict) else awaited or "").lower()
             if str(follow.get("threadId") or "") == str(item.get("threadId") or "") and address == sender:
+                if requests.is_holding_reply(item.get("body") or item.get("snippet")):
+                    # They wrote, and what they wrote is that it is not there
+                    # yet. The wait stays open.
+                    plan.setdefault("kept_follow_ups", []).append({
+                        "id": follow["id"], "state": "waiting", "external": True, "reason": "holding_reply",
+                        "lastHoldingReplyId": item.get("id"), "lastHoldingReplyAt": item.get("timestamp"),
+                        "waitingOn": address, "threadId": follow.get("threadId")})
+                    plan["decisions"].append({
+                        "decision": "keep_follow_up_open", "reason": "holding_reply",
+                        "explanation": "This says the answer is still to come, so the follow-up stays open."})
+                    continue
                 if self.gateway.close_waiting_follow_up(user, follow["id"]):
                     plan.setdefault("closed_follow_ups", []).append({
                         "id": follow["id"], "state": "satisfied", "external": True,
@@ -691,6 +989,33 @@ class DeskWorkflow:
         except Exception:
             open_tasks = None
             plan["reads"].append({"tool": "task.list", "ok": False, "error": "unavailable"})
+        same = None
+        if open_tasks and not any(_same_title(task.get("title"), title) for task in open_tasks):
+            # Not the same title; is it the same work? An open task most of
+            # whose title is in this request, when no other task comes close.
+            match = planning.match_open_task(f"{title}\n{' '.join(str(q) for q in evidence or [])}", open_tasks)
+            same = match["task"] if match["status"] == "one" else None
+        if same is not None:
+            wanted = _moment(due_at) if due_at else None
+            theirs = _moment(same.get("due_at"))
+            if wanted is None or theirs is None or abs((wanted - theirs).total_seconds()) < 3600:
+                # Same work, same date (or none stated): it is already recorded.
+                plan["held"] = plan["held"] or {
+                    "reason": "task_exists", "slots": [], "calendars": [],
+                    "target": {"taskId": str(same.get("id")), "title": same.get("title")},
+                    "message": f"You already have an open task for this (\"{same.get('title')}\"), so no "
+                               "second one is proposed."}
+                plan["decisions"].append({"decision": "none", "reason": "task_exists",
+                                          "explanation": "You already have this task."})
+            else:
+                # It looks like a task you have, with another date. Not a
+                # second task, and not silently dropped either.
+                plan.setdefault("unresolved", []).append({
+                    "text": title[:300], "why": "possibly_same_as_open_task", "taskId": str(same.get("id"))})
+                plan["decisions"].append({"decision": "none", "reason": "possibly_same_as_open_task",
+                                          "explanation": f"This may be your open task \"{same.get('title')}\" "
+                                                         "with a different date. It was left for you."})
+            return
         if open_tasks and any(_same_title(task.get("title"), title) for task in open_tasks):
             # A second message about the same thing must not make a second task.
             plan["held"] = {"reason": "task_exists", "slots": [], "calendars": [],
@@ -787,17 +1112,16 @@ class DeskWorkflow:
         pre_read = extracted is not None
         intent = intent or (item.get("triage") or {}).get("meeting_intent") or "new"
         subject, text = str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")
-        if reading.retracted(text):
-            # "Cancel it. On second thought, keep it." Which half stands is not
-            # for a rule or a model to pick, least of all for a cancellation.
-            self._hold(plan, user, item, calendar, "conflicting_instructions",
-                       "The message gives an instruction and then takes it back, so nothing is "
-                       "proposed. Read it and decide.")
-            return
-        if intent == "new" and reading.refers_to_existing(subject, text) and self._sender_has_meeting(user, item):
+        # (An instruction that is taken back is stopped earlier, in ``_plan``,
+        # before any reader is asked.)
+        if intent == "new" and not pre_read and reading.refers_to_existing(subject, text) \
+                and self._sender_has_meeting(user, item):
             # New or change is decided from the calendar, not from the verb:
             # the message speaks of an existing meeting and the sender is on
             # one. Booking a second event beside it would be the wrong action.
+            # (Not when a model has read the message and reported a new
+            # meeting: this wording test then moved a meeting nobody asked to
+            # move. A model that reads a change says so, and that is honoured.)
             intent = "reschedule"
             plan["decisions"].append({"decision": "read_as_change", "reason": "refers_to_existing_meeting",
                                       "explanation": "The message refers to a meeting the sender is "
@@ -835,7 +1159,7 @@ class DeskWorkflow:
             # that is written out in full is read by rule; anything less
             # exact is left unread, never guessed.
             written = reading.explicit_request(
-                str(item.get("body") or item.get("snippet") or ""),
+                str(plan.get("meeting_text") or item.get("body") or item.get("snippet") or ""),
                 self.service.now(user).astimezone(resolve_zone(zone_name)),
                 change=intent in ("reschedule", "cancel"))
             now_local = self.service.now(user).astimezone(resolve_zone(zone_name))
@@ -858,6 +1182,18 @@ class DeskWorkflow:
                 plan["planner"] = "rules"
         elif extracted and not pre_read:
             plan["planner"] = "rules+model"
+        if extracted and extracted.get("requested_start") and intent != "cancel" \
+                and str(extracted.get("calendar_action") or "").lower() != "cancel" \
+                and reading.weekday_contradicts_date(
+                    f"{subject}\n{text}", self.service.now(user).astimezone(resolve_zone(zone_name)).date()):
+            # "Wednesday 9 March", and the 9th is a Tuesday. Whoever read a
+            # time out of that picked one of the two: a rule does not, and a
+            # model may not either. The sender is asked which day is meant.
+            plan["reads"].append({"tool": "rules.check_date", "ok": False, "error": "weekday_contradicts_date"})
+            self._hold(plan, user, item, calendar, "conflicting_instructions",
+                       "The message names a weekday that does not match its date, so no day is "
+                       "picked. Ask which day is meant.")
+            return
         if extracted and not extracted.get("requested_end") and not extracted.get("duration_minutes") \
                 and intent == "new" and extracted.get("requested_start"):
             plan.setdefault("assumptions", []).append(
@@ -1350,12 +1686,19 @@ class DeskWorkflow:
             return      # unknown is not "no reply": leave the follow-up as it is
         for follow in waiting:
             sent_at = _moment(follow.get("sentAt"))
-            answer = next((row for row in rows
-                           if str(row.get("threadId") or "") == str(follow.get("threadId") or "")
-                           and sender_address(str(row.get("from_addr") or "")) == follow.get("waitingOn")
-                           and str(row.get("id")) != str(meta.get("email_id"))
-                           and sent_at is not None and (_moment(row.get("timestamp")) or sent_at) > sent_at),
-                          None)
+            replies = [row for row in rows
+                       if str(row.get("threadId") or "") == str(follow.get("threadId") or "")
+                       and sender_address(str(row.get("from_addr") or "")) == follow.get("waitingOn")
+                       and str(row.get("id")) != str(meta.get("email_id"))
+                       and sent_at is not None and (_moment(row.get("timestamp")) or sent_at) > sent_at]
+            # A reply that only says the answer is coming is not the answer.
+            answer = next((row for row in replies
+                           if not requests.is_holding_reply(row.get("body") or row.get("snippet"))), None)
+            holding = replies[-1] if replies and answer is None else None
+            if holding is not None and str(follow.get("lastHoldingReplyId")) != str(holding.get("id")):
+                self._record(user, run, "followup", {
+                    "id": follow["id"], "reason": "holding_reply", "lastHoldingReplyId": holding.get("id"),
+                    "lastHoldingReplyAt": holding.get("timestamp")})
             if answer is not None:
                 self._record(user, run, "followup", {
                     "id": follow["id"], "state": "satisfied", "satisfiedBy": answer.get("id"),
@@ -1525,6 +1868,12 @@ class DeskWorkflow:
         task_updates = lifecycle.task_updates(events)
         if any(update.get("state") == "suggested" for update in task_updates):
             next_steps.append("complete_task")    # POST /desk/runs/{id}/task-updates/{taskId}/apply
+        unresolved = lifecycle.unresolved_of(meta, events)
+        if any(not entry["resolved"] for entry in unresolved):
+            next_steps.append("resolve_unresolved")   # POST /desk/runs/{id}/unresolved/resolve
+        file_changes = lifecycle.file_changes(events)
+        if any(change.get("state") == "suggested" for change in file_changes):
+            next_steps.append("apply_file_change")    # POST /desk/runs/{id}/file-changes/{changeId}/apply
         counts: Dict[str, int] = {}
         for status in statuses:
             counts[status] = counts.get(status, 0) + 1
@@ -1550,12 +1899,22 @@ class DeskWorkflow:
             "next": next_steps,
             "followUps": follow,
             "taskUpdates": task_updates,
+            "unresolved": unresolved,
+            "fileChanges": [_file_change_view(change, bool(meta.get("sandbox")), run["id"]) for change in file_changes],
         }
         if detail:
             view["plan"] = {**plan, "steps": steps} if plan is not None else None
             view["actions"] = actions
             view["timeline"] = lifecycle.timeline(events)
             view["usage"] = lifecycle.usage_of(events)
+            view["attachments"] = _attachment_views(events)
+            view["files"] = _file_views(actions) + [
+                {"id": c["resultFileId"], "filename": c.get("resultFilename"), "mimeType": workbooks.XLSX_MIME,
+                 "sizeBytes": c.get("sizeBytes"), "toolCallId": None, "stepId": None, "changeId": c["changeId"],
+                 "state": "VERIFIED" if c.get("state") == "applied" else "EXECUTED_UNVERIFIED",
+                 "verified": c.get("state") == "applied", "simulated": bool(meta.get("sandbox")),
+                 "download": {"method": "GET", "path": f"/desk/files/{c['resultFileId']}"}}
+                for c in file_changes if c.get("resultFileId")]
             if meta.get("kind") == "command":
                 view["command"] = {"text": meta.get("command"), "operations": meta.get("command_kinds") or []}
                 view["assistantMessage"] = reply_text(view, str(meta.get("timezone") or "UTC"))
@@ -1720,6 +2079,59 @@ def _summary(meta: Dict[str, Any], proposals: List[Dict[str, Any]]) -> str:
     elif not proposals:
         parts.append("No action is proposed.")
     return " ".join(part for part in parts if part)
+
+
+def _file_change_view(change: Mapping[str, Any], simulated: bool, run_id: Any) -> Dict[str, Any]:
+    """A change to a workbook as the person sees it: what will be (or was)
+    changed, on which file, and what shows that it worked."""
+    state = str(change.get("state"))
+    return {
+        "id": change.get("changeId"), "state": state, "sourceFileId": change.get("sourceFileId"),
+        "filename": change.get("filename"), "operations": change.get("operations") or [],
+        "resultFileId": change.get("resultFileId"), "resultFilename": change.get("resultFilename"),
+        # True only when the changed copy was reopened, compared with the original and read back from the store.
+        "verified": state == "applied", "verification": change.get("verification"),
+        "steps": change.get("steps") or [], "failedAt": change.get("failedAt"),
+        "error": change.get("error") if state in ("failed", "unverified") else None,
+        "message": change.get("message") if state == "failed" else None,
+        "dismissedFrom": change.get("dismissedFrom") if state == "dismissed" else None,
+        "by": change.get("by"), "updatedAt": change.get("updatedAt"), "simulated": simulated,
+        "apply": {"method": "POST", "path": f"/desk/runs/{run_id}/file-changes/{change.get('changeId')}/apply"}
+        if state == "suggested" else None,
+    }
+
+
+def _attachment_views(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The files that came with the message, as they were read. Facts about
+    each file only: its text is never part of a run's record."""
+    found = []
+    for item in events:
+        data = item.get("data") or {}
+        if item.get("kind") == "read" and data.get("tool") == "file.read_attachment":
+            found.append({"id": data.get("attachmentId"), "filename": data.get("filename"),
+                          "kind": data.get("kind"), "sizeBytes": data.get("sizeBytes"), "sha256": data.get("sha256"),
+                          "read": bool(data.get("ok")), "error": data.get("error"), "unit": data.get("unit"),
+                          "unitCount": data.get("unitCount"), "truncated": bool(data.get("truncated")),
+                          "unreadParts": data.get("unread") or 0, "untrustedFindings": data.get("findings") or 0,
+                          "unusual": data.get("unusual") or 0, "readAt": item.get("at")})
+    return found
+
+
+def _file_views(actions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Files the Desk generated in this run. ``verified`` is true only after
+    the file was reopened and showed what was approved."""
+    found = []
+    for action in actions:
+        document = (action.get("output") or {}).get("document")
+        if not isinstance(document, dict) or not document.get("id"):
+            continue
+        found.append({
+            "id": str(document["id"]), "filename": document.get("filename"), "mimeType": document.get("mime_type"),
+            "sizeBytes": document.get("size_bytes"), "toolCallId": action.get("toolCallId"),
+            "stepId": action.get("stepId"), "state": action.get("lifecycle"), "verified": bool(action.get("verified")),
+            "simulated": bool(action.get("simulated")),
+            "download": {"method": "GET", "path": f"/desk/files/{document['id']}"}})
+    return found
 
 
 def _action_views(cards: List[Dict[str, Any]], events: List[Dict[str, Any]],

@@ -1,0 +1,183 @@
+{
+ "format": "autonomy-quality-lab.stable-campaign/1",
+ "label": "engine-bd4f0cc-rules-only",
+ "maxGapSeconds": 15.0,
+ "attempts": [
+  {
+   "seed": 20270308,
+   "attempt": 1,
+   "kept": true,
+   "discardedBecause": [],
+   "report": "reports/engine-bd4f0cc-rules-only-seed20270308",
+   "backendCommit": "bd4f0cc6cddbbfd0fcd095b5a585827d2cb1f0dc",
+   "executionMode": "rules_only+isolated_sandbox",
+   "model": null,
+   "startedAt": "2026-11-14T13:20:56.193749+00:00",
+   "finishedAt": "2026-11-14T13:26:00.449575+00:00",
+   "maxHeartbeatGapSeconds": 1.1,
+   "heartbeatGaps": [],
+   "items": 291,
+   "byVerdict": {
+    "completed": 218,
+    "safe_handoff": 54,
+    "failed": 19
+   },
+   "completeJobSuccessRate": 0.7491,
+   "safetyViolations": 0,
+   "falseSuccesses": 0,
+   "mandatoryApprovals": 202,
+   "humanRescues": 4,
+   "hardGatesPassed": true,
+   "hardGatesFailed": [],
+   "metamorphic": {
+    "relations": 36,
+    "hold": 29,
+    "broken": 7
+   },
+   "rootCauses": {
+    "RC-WRITTEN-TIME-NOT-READ": 6,
+    "RC-CHANGE-READ-AS-NEW-MEETING": 4,
+    "RC-NON-ENGLISH-NOT-READ": 4,
+    "RC-NON-MEETING-READ-AS-MEETING": 4,
+    "RC-THREAD-CONTEXT-NOT-USED": 3,
+    "RC-SECOND-REQUEST-DROPPED": 2,
+    "RC-CANCEL-READ-AS-MOVE": 1,
+    "RC-OTHER-JOB-NOT-DONE": 21,
+    "RC-SCHEDULING-NOT-RECOGNISED": 20,
+    "RC-TASK-HANDED-OVER": 8
+   }
+  },
+  {
+   "seed": 7,
+   "attempt": 1,
+   "kept": true,
+   "discardedBecause": [],
+   "report": "reports/engine-bd4f0cc-rules-only-seed7",
+   "backendCommit": "bd4f0cc6cddbbfd0fcd095b5a585827d2cb1f0dc",
+   "executionMode": "rules_only+isolated_sandbox",
+   "model": null,
+   "startedAt": "2026-11-14T13:26:02.782355+00:00",
+   "finishedAt": "2026-11-14T13:32:49.065476+00:00",
+   "maxHeartbeatGapSeconds": 1.0,
+   "heartbeatGaps": [],
+   "items": 291,
+   "byVerdict": {
+    "completed": 218,
+    "safe_handoff": 54,
+    "failed": 19
+   },
+   "completeJobSuccessRate": 0.7491,
+   "safetyViolations": 0,
+   "falseSuccesses": 0,
+   "mandatoryApprovals": 202,
+   "humanRescues": 4,
+   "hardGatesPassed": true,
+   "hardGatesFailed": [],
+   "metamorphic": {
+    "relations": 36,
+    "hold": 29,
+    "broken": 7
+   },
+   "rootCauses": {
+    "RC-WRITTEN-TIME-NOT-READ": 6,
+    "RC-CHANGE-READ-AS-NEW-MEETING": 4,
+    "RC-NON-ENGLISH-NOT-READ": 4,
+    "RC-NON-MEETING-READ-AS-MEETING": 4,
+    "RC-THREAD-CONTEXT-NOT-USED": 3,
+    "RC-SECOND-REQUEST-DROPPED": 2,
+    "RC-CANCEL-READ-AS-MOVE": 1,
+    "RC-OTHER-JOB-NOT-DONE": 21,
+    "RC-SCHEDULING-NOT-RECOGNISED": 20,
+    "RC-TASK-HANDED-OVER": 8
+   }
+  },
+  {
+   "seed": 101,
+   "attempt": 1,
+   "kept": true,
+   "discardedBecause": [],
+   "report": "reports/engine-bd4f0cc-rules-only-seed101",
+   "backendCommit": "bd4f0cc6cddbbfd0fcd095b5a585827d2cb1f0dc",
+   "executionMode": "rules_only+isolated_sandbox",
+   "model": null,
+   "startedAt": "2026-11-14T13:32:53.036786+00:00",
+   "finishedAt": "2026-11-14T13:40:54.097389+00:00",
+   "maxHeartbeatGapSeconds": 1.0,
+   "heartbeatGaps": [],
+   "items": 291,
+   "byVerdict": {
+    "completed": 218,
+    "safe_handoff": 54,
+    "failed": 19
+   },
+   "completeJobSuccessRate": 0.7491,
+   "safetyViolations": 0,
+   "falseSuccesses": 0,
+   "mandatoryApprovals": 202,
+   "humanRescues": 4,
+   "hardGatesPassed": true,
+   "hardGatesFailed": [],
+   "metamorphic": {
+    "relations": 36,
+    "hold": 29,
+    "broken": 7
+   },
+   "rootCauses": {
+    "RC-WRITTEN-TIME-NOT-READ": 6,
+    "RC-CHANGE-READ-AS-NEW-MEETING": 4,
+    "RC-NON-ENGLISH-NOT-READ": 4,
+    "RC-NON-MEETING-READ-AS-MEETING": 4,
+    "RC-THREAD-CONTEXT-NOT-USED": 3,
+    "RC-SECOND-REQUEST-DROPPED": 2,
+    "RC-CANCEL-READ-AS-MOVE": 1,
+    "RC-OTHER-JOB-NOT-DONE": 21,
+    "RC-SCHEDULING-NOT-RECOGNISED": 20,
+    "RC-TASK-HANDED-OVER": 8
+   }
+  },
+  {
+   "seed": 4242,
+   "attempt": 1,
+   "kept": true,
+   "discardedBecause": [],
+   "report": "reports/engine-bd4f0cc-rules-only-seed4242",
+   "backendCommit": "bd4f0cc6cddbbfd0fcd095b5a585827d2cb1f0dc",
+   "executionMode": "rules_only+isolated_sandbox",
+   "model": null,
+   "startedAt": "2026-11-14T13:40:55.798473+00:00",
+   "finishedAt": "2026-11-14T13:48:35.584036+00:00",
+   "maxHeartbeatGapSeconds": 1.0,
+   "heartbeatGaps": [],
+   "items": 291,
+   "byVerdict": {
+    "completed": 218,
+    "safe_handoff": 54,
+    "failed": 19
+   },
+   "completeJobSuccessRate": 0.7491,
+   "safetyViolations": 0,
+   "falseSuccesses": 0,
+   "mandatoryApprovals": 202,
+   "humanRescues": 4,
+   "hardGatesPassed": true,
+   "hardGatesFailed": [],
+   "metamorphic": {
+    "relations": 36,
+    "hold": 29,
+    "broken": 7
+   },
+   "rootCauses": {
+    "RC-WRITTEN-TIME-NOT-READ": 6,
+    "RC-CHANGE-READ-AS-NEW-MEETING": 4,
+    "RC-NON-ENGLISH-NOT-READ": 4,
+    "RC-NON-MEETING-READ-AS-MEETING": 4,
+    "RC-THREAD-CONTEXT-NOT-USED": 3,
+    "RC-SECOND-REQUEST-DROPPED": 2,
+    "RC-CANCEL-READ-AS-MOVE": 1,
+    "RC-OTHER-JOB-NOT-DONE": 21,
+    "RC-SCHEDULING-NOT-RECOGNISED": 20,
+    "RC-TASK-HANDED-OVER": 8
+   }
+  }
+ ]
+}

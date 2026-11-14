@@ -1,0 +1,11 @@
+{
+ "commit": "bd4f0cc6cddbbfd0fcd095b5a585827d2cb1f0dc",
+ "parents": {
+  "f06a258": 38,
+  "2e77414": 42
+ },
+ "integrated": 56,
+ "union": 56,
+ "missing": [],
+ "statement": "`backend/eval/scenarios.py` on `bd4f0cc` lists **56 scenarios** (38 in `SCENARIOS`, 18 in `SECRETARY`). That is exactly the union of the two engine branches that were integrated: `f06a258` had 38 (14 of them its own) and `2e77414` had 42 (18 of them its own); none is missing and none is new. Counted statically by `tools/backend_scenarios.py` (the file is parsed, not imported). **The lab did not run the backend's own test suite**: that is Agent 1's check (their commit message reports 869 passed), and their scenario figures are in `docs/handoff/EVAL_BACKEND_SCENARIOS.md` on this commit."
+}

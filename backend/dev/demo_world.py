@@ -97,6 +97,29 @@ def build_demo_world(owner_email: str, *, name: str = "", now: Any = None) -> Sa
     mail(45, provider="outlook", message_id=f"{handle}-outlook-task",
          from_addr="Rami Nassar <rami.nassar@northwind.example>", subject="Expense report",
          body="Please note the deadline for the expense report is tomorrow.")
+
+    # A message that brings a file and asks for it to be looked at. The workbook
+    # is synthetic and is built with Scriba's own generator, so this is skipped
+    # where Scriba is not importable (the unit tests).
+    try:
+        from app import chat_file_tools
+
+        figures = chat_file_tools.build_xlsx([{
+            "name": "Budget", "columns": ["Department", "Month", "Planned", "Actual"],
+            "rows": [["Sales", "Oct", 12000, 12450], ["Sales", "Nov", 12000, 11800], ["Operations", "Oct", 8000, 41200],
+                     ["Operations", "Nov", 8000, -350], ["People", "Oct", 5000, ""], ["People", "Nov", 5000, 5100]]}])
+        mail(50, message_id=f"{handle}-figures", from_addr="Omar Rahal <omar.rahal@northwind.example>",
+             subject="Q4 budget figures", thread_id=f"thread-{handle}-figures",
+             body="Please review the attached figures and tell me if anything looks unusual before Friday.",
+             attachments=[{"filename": "q4-budget.xlsx", "content": figures}])
+    except Exception:       # no Scriba here: the demo simply has no file message
+        pass
+
+    # A FAKE paired computer with two recorded tasks, so the desktop screens
+    # have something to show. Everything about it is reported as simulated.
+    world.add_desktop(recordings=[
+        {"name": "Export the weekly report", "apps": ["Spreadsheet"]},
+        {"name": "File the signed contract", "apps": ["Documents"], "script": "no_check", "checks": 0}])
     return world
 
 

@@ -916,13 +916,8 @@ class DeskWorkflow:
         pre_read = extracted is not None
         intent = intent or (item.get("triage") or {}).get("meeting_intent") or "new"
         subject, text = str(item.get("subject") or ""), str(item.get("body") or item.get("snippet") or "")
-        if reading.retracted(text):
-            # "Cancel it. On second thought, keep it." Which half stands is not
-            # for a rule or a model to pick, least of all for a cancellation.
-            self._hold(plan, user, item, calendar, "conflicting_instructions",
-                       "The message gives an instruction and then takes it back, so nothing is "
-                       "proposed. Read it and decide.")
-            return
+        # (An instruction that is taken back is stopped earlier, in ``_plan``,
+        # before any reader is asked.)
         if intent == "new" and reading.refers_to_existing(subject, text) and self._sender_has_meeting(user, item):
             # New or change is decided from the calendar, not from the verb:
             # the message speaks of an existing meeting and the sender is on
@@ -987,6 +982,18 @@ class DeskWorkflow:
                 plan["planner"] = "rules"
         elif extracted and not pre_read:
             plan["planner"] = "rules+model"
+        if extracted and extracted.get("requested_start") and intent != "cancel" \
+                and str(extracted.get("calendar_action") or "").lower() != "cancel" \
+                and reading.weekday_contradicts_date(
+                    f"{subject}\n{text}", self.service.now(user).astimezone(resolve_zone(zone_name)).date()):
+            # "Wednesday 9 March", and the 9th is a Tuesday. Whoever read a
+            # time out of that picked one of the two: a rule does not, and a
+            # model may not either. The sender is asked which day is meant.
+            plan["reads"].append({"tool": "rules.check_date", "ok": False, "error": "weekday_contradicts_date"})
+            self._hold(plan, user, item, calendar, "conflicting_instructions",
+                       "The message names a weekday that does not match its date, so no day is "
+                       "picked. Ask which day is meant.")
+            return
         if extracted and not extracted.get("requested_end") and not extracted.get("duration_minutes") \
                 and intent == "new" and extracted.get("requested_start"):
             plan.setdefault("assumptions", []).append(

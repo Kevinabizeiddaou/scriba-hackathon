@@ -384,3 +384,30 @@ def test_an_instruction_taken_back_is_not_turned_into_a_task_by_any_reader(desk)
     run = deliver(desk, "Please call off the survey briefing on Thursday. On second thought, keep it as it is.")
     assert run["actions"] == [] and run["held"]["reason"] == "conflicting_instructions"
     assert desk.gateway.model_calls == []
+
+
+def test_a_weekday_that_contradicts_its_date_is_not_booked_whoever_read_the_time(desk):
+    """Found with a real model (scenario S28): it picked one of the two days
+    and the meeting was booked. The rules' guard now applies to every reader."""
+    # 19 November 2026 is a Thursday.
+    body = "Could we meet on Friday 19 November at 11:00 for 30 minutes?"
+    modelled(desk, {"intents": [intent("new_meeting", "Could we meet on Friday 19 November at 11:00",
+                                       requested_start="2026-11-19T11:00:00+00:00",
+                                       requested_end="2026-11-19T11:30:00+00:00")]})
+    desk.world().deliver(message_id="d1", from_addr=SOFIA, subject="Berth", thread_id="T-d1", body=body)
+    run = desk.intake("d1").json()
+    assert not [a for a in run["actions"] if a["tool_name"] == "create_calendar_event"]
+    assert run["held"]["reason"] == "conflicting_instructions"
+
+    # The same through Scriba's own extraction, and a date that does match is booked.
+    other = Desk()
+    other.plan({"calendar_action": "create", "requested_start": "2026-11-19T11:00:00+00:00",
+                "requested_end": "2026-11-19T11:30:00+00:00"})
+    other.world().deliver(message_id="d2", from_addr=SOFIA, subject="Berth", thread_id="T-d2", body=body)
+    assert other.intake("d2").json()["held"]["reason"] == "conflicting_instructions"
+    fine = Desk()
+    fine.plan({"calendar_action": "create", "requested_start": "2026-11-19T11:00:00+00:00",
+               "requested_end": "2026-11-19T11:30:00+00:00"})
+    fine.world().deliver(message_id="d3", from_addr=SOFIA, subject="Berth", thread_id="T-d3",
+                         body="Could we meet on Thursday 19 November at 11:00 for 30 minutes?")
+    assert [a["tool_name"] for a in fine.intake("d3").json()["actions"]] == ["create_calendar_event"]

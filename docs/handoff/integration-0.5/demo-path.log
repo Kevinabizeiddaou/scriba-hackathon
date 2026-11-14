@@ -1,0 +1,34 @@
+overlay 0.5.0 | external writes enabled: False | model: {"configured": true}
+sandbox world demo-alice | clock 2026-11-14T13:27:23.483982+00:00
+free slot chosen: 2026-11-16T13:30:00+00:00 | zone UTC | complete True
+
+1. delivered msg-demo-alice-1 (not taken in by this script: waiting for the worker)
+  [opened by the worker] stage AWAITING_APPROVAL | trigger worker | planner rules+agent
+      create_calendar_event  book         awaiting_approval  lifecycle=PROPOSED verified=False
+      create_task            record_task  awaiting_approval  lifecycle=PROPOSED verified=False
+      intents: [('new_meeting', 0.99, 'model'), ('task', 0.99, 'model')]
+      steps: [('s1', 'create_calendar_event', 'book', 'awaiting_approval', []), ('s2', 'create_task', 'record_task', 'awaiting_approval', []), ('s3', 'send_email', 'confirm', 'waiting', ['s1'])]
+      usage: {"models": [{"model": "gpt-6-luna", "calls": 2, "inputTokens": 1743, "outputTokens": 327, "cachedInputTokens": 0}], "estimatedCostUsd": 0.000338, "priceSource": "https://developers.openai.com/api/docs
+      approved create_calendar_event (book) -> executed
+      approved create_task (record_task) -> executed
+      approved send_email (confirm) -> executed
+  [after approvals] stage COMPLETED | trigger worker | planner rules+agent
+      create_calendar_event  book         executed           lifecycle=VERIFIED verified=True method=sandbox_readback
+      create_task            record_task  executed           lifecycle=VERIFIED verified=True method=sandbox_readback
+      send_email             confirm      executed           lifecycle=VERIFIED verified=True method=sandbox_readback
+      unresolved: [] | follow-ups: []
+
+2. delivered msg-demo-alice-5: asks for 2026-11-16T13:30:00+00:00, where "Close the renewal" already is
+  [opened by the worker] stage AWAITING_APPROVAL | trigger worker | planner rules+agent
+      send_email             offer_times  awaiting_approval  lifecycle=PROPOSED verified=False
+      held: calendar_conflict
+      approved send_email (offer_times) -> executed
+  [after the offer of times was approved] stage WAITING_FOR_RESPONSE | trigger worker | planner rules+agent
+      send_email             offer_times  executed           lifecycle=VERIFIED verified=True method=sandbox_readback
+      follow-ups: [('fu-237-255', 'waiting', 'petra.lindholm@nordvik.example')]
+      after her answer arrived, follow-ups: {'waiting': 0, 'overdue': 0, 'escalated': 0, 'satisfied': 1, 'closed': 0}
+  [the first run, once the awaited answer arrived] stage COMPLETED | trigger worker | planner rules+agent
+      send_email             offer_times  executed           lifecycle=VERIFIED verified=True method=sandbox_readback
+
+sandbox operations: [('calendar.create_event', 'executed'), ('task.create', 'executed'), ('email.send', 'executed'), ('email.send', 'executed')]
+isolation violations: [] | external writes enabled: False

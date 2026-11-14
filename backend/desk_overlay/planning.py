@@ -94,7 +94,7 @@ def deadline_from(text: str, now: dt.datetime) -> Optional[dt.datetime]:
             if not weekday and re.search(r"\b(?:deadline|due)\b", lowered):
                 # "the deadline for the board pack is Friday": a deadline is
                 # named and exactly one weekday appears in the text.
-                named = {m.group(2).lower() for m in _ANY_WEEKDAY.finditer(lowered)}
+                named = set(re.findall("|".join(_WEEKDAYS), lowered))
                 if len(named) == 1:
                     weekday = re.search(r"(" + next(iter(named)) + r")", lowered)
             if weekday:

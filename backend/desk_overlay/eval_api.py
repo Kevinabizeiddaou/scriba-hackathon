@@ -27,7 +27,7 @@ model-planned chat agent, which is not driven from here yet). Such a run ends
 """
 from __future__ import annotations
 
-import datetime as dt
+import logging
 import threading
 import time
 import uuid
@@ -42,6 +42,7 @@ from .gateway import acting_as
 from .sandbox import SandboxWorld, parse_time
 from .service import AppContext
 
+logger = logging.getLogger(__name__)
 CONTRACT_VERSION = "1.1.0"
 CONTRACT_HEADER = "X-Executive-Desk-Contract"
 MAX_RUNS = 500
@@ -211,6 +212,7 @@ class EvalRuns:
         except EvalError as exc:
             self._fail(record, exc.code, exc.message)
         except Exception as exc:
+            logger.exception("desk evaluation run could not be started")
             self._fail(record, "run_failed", f"The run could not be started: {type(exc).__name__}.")
 
     # ── reading ─────────────────────────────────────────────────────────────

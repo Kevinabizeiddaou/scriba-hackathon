@@ -250,7 +250,7 @@ class ExecutionGate:
                 gate.stats["sandboxExecutions"] += 1
                 try:
                     return world.execute(action)
-                except SandboxFault as fault:
+                except SandboxFault:
                     if ctx is not None:
                         ctx["notes"]["outcome"] = "unknown"
                     return {"status": "failed", "error": "The provider did not confirm the request.",

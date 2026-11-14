@@ -23,7 +23,7 @@ action routes, behind the Desk's execution gate; see docs/BACKEND_CONTRACT.md.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field

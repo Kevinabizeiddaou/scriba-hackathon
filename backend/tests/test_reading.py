@@ -93,6 +93,8 @@ def test_urgency_follows_the_deadline_and_the_wording(text, due, expected):
     ("Approval of the wording by Tuesday 17:00, please.", "2026-11-17T17:00:00+00:00"),
     ("Please send it by Thursday 9:30.", "2026-11-19T09:30:00+00:00"),
     ("I need your decision today.", "2026-11-16T17:00:00+00:00"),
+    ("Please note the deadline for the board pack is Friday.", "2026-11-20T17:00:00+00:00"),
+    ("The report is due, ideally on Thursday.", "2026-11-19T17:00:00+00:00"),
 ])
 def test_a_deadline_with_a_clock_time_keeps_it(text, expected):
     assert planning.deadline_from(text, NOW).isoformat() == expected
